@@ -75,6 +75,7 @@ export interface BubbleDesignContract {
   state: BubbleState;
   alignment: BubbleAlignment;
   surface: SurfaceDesignContract;
+  showTextBox: boolean;
   textBox: TextBoxDesignContract;
   mediaSlot: BubbleMediaSlotContract;
   iconRowSlot: BubbleIconRowSlotContract;

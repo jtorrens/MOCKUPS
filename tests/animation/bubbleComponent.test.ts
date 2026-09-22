@@ -156,6 +156,54 @@ test("Bubble resolves Sticker through the image Media viewport with transparent 
   assert.ok((clip.style?.borderRadius as number) > 0);
 });
 
+test("Bubble omits empty image and Sticker text without reserving its layout", () => {
+  for (const mediaType of ["image", "sticker"] as const) {
+    let expectedLayout: {
+      surface: NonNullable<RenderableNode["box"]>;
+      media: NonNullable<RenderableNode["box"]>;
+    } | undefined;
+
+    for (const mediaPosition of ["top", "bottom", "left", "right"] as const) {
+      const source = committedComponentFixture("bubble", "default_copy");
+      const config = JSON.parse(source.configJson) as {
+        bubble: { mediaPosition: string };
+      };
+      config.bubble.mediaPosition = mediaPosition;
+      source.configJson = JSON.stringify(config);
+      const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+      Object.assign(preview, {
+        actorIdentityVisible: false,
+        sampleText: "   ",
+        mediaType,
+        mediaSource: "media/empty-text.png",
+        viewportSize: "180|120",
+        showIconRow: false,
+        statusState: "none",
+        statusText: "",
+        writeOnTrigger: false,
+        keepCursorAfterWrite: true,
+      });
+      source.designPreviewJson = JSON.stringify(preview);
+
+      const resolved = resolveBubbleComponent(source);
+      assert.equal(resolved.showTextBox, false);
+      assert.equal(resolved.textBox.cursorVisible, false);
+
+      const rendered = bubbleComponentToRenderable(source, resolved);
+      assert.equal(findNode(rendered, "component.bubble.textBox"), undefined);
+      const layout = {
+        surface: requiredNode(rendered, "component.bubble.surface").box!,
+        media: requiredNode(rendered, `component.bubble.${mediaType}`).box!,
+      };
+      if (!expectedLayout) {
+        expectedLayout = layout;
+      } else {
+        assert.deepEqual(layout, expectedLayout);
+      }
+    }
+  }
+});
+
 test("Bubble requires every field in its complete prepared Runtime snapshot", () => {
   const requiredKeys = [
     "state",

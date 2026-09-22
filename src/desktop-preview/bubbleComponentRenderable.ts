@@ -106,7 +106,12 @@ export function bubbleComponentToRenderable(
         {
           x: 0,
           y: 0,
-          width: Math.max(1, textBoxForContent.size.width * scale),
+          width: Math.max(
+            1,
+            bubble.showTextBox
+              ? textBoxForContent.size.width * scale
+              : mediaSize?.width ?? 1,
+          ),
           height: intrinsicIconRowSize.height,
         },
       )
@@ -118,7 +123,7 @@ export function bubbleComponentToRenderable(
     numberToken(payload, bubble.iconRowSlot.verticalPaddingToken) * scale,
   );
   let measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
-  if (!fixed && mediaSize
+  if (bubble.showTextBox && !fixed && mediaSize
       && (bubble.mediaSlot.position === "top" || bubble.mediaSlot.position === "bottom")
       && mediaSize.width > measuredTextBox.width) {
     textBoxForContent = {
@@ -148,11 +153,14 @@ export function bubbleComponentToRenderable(
     gapY: paddingY,
   };
   const baseContentLayout = bubbleContentLayout(
-    { width: measuredTextBox.width, height: measuredTextBox.height },
+    bubble.showTextBox
+      ? { width: measuredTextBox.width, height: measuredTextBox.height }
+      : { width: 0, height: 0 },
     statusSize,
     mediaSize,
     iconRowSize,
     bubble.mediaSlot.position,
+    bubble.showTextBox,
     basePadding,
     actorLabelSize?.width ?? 0,
     statusGap,
@@ -226,11 +234,14 @@ export function bubbleComponentToRenderable(
     paddingX,
   );
   const contentLayout = bubbleContentLayout(
-    { width: measuredTextBox.width, height: measuredTextBox.height },
+    bubble.showTextBox
+      ? { width: measuredTextBox.width, height: measuredTextBox.height }
+      : { width: 0, height: 0 },
     statusSize,
     mediaSize,
     iconRowSize,
     bubble.mediaSlot.position,
+    bubble.showTextBox,
     contentPadding,
     Math.max(0, labelMinimumSurfaceWidth - contentPadding.left - contentPadding.right),
     statusGap,
@@ -342,33 +353,35 @@ export function bubbleComponentToRenderable(
           surfaceColors,
         ),
       ),
-      renderAuthoringSlot(
-        payload,
-        "component.bubble",
-        "component.bubble.textBox.editor",
-        "component.textBox",
-        "component.textBox.dimensionMode",
-        (slotPayload) => {
-          const textBoxPayload = forwardAuthoringInputTarget(
-            slotPayload,
-            "component.bubble.input.sampleText",
-            "component.textBox.input.sampleText",
-          );
-          return textBoxComponentToRenderableAt(
-            textBoxPayload,
-            textBoxForContent,
-            textBox,
-            {
-              surfaceVisible: false,
-              verticalTextAlignment: fixed ? "top" : "center",
-              textColors: {
-                textColor,
-                placeholderColor: textColor,
-              },
+      ...(bubble.showTextBox
+        ? [renderAuthoringSlot(
+            payload,
+            "component.bubble",
+            "component.bubble.textBox.editor",
+            "component.textBox",
+            "component.textBox.dimensionMode",
+            (slotPayload) => {
+              const textBoxPayload = forwardAuthoringInputTarget(
+                slotPayload,
+                "component.bubble.input.sampleText",
+                "component.textBox.input.sampleText",
+              );
+              return textBoxComponentToRenderableAt(
+                textBoxPayload,
+                textBoxForContent,
+                textBox,
+                {
+                  surfaceVisible: false,
+                  verticalTextAlignment: fixed ? "top" : "center",
+                  textColors: {
+                    textColor,
+                    placeholderColor: textColor,
+                  },
+                },
+              );
             },
-          );
-        },
-      ),
+          )]
+        : []),
       ...(inlineMediaNode ? [inlineMediaNode] : []),
       ...(iconRow && iconRowBox
         ? [renderAuthoringRuntimeComponentSlot(
@@ -451,6 +464,7 @@ function bubbleContentLayout(
   mediaSize: { width: number; height: number } | undefined,
   iconRowSize: { width: number; height: number } | undefined,
   position: BubbleDesignContract["mediaSlot"]["position"],
+  showTextBox: boolean,
   padding: {
     left: number;
     top: number;
@@ -533,7 +547,7 @@ function bubbleContentLayout(
   const verticalGap = padding.gapY;
   const horizontalGap = padding.gapX;
   if (position === "top" || position === "bottom") {
-    const mediaGap = verticalGap;
+    const mediaGap = showTextBox ? verticalGap : 0;
     const width = Math.max(
       minimumContentWidth,
       textSize.width,
@@ -541,7 +555,8 @@ function bubbleContentLayout(
       mediaSize.width,
       iconRowSize?.width ?? 0,
     );
-    const precedingHeight = textSize.height + mediaGap + mediaSize.height;
+    const precedingHeight = (showTextBox ? textSize.height + mediaGap : 0)
+      + mediaSize.height;
     const height = Math.max(
       minimumContentHeight,
       precedingHeight + iconRowBlockHeight + statusBlockHeight,
@@ -550,13 +565,13 @@ function bubbleContentLayout(
       ? padding.left
       : padding.left + (width - textSize.width) / 2;
     const textY = position === "top"
-      ? padding.top + mediaSize.height + verticalGap
+      ? padding.top + mediaSize.height + mediaGap
       : padding.top;
     const mediaBox = {
       x: padding.left + (width - mediaSize.width) / 2,
       y: position === "top"
         ? padding.top
-        : padding.top + textSize.height + mediaGap,
+        : padding.top + (showTextBox ? textSize.height + mediaGap : 0),
       width: mediaSize.width,
       height: mediaSize.height,
     };
@@ -571,7 +586,8 @@ function bubbleContentLayout(
     };
   }
 
-  const rowWidth = textSize.width + horizontalGap + mediaSize.width;
+  const mediaGap = showTextBox ? horizontalGap : 0;
+  const rowWidth = (showTextBox ? textSize.width + mediaGap : 0) + mediaSize.width;
   const width = Math.max(
     minimumContentWidth,
     rowWidth,
@@ -584,11 +600,13 @@ function bubbleContentLayout(
     rowHeight + iconRowBlockHeight + statusBlockHeight,
   );
   const textX = position === "left"
-    ? padding.left + mediaSize.width + horizontalGap
+    ? padding.left + mediaSize.width + mediaGap
     : padding.left;
   const textY = padding.top + (rowHeight - textSize.height) / 2;
   const mediaBox = {
-    x: position === "left" ? padding.left : padding.left + textSize.width + horizontalGap,
+    x: position === "left"
+      ? padding.left
+      : padding.left + (showTextBox ? textSize.width + mediaGap : 0),
     y: padding.top + (rowHeight - mediaSize.height) / 2,
     width: mediaSize.width,
     height: mediaSize.height,

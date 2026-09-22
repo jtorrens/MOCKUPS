@@ -148,6 +148,8 @@ export function resolveBubbleComponent(
   const mediaType = bubbleMediaType(
     requiredString(preview, "mediaType", "component.bubble.input.mediaType"),
   );
+  const showTextBox = fullText.trim().length > 0
+    || (mediaType !== "image" && mediaType !== "sticker");
   const imageMediaConfig = mediaType === "image" || mediaType === "sticker"
     ? embeddedComponentConfig(
         componentBaseConfigs,
@@ -300,17 +302,19 @@ export function resolveBubbleComponent(
     maxWidth,
     padding: { xToken: padding.first, yToken: padding.second },
     surface: sticker ? transparentContainerSurface(surface) : surface,
+    showTextBox,
     textBox: {
       ...resolvedTextBox,
       textAlign: optionalBoolean(preview, "typingIndicator") || state === "system"
         ? "center"
         : resolvedTextBox.textAlign,
-      cursorVisible: simpleWriteOnFrameInProgress(fullText, writeOnPlan)
-        || requiredBoolean(
-          preview,
-          "keepCursorAfterWrite",
-          "component.bubble.input.keepCursorAfterWrite",
-        ),
+      cursorVisible: showTextBox
+        && (simpleWriteOnFrameInProgress(fullText, writeOnPlan)
+          || requiredBoolean(
+            preview,
+            "keepCursorAfterWrite",
+            "component.bubble.input.keepCursorAfterWrite",
+          )),
     },
     mediaSlot: {
       mediaType,
