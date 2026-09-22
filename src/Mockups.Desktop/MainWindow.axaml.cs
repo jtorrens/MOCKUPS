@@ -85,10 +85,6 @@ public partial class MainWindow : SukiWindow
         var fieldCommitCoordinator = new EditorFieldCommitCoordinator(
             application.Operations);
         InitializeComponent();
-        EditorModalWindowScope.RegisterHost(
-            this,
-            ModalOverlayHost,
-            DesignPreviewHost);
         _operationActivityPresenter =
             new EditorOperationActivityPresenter(
                 application.Operations,
@@ -164,6 +160,10 @@ public partial class MainWindow : SukiWindow
             (target) => previewAuthoringNavigator.Navigate(target),
             PreviewPanelBorder,
             this);
+        EditorModalWindowScope.RegisterHost(
+            this,
+            ModalOverlayHost,
+            _previewController.ModalOcclusionParticipant);
         _screenTimeline = new PreviewScreenTimelineController(
             PreviewTimelineHost,
             _previewController.ProductionScreenTimelineRange,

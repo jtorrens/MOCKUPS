@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal abstract class WebPreviewPane : Grid
+internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
 {
     protected readonly NativeWebView WebView;
     private readonly Image _nativeRasterFrame = new()
@@ -27,7 +27,17 @@ internal abstract class WebPreviewPane : Grid
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
         IsVisible = false,
     };
+    private readonly Image _modalSnapshotFrame = new()
+    {
+        Stretch = Stretch.Fill,
+        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
+        IsVisible = false,
+    };
     private Bitmap? _nativeRasterBitmap;
+    private Bitmap? _modalSnapshotBitmap;
+    private bool _modalWebViewWasVisible;
+    private bool _modalOccluded;
     private bool _nativeRasterBitmapIsBuffered;
     private readonly object _rasterBufferGate = new();
     private readonly Dictionary<string, Bitmap> _rasterBuffer = new(StringComparer.Ordinal);
@@ -49,13 +59,129 @@ internal abstract class WebPreviewPane : Grid
 
         Children.Add(WebView);
         Children.Add(_nativeRasterFrame);
+        Children.Add(_modalSnapshotFrame);
     }
 
     public string NativeHostLifecycleState()
     {
         return $"pane={Bounds.X:0.##},{Bounds.Y:0.##},{Bounds.Width:0.##},{Bounds.Height:0.##};"
             + $"webview={WebView.Bounds.X:0.##},{WebView.Bounds.Y:0.##},{WebView.Bounds.Width:0.##},{WebView.Bounds.Height:0.##};"
-            + $"webVisible={WebView.IsVisible};rasterVisible={_nativeRasterFrame.IsVisible}";
+            + $"webVisible={WebView.IsVisible};rasterVisible={_nativeRasterFrame.IsVisible};"
+            + $"modalSnapshotVisible={_modalSnapshotFrame.IsVisible}";
+    }
+
+    public async Task PrepareAsync()
+    {
+        ClearModalSnapshot();
+        if (!WebView.IsVisible)
+        {
+            return;
+        }
+
+        try
+        {
+            var requestResult = await WebView.InvokeScript("""
+                (() => typeof window.mockupsCaptureModalSnapshot === "function"
+                  ? window.mockupsCaptureModalSnapshot()
+                  : "")();
+                """);
+            var requestId = WebViewScriptResult.Text(requestResult);
+            if (string.IsNullOrWhiteSpace(requestId))
+            {
+                return;
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            while (stopwatch.ElapsedMilliseconds < 1500)
+            {
+                await Task.Delay(16);
+                var requestJson = JsonSerializer.Serialize(requestId);
+                var result = await WebView.InvokeScript($$"""
+                    (() => typeof window.mockupsModalSnapshotResult === "function"
+                      ? window.mockupsModalSnapshotResult({{requestJson}})
+                      : "")();
+                    """);
+                var resultJson = WebViewScriptResult.Text(result);
+                if (string.IsNullOrWhiteSpace(resultJson))
+                {
+                    continue;
+                }
+
+                if (JsonNode.Parse(resultJson) is not JsonObject state
+                    || state["done"]?.GetValue<bool>() != true)
+                {
+                    continue;
+                }
+
+                var error = state["error"]?.GetValue<string>();
+                if (!string.IsNullOrWhiteSpace(error))
+                {
+                    throw new InvalidOperationException(error);
+                }
+
+                var dataUrl = state["dataUrl"]?.GetValue<string>() ?? "";
+                var separator = dataUrl.IndexOf(',');
+                if (separator < 0)
+                {
+                    throw new InvalidOperationException("Preview snapshot did not return PNG data.");
+                }
+
+                var bytes = Convert.FromBase64String(dataUrl[(separator + 1)..]);
+                using var stream = new MemoryStream(bytes, writable: false);
+                _modalSnapshotBitmap = new Bitmap(stream);
+                _modalSnapshotFrame.Source = _modalSnapshotBitmap;
+                _modalSnapshotFrame.Width = state["width"]?.GetValue<double>() ?? 0;
+                _modalSnapshotFrame.Height = state["height"]?.GetValue<double>() ?? 0;
+                _modalSnapshotFrame.Margin = new Avalonia.Thickness(
+                    state["x"]?.GetValue<double>() ?? 0,
+                    state["y"]?.GetValue<double>() ?? 0,
+                    0,
+                    0);
+                _modalSnapshotFrame.IsVisible =
+                    _modalSnapshotFrame.Width > 0
+                    && _modalSnapshotFrame.Height > 0;
+                return;
+            }
+
+            PreviewDebugLog.Write(
+                "preview.modal-snapshot.timeout",
+                ("requestId", requestId),
+                ("ms", stopwatch.Elapsed.TotalMilliseconds));
+        }
+        catch (Exception error)
+        {
+            ClearModalSnapshot();
+            PreviewDebugLog.Write(
+                "preview.modal-snapshot.error",
+                ("error", error.Message));
+        }
+    }
+
+    public void Occlude()
+    {
+        _modalWebViewWasVisible = WebView.IsVisible;
+        _modalOccluded = true;
+        WebView.IsVisible = false;
+    }
+
+    public void Restore()
+    {
+        if (!_modalOccluded)
+        {
+            return;
+        }
+
+        WebView.IsVisible = _modalWebViewWasVisible;
+        _modalOccluded = false;
+        ClearModalSnapshot();
+    }
+
+    private void ClearModalSnapshot()
+    {
+        _modalSnapshotFrame.IsVisible = false;
+        _modalSnapshotFrame.Source = null;
+        _modalSnapshotBitmap?.Dispose();
+        _modalSnapshotBitmap = null;
     }
 
     public void ShowRasterFrame(string rasterId)
@@ -1329,47 +1455,51 @@ internal abstract class WebPreviewPane : Grid
                 const previewRasterResults = new Map();
                 const previewRasterFrames = new Map();
                 let previewRasterSequence = 0;
+                const createPreviewRasterImage = async () => {
+                  if (document.fonts?.ready) await document.fonts.ready;
+                  const root = scaleLayer.firstElementChild;
+                  if (!root) throw new Error("Preview has no render root");
+                  const css = [...document.querySelectorAll("style")]
+                    .map((style) => style.textContent ?? "")
+                    .join("\n");
+                  const xhtmlNamespace = "http://www.w3.org/1999/xhtml";
+                  const wrapper = document.createElementNS(xhtmlNamespace, "div");
+                  wrapper.setAttribute("style", `position:relative;width:${renderWidth}px;height:${renderHeight}px;overflow:hidden`);
+                  const style = document.createElementNS(xhtmlNamespace, "style");
+                  style.textContent = css;
+                  wrapper.appendChild(style);
+                  wrapper.appendChild(root.cloneNode(true));
+                  const content = new XMLSerializer().serializeToString(wrapper);
+                  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${renderWidth}" height="${renderHeight}"><foreignObject width="100%" height="100%">${content}</foreignObject></svg>`;
+                  const blobUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+                  try {
+                    const image = new Image();
+                    await new Promise((resolve, reject) => {
+                      image.onload = resolve;
+                      image.onerror = () => reject(new Error("Raster SVG image failed to load"));
+                      image.src = blobUrl;
+                    });
+                    return { blobUrl, image };
+                  } catch (error) {
+                    URL.revokeObjectURL(blobUrl);
+                    throw error;
+                  }
+                };
                 window.mockupsCapturePreviewRaster = () => {
                   const requestId = String(++previewRasterSequence);
                   previewRasterResults.set(requestId, { done: false });
                   Promise.resolve().then(async () => {
                     try {
-                      if (document.fonts?.ready) await document.fonts.ready;
-                      const root = scaleLayer.firstElementChild;
-                      if (!root) throw new Error("Preview has no render root");
-                      const css = [...document.querySelectorAll("style")]
-                        .map((style) => style.textContent ?? "")
-                        .join("\n");
-                      const xhtmlNamespace = "http://www.w3.org/1999/xhtml";
-                      const wrapper = document.createElementNS(xhtmlNamespace, "div");
-                      wrapper.setAttribute("style", `position:relative;width:${renderWidth}px;height:${renderHeight}px;overflow:hidden`);
-                      const style = document.createElementNS(xhtmlNamespace, "style");
-                      style.textContent = css;
-                      wrapper.appendChild(style);
-                      wrapper.appendChild(root.cloneNode(true));
-                      const content = new XMLSerializer().serializeToString(wrapper);
-                      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${renderWidth}" height="${renderHeight}"><foreignObject width="100%" height="100%">${content}</foreignObject></svg>`;
-                      const blobUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
-                      try {
-                        const image = new Image();
-                        await new Promise((resolve, reject) => {
-                          image.onload = resolve;
-                          image.onerror = () => reject(new Error("Raster SVG image failed to load"));
-                          image.src = blobUrl;
-                        });
-                        image.style.position = "absolute";
-                        image.style.inset = "0";
-                        image.style.width = `${renderWidth}px`;
-                        image.style.height = `${renderHeight}px`;
-                        image.style.display = "none";
-                        image.style.pointerEvents = "none";
-                        previewRasterDeck.appendChild(image);
-                        previewRasterFrames.set(requestId, { blobUrl, image });
-                        previewRasterResults.set(requestId, { done: true, rasterId: requestId });
-                      } catch (error) {
-                        URL.revokeObjectURL(blobUrl);
-                        throw error;
-                      }
+                      const frame = await createPreviewRasterImage();
+                      frame.image.style.position = "absolute";
+                      frame.image.style.inset = "0";
+                      frame.image.style.width = `${renderWidth}px`;
+                      frame.image.style.height = `${renderHeight}px`;
+                      frame.image.style.display = "none";
+                      frame.image.style.pointerEvents = "none";
+                      previewRasterDeck.appendChild(frame.image);
+                      previewRasterFrames.set(requestId, frame);
+                      previewRasterResults.set(requestId, { done: true, rasterId: requestId });
                     } catch (error) {
                       previewRasterResults.set(requestId, { done: true, error: String(error) });
                     }
@@ -1381,6 +1511,45 @@ internal abstract class WebPreviewPane : Grid
                   const result = previewRasterResults.get(key);
                   if (!result) return "";
                   if (result.done) previewRasterResults.delete(key);
+                  return JSON.stringify(result);
+                };
+                const modalSnapshotResults = new Map();
+                let modalSnapshotSequence = 0;
+                window.mockupsCaptureModalSnapshot = () => {
+                  const requestId = String(++modalSnapshotSequence);
+                  modalSnapshotResults.set(requestId, { done: false });
+                  Promise.resolve().then(async () => {
+                    let frame = null;
+                    try {
+                      frame = await createPreviewRasterImage();
+                      const canvas = document.createElement("canvas");
+                      canvas.width = renderWidth;
+                      canvas.height = renderHeight;
+                      const context = canvas.getContext("2d");
+                      if (!context) throw new Error("Preview snapshot canvas is unavailable");
+                      context.drawImage(frame.image, 0, 0, renderWidth, renderHeight);
+                      const bounds = previewViewport.getBoundingClientRect();
+                      modalSnapshotResults.set(requestId, {
+                        done: true,
+                        dataUrl: canvas.toDataURL("image/png"),
+                        x: bounds.x,
+                        y: bounds.y,
+                        width: bounds.width,
+                        height: bounds.height,
+                      });
+                    } catch (error) {
+                      modalSnapshotResults.set(requestId, { done: true, error: String(error) });
+                    } finally {
+                      if (frame) URL.revokeObjectURL(frame.blobUrl);
+                    }
+                  });
+                  return requestId;
+                };
+                window.mockupsModalSnapshotResult = (requestId) => {
+                  const key = String(requestId);
+                  const result = modalSnapshotResults.get(key);
+                  if (!result) return "";
+                  if (result.done) modalSnapshotResults.delete(key);
                   return JSON.stringify(result);
                 };
                 const previewRasterDeck = document.createElement("div");

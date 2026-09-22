@@ -16,6 +16,15 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.Common;
 
+internal interface IEditorModalOcclusionParticipant
+{
+    Task PrepareAsync();
+
+    void Occlude();
+
+    void Restore();
+}
+
 internal static class EditorModalWindowScope
 {
     private static readonly ConditionalWeakTable<Window, ModalHost> Hosts = new();
@@ -25,13 +34,13 @@ internal static class EditorModalWindowScope
     public static void RegisterHost(
         Window owner,
         Panel overlayHost,
-        params Control[] nativeSurfaces)
+        params IEditorModalOcclusionParticipant[] occlusionParticipants)
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentNullException.ThrowIfNull(overlayHost);
-        ArgumentNullException.ThrowIfNull(nativeSurfaces);
+        ArgumentNullException.ThrowIfNull(occlusionParticipants);
         Hosts.Remove(owner);
-        Hosts.Add(owner, new ModalHost(owner, overlayHost, nativeSurfaces));
+        Hosts.Add(owner, new ModalHost(owner, overlayHost, occlusionParticipants));
     }
 
     public static void OnOpened(Window dialog, Action action) =>
@@ -45,17 +54,17 @@ internal static class EditorModalWindowScope
         await ShowDialog<object>(dialog, owner);
     }
 
-    public static Task<TResult?> ShowDialog<TResult>(Window dialog, Window owner)
+    public static async Task<TResult?> ShowDialog<TResult>(Window dialog, Window owner)
     {
         ArgumentNullException.ThrowIfNull(dialog);
         ArgumentNullException.ThrowIfNull(owner);
 
         var host = ResolveHost(owner);
         var session = new ModalSession<TResult>(dialog, host);
+        await host.PushAsync(session);
         Sessions.Add(dialog, session);
-        host.Push(session);
         InvokeOpened(dialog);
-        return session.Completion;
+        return await session.Completion;
     }
 
     public static void Close(Window dialog) => Close<object>(dialog, null);
@@ -158,28 +167,32 @@ internal static class EditorModalWindowScope
     {
         private readonly Window _owner;
         private readonly Panel _overlayHost;
-        private readonly IReadOnlyList<Control> _nativeSurfaces;
+        private readonly IReadOnlyList<IEditorModalOcclusionParticipant> _occlusionParticipants;
         private readonly List<ModalSession> _stack = [];
         private WindowState[] _displaced = [];
-        private ControlVisibilityState[] _occluded = [];
 
         public ModalHost(
             Window owner,
             Panel overlayHost,
-            IReadOnlyList<Control> nativeSurfaces)
+            IReadOnlyList<IEditorModalOcclusionParticipant> occlusionParticipants)
         {
             _owner = owner;
             _overlayHost = overlayHost;
-            _nativeSurfaces = nativeSurfaces;
+            _occlusionParticipants = occlusionParticipants;
         }
 
         public Rect OwnerBounds => _owner.Bounds;
         public bool IsDark => EditorSukiWindowTheme.IsDark(_owner);
 
-        public void Push(ModalSession session)
+        public async Task PushAsync(ModalSession session)
         {
             if (_stack.Count == 0)
             {
+                foreach (var participant in _occlusionParticipants)
+                {
+                    await participant.PrepareAsync();
+                }
+
                 var windows = ApplicationWindows(_owner);
                 CloseTransientSurfaces(windows.Prepend(_owner));
                 _displaced = windows
@@ -193,15 +206,10 @@ internal static class EditorModalWindowScope
                     state.Window.Topmost = false;
                     state.Window.IsEnabled = false;
                 }
-                _occluded = _nativeSurfaces
-                    .Distinct()
-                    .Select(control => new ControlVisibilityState(
-                        control,
-                        control.IsVisible))
-                    .ToArray();
-                foreach (var state in _occluded)
+
+                foreach (var participant in _occlusionParticipants)
                 {
-                    state.Control.IsVisible = false;
+                    participant.Occlude();
                 }
             }
             else
@@ -237,11 +245,10 @@ internal static class EditorModalWindowScope
                 state.Window.Topmost = state.WasTopmost;
             }
             _displaced = [];
-            foreach (var state in _occluded.Reverse())
+            foreach (var participant in _occlusionParticipants.Reverse())
             {
-                state.Control.IsVisible = state.WasVisible;
+                participant.Restore();
             }
-            _occluded = [];
             _owner.Activate();
         }
     }
@@ -397,7 +404,4 @@ internal static class EditorModalWindowScope
         bool WasTopmost,
         bool WasEnabled);
 
-    private sealed record ControlVisibilityState(
-        Control Control,
-        bool WasVisible);
 }

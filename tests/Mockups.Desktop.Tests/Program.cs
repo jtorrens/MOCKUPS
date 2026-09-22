@@ -6980,18 +6980,15 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         {
             IsVisible = false,
         };
-        var nativeSurface = new Border
-        {
-            IsVisible = true,
-        };
+        var modalOcclusion = new TestModalOcclusionParticipant();
         owner.Content = new Grid
         {
-            Children = { root, nativeSurface, modalHost },
+            Children = { root, modalHost },
         };
         EditorModalWindowScope.RegisterHost(
             owner,
             modalHost,
-            nativeSurface);
+            modalOcclusion);
         owner.Show();
         owner.Measure(new Size(1000, 700));
         owner.Arrange(new Rect(0, 0, 1000, 700));
@@ -7063,7 +7060,9 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         True(!ToolTip.GetIsOpen(toggle));
         True(modalHost.IsVisible);
         Equal(1, modalHost.Children.Count);
-        True(!nativeSurface.IsVisible);
+        Equal(1, modalOcclusion.PrepareCount);
+        Equal(1, modalOcclusion.OccludeCount);
+        True(modalOcclusion.IsOccluded);
         True(!dialog.Topmost);
         True(!dialog.IsVisible);
         True(!floating.Topmost);
@@ -7084,7 +7083,9 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
             dialog);
         Dispatcher.UIThread.RunJobs();
         Equal(2, modalHost.Children.Count);
-        True(!nativeSurface.IsVisible);
+        Equal(1, modalOcclusion.PrepareCount);
+        Equal(1, modalOcclusion.OccludeCount);
+        True(modalOcclusion.IsOccluded);
         True(!childDialog.Topmost);
         True(!childDialog.IsVisible);
         True(!dialog.Topmost);
@@ -7106,7 +7107,8 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         Dispatcher.UIThread.RunJobs();
         True(!modalHost.IsVisible);
         Equal(0, modalHost.Children.Count);
-        True(nativeSurface.IsVisible);
+        Equal(1, modalOcclusion.RestoreCount);
+        True(!modalOcclusion.IsOccluded);
         True(!dialog.Topmost);
         True(floating.Topmost);
         True(floating.IsEnabled);
@@ -25209,6 +25211,32 @@ internal static class HeadlessTestApplication
                 UseHeadlessDrawing = true,
             })
             .WithInterFont();
+}
+
+internal sealed class TestModalOcclusionParticipant : IEditorModalOcclusionParticipant
+{
+    public int PrepareCount { get; private set; }
+    public int OccludeCount { get; private set; }
+    public int RestoreCount { get; private set; }
+    public bool IsOccluded { get; private set; }
+
+    public Task PrepareAsync()
+    {
+        PrepareCount++;
+        return Task.CompletedTask;
+    }
+
+    public void Occlude()
+    {
+        OccludeCount++;
+        IsOccluded = true;
+    }
+
+    public void Restore()
+    {
+        RestoreCount++;
+        IsOccluded = false;
+    }
 }
 
 internal static class TestWindowStateScope
