@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Primitives;
 using Avalonia.LogicalTree;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 using System;
 using System.Collections.Generic;
@@ -16,7 +15,7 @@ internal static class EditorModalWindowScope
 {
     public static async Task ShowDialog(Window dialog, Window owner)
     {
-        var presentation = await Prepare(dialog, owner);
+        var presentation = Prepare(dialog, owner);
         try
         {
             await dialog.ShowDialog(presentation.Owner);
@@ -31,7 +30,7 @@ internal static class EditorModalWindowScope
         Window dialog,
         Window owner)
     {
-        var presentation = await Prepare(dialog, owner);
+        var presentation = Prepare(dialog, owner);
         try
         {
             return await dialog.ShowDialog<TResult?>(
@@ -43,7 +42,7 @@ internal static class EditorModalWindowScope
         }
     }
 
-    private static async Task<ModalPresentation> Prepare(
+    private static ModalPresentation Prepare(
         Window dialog,
         Window requestedOwner)
     {
@@ -82,21 +81,6 @@ internal static class EditorModalWindowScope
         }
 
         dialog.ShowActivated = true;
-
-        // Popup roots are native windows on macOS. Give Avalonia one dispatcher
-        // turn to remove them before it materializes the owned modal window.
-        try
-        {
-            await Dispatcher.UIThread.InvokeAsync(
-                static () => { },
-                DispatcherPriority.Background);
-        }
-        catch
-        {
-            Restore();
-            throw;
-        }
-
         return new ModalPresentation(
             owner,
             Restore);

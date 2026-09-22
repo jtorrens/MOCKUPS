@@ -494,8 +494,8 @@ alternate value-kind or persistence route.
 
 Bounded modal dialogs reach native `ShowDialog` only through the shared modal
 lifetime presenter and use their exact visible owner. The presenter dismisses
-transient application surfaces and yields one dispatcher turn before native
-presentation because macOS implements popup roots as separate native windows.
+transient application surfaces synchronously and proceeds directly to native
+presentation; it never waits behind Preview or other queued dispatcher work.
 It temporarily lowers and disables visible sibling windows, while Avalonia's
 owned `ShowDialog` contract alone establishes the native modal relationship.
 Its `finally` boundary restores captured sibling state after close or failed

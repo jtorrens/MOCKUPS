@@ -77,7 +77,7 @@ It includes:
   `ShowDialog` call, dismissal of transient surfaces and displacement of
   auxiliary siblings before that call, one-time restoration after close or
   presentation failure, nested owner preservation and absence of native level
-  overrides, polling or reactive focus recovery;
+  overrides, dispatcher deferral, polling or reactive focus recovery;
 - Production tree Shot ordering by authored name rather than creation or
   persisted sort order;
 - Preview authoring exposes no synchronous Runtime Input visual-construction
