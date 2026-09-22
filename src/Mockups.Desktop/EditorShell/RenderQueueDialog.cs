@@ -344,7 +344,7 @@ internal sealed class RenderQueueDialog
                 _queue.RememberRoute(
                     currentDraft.ProjectId,
                     route.SelectedItem.Value);
-                dialog.Close();
+                EditorModalWindowScope.Close(dialog);
             }
             catch (Exception exception)
             {
@@ -392,7 +392,7 @@ internal sealed class RenderQueueDialog
             Content = "Close",
             MinWidth = 92,
         };
-        close.Click += (_, _) => dialog.Close();
+        close.Click += (_, _) => EditorModalWindowScope.Close(dialog);
         var footer = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -423,12 +423,12 @@ internal sealed class RenderQueueDialog
             Child = root,
         };
 
-        dialog.Closed += (_, _) =>
+        EditorModalWindowScope.OnClosed(dialog, () =>
         {
             cancellation.Cancel();
             proposalCancellation?.Cancel();
-        };
-        dialog.Opened += async (_, _) =>
+        });
+        EditorModalWindowScope.OnOpened(dialog, async () =>
         {
             try
             {
@@ -491,7 +491,7 @@ internal sealed class RenderQueueDialog
             {
                 isInitializing = false;
             }
-        };
+        });
         await EditorModalWindowScope.ShowDialog(dialog, _owner);
         proposalCancellation?.Dispose();
     }

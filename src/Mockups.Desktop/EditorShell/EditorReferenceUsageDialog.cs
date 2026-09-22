@@ -52,7 +52,7 @@ internal sealed class EditorReferenceUsageDialog
             MinWidth = 92,
             HorizontalAlignment = HorizontalAlignment.Right,
         };
-        closeButton.Click += (_, _) => dialog.Close(null);
+        closeButton.Click += (_, _) => EditorModalWindowScope.Close<ReferenceUsageDetail>(dialog, null);
 
         var header = new StackPanel
         {
@@ -123,7 +123,7 @@ internal sealed class EditorReferenceUsageDialog
                 _isDark,
                 () =>
                 {
-                    dialog.Close(usage);
+                    EditorModalWindowScope.Close(dialog, usage);
                     return Task.CompletedTask;
                 },
                 includeKindIcon: true));

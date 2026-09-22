@@ -263,7 +263,7 @@ internal sealed class IconThemeSvgReplaceDialog
         Hook(offsetX);
         Hook(offsetY);
 
-        cancelButton.Click += (_, _) => dialog.Close();
+        cancelButton.Click += (_, _) => EditorModalWindowScope.Close(dialog);
         loadFileButton.Click += async (_, _) =>
         {
             try
@@ -337,7 +337,7 @@ internal sealed class IconThemeSvgReplaceDialog
                         token,
                         transformedSvg));
                 _reloadAndSelect(node);
-                dialog.Close();
+                EditorModalWindowScope.Close(dialog);
             }
             catch (Exception exception)
             {
@@ -524,16 +524,16 @@ internal sealed class IconThemeSvgReplaceDialog
             return next;
         }
 
-        cancel.Click += (_, _) => dialog.Close(null);
+        cancel.Click += (_, _) => EditorModalWindowScope.Close<SaveAsChoice>(dialog, null);
         saveDisk.Click += (_, _) =>
         {
             var next = ValidToken();
-            if (next is not null) dialog.Close(new SaveAsChoice(next, false));
+            if (next is not null) EditorModalWindowScope.Close(dialog, new SaveAsChoice(next, false));
         };
         saveAll.Click += (_, _) =>
         {
             var next = ValidToken();
-            if (next is not null) dialog.Close(new SaveAsChoice(next, true));
+            if (next is not null) EditorModalWindowScope.Close(dialog, new SaveAsChoice(next, true));
         };
 
         var actions = new StackPanel
@@ -604,8 +604,8 @@ internal sealed class IconThemeSvgReplaceDialog
 
         var cancel = new Button { Content = "Cancel", MinWidth = 92 };
         var save = new Button { Content = "Save to all", MinWidth = 112 };
-        cancel.Click += (_, _) => dialog.Close(false);
-        save.Click += (_, _) => dialog.Close(true);
+        cancel.Click += (_, _) => EditorModalWindowScope.Close(dialog, false);
+        save.Click += (_, _) => EditorModalWindowScope.Close(dialog, true);
         var actions = new StackPanel
         {
             Orientation = Orientation.Horizontal,

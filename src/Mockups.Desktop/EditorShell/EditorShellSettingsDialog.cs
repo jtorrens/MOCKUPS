@@ -107,7 +107,7 @@ internal sealed class EditorShellSettingsDialog
             MinWidth = 92,
             HorizontalAlignment = HorizontalAlignment.Right,
         };
-        closeButton.Click += (_, _) => dialog.Close();
+        closeButton.Click += (_, _) => EditorModalWindowScope.Close(dialog);
 
         dialog.Content = new Border
         {

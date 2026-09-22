@@ -29,7 +29,7 @@ internal sealed class EditorDialogService
             MinWidth = 92,
             HorizontalAlignment = HorizontalAlignment.Right,
         };
-        okButton.Click += (_, _) => dialog.Close();
+        okButton.Click += (_, _) => EditorModalWindowScope.Close(dialog);
 
         dialog.Content = new Border
         {
@@ -170,7 +170,7 @@ internal sealed class EditorDialogService
             }
 
             e.Handled = true;
-            dialog.Close(textBox.Text?.Trim());
+            EditorModalWindowScope.Close(dialog, textBox.Text?.Trim());
         };
 
         var content = new StackPanel
@@ -195,8 +195,8 @@ internal sealed class EditorDialogService
             Content = "Cancel",
             MinWidth = 92,
         };
-        cancelButton.Click += (_, _) => dialog.Close(null);
-        saveButton.Click += (_, _) => dialog.Close(textBox.Text?.Trim());
+        cancelButton.Click += (_, _) => EditorModalWindowScope.Close<string>(dialog, null);
+        saveButton.Click += (_, _) => EditorModalWindowScope.Close(dialog, textBox.Text?.Trim());
 
         actions.Children.Add(cancelButton);
         actions.Children.Add(saveButton);
@@ -205,12 +205,12 @@ internal sealed class EditorDialogService
         ((Grid)root.Child).Children.Add(content);
         ((Grid)root.Child).Children.Add(actions);
         dialog.Content = root;
-        dialog.Opened += (_, _) =>
+        EditorModalWindowScope.OnOpened(dialog, () =>
         {
             RefreshSave();
             textBox.Focus();
             textBox.SelectAll();
-        };
+        });
 
         return EditorModalWindowScope.ShowDialog<string>(dialog, _owner);
     }
@@ -266,7 +266,7 @@ internal sealed class EditorDialogService
             Content = "Cancel",
             MinWidth = 92,
         };
-        cancelButton.Click += (_, _) => dialog.Close(false);
+        cancelButton.Click += (_, _) => EditorModalWindowScope.Close(dialog, false);
 
         var confirmButton = new Button
         {
@@ -282,7 +282,7 @@ internal sealed class EditorDialogService
                 ? (_isDark ? "#e8a1a8" : "#b4232e")
                 : (_isDark ? "#d7e2ff" : "#23477f"))),
         };
-        confirmButton.Click += (_, _) => dialog.Close(true);
+        confirmButton.Click += (_, _) => EditorModalWindowScope.Close(dialog, true);
 
         actions.Children.Add(cancelButton);
         actions.Children.Add(confirmButton);

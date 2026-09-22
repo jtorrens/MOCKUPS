@@ -197,7 +197,7 @@ internal sealed class IconThemeSearchDialog
                     ("written", result.WrittenFileCount),
                     ("themes", result.RefreshResult.ThemeCount),
                     ("common", result.RefreshResult.CommonTokenCount));
-                dialog.Close();
+                EditorModalWindowScope.Close(dialog);
                 await _showInfo("Generate complete", $"Generated “{result.Token}” in {result.WrittenFileCount} set(s). Refreshed {result.RefreshResult.CommonTokenCount} common token(s).");
                 _reloadAndSelect(node);
             }
@@ -220,13 +220,13 @@ internal sealed class IconThemeSearchDialog
         cancelButton.Click += (_, _) =>
         {
             activeOperation?.Cancel();
-            dialog.Close();
+            EditorModalWindowScope.Close(dialog);
         };
-        dialog.Closed += (_, _) =>
+        EditorModalWindowScope.OnClosed(dialog, () =>
         {
             isDialogClosed = true;
             activeOperation?.Cancel();
-        };
+        });
 
         var actionRow = new StackPanel
         {

@@ -32,6 +32,10 @@ internal sealed class EditorNavigationRenderer
         ProductionHierarchyTransferMode,
         Task> _transferProductionNode;
     private readonly Action<Exception> _reportProductionTransferGestureFailure;
+    private readonly Action<ProjectTreeNode> _copyScreen;
+    private readonly Func<ProjectTreeNode, bool> _canPasteScreen;
+    private readonly Func<ProjectTreeNode, Task> _pasteScreen;
+    private readonly Func<string> _copiedScreenName;
     private readonly Func<ProjectTreeNode, bool> _canExposeChildren;
     private readonly Func<ProjectTreeNode, bool> _isNodeEnabled;
     private readonly Func<string> _activePreviewNodeId;
@@ -57,6 +61,10 @@ internal sealed class EditorNavigationRenderer
             ProductionHierarchyTransferMode,
             Task> transferProductionNode,
         Action<Exception> reportProductionTransferGestureFailure,
+        Action<ProjectTreeNode> copyScreen,
+        Func<ProjectTreeNode, bool> canPasteScreen,
+        Func<ProjectTreeNode, Task> pasteScreen,
+        Func<string> copiedScreenName,
         Func<ProjectTreeNode, bool> canExposeChildren,
         Func<ProjectTreeNode, bool> isNodeEnabled,
         Func<string> activePreviewNodeId,
@@ -75,6 +83,10 @@ internal sealed class EditorNavigationRenderer
         _transferProductionNode = transferProductionNode;
         _reportProductionTransferGestureFailure =
             reportProductionTransferGestureFailure;
+        _copyScreen = copyScreen;
+        _canPasteScreen = canPasteScreen;
+        _pasteScreen = pasteScreen;
+        _copiedScreenName = copiedScreenName;
         _canExposeChildren = canExposeChildren;
         _isNodeEnabled = isNodeEnabled;
         _activePreviewNodeId = activePreviewNodeId;
@@ -272,6 +284,25 @@ internal sealed class EditorNavigationRenderer
         var nodeEnabled = _isNodeEnabled(node);
         var expanded = hasChildren && _isExpanded(node);
         var options = new List<EditorNavigationRowAction>();
+        var contextActions = new List<EditorNavigationRowAction>();
+        if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
+        {
+            contextActions.Add(new(
+                "Copy Screen",
+                EditorIcons.Duplicate,
+                () => _copyScreen(node)));
+        }
+        else if (node.Kind == ProjectTreeNodeKind.Shot)
+        {
+            var copiedName = _copiedScreenName();
+            contextActions.Add(new(
+                string.IsNullOrWhiteSpace(copiedName)
+                    ? "Paste Screen"
+                    : $"Paste Screen “{copiedName}”",
+                EditorIcons.Add,
+                () => _ = _pasteScreen(node),
+                _canPasteScreen(node)));
+        }
         if (node.CanRenameDirectly)
         {
             options.Add(new($"Rename {EditorNavigationMetadata.Title(node)}", EditorIcons.Edit, () => _ = _renameNode(node)));
@@ -325,7 +356,8 @@ internal sealed class EditorNavigationRenderer
             _persistentAction(node),
             lockedAction,
             add,
-            options);
+            options,
+            contextActions);
         var row = (Border)EditorHierarchicalNavigationRow.Create(
             metadata,
             _isDark(),

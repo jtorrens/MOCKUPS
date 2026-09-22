@@ -85,6 +85,7 @@ public partial class MainWindow : SukiWindow
         var fieldCommitCoordinator = new EditorFieldCommitCoordinator(
             application.Operations);
         InitializeComponent();
+        EditorModalWindowScope.RegisterHost(this, ModalOverlayHost);
         _operationActivityPresenter =
             new EditorOperationActivityPresenter(
                 application.Operations,
@@ -233,6 +234,7 @@ public partial class MainWindow : SukiWindow
             () => Session.TreeRoots,
             LoadProjectTreeAsync,
             ReloadAndSelectAsync,
+            RebuildNavigationCards,
             NavigateToReferenceUsage,
             _messages,
             pathBrowser.BrowsePath);
@@ -259,6 +261,10 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.ToggleVariantLock,
             _nodeCommands.TransferProductionNode,
             _nodeCommands.ReportProductionTransferGestureFailure,
+            _nodeCommands.CopyScreen,
+            _nodeCommands.CanPasteScreen,
+            _nodeCommands.PasteScreen,
+            () => _nodeCommands.CopiedScreenName,
             productionShotContext.CanExposeChildren,
             productionShotContext.IsNavigationNodeEnabled,
             () => _previewController.ActiveNavigationNodeId,

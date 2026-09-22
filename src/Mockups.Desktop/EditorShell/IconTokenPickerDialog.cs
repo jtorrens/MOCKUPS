@@ -269,12 +269,12 @@ internal sealed class IconTokenPickerDialog
         };
 
         var cancelButton = new Button { Content = "Cancel", MinWidth = 90 };
-        cancelButton.Click += (_, _) => dialog.Close();
+        cancelButton.Click += (_, _) => EditorModalWindowScope.Close(dialog);
         var okButton = new Button { Content = "Apply", MinWidth = 90 };
         okButton.Click += (_, _) =>
         {
             result = allowMultiple ? string.Join(",", selected) : selected.FirstOrDefault() ?? "";
-            dialog.Close();
+            EditorModalWindowScope.Close(dialog);
         };
 
         var root = new Grid

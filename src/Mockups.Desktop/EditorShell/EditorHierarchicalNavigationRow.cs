@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Automation;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
@@ -44,7 +45,8 @@ internal sealed record EditorHierarchicalNavigationMetadata(
     EditorNavigationRowAction? PersistentAction,
     EditorNavigationRowAction? LockedAction,
     EditorNavigationRowAction? AddAction,
-    IReadOnlyList<EditorNavigationRowAction> Options);
+    IReadOnlyList<EditorNavigationRowAction> Options,
+    IReadOnlyList<EditorNavigationRowAction>? ContextActions = null);
 
 internal static class EditorHierarchicalNavigationRow
 {
@@ -273,9 +275,40 @@ internal static class EditorHierarchicalNavigationRow
         grid.Children.Add(title);
         grid.Children.Add(actions);
         row.Child = grid;
+        if (metadata.ContextActions is { Count: > 0 } contextActions)
+        {
+            row.ContextMenu = new ContextMenu
+            {
+                ItemsSource = contextActions.Select(action =>
+                {
+                    var item = new MenuItem
+                    {
+                        Header = action.Label,
+                        IsEnabled = action.IsEnabled,
+                    };
+                    item.Click += (_, _) => action.Activate();
+                    return item;
+                }).ToArray(),
+            };
+            row.AddHandler(
+                InputElement.ContextRequestedEvent,
+                (_, args) =>
+                {
+                    row.ContextMenu.Open(row);
+                    args.Handled = true;
+                },
+                RoutingStrategies.Tunnel,
+                handledEventsToo: true);
+        }
         row.PointerPressed += (_, args) =>
         {
             if (!metadata.IsEnabled) return;
+            if (args.GetCurrentPoint(row).Properties.IsRightButtonPressed)
+            {
+                args.Handled = row.ContextMenu is not null;
+                return;
+            }
+            if (!args.GetCurrentPoint(row).Properties.IsLeftButtonPressed) return;
             if (args.Source is Avalonia.Visual source && source.FindAncestorOfType<Button>() is not null) return;
             select();
             args.Handled = true;

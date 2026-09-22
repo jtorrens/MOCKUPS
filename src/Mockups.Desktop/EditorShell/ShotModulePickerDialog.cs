@@ -123,7 +123,7 @@ internal sealed class ShotModulePickerDialog
             var variant = variantCombo.SelectedItem;
             var name = nameBox.Text?.Trim();
             if (module is null || variant is null || string.IsNullOrWhiteSpace(name)) return;
-            dialog.Close(new ShotModuleInstanceDraft(module, variant.Value, variant.Label, name));
+            EditorModalWindowScope.Close(dialog, new ShotModuleInstanceDraft(module, variant.Value, variant.Label, name));
         }
 
         moduleCombo.SelectionChanged += (_, _) => RefreshVariants();
@@ -142,7 +142,7 @@ internal sealed class ShotModulePickerDialog
             eventArgs.Handled = true;
             Commit();
         };
-        cancelButton.Click += (_, _) => dialog.Close(null);
+        cancelButton.Click += (_, _) => EditorModalWindowScope.Close<ShotModuleInstanceDraft>(dialog, null);
         addButton.Click += (_, _) => Commit();
 
         var fields = new Grid
@@ -188,12 +188,12 @@ internal sealed class ShotModulePickerDialog
             Padding = EditorUiDensity.CardThickness(18),
             Child = root,
         };
-        dialog.Opened += (_, _) =>
+        EditorModalWindowScope.OnOpened(dialog, () =>
         {
             RefreshVariants();
             RefreshAddButton();
             if (modules.Count == 0) moduleCombo.IsEnabled = false;
-        };
+        });
         return await EditorModalWindowScope.ShowDialog<ShotModuleInstanceDraft>(
             dialog,
             _owner);

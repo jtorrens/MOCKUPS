@@ -45,10 +45,10 @@ internal sealed class DeviceImportDialog
         _importButton.Click += (_, _) =>
         {
             if (_selectedDetails is null) return;
-            dialog.Close(new DeviceImportDialogResult(false, DeviceImportMapper.ToDraft(_selectedDetails)));
+            EditorModalWindowScope.Close(dialog, new DeviceImportDialogResult(false, DeviceImportMapper.ToDraft(_selectedDetails)));
         };
-        _blankButton.Click += (_, _) => dialog.Close(new DeviceImportDialogResult(true, null));
-        _cancelButton.Click += (_, _) => dialog.Close(null);
+        _blankButton.Click += (_, _) => EditorModalWindowScope.Close(dialog, new DeviceImportDialogResult(true, null));
+        _cancelButton.Click += (_, _) => EditorModalWindowScope.Close<DeviceImportDialogResult>(dialog, null);
         _results.SelectionChanged += async (_, _) => await SelectCurrent();
 
         return await EditorModalWindowScope.ShowDialog<DeviceImportDialogResult>(

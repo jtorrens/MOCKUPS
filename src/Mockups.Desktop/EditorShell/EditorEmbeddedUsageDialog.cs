@@ -72,7 +72,7 @@ internal sealed class EditorEmbeddedUsageDialog
             MinWidth = 92,
             HorizontalAlignment = HorizontalAlignment.Right,
         };
-        closeButton.Click += (_, _) => dialog.Close();
+        closeButton.Click += (_, _) => EditorModalWindowScope.Close(dialog);
 
         dialog.Content = new Border
         {
@@ -278,7 +278,7 @@ internal sealed class EditorEmbeddedUsageDialog
         button.Click += (_, _) =>
         {
             select(new Selection(usage, string.IsNullOrWhiteSpace(usage.SourceNodeId) ? usage.ParentComponentClassId : usage.SourceNodeId));
-            dialog.Close();
+            EditorModalWindowScope.Close(dialog);
         };
         return button;
     }
@@ -351,7 +351,7 @@ internal sealed class EditorEmbeddedUsageDialog
         button.Click += (_, _) =>
         {
             select(new Selection(usage.EmbeddedUsage, usage.TargetNodeId));
-            dialog.Close();
+            EditorModalWindowScope.Close(dialog);
         };
         return button;
     }

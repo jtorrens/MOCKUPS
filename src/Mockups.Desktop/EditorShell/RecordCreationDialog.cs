@@ -70,11 +70,11 @@ internal sealed class RecordCreationDialog
             fields.Children.Add(field);
         }
         var cancel = new Button { Content = "Cancel", MinWidth = 92 };
-        cancel.Click += (_, _) => dialog.Close(null);
+        cancel.Click += (_, _) => EditorModalWindowScope.Close<RecordCreationDraft>(dialog, null);
         accept.Click += (_, _) =>
         {
             if (definition.ValidationError(values) is not null) return;
-            dialog.Close(new RecordCreationDraft(
+            EditorModalWindowScope.Close(dialog, new RecordCreationDraft(
                 definition.Id,
                 new Dictionary<string, string>(values, StringComparer.Ordinal)));
         };

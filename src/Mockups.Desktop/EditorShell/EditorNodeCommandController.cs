@@ -21,9 +21,12 @@ internal sealed class EditorNodeCommandController
     private readonly Func<IReadOnlyList<ProjectTreeNode>> _treeRoots;
     private readonly Func<Task<bool>> _loadProjectTree;
     private readonly Func<ProjectTreeNode, Task> _reloadAndSelect;
+    private readonly Action _refreshNavigation;
     private readonly Func<ReferenceUsageDetail, Task> _navigateToUsage;
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<string, ValueKind, Task<string?>>? _browsePath;
+    private string _copiedScreenId = "";
+    private string _copiedScreenName = "";
 
     public EditorNodeCommandController(
         Window owner,
@@ -37,6 +40,7 @@ internal sealed class EditorNodeCommandController
         Func<IReadOnlyList<ProjectTreeNode>> treeRoots,
         Func<Task<bool>> loadProjectTree,
         Func<ProjectTreeNode, Task> reloadAndSelect,
+        Action refreshNavigation,
         Func<ReferenceUsageDetail, Task> navigateToUsage,
         IEditorShellMessageSink messages,
         Func<string, ValueKind, Task<string?>>? browsePath = null)
@@ -52,6 +56,7 @@ internal sealed class EditorNodeCommandController
         _treeRoots = treeRoots;
         _loadProjectTree = loadProjectTree;
         _reloadAndSelect = reloadAndSelect;
+        _refreshNavigation = refreshNavigation;
         _navigateToUsage = navigateToUsage;
         _messages = messages;
         _browsePath = browsePath;
@@ -209,6 +214,62 @@ internal sealed class EditorNodeCommandController
                 exception);
         }
     }
+
+    public void CopyScreen(ProjectTreeNode screen)
+    {
+        if (screen.Kind != ProjectTreeNodeKind.ModuleInstance)
+        {
+            return;
+        }
+
+        _copiedScreenId = screen.Id;
+        _copiedScreenName = screen.Name;
+        _refreshNavigation();
+        _messages.Info("Copy Screen", $"{screen.Name} is ready to paste into another Shot.");
+    }
+
+    public bool CanPasteScreen(ProjectTreeNode target)
+    {
+        var source = ResolveCopiedScreen();
+        return source is not null
+            && ProductionHierarchyTransferContract.CanTransfer(source, target);
+    }
+
+    public async Task PasteScreen(ProjectTreeNode target)
+    {
+        var source = ResolveCopiedScreen();
+        if (source is null)
+        {
+            _messages.Warning(
+                "Paste Screen",
+                "The copied Screen is no longer available in this session.");
+            return;
+        }
+
+        if (!ProductionHierarchyTransferContract.CanTransfer(source, target))
+        {
+            _messages.Warning(
+                "Paste Screen",
+                "A Screen can only be pasted into another Shot in the same Project.");
+            return;
+        }
+
+        await TransferProductionNode(
+            source,
+            target,
+            ProductionHierarchyTransferMode.Copy);
+    }
+
+    public string CopiedScreenName => _copiedScreenName;
+
+    private ProjectTreeNode? ResolveCopiedScreen() =>
+        string.IsNullOrWhiteSpace(_copiedScreenId)
+            ? null
+            : EditorNodeSelectionState.FindNodeById(
+                _treeRoots(),
+                _copiedScreenId) is { Kind: ProjectTreeNodeKind.ModuleInstance } screen
+                ? screen
+                : null;
 
     public void ReportProductionTransferGestureFailure(
         Exception exception) =>

@@ -210,12 +210,12 @@ internal sealed class ThemeTokenPickerDialog
         };
 
         var cancelButton = new Button { Content = "Cancel", MinWidth = 90 };
-        cancelButton.Click += (_, _) => dialog.Close();
+        cancelButton.Click += (_, _) => EditorModalWindowScope.Close(dialog);
         var applyButton = new Button { Content = "Apply", MinWidth = 90 };
         applyButton.Click += (_, _) =>
         {
             result = draft;
-            dialog.Close();
+            EditorModalWindowScope.Close(dialog);
         };
 
         var root = new Grid

@@ -411,6 +411,9 @@
     </Grid>
     <editor:EditorLoadingScrim x:Name="OperationLoadingScrim"
                                ZIndex="1000" />
+    <Panel x:Name="ModalOverlayHost"
+           ZIndex="2000"
+           IsVisible="False" />
     </Grid>
     </Border>
 </suki:SukiWindow>

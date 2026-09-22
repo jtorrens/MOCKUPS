@@ -231,7 +231,7 @@ var tests = new (string Name, Action Run)[]
     ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
     ("same-owner editor refresh keeps root and embedded cards mounted", SameOwnerEditorRefreshKeepsCardsMounted),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
-    ("Application modals displace siblings and close transient surfaces", ApplicationModalsDisplaceSiblingsAndCloseTransientSurfaces),
+    ("Application modals use the shared overlay and displace siblings", ApplicationModalsUseSharedOverlayAndDisplaceSiblings),
     ("presented editor operations own the shared loading scrim", PresentedEditorOperationsOwnSharedLoadingScrim),
     ("navigation panel restores its width and opens for routed selection", NavigationPanelRestoresWidthAndOpensForRoutedSelection),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
@@ -6928,7 +6928,7 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
     }
 }
 
-static void ApplicationModalsDisplaceSiblingsAndCloseTransientSurfaces()
+static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
 {
     using var session = HeadlessUnitTestSession.StartNew(
         typeof(HeadlessTestApplication));
@@ -6976,7 +6976,15 @@ static void ApplicationModalsDisplaceSiblingsAndCloseTransientSurfaces()
         previewGrid.Children.Add(previewContent);
         root.Children.Add(previewGrid);
         var toggle = new Button();
-        owner.Content = root;
+        var modalHost = new Panel
+        {
+            IsVisible = false,
+        };
+        owner.Content = new Grid
+        {
+            Children = { root, modalHost },
+        };
+        EditorModalWindowScope.RegisterHost(owner, modalHost);
         owner.Show();
         owner.Measure(new Size(1000, 700));
         owner.Arrange(new Rect(0, 0, 1000, 700));
@@ -7024,6 +7032,7 @@ static void ApplicationModalsDisplaceSiblingsAndCloseTransientSurfaces()
         {
             Width = 320,
             Height = 180,
+            Content = new TextBlock { Text = "Modal content" },
         };
         var auxiliary = new Window
         {
@@ -7043,11 +7052,12 @@ static void ApplicationModalsDisplaceSiblingsAndCloseTransientSurfaces()
         var dialogResult = EditorModalWindowScope.ShowDialog<object>(
             dialog,
             owner);
-        True(dialog.ShowActivated);
         Dispatcher.UIThread.RunJobs();
         True(!ToolTip.GetIsOpen(toggle));
+        True(modalHost.IsVisible);
+        Equal(1, modalHost.Children.Count);
         True(!dialog.Topmost);
-        True(dialog.IsActive);
+        True(!dialog.IsVisible);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
         True(!auxiliary.IsEnabled);
@@ -7056,6 +7066,7 @@ static void ApplicationModalsDisplaceSiblingsAndCloseTransientSurfaces()
         {
             Width = 280,
             Height = 160,
+            Content = new TextBlock { Text = "Nested modal content" },
         };
         EditorSukiWindowTheme.ApplyDialogChrome(
             childDialog,
@@ -7064,24 +7075,28 @@ static void ApplicationModalsDisplaceSiblingsAndCloseTransientSurfaces()
             childDialog,
             dialog);
         Dispatcher.UIThread.RunJobs();
+        Equal(2, modalHost.Children.Count);
         True(!childDialog.Topmost);
-        True(childDialog.IsActive);
+        True(!childDialog.IsVisible);
         True(!dialog.Topmost);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
         True(!auxiliary.IsEnabled);
-        childDialog.Close(false);
+        EditorModalWindowScope.Close(childDialog, false);
         Equal(false, childResult.GetAwaiter().GetResult());
         Dispatcher.UIThread.RunJobs();
+        Equal(1, modalHost.Children.Count);
         True(!childDialog.Topmost);
         True(!dialog.Topmost);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
         True(!auxiliary.IsEnabled);
 
-        dialog.Close();
+        EditorModalWindowScope.Close(dialog);
         Equal(null, dialogResult.GetAwaiter().GetResult());
         Dispatcher.UIThread.RunJobs();
+        True(!modalHost.IsVisible);
+        Equal(0, modalHost.Children.Count);
         True(!dialog.Topmost);
         True(floating.Topmost);
         True(floating.IsEnabled);
