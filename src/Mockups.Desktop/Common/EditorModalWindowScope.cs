@@ -54,17 +54,36 @@ internal static class EditorModalWindowScope
         await ShowDialog<object>(dialog, owner);
     }
 
-    public static async Task<TResult?> ShowDialog<TResult>(Window dialog, Window owner)
+    public static Task<TResult?> ShowDialog<TResult>(Window dialog, Window owner)
     {
         ArgumentNullException.ThrowIfNull(dialog);
         ArgumentNullException.ThrowIfNull(owner);
 
         var host = ResolveHost(owner);
         var session = new ModalSession<TResult>(dialog, host);
-        await host.PushAsync(session);
         Sessions.Add(dialog, session);
-        InvokeOpened(dialog);
-        return await session.Completion;
+        _ = OpenAsync(dialog, host, session);
+        return session.Completion;
+    }
+
+    private static async Task OpenAsync(
+        Window dialog,
+        ModalHost host,
+        ModalSession session)
+    {
+        try
+        {
+            await host.PushAsync(session);
+            if (!session.IsClosed)
+            {
+                InvokeOpened(dialog);
+            }
+        }
+        catch (Exception error)
+        {
+            Sessions.Remove(dialog);
+            session.Fail(error);
+        }
     }
 
     public static void Close(Window dialog) => Close<object>(dialog, null);
@@ -123,15 +142,36 @@ internal static class EditorModalWindowScope
 
     private static IReadOnlyList<Window> ApplicationWindows(Window owner)
     {
+        var windows = new HashSet<Window>();
+        AddOwnedWindows(owner, windows);
         if (Application.Current?.ApplicationLifetime
-            is not IClassicDesktopStyleApplicationLifetime lifetime)
+            is IClassicDesktopStyleApplicationLifetime lifetime)
         {
-            return [];
+            foreach (var window in lifetime.Windows)
+            {
+                if (window.IsVisible && !ReferenceEquals(window, owner))
+                {
+                    windows.Add(window);
+                }
+            }
         }
 
-        return lifetime.Windows
-            .Where(window => window.IsVisible && !ReferenceEquals(window, owner))
-            .ToArray();
+        return windows.ToArray();
+    }
+
+    private static void AddOwnedWindows(
+        Window owner,
+        ISet<Window> windows)
+    {
+        foreach (var window in owner.OwnedWindows)
+        {
+            if (!window.IsVisible || !windows.Add(window))
+            {
+                continue;
+            }
+
+            AddOwnedWindows(window, windows);
+        }
     }
 
     private static void CloseTransientSurfaces(IEnumerable<Window> windows)
@@ -188,13 +228,18 @@ internal static class EditorModalWindowScope
         {
             if (_stack.Count == 0)
             {
+                var windows = ApplicationWindows(_owner);
+                CloseTransientSurfaces(windows.Prepend(_owner));
                 foreach (var participant in _occlusionParticipants)
                 {
                     await participant.PrepareAsync();
                 }
 
-                var windows = ApplicationWindows(_owner);
-                CloseTransientSurfaces(windows.Prepend(_owner));
+                if (session.IsClosed)
+                {
+                    return;
+                }
+
                 _displaced = windows
                     .Select(window => new WindowState(
                         window,
@@ -265,7 +310,20 @@ internal static class EditorModalWindowScope
         protected Window Dialog { get; }
         public ModalHost Host { get; }
         public Control Surface { get; }
+        public bool IsClosed { get; private set; }
         public abstract void Close(object? result);
+        public abstract void Fail(Exception error);
+
+        protected bool MarkClosed()
+        {
+            if (IsClosed)
+            {
+                return false;
+            }
+
+            IsClosed = true;
+            return true;
+        }
 
         public void FocusInitialControl()
         {
@@ -386,8 +444,21 @@ internal static class EditorModalWindowScope
 
         public override void Close(object? result)
         {
+            if (!MarkClosed())
+            {
+                return;
+            }
+
             Host.Pop(this);
             _completion.TrySetResult(result is null ? default : (TResult)result);
+        }
+
+        public override void Fail(Exception error)
+        {
+            if (MarkClosed())
+            {
+                _completion.TrySetException(error);
+            }
         }
     }
 

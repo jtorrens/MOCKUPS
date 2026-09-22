@@ -7052,12 +7052,12 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         True(floating.Topmost);
         True(floating.IsEnabled);
         True(auxiliary.IsEnabled);
-        ToolTip.SetIsOpen(toggle, true);
+        ToolTip.SetIsOpen(headerSurface, true);
         var dialogResult = EditorModalWindowScope.ShowDialog<object>(
             dialog,
             owner);
         Dispatcher.UIThread.RunJobs();
-        True(!ToolTip.GetIsOpen(toggle));
+        True(!ToolTip.GetIsOpen(headerSurface));
         True(modalHost.IsVisible);
         Equal(1, modalHost.Children.Count);
         Equal(1, modalOcclusion.PrepareCount);
@@ -14447,6 +14447,30 @@ static void ProductionHierarchyTransferCopiesAndMovesShotsAndScreens()
             node.Id == "shot_001");
         var targetEpisodeNode = Descendants(tree).Single((node) =>
             node.Id == "episode_002");
+        var initialSourceShot = shots.Get(sourceShotNode.Id);
+        var transferableShotNumber = database.SuggestShotNumber(
+            targetEpisodeNode.Id);
+        var projectSettings = database.GetProjectSettings(
+            initialSourceShot.ProjectId);
+        var transferableShotCode =
+            ProductionOutputContract.CreateShotCode(
+                projectSettings.ProductionOutput.ShotPrefix,
+                transferableShotNumber,
+                projectSettings.ProductionOutput.ShotNumberPadding);
+        using (var connection = context.OpenConnection())
+        {
+            context.Execute(
+                connection,
+                """
+                UPDATE shots
+                SET shot_number = $shotNumber,
+                    slug = $shotCode
+                WHERE id = $id
+                """,
+                ("$shotNumber", transferableShotNumber),
+                ("$shotCode", transferableShotCode),
+                ("$id", sourceShotNode.Id));
+        }
         var sourceShot = shots.Get(sourceShotNode.Id);
         IReadOnlyList<ModuleInstanceRecord> sourceScreens;
         using (var connection = context.OpenConnection())
@@ -14523,8 +14547,6 @@ static void ProductionHierarchyTransferCopiesAndMovesShotsAndScreens()
             targetEpisodeNode,
             ProductionHierarchyTransferMode.Copy);
         var reassignedShot = shots.Get(reassignedShotNode.Id);
-        var projectSettings = database.GetProjectSettings(
-            sourceShot.ProjectId);
         Equal(expectedReassignedNumber, reassignedShot.ShotNumber);
         Equal(
             ProductionOutputContract.CreateShotCode(
@@ -24971,10 +24993,17 @@ static void True(
             $"Expected true: {expression}");
     }
 }
-static void Equal<T>(T expected, T actual)
+static void Equal<T>(
+    T expected,
+    T actual,
+    [CallerArgumentExpression(nameof(expected))]
+    string expectedExpression = "",
+    [CallerArgumentExpression(nameof(actual))]
+    string actualExpression = "")
 {
     if (!EqualityComparer<T>.Default.Equals(expected, actual))
-        throw new Exception($"Expected '{expected}', received '{actual}'.");
+        throw new Exception(
+            $"Expected {expectedExpression} '{expected}', received {actualExpression} '{actual}'.");
 }
 static void EqualEpisodeSettings(EpisodeSettings expected, EpisodeSettings actual)
 {
