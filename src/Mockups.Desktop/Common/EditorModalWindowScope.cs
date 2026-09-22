@@ -22,12 +22,16 @@ internal static class EditorModalWindowScope
     private static readonly Dictionary<Window, ModalSession> Sessions = [];
     private static readonly ConditionalWeakTable<Window, Lifecycle> Lifecycles = new();
 
-    public static void RegisterHost(Window owner, Panel overlayHost)
+    public static void RegisterHost(
+        Window owner,
+        Panel overlayHost,
+        params Control[] nativeSurfaces)
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentNullException.ThrowIfNull(overlayHost);
+        ArgumentNullException.ThrowIfNull(nativeSurfaces);
         Hosts.Remove(owner);
-        Hosts.Add(owner, new ModalHost(owner, overlayHost));
+        Hosts.Add(owner, new ModalHost(owner, overlayHost, nativeSurfaces));
     }
 
     public static void OnOpened(Window dialog, Action action) =>
@@ -154,13 +158,19 @@ internal static class EditorModalWindowScope
     {
         private readonly Window _owner;
         private readonly Panel _overlayHost;
+        private readonly IReadOnlyList<Control> _nativeSurfaces;
         private readonly List<ModalSession> _stack = [];
         private WindowState[] _displaced = [];
+        private ControlVisibilityState[] _occluded = [];
 
-        public ModalHost(Window owner, Panel overlayHost)
+        public ModalHost(
+            Window owner,
+            Panel overlayHost,
+            IReadOnlyList<Control> nativeSurfaces)
         {
             _owner = owner;
             _overlayHost = overlayHost;
+            _nativeSurfaces = nativeSurfaces;
         }
 
         public Rect OwnerBounds => _owner.Bounds;
@@ -182,6 +192,16 @@ internal static class EditorModalWindowScope
                 {
                     state.Window.Topmost = false;
                     state.Window.IsEnabled = false;
+                }
+                _occluded = _nativeSurfaces
+                    .Distinct()
+                    .Select(control => new ControlVisibilityState(
+                        control,
+                        control.IsVisible))
+                    .ToArray();
+                foreach (var state in _occluded)
+                {
+                    state.Control.IsVisible = false;
                 }
             }
             else
@@ -217,6 +237,11 @@ internal static class EditorModalWindowScope
                 state.Window.Topmost = state.WasTopmost;
             }
             _displaced = [];
+            foreach (var state in _occluded.Reverse())
+            {
+                state.Control.IsVisible = state.WasVisible;
+            }
+            _occluded = [];
             _owner.Activate();
         }
     }
@@ -371,4 +396,8 @@ internal static class EditorModalWindowScope
         Window Window,
         bool WasTopmost,
         bool WasEnabled);
+
+    private sealed record ControlVisibilityState(
+        Control Control,
+        bool WasVisible);
 }

@@ -6980,11 +6980,18 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         {
             IsVisible = false,
         };
+        var nativeSurface = new Border
+        {
+            IsVisible = true,
+        };
         owner.Content = new Grid
         {
-            Children = { root, modalHost },
+            Children = { root, nativeSurface, modalHost },
         };
-        EditorModalWindowScope.RegisterHost(owner, modalHost);
+        EditorModalWindowScope.RegisterHost(
+            owner,
+            modalHost,
+            nativeSurface);
         owner.Show();
         owner.Measure(new Size(1000, 700));
         owner.Arrange(new Rect(0, 0, 1000, 700));
@@ -7056,6 +7063,7 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         True(!ToolTip.GetIsOpen(toggle));
         True(modalHost.IsVisible);
         Equal(1, modalHost.Children.Count);
+        True(!nativeSurface.IsVisible);
         True(!dialog.Topmost);
         True(!dialog.IsVisible);
         True(!floating.Topmost);
@@ -7076,6 +7084,7 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
             dialog);
         Dispatcher.UIThread.RunJobs();
         Equal(2, modalHost.Children.Count);
+        True(!nativeSurface.IsVisible);
         True(!childDialog.Topmost);
         True(!childDialog.IsVisible);
         True(!dialog.Topmost);
@@ -7097,6 +7106,7 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         Dispatcher.UIThread.RunJobs();
         True(!modalHost.IsVisible);
         Equal(0, modalHost.Children.Count);
+        True(nativeSurface.IsVisible);
         True(!dialog.Topmost);
         True(floating.Topmost);
         True(floating.IsEnabled);

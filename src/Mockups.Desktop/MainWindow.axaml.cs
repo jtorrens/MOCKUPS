@@ -85,7 +85,10 @@ public partial class MainWindow : SukiWindow
         var fieldCommitCoordinator = new EditorFieldCommitCoordinator(
             application.Operations);
         InitializeComponent();
-        EditorModalWindowScope.RegisterHost(this, ModalOverlayHost);
+        EditorModalWindowScope.RegisterHost(
+            this,
+            ModalOverlayHost,
+            DesignPreviewHost);
         _operationActivityPresenter =
             new EditorOperationActivityPresenter(
                 application.Operations,
