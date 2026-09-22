@@ -80,73 +80,37 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
 
         try
         {
-            var requestResult = await WebView.InvokeScript("""
-                (() => typeof window.mockupsCaptureModalSnapshot === "function"
-                  ? window.mockupsCaptureModalSnapshot()
-                  : "")();
-                """);
-            var requestId = WebViewScriptResult.Text(requestResult);
-            if (string.IsNullOrWhiteSpace(requestId))
+            var capture = AppleWebViewSnapshot.CapturePngAsync(WebView);
+            if (await Task.WhenAny(capture, Task.Delay(1500)) != capture)
+            {
+                PreviewDebugLog.Write("preview.modal-snapshot.timeout");
+                return;
+            }
+
+            var bytes = await capture;
+            if (bytes is null || bytes.Length == 0)
             {
                 return;
             }
 
-            var stopwatch = Stopwatch.StartNew();
-            while (stopwatch.ElapsedMilliseconds < 1500)
-            {
-                await Task.Delay(16);
-                var requestJson = JsonSerializer.Serialize(requestId);
-                var result = await WebView.InvokeScript($$"""
-                    (() => typeof window.mockupsModalSnapshotResult === "function"
-                      ? window.mockupsModalSnapshotResult({{requestJson}})
-                      : "")();
-                    """);
-                var resultJson = WebViewScriptResult.Text(result);
-                if (string.IsNullOrWhiteSpace(resultJson))
-                {
-                    continue;
-                }
-
-                if (JsonNode.Parse(resultJson) is not JsonObject state
-                    || state["done"]?.GetValue<bool>() != true)
-                {
-                    continue;
-                }
-
-                var error = state["error"]?.GetValue<string>();
-                if (!string.IsNullOrWhiteSpace(error))
-                {
-                    throw new InvalidOperationException(error);
-                }
-
-                var dataUrl = state["dataUrl"]?.GetValue<string>() ?? "";
-                var separator = dataUrl.IndexOf(',');
-                if (separator < 0)
-                {
-                    throw new InvalidOperationException("Preview snapshot did not return PNG data.");
-                }
-
-                var bytes = Convert.FromBase64String(dataUrl[(separator + 1)..]);
-                using var stream = new MemoryStream(bytes, writable: false);
-                _modalSnapshotBitmap = new Bitmap(stream);
-                _modalSnapshotFrame.Source = _modalSnapshotBitmap;
-                _modalSnapshotFrame.Width = state["width"]?.GetValue<double>() ?? 0;
-                _modalSnapshotFrame.Height = state["height"]?.GetValue<double>() ?? 0;
-                _modalSnapshotFrame.Margin = new Avalonia.Thickness(
-                    state["x"]?.GetValue<double>() ?? 0,
-                    state["y"]?.GetValue<double>() ?? 0,
-                    0,
-                    0);
-                _modalSnapshotFrame.IsVisible =
-                    _modalSnapshotFrame.Width > 0
-                    && _modalSnapshotFrame.Height > 0;
-                return;
-            }
-
+            using var stream = new MemoryStream(bytes, writable: false);
+            _modalSnapshotBitmap = new Bitmap(stream);
+            _modalSnapshotFrame.Source = _modalSnapshotBitmap;
+            _modalSnapshotFrame.Width = WebView.Bounds.Width;
+            _modalSnapshotFrame.Height = WebView.Bounds.Height;
+            _modalSnapshotFrame.Margin = new Avalonia.Thickness(
+                WebView.Bounds.X,
+                WebView.Bounds.Y,
+                0,
+                0);
+            _modalSnapshotFrame.IsVisible =
+                _modalSnapshotFrame.Width > 0
+                && _modalSnapshotFrame.Height > 0;
             PreviewDebugLog.Write(
-                "preview.modal-snapshot.timeout",
-                ("requestId", requestId),
-                ("ms", stopwatch.Elapsed.TotalMilliseconds));
+                "preview.modal-snapshot.ready",
+                ("bytes", bytes.Length),
+                ("width", _modalSnapshotFrame.Width),
+                ("height", _modalSnapshotFrame.Height));
         }
         catch (Exception error)
         {
@@ -1511,45 +1475,6 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
                   const result = previewRasterResults.get(key);
                   if (!result) return "";
                   if (result.done) previewRasterResults.delete(key);
-                  return JSON.stringify(result);
-                };
-                const modalSnapshotResults = new Map();
-                let modalSnapshotSequence = 0;
-                window.mockupsCaptureModalSnapshot = () => {
-                  const requestId = String(++modalSnapshotSequence);
-                  modalSnapshotResults.set(requestId, { done: false });
-                  Promise.resolve().then(async () => {
-                    let frame = null;
-                    try {
-                      frame = await createPreviewRasterImage();
-                      const canvas = document.createElement("canvas");
-                      canvas.width = renderWidth;
-                      canvas.height = renderHeight;
-                      const context = canvas.getContext("2d");
-                      if (!context) throw new Error("Preview snapshot canvas is unavailable");
-                      context.drawImage(frame.image, 0, 0, renderWidth, renderHeight);
-                      const bounds = previewViewport.getBoundingClientRect();
-                      modalSnapshotResults.set(requestId, {
-                        done: true,
-                        dataUrl: canvas.toDataURL("image/png"),
-                        x: bounds.x,
-                        y: bounds.y,
-                        width: bounds.width,
-                        height: bounds.height,
-                      });
-                    } catch (error) {
-                      modalSnapshotResults.set(requestId, { done: true, error: String(error) });
-                    } finally {
-                      if (frame) URL.revokeObjectURL(frame.blobUrl);
-                    }
-                  });
-                  return requestId;
-                };
-                window.mockupsModalSnapshotResult = (requestId) => {
-                  const key = String(requestId);
-                  const result = modalSnapshotResults.get(key);
-                  if (!result) return "";
-                  if (result.done) modalSnapshotResults.delete(key);
                   return JSON.stringify(result);
                 };
                 const previewRasterDeck = document.createElement("div");
