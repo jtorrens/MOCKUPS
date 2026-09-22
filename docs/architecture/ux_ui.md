@@ -142,8 +142,11 @@ receives the released vertical space. Closing the tool window or using its dock
 action returns the surface and its prior dock height.
 
 Application modals always take precedence over that topmost utility window.
-The common modal presenter raises the materialized native modal above Preview;
-Preview keeps its own independent topmost and interaction state unchanged.
+Before native presentation, the common modal presenter closes application
+tooltips, flyouts and popups, temporarily removes topmost from every auxiliary
+application window and disables those siblings. `ShowDialog` then presents the
+modal with its exact visible owner. Closing or failed presentation restores the
+captured sibling topmost and interaction state once.
 
 Floating position and size are remembered only for repeated detachments in the
 current application session. A new application session always starts docked,
@@ -490,14 +493,14 @@ Structural slot metadata may locate nested contexts, but never acts as an
 alternate value-kind or persistence route.
 
 Bounded modal dialogs reach native `ShowDialog` only through the shared modal
-lifetime presenter and use their exact visible owner. The presenter waits for
-the generic `Opened` boundary, when the native window exists, then raises and
-activates the modal once. On macOS it assigns the native modal-panel window
-level through the common platform adapter; every modal therefore stays above
-application and external windows for its complete visible lifetime. Its
-`finally` boundary restores the captured Avalonia state after close or failed
-presentation. No concrete dialog, timer, sibling-window mutation or reactive
-focus recovery participates in window ordering.
+lifetime presenter and use their exact visible owner. The presenter dismisses
+transient application surfaces and yields one dispatcher turn before native
+presentation because macOS implements popup roots as separate native windows.
+It temporarily lowers and disables visible sibling windows, while Avalonia's
+owned `ShowDialog` contract alone establishes the native modal relationship.
+Its `finally` boundary restores captured sibling state after close or failed
+presentation. No concrete dialog, timer, native window-level override or
+reactive focus recovery participates in window ordering.
 
 Record creation that needs explicit values uses one shared modal generated
 from `RecordCreationDefinition`. Every scalar is rendered by its registered

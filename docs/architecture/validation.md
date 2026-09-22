@@ -74,9 +74,10 @@ It includes:
   collection paths, amber propagation through field/card/internal navigation,
   and Restore persistence through the stable item path;
 - shared modal lifetime, including the single presenter owning the exact native
-  `ShowDialog` call, displacement of auxiliary siblings before that call,
-  one-time restoration after close or presentation failure, nested owner
-  preservation and absence of polling or reactive focus recovery;
+  `ShowDialog` call, dismissal of transient surfaces and displacement of
+  auxiliary siblings before that call, one-time restoration after close or
+  presentation failure, nested owner preservation and absence of native level
+  overrides, polling or reactive focus recovery;
 - Production tree Shot ordering by authored name rather than creation or
   persisted sort order;
 - Preview authoring exposes no synchronous Runtime Input visual-construction

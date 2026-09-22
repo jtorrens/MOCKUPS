@@ -231,7 +231,7 @@ var tests = new (string Name, Action Run)[]
     ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
     ("same-owner editor refresh keeps root and embedded cards mounted", SameOwnerEditorRefreshKeepsCardsMounted),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
-    ("Native modals raise after opening without mutating sibling windows", NativeModalsRaiseAfterOpeningWithoutMutatingSiblingWindows),
+    ("Application modals displace siblings and close transient surfaces", ApplicationModalsDisplaceSiblingsAndCloseTransientSurfaces),
     ("presented editor operations own the shared loading scrim", PresentedEditorOperationsOwnSharedLoadingScrim),
     ("navigation panel restores its width and opens for routed selection", NavigationPanelRestoresWidthAndOpensForRoutedSelection),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
@@ -6928,7 +6928,7 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
     }
 }
 
-static void NativeModalsRaiseAfterOpeningWithoutMutatingSiblingWindows()
+static void ApplicationModalsDisplaceSiblingsAndCloseTransientSurfaces()
 {
     using var session = HeadlessUnitTestSession.StartNew(
         typeof(HeadlessTestApplication));
@@ -7039,16 +7039,18 @@ static void NativeModalsRaiseAfterOpeningWithoutMutatingSiblingWindows()
         True(floating.Topmost);
         True(floating.IsEnabled);
         True(auxiliary.IsEnabled);
+        ToolTip.SetIsOpen(toggle, true);
         var dialogResult = EditorModalWindowScope.ShowDialog<object>(
             dialog,
             owner);
         True(dialog.ShowActivated);
         Dispatcher.UIThread.RunJobs();
-        True(dialog.Topmost);
+        True(!ToolTip.GetIsOpen(toggle));
+        True(!dialog.Topmost);
         True(dialog.IsActive);
-        True(floating.Topmost);
-        True(floating.IsEnabled);
-        True(auxiliary.IsEnabled);
+        True(!floating.Topmost);
+        True(!floating.IsEnabled);
+        True(!auxiliary.IsEnabled);
 
         var childDialog = new SukiWindow
         {
@@ -7061,19 +7063,21 @@ static void NativeModalsRaiseAfterOpeningWithoutMutatingSiblingWindows()
         var childResult = EditorModalWindowScope.ShowDialog<bool>(
             childDialog,
             dialog);
-        True(childDialog.Topmost);
         Dispatcher.UIThread.RunJobs();
-        True(childDialog.Topmost);
+        True(!childDialog.Topmost);
         True(childDialog.IsActive);
-        True(dialog.Topmost);
-        True(floating.Topmost);
-        True(floating.IsEnabled);
-        True(auxiliary.IsEnabled);
+        True(!dialog.Topmost);
+        True(!floating.Topmost);
+        True(!floating.IsEnabled);
+        True(!auxiliary.IsEnabled);
         childDialog.Close(false);
         Equal(false, childResult.GetAwaiter().GetResult());
         Dispatcher.UIThread.RunJobs();
         True(!childDialog.Topmost);
-        True(dialog.Topmost);
+        True(!dialog.Topmost);
+        True(!floating.Topmost);
+        True(!floating.IsEnabled);
+        True(!auxiliary.IsEnabled);
 
         dialog.Close();
         Equal(null, dialogResult.GetAwaiter().GetResult());
