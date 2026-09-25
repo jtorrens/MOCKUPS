@@ -5,7 +5,10 @@ import {
   requiredRecord,
   requiredString,
 } from "./previewValueHelpers.js";
-import { textGraphemes } from "./previewTextRevealHelpers.js";
+import {
+  textGraphemes,
+  writeOnFrameForVisibleCount,
+} from "./previewTextRevealHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -77,13 +80,16 @@ export function naturalWriteOnFrame(
   if (mode !== "natural") throw new Error(`Invalid behavior timing mode '${mode}'.`);
   const graphemes = textGraphemes(text);
   if (graphemes.length === 0 || durationFrames <= 0) return durationFrames;
+  if (elapsedFrame <= 0) return 0;
+  if (elapsedFrame >= durationFrames) return durationFrames;
+  if (elapsedFrame <= 1) return 1;
   const weights = graphemes.map((grapheme, index) => {
     const variance = 0.72 + stableUnit(`${seed}:${index}:${grapheme}`) * 0.56;
     const pause = /[.!?;:,]$/u.test(grapheme) ? 1.45 : /\s/u.test(grapheme) ? 1.12 : 1;
     return variance * pause;
   });
   const total = weights.reduce((sum, weight) => sum + weight, 0);
-  const elapsed = Math.max(0, Math.min(durationFrames, elapsedFrame + 1));
+  const elapsed = Math.max(0, Math.min(durationFrames, elapsedFrame));
   let cumulative = 0;
   let visible = 0;
   for (const weight of weights) {
@@ -91,9 +97,12 @@ export function naturalWriteOnFrame(
     if ((cumulative / total) * durationFrames > elapsed) break;
     visible += 1;
   }
-  if (elapsedFrame >= durationFrames) visible = graphemes.length;
-  if (visible >= graphemes.length) return durationFrames;
-  return Math.max(0, Math.ceil((visible * durationFrames) / graphemes.length) - 1);
+  visible = Math.max(1, visible);
+  return writeOnFrameForVisibleCount(
+    graphemes.length,
+    visible,
+    durationFrames,
+  );
 }
 
 function tokenNumber(tokens: JsonRecord, token: string) {

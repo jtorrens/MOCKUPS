@@ -1,7 +1,10 @@
 import { optionalString, requiredString } from "./componentResolverCommon.js";
 import { optionalObjectArray } from "./previewJsonHelpers.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
-import { textGraphemes } from "./previewTextRevealHelpers.js";
+import {
+  textGraphemes,
+  writeOnFrameStepCount,
+} from "./previewTextRevealHelpers.js";
 import { validateTransientAnimationDocument } from "./transientAnimationDocument.js";
 
 type JsonRecord = Record<string, unknown>;
@@ -64,12 +67,19 @@ export function resolveParameterAnimation(
 
   const source = keyframes[destinationIndex - 1]!;
   const destination = keyframes[destinationIndex]!;
-  const progress = (frame - source.frame) / Math.max(1, destination.frame - source.frame);
+  const durationFrames = Math.max(1, destination.frame - source.frame);
+  const elapsedFrame = frame - source.frame;
+  const progress = elapsedFrame / durationFrames;
   if (destination.interpolation === "writeOn"
       && typeof source.value === "string"
       && typeof destination.value === "string") {
     return {
-      value: rewriteText(source.value, destination.value, progress),
+      value: rewriteText(
+        source.value,
+        destination.value,
+        elapsedFrame,
+        durationFrames,
+      ),
       animated: true,
       sourceKeyframeFrame: source.frame,
       previousValue: destinationIndex > 1 ? keyframes[destinationIndex - 2]!.value : baseValue,
@@ -126,7 +136,12 @@ function numericPair(value: string): [number, number] | undefined {
     : undefined;
 }
 
-function rewriteText(source: string, destination: string, progress: number) {
+function rewriteText(
+  source: string,
+  destination: string,
+  elapsedFrame: number,
+  durationFrames: number,
+) {
   const from = textGraphemes(source);
   const to = textGraphemes(destination);
   let common = 0;
@@ -134,7 +149,11 @@ function rewriteText(source: string, destination: string, progress: number) {
   const removals = from.length - common;
   const additions = to.length - common;
   const operationCount = removals + additions;
-  const step = Math.max(0, Math.min(operationCount, Math.floor(operationCount * progress)));
+  const step = writeOnFrameStepCount(
+    operationCount,
+    elapsedFrame,
+    durationFrames,
+  );
   const removed = Math.min(removals, step);
   const appended = Math.max(0, step - removals);
   return from.slice(0, from.length - removed).concat(to.slice(common, common + appended)).join("");

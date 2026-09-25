@@ -91,6 +91,17 @@ test("write-on rewrites by grapheme for deletion and insertion", () => {
   assert.equal(resolveParameterAnimation(data, "value", "", 4, "").value, "A🙂Z");
 });
 
+test("write-on animation reveals its first operation at frame one and ends on the destination", () => {
+  const data = animation([
+    { id: "k0", frame: 0, value: "", interpolation: "hold" },
+    { id: "k1", frame: 100, value: "AB", interpolation: "writeOn" },
+  ]);
+  assert.equal(resolveParameterAnimation(data, "value", "", 0, "base").value, "");
+  assert.equal(resolveParameterAnimation(data, "value", "", 1, "base").value, "A");
+  assert.equal(resolveParameterAnimation(data, "value", "", 99, "base").value, "A");
+  assert.equal(resolveParameterAnimation(data, "value", "", 100, "base").value, "AB");
+});
+
 test("fieldId and targetId select one exact track", () => {
   const data = {
     schemaVersion: 2,

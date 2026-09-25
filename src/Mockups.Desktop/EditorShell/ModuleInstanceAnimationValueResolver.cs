@@ -53,15 +53,21 @@ internal static class ModuleInstanceAnimationValueResolver
 
         var source = keyframes[destinationIndex - 1];
         var destination = keyframes[destinationIndex];
+        var durationFrames = Math.Max(1, destination.Frame - source.Frame);
+        var elapsedFrame = frame - source.Frame;
         var progress = Math.Clamp(
-            (frame - source.Frame) / Math.Max(1, destination.Frame - source.Frame),
+            elapsedFrame / durationFrames,
             0,
             1);
         if (destination.Interpolation == "writeOn"
             && Text(source.Value, out var sourceText)
             && Text(destination.Value, out var destinationText))
         {
-            return JsonValue.Create(RewriteText(sourceText, destinationText, progress))!;
+            return JsonValue.Create(RewriteText(
+                sourceText,
+                destinationText,
+                elapsedFrame,
+                durationFrames))!;
         }
         if (destination.Interpolation is "linear" or "easeInOut"
             && TryNumber(source.Value, out var sourceNumber)
@@ -75,7 +81,11 @@ internal static class ModuleInstanceAnimationValueResolver
         return source.Value!.DeepClone();
     }
 
-    private static string RewriteText(string source, string destination, double progress)
+    private static string RewriteText(
+        string source,
+        string destination,
+        double elapsedFrame,
+        double durationFrames)
     {
         var from = Graphemes(source);
         var to = Graphemes(destination);
@@ -84,10 +94,27 @@ internal static class ModuleInstanceAnimationValueResolver
         var removals = from.Count - common;
         var additions = to.Count - common;
         var operationCount = removals + additions;
-        var step = Math.Clamp((int)Math.Floor(operationCount * progress), 0, operationCount);
+        var step = WriteOnFrameStepCount(
+            operationCount,
+            elapsedFrame,
+            durationFrames);
         var removed = Math.Min(removals, step);
         var appended = Math.Max(0, step - removals);
         return string.Concat(from.Take(from.Count - removed).Concat(to.Skip(common).Take(appended)));
+    }
+
+    private static int WriteOnFrameStepCount(
+        int stepCount,
+        double frame,
+        double durationFrames)
+    {
+        if (stepCount <= 0) return 0;
+        var duration = Math.Max(1, (int)Math.Floor(durationFrames));
+        var elapsed = Math.Max(0, (int)Math.Floor(frame));
+        if (elapsed == 0) return 0;
+        if (elapsed >= duration || duration == 1) return stepCount;
+        if (stepCount == 1) return 1;
+        return 1 + ((stepCount - 1) * (elapsed - 1) / (duration - 1));
     }
 
     private static IReadOnlyList<string> Graphemes(string value)

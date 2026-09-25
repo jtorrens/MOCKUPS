@@ -40,6 +40,16 @@ right edge fixed and grow towards the left; centered Bubbles retain their
 current center and left-aligned Bubbles retain their left edge. The final
 Bubble bounds remain reserved only for vertical message reflow.
 
+Every write-on interval has one exact frame distribution. Its owner-local frame
+zero contains no revealed grapheme. Frame one reveals the first complete
+grapheme, independently of text length or interval duration. Every remaining
+grapheme is distributed across the remaining interval so the final grapheme is
+reached at the track end; a one-grapheme value therefore appears at frame one
+and holds. Parameter-animation write-on uses the same operation distribution
+for removals and insertions. Parent-owned Screen entry holds that empty frame
+zero, and Screen exit holds the completed final frame; neither boundary retimes
+the write-on.
+
 Timeline edits commit through the existing temporal owners. Collection
 movement writes the position field selected by its declared positioning mode;
 outgoing resize

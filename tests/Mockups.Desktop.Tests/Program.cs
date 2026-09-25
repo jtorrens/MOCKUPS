@@ -21154,6 +21154,19 @@ static void RuntimeControlsResolveActiveFrameValue()
         5,
         JsonValue.Create(0)!,
         ValueKind.Decimal));
+
+    var writeOnDocument = EmptyDocument();
+    writeOnDocument.AddTrack("text", "", JsonValue.Create("")!, "writeOn");
+    writeOnDocument.UpsertKeyframe("text", "", 100, JsonValue.Create("AB")!, "writeOn");
+    var writeOn = Required(writeOnDocument.Track("text", ""));
+    Equal("", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        writeOn, 0, JsonValue.Create("base")!, ValueKind.StringMultiline));
+    Equal("A", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        writeOn, 1, JsonValue.Create("base")!, ValueKind.StringMultiline));
+    Equal("A", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        writeOn, 99, JsonValue.Create("base")!, ValueKind.StringMultiline));
+    Equal("AB", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        writeOn, 100, JsonValue.Create("base")!, ValueKind.StringMultiline));
 }
 
 static void TrackTargetsRoundTrip()

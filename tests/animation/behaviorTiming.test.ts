@@ -59,6 +59,8 @@ test("natural Write On is deterministic, monotonic and keeps the final duration"
   assert.deepEqual(frames, Array.from({ length: 85 }, (_, frame) =>
     naturalWriteOnFrame(text, timing, frame, 84, "message-1:Natural pace")));
   assert.ok(frames.every((value, index) => index === 0 || value >= frames[index - 1]!));
+  assert.equal(frames[0], 0);
+  assert.equal(frames[1], 1);
   assert.equal(frames.at(-1), 84);
   assert.ok(new Set(frames.slice(1).map((value, index) => value - frames[index]!)).size > 1);
 });
