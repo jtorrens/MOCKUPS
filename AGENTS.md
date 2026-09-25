@@ -427,6 +427,33 @@ explicit confirmation before editing.
 
 ## Collaboration: serialize code-writing tasks
 
+### Hard prohibition: never restore the canonical database from the repository snapshot
+
+Agents and contributors must never copy, move, install, stream, restore or
+otherwise replace an existing canonical workstation database from
+`data/mockups.sqlite`, from any Git revision of that file or from a temporary
+copy derived from it. This includes direct or indirect use of `cp`, `rsync`,
+`install`, `mv`, SQLite backup/restore commands, shell redirection and scripts.
+Running `git restore` or `git checkout` on `data/mockups.sqlite` never
+authorizes a subsequent write to the canonical database.
+
+The only permitted repository-snapshot-to-workstation direction is the
+create-only `npm run desktop:workstation:bootstrap` workflow, and only when the
+canonical database does not exist. For every existing workstation database,
+the maintenance direction is exclusively:
+
+```text
+canonical workstation database -> data/mockups.sqlite
+```
+
+Recovery of an existing canonical database must use Backup Hub's verified
+restore handoff or an explicitly user-authorized, scoped maintenance
+transaction from a separately verified backup after the current canonical
+baseline has been captured and checkpointed. It must never use the repository
+snapshot as recovery authority or replace the complete file through the
+filesystem. If a requested operation appears to require the prohibited
+direction, stop without writing and report the conflict to the user.
+
 Work directly on `main` by default. Create another branch or worktree only when
 the user explicitly requests it. A temporary implementation branch is part of
 the same delivery: integrate it into `main`, push `main` when authorized,
