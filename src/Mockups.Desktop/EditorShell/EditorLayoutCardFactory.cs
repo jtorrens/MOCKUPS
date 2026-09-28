@@ -78,7 +78,8 @@ internal sealed class EditorLayoutCardFactory
         EditorLayoutCard layoutCard,
         string editorStateKey,
         EditorDictionaryContextSnapshot dictionaryContext,
-        IReadOnlyDictionary<string, FieldValue> preparedFields)
+        IReadOnlyDictionary<string, FieldValue> preparedFields,
+        IReadOnlySet<string>? presentationControllerFieldIds = null)
     {
         var body = new StackPanel
         {
@@ -109,7 +110,9 @@ internal sealed class EditorLayoutCardFactory
                     node,
                     preparedFields[layoutField.Id],
                     dictionaryContext,
-                    preparedFields);
+                    preparedFields,
+                    presentationControllerFieldIds?.Contains(
+                        layoutField.Id) == true);
                 controls.Add(control);
                 groupControls.Add(control);
                 groupPanel.Children.Add(control);
@@ -174,7 +177,8 @@ internal sealed class EditorLayoutCardFactory
         EditorEmbeddedContext context,
         EditorLayoutCard layoutCard,
         EditorDictionaryContextSnapshot dictionaryContext,
-        IReadOnlyDictionary<string, FieldValue> preparedFields)
+        IReadOnlyDictionary<string, FieldValue> preparedFields,
+        IReadOnlySet<string>? presentationControllerFieldIds = null)
     {
         var body = new StackPanel
         {
@@ -205,7 +209,9 @@ internal sealed class EditorLayoutCardFactory
                     context,
                     preparedFields[layoutField.Id],
                     dictionaryContext,
-                    preparedFields);
+                    preparedFields,
+                    presentationControllerFieldIds?.Contains(
+                        layoutField.Id) == true);
                 controls.Add(control);
                 groupControls.Add(control);
                 groupPanel.Children.Add(control);
@@ -341,8 +347,7 @@ internal sealed class EditorLayoutCardFactory
                                 field.Definition.Id,
                                 stored));
                         activeFieldControls.RefreshPreviews();
-                        _scheduleActiveEditorReload(
-                            context.OwnerNode);
+                        _refreshPreview();
                     }
                     catch (Exception exception)
                     {
@@ -415,7 +420,8 @@ internal sealed class EditorLayoutCardFactory
         ProjectTreeNode node,
         FieldValue field,
         EditorDictionaryContextSnapshot dictionaryContext,
-        IReadOnlyDictionary<string, FieldValue> preparedFields)
+        IReadOnlyDictionary<string, FieldValue> preparedFields,
+        bool refreshPresentationOnCommit = false)
     {
         var supportsEmbeddedOverrides = node.Kind is ProjectTreeNodeKind.ComponentClass
             or ProjectTreeNodeKind.ComponentVariant
@@ -488,7 +494,11 @@ internal sealed class EditorLayoutCardFactory
                     (fieldId) => _fieldValues.Create(node, fieldId));
                 _inlinePreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
                 _activeFieldControls.RefreshPreviews();
-                _scheduleActiveEditorReload(node);
+                _refreshPreview();
+                if (refreshPresentationOnCommit)
+                {
+                    _scheduleActiveEditorReload(node);
+                }
             }
             catch (Exception exception)
             {
@@ -503,7 +513,8 @@ internal sealed class EditorLayoutCardFactory
         EditorEmbeddedContext context,
         FieldValue field,
         EditorDictionaryContextSnapshot dictionaryContext,
-        IReadOnlyDictionary<string, FieldValue> preparedFields)
+        IReadOnlyDictionary<string, FieldValue> preparedFields,
+        bool refreshPresentationOnCommit = false)
         => CreateEmbeddedFieldControlCore(
             context,
             field,
@@ -511,7 +522,11 @@ internal sealed class EditorLayoutCardFactory
             preparedFields,
             null,
             _activeFieldControls,
-            null);
+            null,
+            refreshPresentationOnCommit
+                ? () => _scheduleActiveEditorReload(
+                    context.OwnerNode)
+                : null);
 
     public Control CreateFlatOverrideContent(
         ProjectTreeNode node,
@@ -600,6 +615,7 @@ internal sealed class EditorLayoutCardFactory
         IReadOnlyDictionary<string, FieldValue>? dependencyFields,
         EditorActiveFieldControls activeFieldControls,
         Action? restored,
+        Action? presentationChanged = null,
         bool compact = false)
     {
         var services = _dictionaryFieldServices.ForPreparedNode(
@@ -661,6 +677,7 @@ internal sealed class EditorLayoutCardFactory
                     }
                     activeFieldControls.RefreshPreviews();
                     _refreshPreview();
+                    presentationChanged?.Invoke();
                     return;
                 }
 
@@ -675,6 +692,7 @@ internal sealed class EditorLayoutCardFactory
                     activeFieldControls.RefreshPreviews();
                     _refreshPreview();
                     restored?.Invoke();
+                    presentationChanged?.Invoke();
                     return;
                 }
 
@@ -692,6 +710,7 @@ internal sealed class EditorLayoutCardFactory
                     (storedValue) => _componentClassFieldValues.CommitEmbeddedFieldValue(context, field.Definition.Id, storedValue));
                 activeFieldControls.RefreshPreviews();
                 _refreshPreview();
+                presentationChanged?.Invoke();
             }
             catch (Exception exception)
             {

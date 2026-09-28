@@ -176,7 +176,7 @@ public partial class MainWindow : SukiWindow
             _previewController.ProductionShotFrame,
             _previewController.SetProductionShotFrame,
             _previewController.UpdateProductionShotScreenTimelineAsync,
-            RefreshProductionAuthoringAsync);
+            RefreshProductionPreviewAsync);
         _previewController.ConfigureScreenTimelineKeyboardNavigation(
             _screenTimeline.TryStepFrame,
             _screenTimeline.TryMoveToNavigationFrame,
@@ -277,7 +277,7 @@ public partial class MainWindow : SukiWindow
             new PreviewAuthoringRefreshCoordinator(
                 () => Session.Workspace,
                 _previewController.NotifyAuthoredPreviewInputsChanged,
-                RefreshProductionAuthoringAsync);
+                RefreshProductionPreviewAsync);
         var fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             data.Presentation,
             application.Operations,
@@ -703,16 +703,9 @@ public partial class MainWindow : SukiWindow
         }
     }
 
-    private async Task RefreshProductionAuthoringAsync()
+    private async Task RefreshProductionPreviewAsync()
     {
-        var selected = Session.SelectedNode;
-        if (selected is null) return;
-        var revision = Session.Revision;
-        if (!await RefreshPreviewOptionsAsync()) return;
-        await RefreshPreviewAuthoringSurfaceAsync(
-            selected,
-            revision,
-            preserveCurrentSurfaceWhilePreparing: true);
+        await RefreshPreviewOptionsAsync();
     }
 
     private async Task<bool> LoadProjectTreeAsync()

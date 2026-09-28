@@ -27,6 +27,14 @@ Continuous controls publish transient values while moving and commit once when
 the interaction ends. Discrete selectors commit immediately. Controls and
 concrete editors never add a timer, debounce or field-specific trigger.
 
+A successful scalar commit retains the mounted registered control. It updates
+that control's confirmed value, inherited state, Restore presentation and
+inline preview in place, then invalidates Preview independently. Recomposition
+is structural and declarative: it occurs only when layout visibility names the
+field as a controller, the registered control reports a Runtime-contract
+change, or a collection lifecycle changes stable structure. A scalar commit
+never reloads the navigation tree merely to refresh its editor.
+
 Structured collections have an owning collection editor. Scalar fields inside
 each item still use dictionary definitions and controls. Their Add, Duplicate,
 Move and Delete actions call the same typed collection mutation owner used by

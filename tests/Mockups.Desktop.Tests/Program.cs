@@ -230,6 +230,7 @@ var tests = new (string Name, Action Run)[]
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
     ("same-owner editor refresh keeps root and embedded cards mounted", SameOwnerEditorRefreshKeepsCardsMounted),
+    ("Production scalar commits keep Screen Payload mounted", ProductionScalarCommitKeepsScreenPayloadMounted),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("Application modals use the shared overlay and displace siblings", ApplicationModalsUseSharedOverlayAndDisplaceSiblings),
     ("presented editor operations own the shared loading scrim", PresentedEditorOperationsOwnSharedLoadingScrim),
@@ -6653,6 +6654,39 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
                 out var minimumFade));
             Equal("0.15", Required(minimumFade).Value);
 
+            var mountedCursorCard = cursorCard;
+            var mountedMinimumFade = Required(minimumFade);
+            var mountedNavigationRoot =
+                navigationCards.Children.FirstOrDefault();
+            var mountedPreviewAuthoring =
+                previewAuthoringHost.Content;
+            mountedMinimumFade.SetValue(
+                "0.16",
+                commit: true);
+            True(SpinWait.SpinUntil(
+                () =>
+                {
+                    Layout();
+                    return mountedMinimumFade.IsDefault;
+                },
+                TimeSpan.FromSeconds(10)));
+            True(ReferenceEquals(
+                mountedCursorCard,
+                editorContent.Cards.Single((card) =>
+                    card.SessionStateId == "layout:cursor")));
+            True(activeFieldControls.ControlsByFieldId.TryGetValue(
+                "component.cursor.minimumFade",
+                out minimumFade));
+            True(ReferenceEquals(
+                mountedMinimumFade,
+                minimumFade));
+            True(ReferenceEquals(
+                mountedNavigationRoot,
+                navigationCards.Children.FirstOrDefault()));
+            True(ReferenceEquals(
+                mountedPreviewAuthoring,
+                previewAuthoringHost.Content));
+
             cursorCard = RefreshWithoutUnmounting(
                 cursorOwner,
                 cursorCard,
@@ -6666,7 +6700,7 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
             True(activeFieldControls.ControlsByFieldId.TryGetValue(
                 "component.cursor.minimumFade",
                 out minimumFade));
-            Equal("0.15", Required(minimumFade).Value);
+            Equal("0.16", Required(minimumFade).Value);
 
             var avatar = Component("component.avatar");
             Select(avatar);
@@ -6688,6 +6722,109 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
                 "Embedded same-owner refresh");
             True(labelCard.IsExpanded);
 
+            window.Hide();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ProductionScalarCommitKeepsScreenPayloadMounted()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-headless-payload-refresh-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = CreateTestWindow(temporary);
+            window.Show();
+            Required(window.FindControl<Button>(
+                    "ProductionWorkspaceButton"))
+                .RaiseEvent(new RoutedEventArgs(
+                    Button.ClickEvent));
+            True(SpinWait.SpinUntil(
+                () =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return WindowSession(window).Workspace
+                        == EditorWorkspace.Production;
+                },
+                TimeSpan.FromSeconds(10)));
+
+            var screen = WindowSession(window).TreeRoots
+                .SelectMany(DescendantsAndSelf)
+                .First((node) =>
+                    node.Kind == ProjectTreeNodeKind.ModuleInstance
+                    && node.RecordClassId == "module.core.chat");
+            var selectNode = typeof(MainWindow).GetMethod(
+                "SelectNodeById",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string)],
+                modifiers: null)
+                ?? throw new InvalidOperationException(
+                    "Missing MainWindow node selection boundary.");
+            True((bool)(selectNode.Invoke(
+                window,
+                [screen.Id]) ?? false));
+            var authoringHost = Required(
+                window.FindControl<ContentControl>(
+                    "PreviewAuthoringDataHost"));
+            True(SpinWait.SpinUntil(
+                () =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return authoringHost.Content is Control content
+                        && content.GetVisualDescendants()
+                            .OfType<DictionaryFieldControl>()
+                            .Any((field) =>
+                                field.FieldId == "headerSubtitle");
+                },
+                TimeSpan.FromSeconds(10)));
+
+            var mountedSurface = Required(
+                authoringHost.Content as Control);
+            var mountedField = mountedSurface
+                .GetVisualDescendants()
+                .OfType<DictionaryFieldControl>()
+                .Single((field) =>
+                    field.FieldId == "headerSubtitle");
+            mountedField.SetValue(
+                "Mounted payload",
+                commit: true);
+            True(SpinWait.SpinUntil(
+                () =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return mountedField.IsDefault;
+                },
+                TimeSpan.FromSeconds(10)));
+
+            var settle = Stopwatch.StartNew();
+            while (settle.Elapsed < TimeSpan.FromSeconds(1))
+            {
+                Dispatcher.UIThread.RunJobs();
+                True(ReferenceEquals(
+                    mountedSurface,
+                    authoringHost.Content));
+                Thread.Sleep(10);
+            }
+            True(ReferenceEquals(
+                mountedField,
+                Required(authoringHost.Content as Control)
+                    .GetVisualDescendants()
+                    .OfType<DictionaryFieldControl>()
+                    .Single((field) =>
+                        field.FieldId == "headerSubtitle")));
             window.Hide();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }

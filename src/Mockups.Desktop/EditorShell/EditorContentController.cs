@@ -156,13 +156,16 @@ internal sealed class EditorContentController : IDisposable
         IReadOnlyCollection<string>? restoredExpandedCardIds = null)
     {
         ResetRegistries();
+        var presentationControllerFieldIds =
+            PresentationControllerFieldIds(prepared.Cards);
         var cards = prepared.Cards
             .Select((card) => _layoutCards.Create(
                 dataNode,
                 card.Layout,
                 layoutNode.RecordClassId,
                 prepared.DictionaryContext,
-                card.Fields))
+                card.Fields,
+                presentationControllerFieldIds))
             .Concat(_collectionCards.Create(dataNode))
             .ToList();
         _cardHost.Replace(
@@ -218,6 +221,11 @@ internal sealed class EditorContentController : IDisposable
         ResetRegistries();
         var cards = new List<InstantEditorCard>();
         var ownerLayoutRecordClassId = OwnerLayoutRecordClassId(context.OwnerNode);
+        var preparedCards = prepared.OwnerCard is null
+            ? prepared.Cards
+            : [prepared.OwnerCard, .. prepared.Cards];
+        var presentationControllerFieldIds =
+            PresentationControllerFieldIds(preparedCards);
 
         if (context.IsRecordReferenceOverride)
         {
@@ -243,7 +251,8 @@ internal sealed class EditorContentController : IDisposable
                 ownerCard.Layout,
                 ownerLayoutRecordClassId,
                 prepared.DictionaryContext,
-                ownerCard.Fields));
+                ownerCard.Fields,
+                presentationControllerFieldIds));
         }
 
         foreach (var card in prepared.Cards)
@@ -252,7 +261,8 @@ internal sealed class EditorContentController : IDisposable
                 context,
                 card.Layout,
                 prepared.DictionaryContext,
-                card.Fields));
+                card.Fields,
+                presentationControllerFieldIds));
         }
         _cardHost.Replace(
             cards,
@@ -270,6 +280,16 @@ internal sealed class EditorContentController : IDisposable
             ? ownerNode.Parent?.RecordClassId
                 ?? throw new InvalidOperationException("A component Variant must have its parent component class.")
             : ownerNode.RecordClassId;
+
+    private static IReadOnlySet<string> PresentationControllerFieldIds(
+        IEnumerable<EditorPreparedLayoutCard> cards) =>
+        cards
+            .SelectMany((card) => card.Layout.Groups)
+            .SelectMany((group) => group.Fields)
+            .Where((field) => !string.IsNullOrWhiteSpace(
+                field.VisibleWhenFieldId))
+            .Select((field) => field.VisibleWhenFieldId)
+            .ToHashSet(StringComparer.Ordinal);
 
     private void ResetRegistries()
     {

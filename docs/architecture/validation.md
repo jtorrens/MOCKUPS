@@ -146,9 +146,10 @@ It includes:
 - headless Avalonia editor view-state navigation across record classes and
   embedded breadcrumb levels, including card expansion and post-layout scroll
   restoration by exact `recordClassId`, plus the header Back/Forward controls
-  restoring both embedded breadcrumbs and root editor view state, atomic
-  same-owner field refresh without navigation or Preview-authoring loading
-  swaps, and fixed Preview contexts retaining their exact breadcrumbs while
+  restoring both embedded breadcrumbs and root editor view state, scalar
+  same-owner commits retaining the exact mounted card, registered control and
+  Preview-authoring surface without a tree reload, declared structural fields
+  replacing only after preparation, and fixed Preview contexts retaining their exact breadcrumbs while
   their authoring identity resolves to the current canonical project tree;
 - headless Avalonia List Item/List authoring surfaces, including Variant
   selection, numeric active-set and state Runtime values, shared List item

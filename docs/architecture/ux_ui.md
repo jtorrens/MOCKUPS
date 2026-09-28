@@ -83,13 +83,16 @@ aligned with status and lifecycle actions.
 Changing between records of the same class keeps the same open card and scroll
 level. Returning to another editor restores that editor class's session point.
 This memory lasts only for the current application session.
-Committing a field prepares one replacement shell candidate for the current
-root or embedded editor and its Preview-authoring surface while the existing
-cards and panels remain mounted. Editor cards, header and Preview authoring are
-published together with the captured expansion and scroll state. Navigation is
-rebuilt in that same visual turn only when its complete presentation changed;
-an unchanged tree retains its mounted controls. Loading surfaces are reserved
-for transitions that do not already present that exact owner.
+Committing a scalar field keeps its exact editor card, registered control and
+Preview-authoring surface mounted. The confirmed value updates that control in
+place, while Preview or the immutable Production catalog refreshes through its
+own revisioned boundary. A field that is named by layout visibility metadata,
+emits a Runtime-contract change or changes declared collection structure
+prepares only the required structural replacement; ordinary values never
+reload the tree or replace the complete editor or Screen Payload surface.
+Navigation is rebuilt only when its complete presentation changed. Loading
+surfaces are reserved for transitions that do not already present that exact
+owner.
 
 Component and Module headers expose compact Back and Forward actions after the
 Variant actions. They traverse the exact sequence of Design editor visits,
