@@ -21,6 +21,43 @@ internal enum EditorSubcardLayout
     SeparatedSections,
 }
 
+internal sealed class EditorInternalNavigationPresentation
+{
+    public EditorInternalNavigationPresentation(
+        string label,
+        string subtitle,
+        string icon)
+    {
+        Label = label;
+        Subtitle = subtitle;
+        Icon = icon;
+    }
+
+    public string Label { get; private set; }
+    public string Subtitle { get; private set; }
+    public string Icon { get; private set; }
+
+    public event Action? Changed;
+
+    public void Update(
+        string label,
+        string subtitle,
+        string icon)
+    {
+        if (Label.Equals(label, StringComparison.Ordinal)
+            && Subtitle.Equals(subtitle, StringComparison.Ordinal)
+            && Icon.Equals(icon, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Label = label;
+        Subtitle = subtitle;
+        Icon = icon;
+        Changed?.Invoke();
+    }
+}
+
 internal sealed record EditorInternalNavigationSection(
     string Id,
     string Label,
@@ -37,7 +74,8 @@ internal sealed record EditorInternalNavigationSection(
     double? SubcardNavigationWidth = null,
     Action<double>? SubcardNavigationWidthChanged = null,
     bool ShowLabel = true,
-    bool Reveal = false);
+    bool Reveal = false,
+    EditorInternalNavigationPresentation? Presentation = null);
 
 internal sealed class EditorSubcardLayoutHost : ContentControl, IEditorAuthoringItemTarget,
     IEditorAuthoringRuntimeComponentTarget
@@ -181,7 +219,8 @@ internal sealed class EditorSubcardLayoutHost : ContentControl, IEditorAuthoring
                     out var card,
                     isExpanded: subcard.IsExpanded,
                     headerTrailing: subcard.Trailing,
-                    hierarchyIndent: EditorUiDensity.Card(12)));
+                    hierarchyIndent: EditorUiDensity.Card(12),
+                    presentation: subcard.Presentation));
                 if (subcard.ExpansionChanged is not null)
                 {
                     card.ExpansionChanged += subcard.ExpansionChanged;
@@ -334,27 +373,35 @@ internal sealed class EditorInternalNavigation : Grid, IEditorAuthoringSectionTa
 
     private Button CreateNavigationButton(EditorInternalNavigationSection section)
     {
-        var icon = EditorIcons.CreateSemantic(section.Label, section.Icon, 16);
+        var presentation = section.Presentation;
+        var label = presentation?.Label ?? section.Label;
+        var subtitle = presentation?.Subtitle ?? section.Subtitle;
+        var icon = EditorIcons.CreateSemantic(
+            label,
+            presentation?.Icon ?? section.Icon,
+            16);
         _icons[section.Id] = icon;
+        var labelText = new TextBlock
+        {
+            Text = label,
+            FontWeight = FontWeight.SemiBold,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        var subtitleText = new TextBlock
+        {
+            Text = subtitle,
+            FontSize = 11,
+            Opacity = 0.68,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
         var text = new StackPanel
         {
             Spacing = 2,
             VerticalAlignment = VerticalAlignment.Center,
             Children =
             {
-                new TextBlock
-                {
-                    Text = section.Label,
-                    FontWeight = FontWeight.SemiBold,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                },
-                new TextBlock
-                {
-                    Text = section.Subtitle,
-                    FontSize = 11,
-                    Opacity = 0.68,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                },
+                labelText,
+                subtitleText,
             },
         };
         var row = new Grid
@@ -385,7 +432,32 @@ internal sealed class EditorInternalNavigation : Grid, IEditorAuthoringSectionTa
             Select(section.Id, notify: true);
         };
         button.KeyDown += (_, args) => NavigateByKeyboard(section.Id, args);
-        EditorAccessibility.Describe(button, $"Open {section.Label}", section.Subtitle, showToolTip: false);
+        void ApplyPresentation()
+        {
+            if (presentation is null) return;
+            labelText.Text = presentation.Label;
+            subtitleText.Text = presentation.Subtitle;
+            var nextIcon = EditorIcons.CreateSemantic(
+                presentation.Label,
+                presentation.Icon,
+                16);
+            row.Children.Remove(icon);
+            icon = nextIcon;
+            row.Children.Insert(0, icon);
+            _icons[section.Id] = icon;
+            EditorAccessibility.Describe(
+                button,
+                $"Open {presentation.Label}",
+                presentation.Subtitle,
+                showToolTip: false);
+            RefreshVisuals();
+        }
+        presentation?.Changed += ApplyPresentation;
+        EditorAccessibility.Describe(
+            button,
+            $"Open {label}",
+            subtitle,
+            showToolTip: false);
         return button;
     }
 

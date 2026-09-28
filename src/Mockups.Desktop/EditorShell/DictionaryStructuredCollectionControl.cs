@@ -193,7 +193,12 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 $"{collection.ItemLabel} {index + 1}",
                 $"Variant item {index + 1}",
                 EditorIcons.Component),
-            (item, index) => ItemContent(collection, item, index),
+            (item, index, refreshPresentation) =>
+                ItemContent(
+                    collection,
+                    item,
+                    index,
+                    refreshPresentation),
             new StructuredCollectionActions(
                 AddFirst: async () =>
                 {
@@ -296,14 +301,24 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     private StructuredCollectionItemContent ItemContent(
         RuntimeInputCollectionDefinition collection,
         JsonObject item,
-        int itemIndex)
+        int itemIndex,
+        Action refreshPresentation)
     {
         var content = new StackPanel { Spacing = 8 };
+        var itemControls =
+            new Dictionary<string, DictionaryFieldControl>(
+                StringComparer.Ordinal);
         foreach (var input in collection.Fields)
         {
             if (!input.ShowInEditor) continue;
             if (!CollectionFieldAvailability.IsEnabled(item, input, itemIndex)) continue;
-            content.Children.Add(CreateItemField(collection, item, itemIndex, input));
+            content.Children.Add(CreateItemField(
+                collection,
+                item,
+                itemIndex,
+                input,
+                itemControls,
+                refreshPresentation));
         }
 
         var subcards = new List<EditorInternalNavigationSection>();
@@ -430,7 +445,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         RuntimeInputCollectionDefinition collection,
         JsonObject item,
         int itemIndex,
-        ComponentInputDefinition input)
+        ComponentInputDefinition input,
+        IDictionary<string, DictionaryFieldControl> itemControls,
+        Action refreshPresentation)
     {
         async Task PublishItemValuesAsync(
             IReadOnlyDictionary<string, JsonNode?> values)
@@ -561,6 +578,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     && overrides is not null
                     && OverrideDocumentContract.HasAuthoredValues(overrides)),
             services);
+        itemControls[input.Id] = control;
         RegisterOverrideControl(control);
         control.ValueCommitted += async (_, next) =>
         {
@@ -607,6 +625,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 updates[componentItems.InputsJsonKey] = item[componentItems.InputsJsonKey];
             }
             await PublishItemValuesAsync(updates);
+            refreshPresentation();
+            StructuredCollectionFieldRefresh.RefreshCalculatedDependents(
+                collection,
+                input,
+                itemControls);
             if (referenceChanged
                 && _services.ResetUsedRuntimePayloads is not null)
             {

@@ -34,7 +34,7 @@ internal sealed class StructuredCollectionEditor
     private readonly IReadOnlyList<JsonObject> _items;
     private readonly Func<JsonObject, int, string> _itemId;
     private readonly Func<JsonObject, int, RuntimeCollectionItemPresentationResult> _presentation;
-    private readonly Func<JsonObject, int, StructuredCollectionItemContent> _content;
+    private readonly Func<JsonObject, int, Action, StructuredCollectionItemContent> _content;
     private readonly StructuredCollectionActions _actions;
     private readonly EditorSessionUiState _sessionUiState;
     private readonly bool _canEditStructure;
@@ -46,7 +46,7 @@ internal sealed class StructuredCollectionEditor
         IReadOnlyList<JsonObject> items,
         Func<JsonObject, int, string> itemId,
         Func<JsonObject, int, RuntimeCollectionItemPresentationResult> presentation,
-        Func<JsonObject, int, StructuredCollectionItemContent> content,
+        Func<JsonObject, int, Action, StructuredCollectionItemContent> content,
         StructuredCollectionActions actions,
         EditorSessionUiState sessionUiState,
         bool canEditStructure = true)
@@ -82,8 +82,24 @@ internal sealed class StructuredCollectionEditor
             var itemId = _itemId(item, itemIndex);
             var expansionKey = $"{_scopeKey}:{itemId}:expanded";
             var navigationKey = $"{_scopeKey}:{itemId}:vertical-card";
-            var itemContent = _content(item, itemIndex);
             var presentation = _presentation(item, itemIndex);
+            var presentationController =
+                new EditorInternalNavigationPresentation(
+                    presentation.Title,
+                    presentation.Subtitle,
+                    presentation.Icon);
+            void RefreshPresentation()
+            {
+                var current = _presentation(item, itemIndex);
+                presentationController.Update(
+                    current.Title,
+                    current.Subtitle,
+                    current.Icon);
+            }
+            var itemContent = _content(
+                item,
+                itemIndex,
+                RefreshPresentation);
             subcards.Add(new EditorInternalNavigationSection(
                 itemId,
                 presentation.Title,
@@ -108,7 +124,8 @@ internal sealed class StructuredCollectionEditor
                 (next) => _sessionUiState.Select(navigationKey, next),
                 _sessionUiState.NavigationWidth(navigationKey, EditorInternalNavigation.DefaultNavigationWidth),
                 (next) => _sessionUiState.SetNavigationWidth(navigationKey, next),
-                Reveal: _sessionUiState.ConsumeReveal(expansionKey)));
+                Reveal: _sessionUiState.ConsumeReveal(expansionKey),
+                Presentation: presentationController));
         }
 
         var result = new StackPanel { Spacing = EditorUiDensity.Card(8) };

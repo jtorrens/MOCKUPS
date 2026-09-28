@@ -6825,6 +6825,66 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
                     .OfType<DictionaryFieldControl>()
                     .Single((field) =>
                         field.FieldId == "headerSubtitle")));
+
+            var messageText = mountedSurface
+                .GetVisualDescendants()
+                .OfType<DictionaryFieldControl>()
+                .First((field) => field.FieldId == "text");
+            var messageCard = messageText
+                .GetVisualAncestors()
+                .OfType<InstantEditorCard>()
+                .First((card) =>
+                    card.GetVisualDescendants()
+                        .OfType<DictionaryFieldControl>()
+                        .Any((field) => field.FieldId == "writeOn"));
+            messageCard.IsExpanded = true;
+            var writeOnTiming = messageCard
+                .GetVisualDescendants()
+                .OfType<DictionaryFieldControl>()
+                .Single((field) => field.FieldId == "writeOn");
+            const string nextMessageText =
+                "Mounted conversation message";
+            messageText.SetValue(
+                nextMessageText,
+                commit: true);
+            True(SpinWait.SpinUntil(
+                () =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return messageCard
+                        .GetVisualDescendants()
+                        .OfType<TextBlock>()
+                        .Any((text) => text.Text?.Contains(
+                            nextMessageText,
+                            StringComparison.Ordinal) == true);
+                },
+                TimeSpan.FromSeconds(10)));
+            True(ReferenceEquals(
+                mountedSurface,
+                authoringHost.Content));
+            True(ReferenceEquals(
+                messageCard,
+                messageText
+                    .GetVisualAncestors()
+                    .OfType<InstantEditorCard>()
+                    .First((card) =>
+                        card.GetVisualDescendants()
+                            .OfType<DictionaryFieldControl>()
+                            .Any((field) =>
+                                field.FieldId == "writeOn"))));
+            True(messageCard.IsExpanded);
+            True(ReferenceEquals(
+                messageText,
+                messageCard
+                    .GetVisualDescendants()
+                    .OfType<DictionaryFieldControl>()
+                    .Single((field) => field.FieldId == "text")));
+            True(ReferenceEquals(
+                writeOnTiming,
+                messageCard
+                    .GetVisualDescendants()
+                    .OfType<DictionaryFieldControl>()
+                    .Single((field) => field.FieldId == "writeOn")));
             window.Hide();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }

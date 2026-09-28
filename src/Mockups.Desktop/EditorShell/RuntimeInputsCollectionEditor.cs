@@ -1609,7 +1609,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 $"{collection.ItemLabel} {itemIndex + 1}",
                 $"Payload item {itemIndex + 1}",
                 EditorIcons.Component),
-            (item, itemIndex) =>
+            (item, itemIndex, refreshPresentation) =>
             {
                 void OpenComponentOverrides() =>
                     OpenRuntimeComponentOverrides(owner, collection, address, itemIndex, item);
@@ -1622,7 +1622,8 @@ internal sealed class RuntimeInputsCollectionEditor
                     itemIndex,
                     item,
                     OpenComponentOverrides,
-                    out var itemSubcards);
+                    out var itemSubcards,
+                    refreshPresentation);
                 if (childCollections is { Count: > 0 })
                 {
                     itemSubcards = itemSubcards
@@ -1722,9 +1723,13 @@ internal sealed class RuntimeInputsCollectionEditor
         int itemIndex,
         JsonObject item,
         Action openComponentOverrides,
-        out IReadOnlyList<EditorInternalNavigationSection> subcards)
+        out IReadOnlyList<EditorInternalNavigationSection> subcards,
+        Action? refreshPresentation = null)
     {
         var content = new StackPanel { Spacing = 8 };
+        var itemControls =
+            new Dictionary<string, DictionaryFieldControl>(
+                StringComparer.Ordinal);
         var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
             ? id
             : "";
@@ -1757,7 +1762,9 @@ internal sealed class RuntimeInputsCollectionEditor
                 item,
                 input,
                 refreshActionVisibility,
-                openComponentOverrides));
+                openComponentOverrides,
+                itemControls,
+                refreshPresentation));
         }
 
         var groups = ComponentInputGrouping.EmbeddedGroups(visibleCollectionFields);
@@ -1766,7 +1773,17 @@ internal sealed class RuntimeInputsCollectionEditor
         foreach (var groupId in topLevelGroupIds)
         {
             groupSubcards.Add(CreateTestValueCollectionGroupSubcard(
-                owner, preview, collection, address, itemIndex, item, groupId, groups, refreshActionVisibility));
+                owner,
+                preview,
+                collection,
+                address,
+                itemIndex,
+                item,
+                groupId,
+                groups,
+                itemControls,
+                refreshActionVisibility,
+                refreshPresentation));
         }
         var componentItemDefinition = collection.ComponentItems;
         var componentVariantField = componentItemDefinition is null
@@ -2078,7 +2095,9 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject item,
         ComponentInputDefinition input,
         Action? afterCommit = null,
-        Action? openComponentOverrides = null)
+        Action? openComponentOverrides = null,
+        IDictionary<string, DictionaryFieldControl>? itemControls = null,
+        Action? refreshPresentation = null)
     {
         var fieldIsActive = CollectionFieldAvailability.IsEnabled(
             item,
@@ -2218,6 +2237,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 DesignPreviewTestValues.CollectionValue(item, input),
                 IsHighlighted: hasComponentOverrides),
             services);
+        itemControls?[input.Id] = control;
         control.ValueCommitted += async (_, next) =>
         {
             var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
@@ -2290,11 +2310,20 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             _testValuesChanged();
             afterCommit?.Invoke();
+            refreshPresentation?.Invoke();
+            if (itemControls is not null)
+            {
+                StructuredCollectionFieldRefresh.RefreshCalculatedDependents(
+                    collection,
+                    input,
+                    itemControls);
+            }
             if (selectsComponent
                 || selectsItemRuntimeVariant
                 || collection.Fields.Any((candidate) =>
-                    candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)
-                    || candidate.BehaviorTiming?.SourceFieldId.Equals(input.Id, StringComparison.Ordinal) == true))
+                    candidate.EnabledWhenItemJsonKey.Equals(
+                        input.JsonKey,
+                        StringComparison.Ordinal)))
             {
                 _reloadAndSelect?.Invoke(owner.Node);
             }
@@ -2558,7 +2587,9 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject item,
         string groupId,
         IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups,
-        Action? afterCommit = null)
+        IDictionary<string, DictionaryFieldControl> itemControls,
+        Action? afterCommit = null,
+        Action? refreshPresentation = null)
     {
         var groupInputs = groups[groupId];
         var content = new StackPanel { Spacing = 8 };
@@ -2578,14 +2609,26 @@ internal sealed class RuntimeInputsCollectionEditor
                 itemIndex,
                 item,
                 input,
-                afterCommit));
+                afterCommit,
+                itemControls: itemControls,
+                refreshPresentation: refreshPresentation));
         }
 
         var childSubcards = new List<EditorInternalNavigationSection>();
         foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
         {
             childSubcards.Add(CreateTestValueCollectionGroupSubcard(
-                owner, preview, collection, address, itemIndex, item, childId, groups, afterCommit));
+                owner,
+                preview,
+                collection,
+                address,
+                itemIndex,
+                item,
+                childId,
+                groups,
+                itemControls,
+                afterCommit,
+                refreshPresentation));
         }
         return new EditorInternalNavigationSection(
             groupId,

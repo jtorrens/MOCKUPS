@@ -149,8 +149,11 @@ It includes:
   restoring both embedded breadcrumbs and root editor view state, scalar
   same-owner commits retaining the exact mounted card, registered control and
   Preview-authoring surface without a tree reload, declared structural fields
-  replacing only after preparation, and fixed Preview contexts retaining their exact breadcrumbs while
-  their authoring identity resolves to the current canonical project tree;
+  replacing only after preparation, structured Runtime item text retaining its
+  expanded card while refreshing metadata-owned presentation and natural
+  timing dependents in place, and fixed Preview contexts retaining their exact
+  breadcrumbs while their authoring identity resolves to the current canonical
+  project tree;
 - headless Avalonia List Item/List authoring surfaces, including Variant
   selection, numeric active-set and state Runtime values, shared List item
   dimensions, General plus promoted Content Set sections, compact Avatar/Label/

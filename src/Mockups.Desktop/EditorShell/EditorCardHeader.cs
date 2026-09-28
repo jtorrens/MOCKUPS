@@ -10,6 +10,64 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class EditorCardHeader
 {
+    public static Control Create(
+        EditorInternalNavigationPresentation presentation)
+    {
+        var iconHost = new ContentControl();
+        var label = new TextBlock
+        {
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        var subtitle = new TextBlock
+        {
+            FontSize = 12,
+            Opacity = 0.72,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        var textPanel = new StackPanel
+        {
+            Spacing = 2,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                label,
+                subtitle,
+            },
+        };
+        var header = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            ColumnSpacing = 12,
+            VerticalAlignment = VerticalAlignment.Center,
+            ClipToBounds = true,
+            Children =
+            {
+                iconHost,
+            },
+        };
+        Grid.SetColumn(textPanel, 1);
+        header.Children.Add(textPanel);
+
+        void Apply()
+        {
+            label.Text = presentation.Label;
+            subtitle.Text = presentation.Subtitle;
+            subtitle.IsVisible = !string.IsNullOrWhiteSpace(
+                presentation.Subtitle);
+            iconHost.Content = EditorIcons.CreateSemantic(
+                presentation.Label,
+                presentation.Icon,
+                15);
+        }
+
+        presentation.Changed += Apply;
+        Apply();
+        return header;
+    }
+
     public static Control Create(string label, string subtitle, Control icon)
     {
         var header = new Grid

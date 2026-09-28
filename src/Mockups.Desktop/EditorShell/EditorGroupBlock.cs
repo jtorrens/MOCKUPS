@@ -128,13 +128,16 @@ internal static class EditorGroupBlock
         out InstantEditorCard card,
         bool isExpanded = false,
         Control? headerTrailing = null,
-        double hierarchyIndent = 0)
+        double hierarchyIndent = 0,
+        EditorInternalNavigationPresentation? presentation = null)
     {
         card = new InstantEditorCard(
-            EditorCardHeader.Create(
-                label,
-                subtitle,
-                EditorIcons.CreateSemantic(label, icon, 15)),
+            presentation is null
+                ? EditorCardHeader.Create(
+                    label,
+                    subtitle,
+                    EditorIcons.CreateSemantic(label, icon, 15))
+                : EditorCardHeader.Create(presentation),
             new Border
             {
                 Padding = EditorUiDensity.CardThickness(10, 4, 10, 12),

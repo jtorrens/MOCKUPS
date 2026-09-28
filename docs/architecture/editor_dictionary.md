@@ -34,6 +34,10 @@ is structural and declarative: it occurs only when layout visibility names the
 field as a controller, the registered control reports a Runtime-contract
 change, or a collection lifecycle changes stable structure. A scalar commit
 never reloads the navigation tree merely to refresh its editor.
+Inside a structured collection, scalar commits retain the exact item card and
+field controls. Item title, subtitle, icon and calculated `BehaviorTiming`
+dependents update in place from their declared metadata. Only a dependency
+that changes the visible field set may recompose that affected structure.
 
 Structured collections have an owning collection editor. Scalar fields inside
 each item still use dictionary definitions and controls. Their Add, Duplicate,
