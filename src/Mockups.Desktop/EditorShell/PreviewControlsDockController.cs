@@ -18,7 +18,6 @@ internal sealed class PreviewControlsDockController :
 {
     private const int UtilityRowIndex = 0;
     private const int SplitterRowIndex = 1;
-    private const double DefaultUtilityHeight = 240;
     private const double SplitterHeight = 10;
     private readonly Window _owner;
     private readonly Panel _headerDockHost;
@@ -42,7 +41,8 @@ internal sealed class PreviewControlsDockController :
     private PixelPoint? _floatingPosition;
     private double _floatingWidth = 720;
     private double _floatingHeight = 330;
-    private double _dockedUtilityHeight = DefaultUtilityHeight;
+    private double _dockedUtilityHeight =
+        PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight;
     private bool _isDisposing;
     private bool _restoreFloatingWindowAfterModal;
     private int _transferRevision;
@@ -67,6 +67,11 @@ internal sealed class PreviewControlsDockController :
         _splitter = splitter;
         _toggleButton = toggleButton;
         _isDark = isDark;
+        var utilityRow = _previewGrid.RowDefinitions[UtilityRowIndex];
+        utilityRow.MinHeight =
+            PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight;
+        utilityRow.Height = new GridLength(
+            PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight);
         _toggleButton.Background = Brushes.Transparent;
         _toggleButton.BorderBrush = Brushes.Transparent;
         _toggleButton.BorderThickness = new Thickness(0);

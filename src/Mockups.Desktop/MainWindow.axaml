@@ -232,7 +232,7 @@
                         </Border>
                     <Grid x:Name="PreviewPanelGrid"
                           Margin="10"
-                          RowDefinitions="240,10,*,Auto">
+                          RowDefinitions="Auto,10,*,Auto">
                         <Border x:Name="PreviewUtilitySurface"
                                 Grid.Row="0"
                                 MinHeight="132"

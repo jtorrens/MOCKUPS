@@ -7427,6 +7427,9 @@ static void PreviewShellVisualTreeIsResponsive()
             var navigation = Required(window.FindControl<Border>("NavigationPanelBorder"));
             var editor = Required(window.FindControl<Border>("EditorPanelBorder"));
             var preview = Required(window.FindControl<Border>("PreviewPanelBorder"));
+            var previewGrid = Required(window.FindControl<Grid>("PreviewPanelGrid"));
+            var previewUtilitySurface = Required(
+                window.FindControl<Border>("PreviewUtilitySurface"));
             var tabs = Required(window.FindControl<TabControl>("PreviewUtilityTabs"));
             var authoringTab = Required(window.FindControl<TabItem>("PreviewAuthoringDataTab"));
             var authoringHost = Required(window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
@@ -7762,6 +7765,9 @@ static void PreviewShellVisualTreeIsResponsive()
                 True(shotTimelineControls.IsVisible);
                 True(shotTimelineSliderRow.IsVisible);
                 True(
+                    previewGrid.RowDefinitions[0].ActualHeight
+                        >= PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight);
+                True(
                     shotFrameSlider.Bounds.Width
                         >= PreviewPanelLayoutPolicy.MinimumTimelineSliderWidth);
                 True(double.IsPositiveInfinity(shotFrameSlider.MaxWidth));
@@ -7771,6 +7777,9 @@ static void PreviewShellVisualTreeIsResponsive()
                 var timelineSliderRowRect = BoundsInWindow(shotTimelineSliderRow, window);
                 var sliderRect = BoundsInWindow(shotFrameSlider, window);
                 var frameTextRect = BoundsInWindow(shotFrameText, window);
+                var previewUtilityRect = BoundsInWindow(
+                    previewUtilitySurface,
+                    window);
                 var orientationRect = BoundsInWindow(orientationComboBox, window);
                 var splitControlsRect = BoundsInWindow(referenceSplitControls, window);
                 var selectedNavigationRow = Required(window
@@ -7820,6 +7829,10 @@ static void PreviewShellVisualTreeIsResponsive()
                     && Math.Abs(frameTextRect.Right - timelineSliderRowRect.Right) <= 0.5
                     && sliderRect.Right <= frameTextRect.Left + 0.5,
                     $"{productionSize}: Production slider and frame count do not share one full row");
+                LayoutCheck(
+                    timelineSliderRowRect.Bottom
+                        <= previewUtilityRect.Bottom + 0.5,
+                    $"{productionSize}: Production time slider is outside the visible Preview utility area");
                 LayoutCheck(
                     splitControlsRect.Top <= timelineSliderRowRect.Bottom + 0.5,
                     $"{productionSize}: Split controls are not immediately below the timeline");
