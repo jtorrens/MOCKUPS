@@ -13,7 +13,8 @@ internal sealed record EditorNavigationPanelState(
 
 internal sealed class EditorNavigationPanelController
 {
-    internal const double CollapsedRailWidth = 48;
+    internal const double CollapsedRailWidth =
+        PreviewPanelLayoutPolicy.CollapsedNavigationRailWidth;
     private const double SplitterWidth = 6;
     private readonly Grid _shellColumns;
     private readonly Control _panel;
@@ -28,6 +29,7 @@ internal sealed class EditorNavigationPanelController
     private double _expandedPreviewWidth =
         PreviewPanelLayoutPolicy.ForWindow(
             PreviewPanelLayoutPolicy.DefaultWindowWidth).PreviewPanelWidth;
+    private bool _requestedCollapsed;
 
     public EditorNavigationPanelController(
         Grid shellColumns,
@@ -58,20 +60,23 @@ internal sealed class EditorNavigationPanelController
         _expandedWidth = ValidExpandedWidth(expandedWidth);
         _expandedEditorWidth = ValidEditorWidth(expandedEditorWidth);
         _expandedPreviewWidth = ValidPreviewWidth(expandedPreviewWidth);
-        Apply(isCollapsed, captureCurrentWidth: false);
+        _requestedCollapsed = isCollapsed;
+        ApplyRequested(captureCurrentWidth: false);
     }
 
     public void EnsureVisible()
     {
-        if (IsCollapsed)
-        {
-            Apply(isCollapsed: false, captureCurrentWidth: false);
-        }
+        _requestedCollapsed = false;
+        ApplyRequested(captureCurrentWidth: false);
     }
 
     public void Reflow()
     {
-        Apply(IsCollapsed, captureCurrentWidth: false);
+        var mustAutoCollapse =
+            !PreviewPanelLayoutPolicy.CanShowExpandedNavigation(
+                _windowWidth());
+        ApplyRequested(
+            captureCurrentWidth: !IsCollapsed && mustAutoCollapse);
     }
 
     public EditorNavigationPanelState Snapshot()
@@ -81,7 +86,7 @@ internal sealed class EditorNavigationPanelController
             CaptureExpandedGeometry();
         }
         return new EditorNavigationPanelState(
-            IsCollapsed,
+            _requestedCollapsed,
             _expandedWidth,
             _expandedEditorWidth,
             _expandedPreviewWidth);
@@ -89,7 +94,24 @@ internal sealed class EditorNavigationPanelController
 
     private void Toggle()
     {
-        Apply(!IsCollapsed, captureCurrentWidth: !IsCollapsed);
+        if (IsCollapsed)
+        {
+            _requestedCollapsed = false;
+            ApplyRequested(captureCurrentWidth: false);
+            return;
+        }
+
+        _requestedCollapsed = true;
+        ApplyRequested(captureCurrentWidth: true);
+    }
+
+    private void ApplyRequested(bool captureCurrentWidth)
+    {
+        var shouldCollapse =
+            _requestedCollapsed
+            || !PreviewPanelLayoutPolicy.CanShowExpandedNavigation(
+                _windowWidth());
+        Apply(shouldCollapse, captureCurrentWidth);
     }
 
     private void Apply(
@@ -128,7 +150,8 @@ internal sealed class EditorNavigationPanelController
                 PreviewPanelLayoutPolicy.ClampRestoredColumns(
                     _windowWidth(),
                     _expandedWidth,
-                    _expandedEditorWidth);
+                    _expandedEditorWidth,
+                    _expandedPreviewWidth);
             _shellColumns.ColumnDefinitions[0].MinWidth =
                 PreviewPanelLayoutPolicy.MinimumLeftColumnWidth;
             _shellColumns.ColumnDefinitions[0].Width =
@@ -136,11 +159,14 @@ internal sealed class EditorNavigationPanelController
             _shellColumns.ColumnDefinitions[1].Width =
                 new GridLength(SplitterWidth);
             _shellColumns.ColumnDefinitions[2].Width =
-                new GridLength(appliedColumns.EditorPanelWidth);
+                new GridLength(1, GridUnitType.Star);
             _shellColumns.ColumnDefinitions[4].MinWidth =
                 PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth;
             _shellColumns.ColumnDefinitions[4].Width =
-                new GridLength(1, GridUnitType.Star);
+                new GridLength(appliedColumns.PreviewPanelWidth);
+            _expandedWidth = appliedColumns.LeftPanelWidth;
+            _expandedEditorWidth = appliedColumns.EditorPanelWidth;
+            _expandedPreviewWidth = appliedColumns.PreviewPanelWidth;
             _panel.IsVisible = true;
             _splitter.IsVisible = true;
         }
@@ -188,16 +214,24 @@ internal sealed class EditorNavigationPanelController
     private static double ValidPreviewWidth(double width)
     {
         return double.IsFinite(width) && width > 0
-            ? width
+            ? Math.Max(
+                PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth,
+                width)
             : PreviewPanelLayoutPolicy.ForWindow(
                 PreviewPanelLayoutPolicy.DefaultWindowWidth).PreviewPanelWidth;
     }
 
     private void RefreshTogglePresentation()
     {
+        var autoCollapsed =
+            IsCollapsed
+            && !_requestedCollapsed;
+        _toggleButton.IsEnabled = !autoCollapsed;
         EditorAccessibility.Describe(
             _toggleButton,
-            IsCollapsed
+            autoCollapsed
+                ? "Navigation panel hidden until the window is wider"
+                : IsCollapsed
                 ? "Show navigation panel"
                 : "Hide navigation panel");
         _toggleButton.Margin = IsCollapsed

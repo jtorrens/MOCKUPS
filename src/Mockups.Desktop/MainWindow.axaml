@@ -78,17 +78,17 @@
         <Grid x:Name="ShellColumns"
               Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300" MinWidth="300" />
+                <ColumnDefinition Width="380" MinWidth="380" />
                 <ColumnDefinition Width="6" />
-                <ColumnDefinition Width="2*" MinWidth="280" />
+                <ColumnDefinition Width="*" MinWidth="280" />
                 <ColumnDefinition Width="6" />
-                <ColumnDefinition Width="*" MinWidth="428" />
+                <ColumnDefinition Width="520" MinWidth="520" />
             </Grid.ColumnDefinitions>
             <Grid x:Name="NavigationPanelHost"
                   Grid.Column="0">
                 <Border x:Name="NavigationPanelBorder"
                         Margin="10"
-                        MinWidth="280">
+                        MinWidth="360">
                     <suki:GlassCard>
                         <DockPanel>
                         <Border DockPanel.Dock="Top"

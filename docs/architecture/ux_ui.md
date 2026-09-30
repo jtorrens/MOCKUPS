@@ -291,7 +291,10 @@ has a real minimum that preserves a clipped text column beside its complete
 row actions, and the Preview column has a real minimum that preserves the
 Production time slider. The upper Preview utility region also has a policy-owned
 minimum height, so responsive wrapping cannot push that slider below the visible
-region. These minima are independent of star sizing. The setup section uses
+region. These minima are independent of star sizing. If all three expanded
+panels cannot satisfy them, Navigation collapses to its rail automatically;
+resizing wider restores the exact session widths unless the user explicitly
+left Navigation collapsed. The setup section uses
 four columns only when its measured content width allows them, otherwise it
 reflows to two rows and finally one scrollable column. Splitter movement, the
 selected utility tab and session state remain intact across these layout

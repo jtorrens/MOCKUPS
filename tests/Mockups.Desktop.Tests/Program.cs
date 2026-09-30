@@ -6946,15 +6946,23 @@ static void PreviewShellLayoutIsResponsive()
     Equal(PreviewSetupLayoutMode.FourColumns, PreviewPanelLayoutPolicy.SetupMode(580));
 
     var restored = PreviewPanelLayoutPolicy.ClampRestoredColumns(
-        PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth,
+        PreviewPanelLayoutPolicy.DefaultWindowWidth,
         requestedLeftWidth: 800,
-        requestedEditorWidth: 800);
+        requestedEditorWidth: 800,
+        requestedPreviewWidth: 800);
     True(restored.LeftPanelWidth >= PreviewPanelLayoutPolicy.MinimumLeftColumnWidth);
     True(restored.EditorPanelWidth >= PreviewPanelLayoutPolicy.MinimumEditorColumnWidth);
+    True(restored.PreviewPanelWidth >= PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth);
     True(restored.LeftPanelWidth
         + restored.EditorPanelWidth
-        + PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth
-        <= PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth - 32);
+        + restored.PreviewPanelWidth
+        <= PreviewPanelLayoutPolicy.DefaultWindowWidth - 32);
+    True(!PreviewPanelLayoutPolicy.CanShowExpandedNavigation(
+        PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth));
+    True(PreviewPanelLayoutPolicy.ForWindow(
+        PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth).IsNavigationCollapsed);
+    True(!PreviewPanelLayoutPolicy.ForWindow(
+        PreviewPanelLayoutPolicy.DefaultWindowWidth).IsNavigationCollapsed);
     Equal(
         686d,
         PreviewPanelLayoutPolicy.ClampCollapsedPreviewWidth(
@@ -6978,7 +6986,7 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
             typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            const double requestedExpandedWidth = 336;
+            const double requestedExpandedWidth = 420;
             var first = CreateTestWindow(temporary);
             first.Width = 1700;
             first.Height = 900;
@@ -7479,7 +7487,18 @@ static void PreviewShellVisualTreeIsResponsive()
 
                 LayoutCheck(window.ClientSize.Width <= size.Width + 0.5, $"{size}: Client width escaped the window");
                 LayoutCheck(shell.Bounds.Width > 0, $"{size}: shell has no width");
-                LayoutCheck(navigation.Bounds.Width >= navigation.MinWidth, $"{size}: Navigation is below its minimum");
+                var expectedShellLayout =
+                    PreviewPanelLayoutPolicy.ForWindow(size.Width);
+                LayoutCheck(
+                    navigation.IsVisible
+                        == !expectedShellLayout.IsNavigationCollapsed,
+                    $"{size}: Navigation collapse does not match the shared layout policy");
+                if (navigation.IsVisible)
+                {
+                    LayoutCheck(
+                        navigation.Bounds.Width >= navigation.MinWidth,
+                        $"{size}: Navigation is below its minimum");
+                }
                 LayoutCheck(editor.Bounds.Width >= editor.MinWidth, $"{size}: Editor is below its minimum");
                 LayoutCheck(preview.Bounds.Width >= preview.MinWidth, $"{size}: Preview is below its visual minimum");
                 LayoutCheck(
@@ -25194,13 +25213,20 @@ static string CreateDesktopTestDatabase(
 
 static void DefaultDesktopDatabaseUsesApplicationData()
 {
+    var applicationData = Environment.GetFolderPath(
+        Environment.SpecialFolder.LocalApplicationData);
     Equal(
         Path.Combine(
-            Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData),
+            applicationData,
             "MOCKUPS",
             "mockups.sqlite"),
         SqlitePersistence.DefaultDatabasePath());
+    Equal(
+        Path.Combine(
+            applicationData,
+            "MOCKUPS",
+            "window-state.json"),
+        EditorShellStateService.DefaultShellStatePath());
 }
 
 static MainWindow CreateTestWindow(string databasePath) =>

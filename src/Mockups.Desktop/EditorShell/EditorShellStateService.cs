@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -79,16 +80,11 @@ internal sealed class EditorShellStateService
         var columns = PreviewPanelLayoutPolicy.ClampRestoredColumns(
             _window.Width,
             state.LeftPanelWidth,
-            state.EditorPanelWidth);
-        _shellColumns.ColumnDefinitions[0].Width =
-            new GridLength(columns.LeftPanelWidth);
-        _shellColumns.ColumnDefinitions[2].Width =
-            new GridLength(columns.EditorPanelWidth);
-        _shellColumns.ColumnDefinitions[4].Width =
-            new GridLength(1, GridUnitType.Star);
+            state.EditorPanelWidth,
+            state.RightPanelWidth);
         NavigationPanelExpandedWidth = columns.LeftPanelWidth;
         NavigationPanelExpandedEditorWidth = columns.EditorPanelWidth;
-        NavigationPanelExpandedPreviewWidth = state.RightPanelWidth;
+        NavigationPanelExpandedPreviewWidth = columns.PreviewPanelWidth;
         IsNavigationPanelCollapsed = state.IsNavigationPanelCollapsed;
         IsDark = state.IsDark;
         SukiColor = state.SukiColor;
@@ -149,17 +145,9 @@ internal sealed class EditorShellStateService
                 new JsonSerializerOptions { WriteIndented = true }));
     }
 
-    private static string DefaultShellStatePath()
-    {
-        var root = AppContext.BaseDirectory;
-        return Path.GetFullPath(Path.Combine(
-            root,
-            "..",
-            "..",
-            "..",
-            "data",
-            "window-state.json"));
-    }
+    internal static string DefaultShellStatePath() =>
+        CurrentLocalDocument.ApplicationDataPath(
+            "window-state.json");
 
     private void RequireCurrent(ShellWindowState state)
     {

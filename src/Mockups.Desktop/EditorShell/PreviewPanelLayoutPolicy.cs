@@ -15,26 +15,32 @@ internal sealed record PreviewShellLayout(
     double PreviewPanelWidth,
     double HeaderStripWidth,
     double SetupGridWidth,
-    PreviewSetupLayoutMode SetupMode);
+    PreviewSetupLayoutMode SetupMode,
+    bool IsNavigationCollapsed);
 
-internal sealed record RestoredShellColumns(double LeftPanelWidth, double EditorPanelWidth);
+internal sealed record RestoredShellColumns(
+    double LeftPanelWidth,
+    double EditorPanelWidth,
+    double PreviewPanelWidth);
 
 internal static class PreviewPanelLayoutPolicy
 {
     public const double SupportedMinimumWindowWidth = 1040;
     public const double DefaultWindowWidth = 1440;
-    public const double MinimumPreviewColumnWidth = 428;
+    public const double MinimumPreviewColumnWidth = 520;
     public const double MinimumPreviewUtilityHeight = 320;
     public const double MinimumTimelineSliderWidth = 240;
     public const double MinimumHeaderStripWidth = 320;
     public const double MinimumEditorColumnWidth = 280;
-    public const double MinimumLeftColumnWidth = 300;
-    public const double DefaultLeftColumnWidth = 300;
+    public const double MinimumLeftColumnWidth = 380;
+    public const double DefaultLeftColumnWidth = 380;
+    public const double CollapsedNavigationRailWidth = 48;
     public const double FourColumnSetupWidth = 580;
     public const double TwoColumnSetupWidth = 280;
 
     private const double RootHorizontalPadding = 20;
-    private const double SplitterWidth = 12;
+    private const double ExpandedSplitterWidth = 12;
+    private const double PreviewSplitterWidth = 6;
     private const double PreviewHeaderChrome = 80;
     private const double PreviewSetupChrome = 46;
 
@@ -54,16 +60,37 @@ internal static class PreviewPanelLayoutPolicy
     public static PreviewShellLayout ForWindow(double windowWidth)
     {
         var contentWidth = Math.Max(0, windowWidth - RootHorizontalPadding);
-        var leftWidth = DefaultLeftColumnWidth;
-        var weightedWidth = Math.Max(0, contentWidth - leftWidth - SplitterWidth);
-        var previewWidth = Math.Max(MinimumPreviewColumnWidth, weightedWidth / 3);
-        var editorWidth = weightedWidth - previewWidth;
-        if (editorWidth < MinimumEditorColumnWidth)
+        var isNavigationCollapsed = !CanShowExpandedNavigation(windowWidth);
+        double leftWidth;
+        double editorWidth;
+        double previewWidth;
+        if (isNavigationCollapsed)
         {
-            var deficit = MinimumEditorColumnWidth - editorWidth;
-            leftWidth = Math.Max(MinimumLeftColumnWidth, leftWidth - deficit);
-            weightedWidth = Math.Max(0, contentWidth - leftWidth - SplitterWidth);
-            editorWidth = Math.Max(MinimumEditorColumnWidth, weightedWidth - previewWidth);
+            leftWidth = CollapsedNavigationRailWidth;
+            previewWidth = ClampCollapsedPreviewWidth(
+                windowWidth,
+                MinimumPreviewColumnWidth,
+                CollapsedNavigationRailWidth,
+                PreviewSplitterWidth);
+            editorWidth = Math.Max(
+                MinimumEditorColumnWidth,
+                contentWidth
+                - leftWidth
+                - PreviewSplitterWidth
+                - previewWidth);
+        }
+        else
+        {
+            leftWidth = DefaultLeftColumnWidth;
+            var weightedWidth = Math.Max(
+                0,
+                contentWidth - leftWidth - ExpandedSplitterWidth);
+            previewWidth = Math.Max(
+                MinimumPreviewColumnWidth,
+                weightedWidth / 3);
+            editorWidth = Math.Max(
+                MinimumEditorColumnWidth,
+                weightedWidth - previewWidth);
         }
 
         var headerWidth = Math.Max(0, previewWidth - PreviewHeaderChrome);
@@ -74,30 +101,66 @@ internal static class PreviewPanelLayoutPolicy
             previewWidth,
             headerWidth,
             setupWidth,
-            SetupMode(setupWidth));
+            SetupMode(setupWidth),
+            isNavigationCollapsed);
     }
+
+    public static bool CanShowExpandedNavigation(double windowWidth) =>
+        windowWidth
+        >= RootHorizontalPadding
+        + ExpandedSplitterWidth
+        + MinimumLeftColumnWidth
+        + MinimumEditorColumnWidth
+        + MinimumPreviewColumnWidth;
 
     public static RestoredShellColumns ClampRestoredColumns(
         double windowWidth,
         double requestedLeftWidth,
-        double requestedEditorWidth)
+        double requestedEditorWidth,
+        double requestedPreviewWidth)
     {
         var available = Math.Max(
-            MinimumLeftColumnWidth + MinimumEditorColumnWidth,
-            windowWidth - RootHorizontalPadding - SplitterWidth - MinimumPreviewColumnWidth);
-        var leftWidth = Math.Clamp(
-            requestedLeftWidth,
+            MinimumLeftColumnWidth
+            + MinimumEditorColumnWidth
+            + MinimumPreviewColumnWidth,
+            windowWidth
+            - RootHorizontalPadding
+            - ExpandedSplitterWidth);
+        var leftWidth = Math.Max(
             MinimumLeftColumnWidth,
-            Math.Max(MinimumLeftColumnWidth, available - MinimumEditorColumnWidth));
-        var editorWidth = Math.Clamp(
-            requestedEditorWidth,
+            requestedLeftWidth);
+        var editorWidth = Math.Max(
             MinimumEditorColumnWidth,
-            Math.Max(MinimumEditorColumnWidth, available - leftWidth));
-        if (leftWidth + editorWidth > available)
+            requestedEditorWidth);
+        var previewWidth = Math.Max(
+            MinimumPreviewColumnWidth,
+            requestedPreviewWidth);
+        var overflow = leftWidth + editorWidth + previewWidth - available;
+        if (overflow > 0)
         {
-            editorWidth = Math.Max(MinimumEditorColumnWidth, available - leftWidth);
+            var editorReduction = Math.Min(
+                overflow,
+                editorWidth - MinimumEditorColumnWidth);
+            editorWidth -= editorReduction;
+            overflow -= editorReduction;
+            var previewReduction = Math.Min(
+                overflow,
+                previewWidth - MinimumPreviewColumnWidth);
+            previewWidth -= previewReduction;
+            overflow -= previewReduction;
+            var leftReduction = Math.Min(
+                overflow,
+                leftWidth - MinimumLeftColumnWidth);
+            leftWidth -= leftReduction;
         }
-        return new RestoredShellColumns(leftWidth, editorWidth);
+        else if (overflow < 0)
+        {
+            editorWidth -= overflow;
+        }
+        return new RestoredShellColumns(
+            leftWidth,
+            editorWidth,
+            previewWidth);
     }
 
     public static double ClampCollapsedPreviewWidth(
