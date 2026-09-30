@@ -4924,7 +4924,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
             () =>
             {
                 var window = CreateTestWindow(temporary);
-                window.Width = 1040;
+                window.Width = PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth;
                 window.Height = 700;
                 var content = typeof(MainWindow)
                     .GetField(
@@ -7182,10 +7182,6 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         {
             Children = { root, modalHost },
         };
-        EditorModalWindowScope.RegisterHost(
-            owner,
-            modalHost,
-            modalOcclusion);
         owner.Show();
         owner.Measure(new Size(1000, 700));
         owner.Arrange(new Rect(0, 0, 1000, 700));
@@ -7202,6 +7198,11 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
                 splitter,
                 toggle,
                 () => true);
+        EditorModalWindowScope.RegisterHost(
+            owner,
+            modalHost,
+            modalOcclusion,
+            controller);
         toggle.RaiseEvent(
             new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
@@ -7264,6 +7265,7 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         True(!dialog.IsVisible);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
+        True(!floating.IsVisible);
         True(!auxiliary.IsEnabled);
 
         var childDialog = new SukiWindow
@@ -7288,6 +7290,7 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         True(!dialog.Topmost);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
+        True(!floating.IsVisible);
         True(!auxiliary.IsEnabled);
         EditorModalWindowScope.Close(childDialog, false);
         Equal(false, childResult.GetAwaiter().GetResult());
@@ -7309,6 +7312,7 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         True(!dialog.Topmost);
         True(floating.Topmost);
         True(floating.IsEnabled);
+        True(floating.IsVisible);
         True(auxiliary.IsEnabled);
         auxiliary.Close();
 
@@ -7457,7 +7461,9 @@ static void PreviewShellVisualTreeIsResponsive()
 
             foreach (var size in new[]
                      {
-                         new Size(1040, 680),
+                         new Size(
+                             PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth,
+                             680),
                          new Size(1440, 900),
                      })
             {
@@ -7546,8 +7552,10 @@ static void PreviewShellVisualTreeIsResponsive()
                 Equal(selectedTab, tabs.SelectedItem);
             }
 
-            shell.ColumnDefinitions[0].Width = new GridLength(240);
-            shell.ColumnDefinitions[2].Width = new GridLength(280);
+            shell.ColumnDefinitions[0].Width = new GridLength(
+                PreviewPanelLayoutPolicy.MinimumLeftColumnWidth);
+            shell.ColumnDefinitions[2].Width = new GridLength(
+                PreviewPanelLayoutPolicy.MinimumEditorColumnWidth);
             shell.ColumnDefinitions[4].Width = new GridLength(1, GridUnitType.Star);
             Dispatcher.UIThread.RunJobs();
             Equal(4, setupGrid.ColumnDefinitions.Count);
@@ -7635,6 +7643,26 @@ static void PreviewShellVisualTreeIsResponsive()
                 .OfType<TextBlock>()
                 .Any((text) => text.Text is "General"
                     || text.Text?.EndsWith(" · Keyframes", StringComparison.Ordinal) == true));
+            var shotTimelineZoom = Required(shotTimelineSurface
+                .GetVisualDescendants()
+                .OfType<PreviewScreenTimelineZoomControl>()
+                .SingleOrDefault());
+            var shotTimelineVideo = Required(shotTimelineSurface
+                .GetVisualDescendants()
+                .OfType<Button>()
+                .SingleOrDefault((button) =>
+                    Avalonia.Automation.AutomationProperties.GetName(button)
+                        == "Show or hide the Shot reference video"));
+            var shotTimelineZoomRect = BoundsInWindow(
+                shotTimelineZoom,
+                window);
+            var shotTimelineVideoRect = BoundsInWindow(
+                shotTimelineVideo,
+                window);
+            LayoutCheck(
+                shotTimelineVideoRect.Left
+                    >= shotTimelineZoomRect.Right - 0.5,
+                "Shot Timeline reference-video action is not right of its scale control");
             var shotAnimationHost = Required(
                 typeof(PreviewScreenTimelineSurface)
                     .GetField(
@@ -7718,7 +7746,9 @@ static void PreviewShellVisualTreeIsResponsive()
             True(referenceSplitControls.IsVisible);
             foreach (var productionSize in new[]
                      {
-                         new Size(1040, 680),
+                         new Size(
+                             PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth,
+                             680),
                          new Size(1440, 900),
                      })
             {
@@ -7731,6 +7761,9 @@ static void PreviewShellVisualTreeIsResponsive()
 
                 True(shotTimelineControls.IsVisible);
                 True(shotTimelineSliderRow.IsVisible);
+                True(
+                    shotFrameSlider.Bounds.Width
+                        >= PreviewPanelLayoutPolicy.MinimumTimelineSliderWidth);
                 True(double.IsPositiveInfinity(shotFrameSlider.MaxWidth));
                 var navigationRect = BoundsInWindow(shotTimelineControls, window);
                 var primaryControlsRect = BoundsInWindow(primaryControls, window);
@@ -7740,9 +7773,38 @@ static void PreviewShellVisualTreeIsResponsive()
                 var frameTextRect = BoundsInWindow(shotFrameText, window);
                 var orientationRect = BoundsInWindow(orientationComboBox, window);
                 var splitControlsRect = BoundsInWindow(referenceSplitControls, window);
+                var selectedNavigationRow = Required(window
+                    .FindControl<StackPanel>("NavigationCardsPanel")
+                    ?.GetVisualDescendants()
+                    .OfType<Border>()
+                    .SingleOrDefault((row) =>
+                        row.Tag is EditorHierarchicalNavigationMetadata metadata
+                        && metadata.NodeId == productionShot.Id));
+                var selectedNavigationGrid = Required(
+                    selectedNavigationRow.Child as Grid);
+                var selectedNavigationTitle = Required(selectedNavigationGrid
+                    .Children
+                    .OfType<StackPanel>()
+                    .SingleOrDefault((child) =>
+                        Grid.GetColumn(child) < 3));
+                var selectedNavigationActions = Required(selectedNavigationGrid
+                    .Children
+                    .OfType<StackPanel>()
+                    .SingleOrDefault((child) =>
+                        Grid.GetColumn(child) == 3));
+                var selectedNavigationTitleRect = BoundsInWindow(
+                    selectedNavigationTitle,
+                    window);
+                var selectedNavigationActionsRect = BoundsInWindow(
+                    selectedNavigationActions,
+                    window);
                 LayoutCheck(
                     Math.Abs(orientationRect.Top - primaryControlsRect.Top) <= 0.5,
                     $"{productionSize}: Orientation is not in the compact Preview row");
+                LayoutCheck(
+                    selectedNavigationTitleRect.Right
+                        <= selectedNavigationActionsRect.Left + 0.5,
+                    $"{productionSize}: Navigation text overlaps its row actions");
                 LayoutCheck(
                     primaryControlsRect.Top - productionContextRect.Bottom <= 16,
                     $"{productionSize}: Production context leaves excess space before Preview controls "

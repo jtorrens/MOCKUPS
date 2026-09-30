@@ -4,13 +4,17 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Common;
 using SukiUI.Controls;
 using System;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class PreviewControlsDockController : IDisposable
+internal sealed class PreviewControlsDockController :
+    IDisposable,
+    IEditorModalOcclusionParticipant
 {
     private const int UtilityRowIndex = 0;
     private const int SplitterRowIndex = 1;
@@ -40,6 +44,7 @@ internal sealed class PreviewControlsDockController : IDisposable
     private double _floatingHeight = 330;
     private double _dockedUtilityHeight = DefaultUtilityHeight;
     private bool _isDisposing;
+    private bool _restoreFloatingWindowAfterModal;
     private int _transferRevision;
 
     public PreviewControlsDockController(
@@ -74,6 +79,7 @@ internal sealed class PreviewControlsDockController : IDisposable
         Grid.SetRow(_floatingUtilityHost, 1);
         floatingLayout.Children.Add(_floatingUtilityHost);
         _floatingHost.Content = floatingLayout;
+        _floatingHeaderHost.PointerPressed += OnFloatingHeaderPointerPressed;
         RefreshTogglePresentation();
     }
 
@@ -109,6 +115,48 @@ internal sealed class PreviewControlsDockController : IDisposable
         {
             EditorUiTextScale.Apply(_floatingWindow, scale);
         }
+    }
+
+    public Task PrepareAsync()
+    {
+        _restoreFloatingWindowAfterModal =
+            IsDetached
+            && _floatingWindow?.IsVisible == true;
+        if (_restoreFloatingWindowAfterModal)
+        {
+            CaptureFloatingGeometry();
+        }
+        return Task.CompletedTask;
+    }
+
+    public void Occlude()
+    {
+        if (_restoreFloatingWindowAfterModal)
+        {
+            _floatingWindow?.Hide();
+        }
+    }
+
+    public void Restore()
+    {
+        if (!_restoreFloatingWindowAfterModal)
+        {
+            return;
+        }
+
+        _restoreFloatingWindowAfterModal = false;
+        if (_isDisposing || !IsDetached || _floatingWindow is null)
+        {
+            return;
+        }
+
+        _floatingWindow.Width = _floatingWidth;
+        _floatingWindow.Height = _floatingHeight;
+        if (_floatingPosition is { } position)
+        {
+            _floatingWindow.Position = position;
+        }
+        _floatingWindow.Show(_owner);
     }
 
     public void Dispose()
@@ -273,6 +321,23 @@ internal sealed class PreviewControlsDockController : IDisposable
 
     private void OnFloatingWindowKeyDown(object? sender, KeyEventArgs args) =>
         PreviewKeyDown?.Invoke(sender, args);
+
+    private void OnFloatingHeaderPointerPressed(
+        object? sender,
+        PointerPressedEventArgs args)
+    {
+        if (_floatingWindow is null
+            || !args.GetCurrentPoint(_floatingHeaderHost)
+                .Properties.IsLeftButtonPressed
+            || args.Source is Visual source
+                && source.FindAncestorOfType<Button>() is not null)
+        {
+            return;
+        }
+
+        _floatingWindow.BeginMoveDrag(args);
+        args.Handled = true;
+    }
 
     private void CaptureFloatingGeometry()
     {

@@ -975,6 +975,9 @@ internal sealed class PreviewScreenTimelineController : IDisposable
         _shotSnapshot;
     private readonly Func<int> _shotFrame;
     private readonly Action<int> _setShotFrame;
+    private readonly Func<bool> _canToggleReferenceVideo;
+    private readonly Func<string> _referenceVideoToolTip;
+    private readonly Action _toggleReferenceVideo;
     private readonly Func<string, string, int, Task>
         _updateShotScreenField;
     private readonly Func<Task> _refreshProductionAuthoring;
@@ -994,6 +997,9 @@ internal sealed class PreviewScreenTimelineController : IDisposable
         Func<string, ProductionPreviewShotSnapshot> shotSnapshot,
         Func<int> shotFrame,
         Action<int> setShotFrame,
+        Func<bool> canToggleReferenceVideo,
+        Func<string> referenceVideoToolTip,
+        Action toggleReferenceVideo,
         Func<string, string, int, Task> updateShotScreenField,
         Func<Task> refreshProductionAuthoring)
     {
@@ -1007,12 +1013,18 @@ internal sealed class PreviewScreenTimelineController : IDisposable
         _shotSnapshot = shotSnapshot;
         _shotFrame = shotFrame;
         _setShotFrame = setShotFrame;
+        _canToggleReferenceVideo = canToggleReferenceVideo;
+        _referenceVideoToolTip = referenceVideoToolTip;
+        _toggleReferenceVideo = toggleReferenceVideo;
         _updateShotScreenField = updateShotScreenField;
         _refreshProductionAuthoring = refreshProductionAuthoring;
         _surface = new PreviewScreenTimelineSurface(
             SetFrame,
             StepFrame,
-            TogglePlayback);
+            TogglePlayback,
+            _canToggleReferenceVideo,
+            _referenceVideoToolTip,
+            _toggleReferenceVideo);
         _host.Content = _surface;
         _playbackState.Changed += RefreshFrame;
     }
@@ -1154,6 +1166,9 @@ internal sealed class PreviewScreenTimelineSurface : Border
     private readonly Action<int> _setFrame;
     private readonly Action<int> _stepFrame;
     private readonly Action _togglePlayback;
+    private readonly Func<bool> _canToggleReferenceVideo;
+    private readonly Func<string> _referenceVideoToolTip;
+    private readonly Action _toggleReferenceVideo;
     private readonly StackPanel _content = new() { Spacing = 2 };
     private TextBlock? _frameText;
     private Button? _playButton;
@@ -1195,11 +1210,17 @@ internal sealed class PreviewScreenTimelineSurface : Border
     public PreviewScreenTimelineSurface(
         Action<int> setFrame,
         Action<int> stepFrame,
-        Action togglePlayback)
+        Action togglePlayback,
+        Func<bool> canToggleReferenceVideo,
+        Func<string> referenceVideoToolTip,
+        Action toggleReferenceVideo)
     {
         _setFrame = setFrame;
         _stepFrame = stepFrame;
         _togglePlayback = togglePlayback;
+        _canToggleReferenceVideo = canToggleReferenceVideo;
+        _referenceVideoToolTip = referenceVideoToolTip;
+        _toggleReferenceVideo = toggleReferenceVideo;
         Padding = new Thickness(8);
         Child = new ScrollViewer
         {
@@ -2116,14 +2137,44 @@ internal sealed class PreviewScreenTimelineSurface : Border
         var zoomControl = new PreviewScreenTimelineZoomControl(zoom);
         zoomControl.ValueChanged += (_, value) => SetZoom(value);
         _zoomControl = zoomControl;
-        Grid.SetColumn(zoomControl, 2);
+        var referenceVideoButton = new Button
+        {
+            Content = EditorIcons.Create(EditorIcons.Video, 17),
+            Width = 34,
+            Height = 30,
+            Padding = new Thickness(0),
+            IsEnabled = _canToggleReferenceVideo(),
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+        };
+        EditorAccessibility.Describe(
+            referenceVideoButton,
+            "Show or hide the Shot reference video");
+        ToolTip.SetTip(
+            referenceVideoButton,
+            _referenceVideoToolTip());
+        referenceVideoButton.Click += (_, _) =>
+            _toggleReferenceVideo();
+        var trailingControls = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                zoomControl,
+                referenceVideoButton,
+            },
+        };
+        Grid.SetColumn(trailingControls, 2);
         var grid = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*,Auto"),
             ColumnSpacing = 8,
         };
         grid.Children.Add(controls);
-        grid.Children.Add(zoomControl);
+        grid.Children.Add(trailingControls);
         return grid;
     }
 

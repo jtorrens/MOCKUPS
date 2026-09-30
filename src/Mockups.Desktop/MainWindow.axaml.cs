@@ -160,10 +160,6 @@ public partial class MainWindow : SukiWindow
             (target) => previewAuthoringNavigator.Navigate(target),
             PreviewPanelBorder,
             this);
-        EditorModalWindowScope.RegisterHost(
-            this,
-            ModalOverlayHost,
-            _previewController.ModalOcclusionParticipant);
         _screenTimeline = new PreviewScreenTimelineController(
             PreviewTimelineHost,
             _previewController.ProductionScreenTimelineRange,
@@ -175,6 +171,9 @@ public partial class MainWindow : SukiWindow
             _previewController.ProductionShotTimelineSnapshot,
             _previewController.ProductionShotFrame,
             _previewController.SetProductionShotFrame,
+            _previewController.CanToggleProductionReferenceVideo,
+            _previewController.ProductionReferenceVideoToolTip,
+            _previewController.ToggleProductionReferenceVideo,
             _previewController.UpdateProductionShotScreenTimelineAsync,
             RefreshProductionPreviewAsync);
         _previewController.ConfigureScreenTimelineKeyboardNavigation(
@@ -194,6 +193,11 @@ public partial class MainWindow : SukiWindow
                 () => _themeController.IsDark);
         _previewControlsDock.PreviewKeyDown +=
             _previewController.OnDetachedPreviewKeyDown;
+        EditorModalWindowScope.RegisterHost(
+            this,
+            ModalOverlayHost,
+            _previewController.ModalOcclusionParticipant,
+            _previewControlsDock);
         _treePreviewTransitions =
             new EditorTreePreviewTransitionCoordinator(
                 _workspaceCoordinator,

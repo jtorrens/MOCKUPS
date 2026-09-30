@@ -147,7 +147,10 @@ action returns the surface and its prior dock height.
 Application modals always take precedence over that topmost utility window.
 Before native presentation, the common modal presenter closes application
 tooltips, flyouts and popups, temporarily removes topmost from every auxiliary
-application window and disables those siblings. `ShowDialog` then presents the
+application window and disables those siblings. The detached Preview window is
+also hidden for the modal lifetime because its native owner relationship would
+otherwise keep it above the owner's modal surface; its exact session geometry
+and detached state are restored when the modal closes. `ShowDialog` then presents the
 modal with its exact visible owner. Closing or failed presentation restores the
 captured sibling topmost and interaction state once.
 
@@ -270,7 +273,9 @@ range. Multiple filled intervals on one lane represent re-entry. Their shared
 In/Out boundaries edit the existing selector keyframes.
 
 A compact scale control shares the transport row and aligns to its right edge,
-leaving the ruler and lanes the complete remaining width. Its larger thumb,
+followed by the same Shot reference-video action exposed in Preview. The action
+opens or hides the one shared reference window; Timeline never creates another
+video controller. The ruler and lanes retain the complete remaining width. Its larger thumb,
 visible center tick and pointer detent restore `1:1`, where the viewport is
 exactly the declared Screen range. Moving right zooms in; moving left zooms out
 and reveals additional time before and after that range. Each scale change
@@ -281,8 +286,10 @@ reveals it. Both values remain authored, while Preview and Render clip the item
 to the independent Screen range.
 
 The visible Preview utility headers remain in one horizontal row at the
-supported 1040 px minimum and the 1440 px default window widths. The Preview
-column has a real minimum independent of star sizing. The setup section uses
+supported 1040 px minimum and the 1440 px default window widths. Navigation
+has a real minimum that preserves a clipped text column beside its complete
+row actions, and the Preview column has a real minimum that preserves the
+Production time slider. Both minima are independent of star sizing. The setup section uses
 four columns only when its measured content width allows them, otherwise it
 reflows to two rows and finally one scrollable column. Splitter movement, the
 selected utility tab and session state remain intact across these layout

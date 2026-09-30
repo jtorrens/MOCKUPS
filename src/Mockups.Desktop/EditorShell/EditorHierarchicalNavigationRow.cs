@@ -168,10 +168,12 @@ internal static class EditorHierarchicalNavigationRow
             Spacing = 0,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        var titleLine = new StackPanel
+        var titleLine = new Grid
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 5,
+            ColumnDefinitions = metadata.IsPreviewActive
+                ? new ColumnDefinitions("Auto,*")
+                : new ColumnDefinitions("*"),
+            ColumnSpacing = 5,
             VerticalAlignment = VerticalAlignment.Center,
         };
         if (metadata.IsPreviewActive)
@@ -181,9 +183,10 @@ internal static class EditorHierarchicalNavigationRow
             ToolTip.SetTip(activeIcon, "Active Screen at the current Preview frame");
             titleLine.Children.Add(activeIcon);
         }
-        titleLine.Children.Add(new TextBlock
+        var titleText = new TextBlock
         {
             Text = metadata.Title,
+            MinWidth = 0,
             FontWeight = FontWeight.SemiBold,
             Foreground = metadata.IsSelected
                 ? EditorUiVisuals.SelectedTextBrush(isDark)
@@ -192,7 +195,10 @@ internal static class EditorHierarchicalNavigationRow
                     : EditorUiVisuals.DisabledTextBrush(isDark),
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
-        });
+        };
+        Grid.SetColumn(titleText, metadata.IsPreviewActive ? 1 : 0);
+        titleLine.Children.Add(titleText);
+        title.MinWidth = 0;
         title.Children.Add(titleLine);
         var detail = !string.IsNullOrWhiteSpace(metadata.Status) ? metadata.Status : metadata.Subtitle;
         if (!metadata.IsGroup && !string.IsNullOrWhiteSpace(detail))

@@ -155,7 +155,7 @@ internal sealed class EditorPreviewController : IDisposable
         Maximum = 0,
         Value = 0,
         TickFrequency = 1,
-        MinWidth = 0,
+        MinWidth = PreviewPanelLayoutPolicy.MinimumTimelineSliderWidth,
         HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
     });
     private readonly TextBlock _shotFrameText = new()
@@ -286,6 +286,37 @@ internal sealed class EditorPreviewController : IDisposable
     public int ProductionShotFrame() => _shotPreviewFrame;
 
     public void SetProductionShotFrame(int frame) => SetShotPreviewFrame(frame);
+
+    public bool CanToggleProductionReferenceVideo()
+    {
+        var shotId = ProductionShotId();
+        return PreviewWorkspace() == EditorWorkspace.Production
+            && !string.IsNullOrWhiteSpace(shotId)
+            && _productionSessionSnapshot is not null
+            && _productionSessionSnapshot.ShotsById.TryGetValue(
+                shotId,
+                out var shot)
+            && !string.IsNullOrWhiteSpace(
+                shot.ReferenceVideo.SourcePath);
+    }
+
+    public string ProductionReferenceVideoToolTip()
+    {
+        var shotId = ProductionShotId();
+        return PreviewWorkspace() == EditorWorkspace.Production
+            && !string.IsNullOrWhiteSpace(shotId)
+            && _productionSessionSnapshot is not null
+            && _productionSessionSnapshot.ShotsById.TryGetValue(
+                shotId,
+                out var shot)
+            && !string.IsNullOrWhiteSpace(
+                shot.ReferenceVideo.SourcePath)
+            ? shot.ReferenceVideo.SourcePath
+            : "Assign a reference video in Shot > General";
+    }
+
+    public void ToggleProductionReferenceVideo() =>
+        _referenceVideoController.Toggle();
 
     public ProductionPreviewShotSnapshot ProductionShotTimelineSnapshot(
         string shotId) =>
