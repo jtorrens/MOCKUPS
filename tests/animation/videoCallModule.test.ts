@@ -57,9 +57,10 @@ test("Video Call derives each visible participant name from its Actor", () => {
   const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
   preview.participants[0]!.showActorName = true;
   preview.participants[1]!.showActorName = false;
+  const selectedActor = preview.participants[0]!.actor as { displayName: string };
   const edited = { ...source, designPreviewJson: JSON.stringify(preview) };
   const call = resolveVideoCallModule(edited);
-  assert.equal(call.participants[0]?.nameLabel?.text, "Alex Q");
+  assert.equal(call.participants[0]?.nameLabel?.text, selectedActor.displayName);
   assert.equal(call.participants[0]?.showActorName, true);
   assert.equal(call.participants[1]?.showActorName, false);
   const node = videoCallModuleToRenderable(edited);

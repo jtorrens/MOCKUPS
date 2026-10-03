@@ -26,7 +26,10 @@ export function resolveRuntimeCollectionPresence(
   enterMotion: ComponentMotionContract,
   exitMotion: ComponentMotionContract,
 ): RuntimeCollectionPresence {
-  const ownerFrame = Math.floor(timeline.temporalLocalFrame("present", targetId, screenFrame));
+  const hasTemporalOwner = timeline.ownsTarget(targetId);
+  const ownerFrame = hasTemporalOwner
+    ? Math.floor(timeline.temporalLocalFrame("present", targetId, screenFrame))
+    : screenFrame;
   const resolved = resolveParameterAnimation(
     animation,
     "present",
@@ -37,7 +40,9 @@ export function resolveRuntimeCollectionPresence(
   const present = resolved.value === true;
   const sourceFrame = resolved.sourceKeyframeFrame === undefined
     ? undefined
-    : timeline.screenFrame("present", targetId, resolved.sourceKeyframeFrame);
+    : hasTemporalOwner
+      ? timeline.screenFrame("present", targetId, resolved.sourceKeyframeFrame)
+      : resolved.sourceKeyframeFrame;
   const exitDurationFrames = Math.ceil(
     motionTotalDurationMs(payload, exitMotion) / 1000 * Math.max(1, payload.frameRate),
   );
