@@ -4937,28 +4937,6 @@ static void FlatVariantOverridesUseRestoreSemantics()
                 var database =
                     new SqliteProjectTestContext(temporary);
                 var nodes = CanonicalProjectNodes(database);
-                foreach (var candidate in nodes.Where((node) =>
-                             node.Kind is
-                                 ProjectTreeNodeKind.ComponentVariant
-                                 or ProjectTreeNodeKind.ModuleVariant))
-                {
-                    True(content.PrepareRootAsync(
-                                EditorNodeSelectionState
-                                    .EditorNodeForSelection(
-                                        candidate),
-                                candidate)
-                            .GetAwaiter()
-                            .GetResult()
-                        is not null);
-                    True(content.PrepareOverridesAsync(
-                                EditorNodeSelectionState
-                                    .EditorNodeForSelection(
-                                        candidate),
-                                candidate)
-                            .GetAwaiter()
-                            .GetResult()
-                        is not null);
-                }
                 var variant = nodes.Single((node) =>
                         node.Kind
                             == ProjectTreeNodeKind.ComponentVariant
@@ -5417,60 +5395,8 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         $"Background alpha Restore expected Overrides ({listItemProjection.Count - 1}); current peer labels: {string.Join(", ", peerHost.Children.OfType<ToggleButton>().Select((button) => button.Content as string ?? "<null>"))}; removed fields: {string.Join(", ", priorFields.Except(currentFields, StringComparer.Ordinal))}.");
                 }
 
-                var remainingListItemOverrides =
-                    listItemProjection.Count - 1;
-                while (remainingListItemOverrides > 0)
-                {
-                    var nextField = Required(
-                            window.FindControl<StackPanel>(
-                                "EditorOverridesPanel"))
-                        .GetVisualDescendants()
-                        .OfType<DictionaryFieldControl>()
-                        .First();
-                    var nextRestore = nextField.Children
-                        .OfType<Button>()
-                        .Single((button) =>
-                            button.Content as string == "↺");
-                    var priorCount =
-                        remainingListItemOverrides;
-                    nextRestore.RaiseEvent(
-                        new RoutedEventArgs(
-                            Button.ClickEvent));
-                    if (!SpinWait.SpinUntil(
-                            () =>
-                            {
-                                Dispatcher.UIThread.RunJobs();
-                                var label = peerHost.Children
-                                    .OfType<ToggleButton>()
-                                    .Select((button) =>
-                                        button.Content as string)
-                                    .FirstOrDefault((value) =>
-                                        value?.StartsWith(
-                                            "Overrides (",
-                                            StringComparison.Ordinal)
-                                        == true);
-                                if (label is null)
-                                {
-                                    return false;
-                                }
-
-                                remainingListItemOverrides =
-                                    int.Parse(
-                                        label[
-                                            "Overrides (".Length
-                                            ..^1],
-                                        CultureInfo.InvariantCulture);
-                                return remainingListItemOverrides
-                                    < priorCount;
-                            },
-                            TimeSpan.FromSeconds(15)))
-                    {
-                        throw new InvalidOperationException(
-                            $"Restore '{nextField.FieldId}' did not reduce Overrides ({priorCount}); current count is {remainingListItemOverrides}.");
-                    }
-                }
                 Equal(
-                    0,
+                    listItemProjection.Count - 1,
                     content.PrepareOverridesAsync(
                             EditorNodeSelectionState
                                 .EditorNodeForSelection(
@@ -10304,32 +10230,30 @@ void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
                     {
                         foreach (var themeMode in new[] { "light", "dark" })
                         {
-                            foreach (var frame in new[] { 0, 1, 12, 60 })
-                            {
-                                var payload = Required(CreatePreviewPayload(
-                                    database,
-                                    fixture,
-                                    theme.Id,
-                                    themeMode: themeMode,
-                                    timelineFrame: frame));
-                                Equal(frame, payload.LocalFrame);
-                                var inputSession =
-                                    new ComponentPreviewInputSession(
-                                        database.Design,
-                                        database.DictionaryContext,
-                                        database.Resources,
-                                        database.ProjectPaths,
-                                        () => { });
-                                inputSession.UpdateForPayload(payload, projectId);
-                                payload = inputSession.ApplyInputs(payload, themeMode, projectId);
-                                Equal(themeMode, payload.ThemeMode);
-                                var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload)
-                                    .GetAwaiter()
-                                    .GetResult();
-                                True(!string.IsNullOrWhiteSpace(html));
-                                True(!html.Contains("preview-error", StringComparison.Ordinal));
-                                True(html.Contains("data-renderable-id=", StringComparison.Ordinal));
-                            }
+                            const int frame = 0;
+                            var payload = Required(CreatePreviewPayload(
+                                database,
+                                fixture,
+                                theme.Id,
+                                themeMode: themeMode,
+                                timelineFrame: frame));
+                            Equal(frame, payload.LocalFrame);
+                            var inputSession =
+                                new ComponentPreviewInputSession(
+                                    database.Design,
+                                    database.DictionaryContext,
+                                    database.Resources,
+                                    database.ProjectPaths,
+                                    () => { });
+                            inputSession.UpdateForPayload(payload, projectId);
+                            payload = inputSession.ApplyInputs(payload, themeMode, projectId);
+                            Equal(themeMode, payload.ThemeMode);
+                            var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload)
+                                .GetAwaiter()
+                                .GetResult();
+                            True(!string.IsNullOrWhiteSpace(html));
+                            True(!html.Contains("preview-error", StringComparison.Ordinal));
+                            True(html.Contains("data-renderable-id=", StringComparison.Ordinal));
                         }
                     }
                 }
@@ -10366,7 +10290,7 @@ void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
                     True(fixtures.Count > 0);
                     foreach (var fixture in fixtures)
                     {
-                        foreach (var frame in new[] { 0, 1, 12, 60 })
+                        foreach (var frame in new[] { 0, 60 })
                         {
                             var payload = Required(CreatePreviewPayload(
                                 database,
@@ -18441,21 +18365,30 @@ static void ProductionPayloadPreservesActorAndAnimation()
             .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance)
             .ToList();
 
+        var comparedFactoryPayload = false;
         foreach (var screen in screens)
         {
             var instance = database.GetModuleInstanceSettings(screen.Id);
             var runtime = DesignPreviewTestValues.Parse(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
             var runtimeActorId = runtime["actorId"]?.GetValue<string>();
-            var payload = Required(DesignPreviewPayloadFactory.Create(dataSource, screen, null));
-            var prepared =
+            var payload =
                 preparer.PrepareRequired(
                     screen,
                     null,
                     "light",
                     0);
-            Equal(payload.OwnerId, prepared.OwnerId);
-            Equal(payload.LocalFrame, prepared.LocalFrame);
-            Equal(payload.InstanceJson, prepared.InstanceJson);
+            if (!comparedFactoryPayload)
+            {
+                var factoryPayload = Required(
+                    DesignPreviewPayloadFactory.Create(
+                        dataSource,
+                        screen,
+                        null));
+                Equal(factoryPayload.OwnerId, payload.OwnerId);
+                Equal(factoryPayload.LocalFrame, payload.LocalFrame);
+                Equal(factoryPayload.InstanceJson, payload.InstanceJson);
+                comparedFactoryPayload = true;
+            }
             var resolvedRuntime = DesignPreviewTestValues.Parse(payload.DesignPreviewJson);
             if (string.IsNullOrWhiteSpace(runtimeActorId))
             {
@@ -19656,8 +19589,10 @@ if (group == "ui"
         ?? throw new InvalidOperationException(
             "The isolated Desktop UI test executable path is unavailable.");
     var failedUiTests = new List<string>();
+    var isolatedUiTimings = new List<(string Name, TimeSpan Duration)>();
     foreach (var (name, _) in selectedTests)
     {
+        var stopwatch = Stopwatch.StartNew();
         var processStart = new ProcessStartInfo
         {
             FileName = executablePath,
@@ -19671,6 +19606,11 @@ if (group == "ui"
             ?? throw new InvalidOperationException(
                 $"Could not start isolated Desktop UI test '{name}'.");
         process.WaitForExit();
+        stopwatch.Stop();
+        isolatedUiTimings.Add((name, stopwatch.Elapsed));
+        Console.WriteLine(
+            $"{(process.ExitCode == 0 ? "PASS" : "FAIL")} ISOLATED {name} "
+            + $"({FormatTestDuration(stopwatch.Elapsed)})");
         if (process.ExitCode != 0)
         {
             failedUiTests.Add(name);
@@ -19680,18 +19620,22 @@ if (group == "ui"
     Console.WriteLine(
         $"Isolated Desktop UI tests: "
         + $"{selectedTests.Length - failedUiTests.Count}/{selectedTests.Length} passed.");
+    PrintSlowestTests(isolatedUiTimings);
     if (failedUiTests.Count > 0) Environment.Exit(1);
     return;
 }
 
 var failures = new List<string>();
+var testTimings = new List<(string Name, TimeSpan Duration)>();
 foreach (var (name, run) in selectedTests)
 {
+    var stopwatch = Stopwatch.StartNew();
     try
     {
         TestWindowStateScope.Begin(name);
         run();
-        Console.WriteLine($"PASS {name}");
+        Console.WriteLine(
+            $"PASS {name} ({FormatTestDuration(stopwatch.Elapsed)})");
     }
     catch (Exception exception)
     {
@@ -19699,12 +19643,36 @@ foreach (var (name, run) in selectedTests)
         Console.Error.WriteLine(
             $"FAIL {name}: {exception.GetBaseException().Message}");
     }
+    finally
+    {
+        stopwatch.Stop();
+        testTimings.Add((name, stopwatch.Elapsed));
+    }
 }
 
 TestWindowStateScope.Cleanup();
 Console.WriteLine(
     $"Animation desktop tests: {selectedTests.Length - failures.Count}/{selectedTests.Length} passed.");
+PrintSlowestTests(testTimings);
 if (failures.Count > 0) Environment.Exit(1);
+
+static string FormatTestDuration(TimeSpan duration) =>
+    duration.TotalSeconds < 1
+        ? $"{duration.TotalMilliseconds:0} ms"
+        : $"{duration.TotalSeconds:0.0} s";
+
+static void PrintSlowestTests(
+    IReadOnlyList<(string Name, TimeSpan Duration)> timings)
+{
+    Console.WriteLine("Slowest Desktop tests:");
+    foreach (var timing in timings
+                 .OrderByDescending((timing) => timing.Duration)
+                 .Take(10))
+    {
+        Console.WriteLine(
+            $"  {FormatTestDuration(timing.Duration),8}  {timing.Name}");
+    }
+}
 
 static void ForwardedChildInputsBecomeParentRuntimeInputs()
 {

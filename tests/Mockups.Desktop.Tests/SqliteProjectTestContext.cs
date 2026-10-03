@@ -1,9 +1,13 @@
 using Mockups.DesktopEditorShell.Common;
+using System.Security.Cryptography;
 
 namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed class SqliteProjectTestContext
 {
+    private static readonly object ValidationCacheGate = new();
+    private static readonly HashSet<string> ValidatedFixtureKeys =
+        new(StringComparer.Ordinal);
     private readonly ReferenceUsageService _referenceUsages;
     private readonly IPreviewInputRepository _previewInputs;
     private readonly IDictionaryFieldContextRepository
@@ -95,12 +99,11 @@ internal sealed class SqliteProjectTestContext
                 Production,
                 Resources);
 
-        new SqliteCurrentDatabaseValidator(
+        ValidateFixtureOnce(
             context,
             Design,
             Production,
-            Resources)
-            .Validate();
+            Resources);
     }
 
     internal IProjectPathResolver ProjectPaths =>
@@ -166,5 +169,32 @@ internal sealed class SqliteProjectTestContext
     internal SqliteRuntimeInputInstanceStore RuntimeInputInstances
     {
         get;
+    }
+
+    private static void ValidateFixtureOnce(
+        SqliteProjectContext context,
+        SqliteDesignOwner design,
+        SqliteProductionOwner production,
+        SqliteResourceOwner resources)
+    {
+        var databaseHash = Convert.ToHexString(
+            SHA256.HashData(File.ReadAllBytes(context.DatabasePath)));
+        var fixtureKey = $"{context.ProjectPaths.ProjectRoot}|{databaseHash}";
+        lock (ValidationCacheGate)
+        {
+            if (ValidatedFixtureKeys.Contains(fixtureKey)) return;
+        }
+
+        new SqliteCurrentDatabaseValidator(
+            context,
+            design,
+            production,
+            resources)
+            .Validate();
+
+        lock (ValidationCacheGate)
+        {
+            ValidatedFixtureKeys.Add(fixtureKey);
+        }
     }
 }

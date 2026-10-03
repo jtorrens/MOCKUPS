@@ -107,16 +107,37 @@ export function checkValidationPipeline({
   }
   const desktopTestCommand =
     "dotnet run --project tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj --";
+  const desktopTestRunCommand =
+    "dotnet run --project tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj --no-build --no-restore --";
   const applicationTestCommand =
     "dotnet run --project tests/Mockups.Application.Tests/Mockups.Application.Tests.csproj --";
-  for (const group of ["core", "ui", "exhaustive"]) {
+  const desktopBuildCommand =
+    "dotnet build tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj";
+  for (const group of ["core", "ui"]) {
+    if ((packageScripts[`animation:test:desktop:${group}:run`] ?? "")
+      !== `${desktopTestRunCommand} --group ${group}`) {
+      addViolation(
+        "package.json",
+        `the desktop suite must expose the build-free ${group} group`,
+      );
+    }
     if ((packageScripts[`animation:test:desktop:${group}`] ?? "")
-      !== `${desktopTestCommand} --group ${group}`) {
+      !== `npm run animation:test:desktop:build && npm run animation:test:desktop:${group}:run`) {
       addViolation(
         "package.json",
         `the desktop suite must expose the isolated ${group} group`,
       );
     }
+  }
+  if (packageScripts["animation:test:desktop:build"] !== desktopBuildCommand
+      || packageScripts["animation:test:desktop:exhaustive:run"]
+        !== "tsx scripts/runDesktopExhaustive.ts"
+      || packageScripts["animation:test:desktop:exhaustive"]
+        !== "npm run animation:test:desktop:build && npm run animation:test:desktop:exhaustive:run") {
+    addViolation(
+      "package.json",
+      "the desktop suite must build once and expose sharded exhaustive coverage",
+    );
   }
   if (packageScripts["test:focus:preview"] !== "tsx --test"
       || packageScripts["test:focus:desktop"] !== desktopTestCommand
