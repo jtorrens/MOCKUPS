@@ -706,8 +706,10 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 ? Math.Max(start + 1, RuntimeAnimationFrameOrigin.OwnerSequenceEndScreenFrame(
                     contract, runtime, animation, itemId, themeTokens, frameRate))
                 : contentDurationFrames;
-            var end = RuntimeAnimationFrameOrigin.OwnerPresenceEndScreenFrame(
-                contract, runtime, animation, itemId, contentDurationFrames, themeTokens, frameRate);
+            var end = !sequenceItems && presenceDurationField is null
+                ? contentDurationFrames
+                : RuntimeAnimationFrameOrigin.OwnerPresenceEndScreenFrame(
+                    contract, runtime, animation, itemId, contentDurationFrames, themeTokens, frameRate);
             var phaseFrames = RuntimeAnimationFrameOrigin.OwnerPhaseDurationScreenFrames(
                 contract, runtime, animation, itemId, themeTokens, frameRate);
             var hasExplicitEnd = RuntimeAnimationFrameOrigin.OwnerHasExplicitPresenceEnd(

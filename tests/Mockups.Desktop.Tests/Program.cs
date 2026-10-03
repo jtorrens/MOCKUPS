@@ -21450,6 +21450,85 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     True(
         derivedPresence.Collections[0].Items[0]
             .SerialEdit?.CanResizeEnd == false);
+
+    var parallelRuntime = Object("""
+        {
+          "participants":[
+            {"id":"participant-1","scale":1},
+            {"id":"participant-2","scale":1}
+          ],
+          "rows":[
+            {"id":"row-1","offset":"0|0"},
+            {"id":"row-2","offset":"0|0"}
+          ]
+        }
+        """);
+    var parallelContract = """
+        {
+          "collections":[
+            {
+              "id":"participants","label":"Participants","jsonKey":"participants","itemLabel":"Participant",
+              "animationTimeline":{"sequenceItems":false},
+              "fields":[{"id":"scale","jsonKey":"scale","animationTimeline":{"extendsOwnerDuration":true}}]
+            },
+            {
+              "id":"rows","label":"Rows","jsonKey":"rows","itemLabel":"Row",
+              "animationTimeline":{"sequenceItems":false},
+              "fields":[{"id":"offset","jsonKey":"offset","animationTimeline":{"extendsOwnerDuration":true}}]
+            }
+          ]
+        }
+        """;
+    var parallelAnimation = EmptyDocument();
+    parallelAnimation.AddTrack("scale", "participant-1", JsonValue.Create(1d)!, "linear");
+    parallelAnimation.AddTrack("offset", "row-1", JsonValue.Create("0|0")!, "linear");
+    var parallelSurface = new RuntimeInputSurface(
+        new RuntimeInputOwner(
+            node,
+            "{}",
+            parallelRuntime.ToJsonString(),
+            (_) => Task.CompletedTask,
+            IsInstance: true),
+        parallelRuntime,
+        [],
+        [
+            new RuntimeInputCollectionDefinition(
+                "participants",
+                "Participants",
+                "participants",
+                "Participant",
+                []),
+            new RuntimeInputCollectionDefinition(
+                "rows",
+                "Rows",
+                "rows",
+                "Row",
+                []),
+        ],
+        [],
+        AnimationSnapshot: new ModuleInstanceAnimationSnapshot(
+            node.Id,
+            new ModuleInstanceAnimationSource(
+                "{}",
+                parallelAnimation.ToJson(),
+                PreparedTimelineContract(parallelContract, parallelRuntime),
+                "{}",
+                parallelContract,
+                25),
+            ScreenStartFrame: 0,
+            ActionStartFrame: 0,
+            DurationFrames: 137));
+    var parallelSnapshot = PreviewScreenTimelineSnapshotFactory.Create(
+        parallelSurface,
+        new PreviewScreenTimelineRange(0, 137, 0));
+    Equal(2, parallelSnapshot.Collections.Count);
+    True(parallelSnapshot.Collections
+        .SelectMany((candidate) => candidate.Items)
+        .All((item) => item.StartFrame == 0
+            && item.EndFrame == 137
+            && item.Intervals[0].StartFrame == 0
+            && item.Intervals[0].EndFrame == 137));
+
     var explicitDurationContract = Object(contract);
     explicitDurationContract["animationTimeline"] = new JsonObject
     {
