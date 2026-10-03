@@ -1,18 +1,15 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
+import { optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { optionalObject, optionalObjectArray, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
-import {
-  motionTotalDurationMs,
-  requiredMotionContract,
-  resolveMotionFrame,
-} from "./previewMotionHelpers.js";
+import { requiredMotionContract } from "./previewMotionHelpers.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
 import { optionalComponentBoundaryMotion } from "./componentBoundaryMotion.js";
+import { resolveRuntimeCollectionPresence } from "./runtimeCollectionPresence.js";
 import type {
   ComponentCollectionAlignment,
   ComponentCollectionGapMode,
@@ -68,29 +65,26 @@ export function resolveComponentCollectionItem(
       componentVariantConfig(bases, componentType, variantReference),
       requiredRecord(item, "overrides", `${itemPath}.overrides`),
     );
-    const presence = ownsPresence
-      ? resolveParameterAnimation(animation, "present", rawId, frame, item.present === true)
-      : { value: true, animated: false, sourceKeyframeFrame: undefined };
     const presenceMotion = optionalComponentBoundaryMotion(config, `${itemPath}.component`)
       ?? requiredMotionContract(
         item,
         ownsPresence ? "presenceMotion" : "enterMotion",
         `${itemPath}.${ownsPresence ? "presenceMotion" : "enterMotion"}`,
       );
-    const present = presence.value === true;
-    const presenceTransition = optionalBoolean(item, "presenceTransition");
-    const presenceElapsedMs = Math.max(0, optionalNumber(item, "presenceElapsedMs", 0));
-    const exitDurationFrames = Math.ceil(
-      motionTotalDurationMs(payload, presenceMotion) / 1000 * Math.max(1, payload.frameRate),
-    );
-    const exitFrame = !present
-      && presence.sourceKeyframeFrame !== undefined
-      && frame - presence.sourceKeyframeFrame < exitDurationFrames
-        ? presence.sourceKeyframeFrame
-        : undefined;
-    const removalReflowStartFrame = !present && presence.sourceKeyframeFrame !== undefined
-      ? presence.sourceKeyframeFrame + exitDurationFrames
-      : undefined;
+    const presence = ownsPresence
+      ? resolveRuntimeCollectionPresence(
+          payload,
+          timeline,
+          animation,
+          item,
+          rawId,
+          frame,
+          presenceMotion,
+          presenceMotion,
+        )
+      : { present: true, reflowFromPresent: true };
+    const present = presence.present;
+    const exitFrame = presence.exitFrame;
     const rawInputs = requiredRecord(item, "inputs", `${itemPath}.inputs`);
     const inputResolution = resolveAnimatedInputs(
       timeline,
@@ -100,40 +94,16 @@ export function resolveComponentCollectionItem(
       frame,
       themeTokens,
       payload.frameRate,
-      exitFrame === undefined ? undefined : exitFrame + exitDurationFrames,
+      exitFrame === undefined ? undefined : presence.exitEndFrame,
     );
-    const reflowStartFrame = removalReflowStartFrame ?? inputResolution.changeFrame;
-    const activationFrame = present ? presence.sourceKeyframeFrame : undefined;
+    const reflowStartFrame = presence.reflowStartFrame ?? inputResolution.changeFrame;
+    const activationFrame = presence.activationFrame;
     const localFrame = exitFrame === undefined
       ? Math.max(0, frame - (activationFrame ?? 0))
       : Math.max(0, exitFrame - (activationFrame ?? 0));
-    const resolvedPresenceMotion = presenceTransition
-      ? {
-          kind: present ? "enter" as const : "exit" as const,
-          frame: resolveMotionFrame(payload, presenceMotion, {
-            trigger: true,
-            elapsedMs: presenceElapsedMs,
-          }),
-        }
-      : exitFrame !== undefined
-        ? {
-            kind: "exit" as const,
-            frame: resolveMotionFrame(payload, presenceMotion, {
-              trigger: true,
-              elapsedMs: Math.max(0, frame - exitFrame)
-                / Math.max(1, payload.frameRate) * 1000,
-            }),
-          }
-        : activationFrame !== undefined && activationFrame > 0
-          ? {
-              kind: "enter" as const,
-              frame: resolveMotionFrame(payload, presenceMotion, {
-                trigger: true,
-                elapsedMs: Math.max(0, frame - activationFrame)
-                  / Math.max(1, payload.frameRate) * 1000,
-              }),
-            }
-          : undefined;
+    const resolvedPresenceMotion = presence.motionKind && presence.motionFrame
+      ? { kind: presence.motionKind, frame: presence.motionFrame }
+      : undefined;
     const alignment = requiredString(item, "alignment", `${itemPath}.alignment`);
     if (alignment !== "start" && alignment !== "center" && alignment !== "end") {
       throw new Error(`Unsupported ${itemPath} alignment ${alignment}`);

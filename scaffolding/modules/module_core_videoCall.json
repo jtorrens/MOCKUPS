@@ -592,10 +592,30 @@
       },
       "participantNamePlacement": {
         "mode": "insideEdge",
-        "alignX": 0,
-        "alignY": -1,
+        "alignX": 0.5,
+        "alignY": 0,
         "offsetX": 0,
         "offsetY": 12
+      },
+      "participantEnterMotion": {
+        "transition": "scale",
+        "direction": "bottom",
+        "bounds": "parent",
+        "fade": true,
+        "translate": false,
+        "scale": true
+      },
+      "participantExitMotion": {
+        "transition": "scale",
+        "direction": "bottom",
+        "bounds": "parent",
+        "fade": true,
+        "translate": false,
+        "scale": true
+      },
+      "participantReflowTiming": {
+        "durationMs": 240,
+        "easing": "ease-out"
       },
       "participantStatusLabelSlot": {
         "variantReference": "component_project_foqn_s2_label::variant::default",
@@ -1483,6 +1503,9 @@
         "label": "Participants",
         "jsonKey": "participants",
         "itemLabel": "Participant",
+        "animationTimeline": {
+          "sequenceItems": false
+        },
         "fields": [
           {
             "id": "present",
@@ -1606,7 +1629,11 @@
             "defaultValue": "1",
             "minimum": 0.01,
             "maximum": 10,
-            "increment": 0.01
+            "increment": 0.01,
+            "animatable": true,
+            "animationInterpolations": [
+              "linear"
+            ]
           },
           {
             "id": "mediaOffset",
@@ -1616,7 +1643,11 @@
             "valueKind": "DecimalPair",
             "defaultValue": "0|0",
             "pairFirstLabel": "X",
-            "pairSecondLabel": "Y"
+            "pairSecondLabel": "Y",
+            "animatable": true,
+            "animationInterpolations": [
+              "linear"
+            ]
           }
         ]
       }
@@ -2564,10 +2595,30 @@
         },
         "participantNamePlacement": {
           "mode": "insideEdge",
-          "alignX": 0,
-          "alignY": -1,
+          "alignX": 0.5,
+          "alignY": 0,
           "offsetX": 0,
           "offsetY": 12
+        },
+        "participantEnterMotion": {
+          "transition": "scale",
+          "direction": "bottom",
+          "bounds": "parent",
+          "fade": true,
+          "translate": false,
+          "scale": true
+        },
+        "participantExitMotion": {
+          "transition": "scale",
+          "direction": "bottom",
+          "bounds": "parent",
+          "fade": true,
+          "translate": false,
+          "scale": true
+        },
+        "participantReflowTiming": {
+          "durationMs": 240,
+          "easing": "ease-out"
         },
         "participantStatusLabelSlot": {
           "variantReference": "component_project_foqn_s2_label::variant::default",
@@ -4674,6 +4725,94 @@
       "embeddedSlot": null
     },
     {
+      "id": "module.core.videoCall.participantEnterMotion",
+      "label": "Participant enter motion",
+      "valueKind": "Motion",
+      "jsonPath": [
+        "videoCall",
+        "participantEnterMotion"
+      ],
+      "defaultValue": "{\"transition\":\"scale\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":true,\"translate\":false,\"scale\":true}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.participantExitMotion",
+      "label": "Participant exit motion",
+      "valueKind": "Motion",
+      "jsonPath": [
+        "videoCall",
+        "participantExitMotion"
+      ],
+      "defaultValue": "{\"transition\":\"scale\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":true,\"translate\":false,\"scale\":true}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.participantReflowTiming",
+      "label": "Participant reflow timing",
+      "valueKind": "MotionTiming",
+      "jsonPath": [
+        "videoCall",
+        "participantReflowTiming"
+      ],
+      "defaultValue": "{\"durationMs\":240,\"easing\":\"ease-out\"}",
+      "isEditable": true,
+      "options": [
+        { "value": "linear", "label": "Linear" },
+        { "value": "ease-in", "label": "Ease in" },
+        { "value": "ease-out", "label": "Ease out" },
+        { "value": "ease", "label": "Ease" },
+        { "value": "spring", "label": "Spring" },
+        { "value": "bounce", "label": "Bounce" }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": {
+        "showDelay": false,
+        "showIntensity": false
+      },
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
       "id": "module.core.videoCall.showStatusBar",
       "label": "Show status bar",
       "valueKind": "Boolean",
@@ -5004,6 +5143,21 @@
               {
                 "id": "module.core.videoCall.participantNamePlacement",
                 "order": 120,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.participantEnterMotion",
+                "order": 130,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.participantExitMotion",
+                "order": 140,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.participantReflowTiming",
+                "order": 150,
                 "visible": true
               }
             ]

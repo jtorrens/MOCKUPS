@@ -1,7 +1,7 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentVariantConfig, mergeComponentDefaults, requireComponentVariantType } from "./componentPreviewDefaults.js";
 import { parseObject, requiredBoolean, requiredComponentVariantSlot, requiredNumber, requiredNumberPair, requiredPlacement, requiredPossiblyEmptyString, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
-import { requiredObjectArray } from "./previewJsonHelpers.js";
+import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 import { resolveMediaComponentFromRecords } from "./mediaComponentResolver.js";
@@ -9,10 +9,27 @@ import { requiredRows, requiredRuntimeRows, resolveRow } from "./moduleRowSectio
 import { resolveContentRowComponent } from "./contentRowComponentResolver.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import type { VideoCallComponentSlot, VideoCallModuleContract, VideoCallParticipantRole } from "./videoCallModuleContract.js";
+import { requiredMotionContract } from "./previewMotionHelpers.js";
+import { requiredReflowTiming, resolveReflowProgress } from "./previewReflowHelpers.js";
+import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
+import { rootScreenFrame } from "./previewFrameContext.js";
+import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
+import { resolveRuntimeCollectionPresence } from "./runtimeCollectionPresence.js";
 
 export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCallModuleContract {
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
+  const instance = parseObject(payload.instanceJson);
+  const animation = optionalObject(instance, "animation", "Preview instance envelope");
+  const screenFrame = rootScreenFrame(payload);
+  const timeline = new RuntimeOwnerTimeline(
+    preview,
+    preview,
+    animation,
+    parseObject(payload.themeTokensJson),
+    0,
+    payload.frameRate,
+  );
   const bases = parseObject(payload.componentBaseConfigsJson);
   const owner = requiredRecord(config, "videoCall", "module.core.videoCall");
   const participantMediaConfig = slotConfig(bases, typedSlot(owner, bases, "participantMediaSlot", "media"), "media", "module.core.videoCall.participantMediaSlot");
@@ -25,23 +42,59 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     grid: slotConfig(bases, typedSlot(owner, bases, "gridSurfaceSlot", "surface"), "surface", "module.core.videoCall.gridSurfaceSlot"),
   };
   const participantPadding = pair(owner, "participantContentPadding");
+  const participantEnterMotion = requiredMotionContract(owner, "participantEnterMotion", "module.core.videoCall.participantEnterMotion");
+  const participantExitMotion = requiredMotionContract(owner, "participantExitMotion", "module.core.videoCall.participantExitMotion");
   const avatarSize = positive(requiredNumber(owner, "participantAvatarSize", "module.core.videoCall.participantAvatarSize"), "participantAvatarSize");
-  const participants = requiredObjectArray(preview, "participants", "module.core.videoCall.runtime.participants")
-    .filter((item, index) => requiredBoolean(item, "present", `module.core.videoCall.runtime.participants[${index}].present`))
+  const participantCollection = requiredObjectArray(preview, "collections", "module.core.videoCall Runtime collections")
+    .find((collection) => requiredString(collection, "id", "module.core.videoCall Runtime collection") === "participants");
+  if (!participantCollection) throw new Error("module.core.videoCall requires Runtime collection 'participants'");
+  const allParticipants = requiredObjectArray(preview, "participants", "module.core.videoCall.runtime.participants")
     .map((item, index) => {
-      const role = participantRole(requiredString(item, "role", `module.core.videoCall.runtime.participants[${index}].role`));
       const itemOwner = `module.core.videoCall.runtime.participants[${index}]`;
-      const videoPresent = requiredBoolean(item, "videoPresent", `${itemOwner}.videoPresent`);
+      const id = requiredString(item, "id", `${itemOwner}.id`);
+      const resolve = (fieldId: string, value: unknown, valueKind?: "decimalPair") => resolveParameterAnimation(
+        animation,
+        fieldId,
+        id,
+        Math.floor(timeline.temporalLocalFrame(fieldId, id, screenFrame)),
+        value,
+        valueKind,
+      ).value;
+      const presence = resolveRuntimeCollectionPresence(
+        payload,
+        timeline,
+        animation,
+        item,
+        id,
+        screenFrame,
+        participantEnterMotion,
+        participantExitMotion,
+      );
+      const role = participantRole(resolvedString(
+        resolve("role", requiredString(item, "role", `${itemOwner}.role`)),
+        `${itemOwner}.role animation`,
+      ));
+      const videoPresent = resolvedBoolean(
+        resolve("videoPresent", requiredBoolean(item, "videoPresent", `${itemOwner}.videoPresent`)),
+        `${itemOwner}.videoPresent animation`,
+      );
       const actorId = requiredPossiblyEmptyString(item, "actorId", `${itemOwner}.actorId`);
       const actor = actorId.trim()
         ? requiredRecord(item, "actor", `${itemOwner}.actor`)
         : undefined;
       const avatarConfig = structuredClone(participantAvatarConfig);
       requiredRecord(avatarConfig, "avatar", "module.core.videoCall.participantAvatar").defaultSize = avatarSize;
-      const connectionText = requiredPossiblyEmptyString(item, "connectionText", `${itemOwner}.connectionText`);
-      const showActorName = requiredBoolean(item, "showActorName", `${itemOwner}.showActorName`);
+      const connectionText = resolvedString(
+        resolve("connectionText", requiredPossiblyEmptyString(item, "connectionText", `${itemOwner}.connectionText`)),
+        `${itemOwner}.connectionText animation`,
+      );
+      const showActorName = resolvedBoolean(
+        resolve("showActorName", requiredBoolean(item, "showActorName", `${itemOwner}.showActorName`)),
+        `${itemOwner}.showActorName animation`,
+      );
       return {
-        id: requiredString(item, "id", `${itemOwner}.id`),
+        id,
+        present: presence.present,
         role,
         videoPresent,
         showActorName,
@@ -57,8 +110,14 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
           mediaType: requiredString(item, "mediaType", `${itemOwner}.mediaType`),
           mediaSource: requiredPossiblyEmptyString(item, "mediaSource", `${itemOwner}.mediaSource`),
           viewportSize: "390|844",
-          mediaScale: requiredNumber(item, "mediaScale", `${itemOwner}.mediaScale`),
-          mediaOffset: requiredString(item, "mediaOffset", `${itemOwner}.mediaOffset`),
+          mediaScale: resolvedNumber(
+            resolve("mediaScale", requiredNumber(item, "mediaScale", `${itemOwner}.mediaScale`)),
+            `${itemOwner}.mediaScale animation`,
+          ),
+          mediaOffset: resolvedString(
+            resolve("mediaOffset", requiredString(item, "mediaOffset", `${itemOwner}.mediaOffset`), "decimalPair"),
+            `${itemOwner}.mediaOffset animation`,
+          ),
           isPlaying: videoPresent,
           currentTimeSeconds: Math.max(0, payload.localFrame / Math.max(1, payload.frameRate)),
           durationSeconds: 0,
@@ -93,8 +152,15 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
           `${itemOwner}.status`,
           { localFrame: payload.localFrame, frameRate: payload.frameRate },
         ),
+        ...(presence.motionKind && presence.motionFrame
+          ? { presenceMotionKind: presence.motionKind, presenceMotionFrame: presence.motionFrame }
+          : {}),
+        reflowStartFrame: presence.reflowStartFrame,
+        reflowFromPresent: presence.reflowFromPresent,
       };
     });
+  const participants = allParticipants.filter((item) => item.present || item.presenceMotionKind === "exit");
+  const participantReflow = resolveParticipantReflow(payload, owner, allParticipants, participants, screenFrame);
   const headerRows = requiredRows(owner, "headerRows", "row", "module.core.videoCall");
   const headerRuntimeRows = requiredRuntimeRows(preview, "videoCallHeaderRows", "row", "module.core.videoCall");
   const footerRows = requiredRows(owner, "footerRows", "footerRow", "module.core.videoCall");
@@ -144,11 +210,40 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     gridHeightPercent: percentage(requiredNumber(owner, "gridHeightPercent", "module.core.videoCall.gridHeightPercent"), "gridHeightPercent"),
     gridRows: Math.max(1, Math.round(requiredNumber(owner, "gridRows", "module.core.videoCall.gridRows"))),
     participantNamePlacement: requiredPlacement(owner, "participantNamePlacement", "module.core.videoCall.participantNamePlacement"),
+    participantEnterMotion,
+    participantExitMotion,
     showStatusBar: requiredBoolean(owner, "showStatusBar", "module.core.videoCall.showStatusBar"),
     showNavigationBar: requiredBoolean(owner, "showNavigationBar", "module.core.videoCall.showNavigationBar"),
     participants,
     statusBarSlot: typedSlot(owner, bases, "statusBarSlot", "status_bar"),
     navigationBarSlot: typedSlot(owner, bases, "navigationBarSlot", "navigation_bar"),
+    ...(participantReflow ? { participantReflow } : {}),
+  };
+}
+
+function resolveParticipantReflow(
+  payload: DesignPreviewPayload,
+  owner: Record<string, unknown>,
+  allParticipants: VideoCallModuleContract["participants"],
+  participants: VideoCallModuleContract["participants"],
+  frame: number,
+) {
+  const timing = requiredReflowTiming(
+    requiredRecord(owner, "participantReflowTiming", "module.core.videoCall.participantReflowTiming"),
+    "module.core.videoCall.participantReflowTiming",
+  );
+  const durationFrames = timing.durationMs / 1000 * Math.max(1, payload.frameRate);
+  if (durationFrames <= 0) return undefined;
+  const start = allParticipants
+    .flatMap((item) => item.reflowStartFrame === undefined ? [] : [item.reflowStartFrame])
+    .filter((candidate) => candidate <= frame && frame < candidate + durationFrames)
+    .sort((left, right) => right - left)[0];
+  if (start === undefined) return undefined;
+  const fromParticipants = allParticipants.filter((item) =>
+    item.reflowStartFrame === start ? item.reflowFromPresent : participants.some((current) => current.id === item.id));
+  return {
+    progress: resolveReflowProgress(timing, (frame - start) / Math.max(1, payload.frameRate) * 1000),
+    fromParticipants,
   };
 }
 
@@ -161,3 +256,6 @@ function gridHeightMode(value: string): VideoCallModuleContract["gridHeightMode"
 function positive(value: number, path: string) { if (!Number.isFinite(value) || value <= 0) throw new Error(`${path} must be positive`); return value; }
 function percentage(value: number, path: string) { if (!Number.isFinite(value) || value <= 0 || value > 100) throw new Error(`${path} must be greater than 0 and at most 100`); return value; }
 function nonNegative(value: number, path: string) { if (!Number.isFinite(value) || value < 0) throw new Error(`${path} must be non-negative`); return value; }
+function resolvedString(value: unknown, path: string) { if (typeof value !== "string") throw new Error(`${path} must resolve to a string`); return value; }
+function resolvedBoolean(value: unknown, path: string) { if (typeof value !== "boolean") throw new Error(`${path} must resolve to a boolean`); return value; }
+function resolvedNumber(value: unknown, path: string) { if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`${path} must resolve to a finite number`); return value; }

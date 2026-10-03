@@ -5,6 +5,7 @@ import Database from "better-sqlite3";
 import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
 import { videoCallModuleToRenderable } from "../../src/desktop-preview/videoCallModuleRenderable.js";
 import { resolveVideoCallModule } from "../../src/desktop-preview/videoCallModuleResolver.js";
+import { numberToken, renderScale } from "../../src/desktop-preview/componentRenderableCommon.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
 function fixture() {
@@ -64,8 +65,124 @@ test("Video Call derives each visible participant name from its Actor", () => {
   const node = videoCallModuleToRenderable(edited);
   const visible = node.children?.find(child => child.id === "participant_alex");
   const hidden = node.children?.find(child => child.id === "participant_asia");
-  assert.ok(visible?.children?.some(child => child.id.includes(".name")));
+  const name = visible?.children?.find(child => child.id.includes(".name"));
+  assert.ok(visible?.box && name?.box);
+  assert.ok(Math.abs(
+    name.box.x + name.box.width * 0.5
+      - (visible.box.x + visible.box.width * 0.5),
+  ) < 0.001);
   assert.equal(hidden?.children?.some(child => child.id.includes(".name")), false);
+});
+
+test("Video Call uses exactly one configured gap between percentage regions", () => {
+  const source = fixture();
+  const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
+  preview.participants = preview.participants.slice(0, 2);
+  preview.participants[0]!.role = "main";
+  preview.participants[1]!.role = "grid";
+  const config = JSON.parse(source.configJson) as { videoCall: Record<string, unknown> };
+  config.videoCall.gridHeightMode = "percent";
+  config.videoCall.gridHeightPercent = 50;
+  config.videoCall.participantOuterPadding = "theme.spacing.m|theme.spacing.m";
+  config.videoCall.gridGapToken = "theme.spacing.s";
+  config.videoCall.showPip = false;
+
+  const node = videoCallModuleToRenderable({
+    ...source,
+    configJson: JSON.stringify(config),
+    designPreviewJson: JSON.stringify(preview),
+  });
+  const main = node.children?.find(child => child.id === "participant_alex");
+  const grid = node.children?.find(child => child.id === "participant_asia");
+  assert.ok(main?.box && grid?.box);
+  assert.equal(
+    grid.box.y - (main.box.y + main.box.height),
+    numberToken(source, "theme.spacing.s") * renderScale(source),
+  );
+});
+
+test("Video Call linearly animates participant Media scale and offset", () => {
+  const source = fixture();
+  source.localFrame = 5;
+  source.instanceJson = JSON.stringify({
+    context: { screenFrame: 5 },
+    animation: {
+      schemaVersion: 2,
+      tracks: [
+        {
+          fieldId: "mediaScale",
+          targetId: "participant_alex",
+          keyframes: [
+            { frame: 0, value: 1, interpolation: "hold" },
+            { frame: 10, value: 2, interpolation: "linear" },
+          ],
+        },
+        {
+          fieldId: "mediaOffset",
+          targetId: "participant_alex",
+          keyframes: [
+            { frame: 0, value: "0|0", interpolation: "hold" },
+            { frame: 10, value: "20|-10", interpolation: "linear" },
+          ],
+        },
+      ],
+    },
+  });
+  const participant = resolveVideoCallModule(source).participants
+    .find(item => item.id === "participant_alex");
+  assert.equal(participant?.media.viewport.scale, 1.5);
+  assert.equal(participant?.media.viewport.offsetX, 10);
+  assert.equal(participant?.media.viewport.offsetY, -5);
+});
+
+test("Video Call enters a participant and reflows stable cards from their prior geometry", () => {
+  const source = fixture();
+  const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
+  preview.participants = preview.participants.slice(0, 2);
+  preview.participants[0]!.role = "main";
+  preview.participants[1]!.role = "grid";
+  preview.participants[1]!.present = false;
+  const config = JSON.parse(source.configJson) as { videoCall: Record<string, unknown> };
+  config.videoCall.showPip = false;
+  const at = (frame: number) => {
+    const payload = {
+      ...source,
+      localFrame: frame,
+      configJson: JSON.stringify(config),
+      designPreviewJson: JSON.stringify(preview),
+      runtimeContractJson: JSON.stringify(preview),
+      instanceJson: JSON.stringify({
+        context: { screenFrame: frame },
+        animation: {
+          schemaVersion: 2,
+          tracks: [{
+            fieldId: "present",
+            targetId: "participant_asia",
+            keyframes: [{ frame: 10, value: true, interpolation: "hold" }],
+          }],
+        },
+      }),
+    };
+    return {
+      contract: resolveVideoCallModule(payload),
+      main: videoCallModuleToRenderable(payload).children
+        ?.find(child => child.id === "participant_alex"),
+    };
+  };
+
+  const before = at(9);
+  const start = at(10);
+  const middle = at(12);
+  const after = at(20);
+  const entering = start.contract.participants.find(item => item.id === "participant_asia");
+  assert.equal(entering?.presenceMotionKind, "enter");
+  assert.equal(start.contract.participantReflow?.progress, 0);
+  assert.ok(middle.contract.participantReflow?.progress);
+  assert.equal(after.contract.participantReflow, undefined);
+  assert.ok(before.main?.box && start.main?.box && middle.main?.box && after.main?.box);
+  assert.equal(start.main.box.height, before.main.box.height);
+  assert.ok(middle.main.box.height < start.main.box.height);
+  assert.equal(after.main.box.height < middle.main.box.height, true);
 });
 
 test("Video Call permits simultaneous participants with the same role", () => {

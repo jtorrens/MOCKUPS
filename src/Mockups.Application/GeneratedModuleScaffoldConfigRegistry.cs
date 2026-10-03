@@ -594,6 +594,20 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["videoCall", "participantContentPadding"],
             "",
             []),
+        ["module.core.videoCall.participantEnterMotion"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.participantEnterMotion",
+            ValueKind.Motion,
+            ["videoCall", "participantEnterMotion"],
+            "",
+            []),
+        ["module.core.videoCall.participantExitMotion"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.participantExitMotion",
+            ValueKind.Motion,
+            ["videoCall", "participantExitMotion"],
+            "",
+            []),
         ["module.core.videoCall.participantMedia"] = new(
             "module.core.videoCall",
             "module.core.videoCall.participantMedia",
@@ -620,6 +634,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             "module.core.videoCall.participantOuterPadding",
             ValueKind.ThemeTokenPair,
             ["videoCall", "participantOuterPadding"],
+            "",
+            []),
+        ["module.core.videoCall.participantReflowTiming"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.participantReflowTiming",
+            ValueKind.MotionTiming,
+            ["videoCall", "participantReflowTiming"],
             "",
             []),
         ["module.core.videoCall.participantStatusLabel"] = new(

@@ -3,7 +3,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
-import { numberToken, placeChild, previewPayloadInBox, previewScreenBox, renderScale, scalePlacement, selectedColor } from "./componentRenderableCommon.js";
+import { interpolateRenderableGeometry, numberToken, placeChild, previewPayloadInBox, previewScreenBox, renderScale, scalePlacement, selectedColor } from "./componentRenderableCommon.js";
 import { parseObject } from "./componentResolverCommon.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import { mediaComponentToRenderableAt } from "./mediaComponentRenderable.js";
@@ -13,6 +13,7 @@ import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import { resolveVideoCallModule } from "./videoCallModuleResolver.js";
 import type { VideoCallComponentSlot, VideoCallModuleContract, VideoCallParticipant } from "./videoCallModuleContract.js";
+import { wrapExitMotionFrame, wrapMotionFrame } from "./previewMotionHelpers.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
 
 export function videoCallModuleToRenderable(payload: DesignPreviewPayload): RenderableNode {
@@ -63,12 +64,24 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
     height: Math.max(1, bodyBottom - bodyTop),
   };
   const gap = numberToken(payload, call.gridGapToken) * scale;
-  const layoutById = participantLayout(call, payload, body, gap);
-  const pipContent = inset(payload, body, call.participantOuterPadding);
-  const pipBox = placeChild(pipContent, { width: call.pipSize.width * scale, height: call.pipSize.height * scale }, scalePlacement(call.pipPlacement, scale));
+  const participantArea = inset(payload, body, call.participantOuterPadding);
+  const targetBoxes = participantBoxes(call, payload, participantArea, gap, call.participants);
+  const previousBoxes = call.participantReflow
+    ? participantBoxes(call, payload, participantArea, gap, call.participantReflow.fromParticipants)
+    : undefined;
   const participants = call.participants.flatMap((item) => {
-    const box = item.role === "pip" && call.showPip ? pipBox : layoutById.get(item.id);
-    return box ? [participantNode(previewPayloadInBox(payload, box), bases, call, item, box)] : [];
+    const targetBox = targetBoxes.get(item.id);
+    if (!targetBox) return [];
+    const targetNode = participantNode(previewPayloadInBox(payload, targetBox), bases, call, item, targetBox);
+    const previousBox = previousBoxes?.get(item.id);
+    const reflowed = call.participantReflow && previousBox
+      ? interpolateRenderableGeometry(
+          participantNode(previewPayloadInBox(payload, previousBox), bases, call, item, previousBox),
+          targetNode,
+          call.participantReflow.progress,
+        )
+      : targetNode;
+    return [applyParticipantMotion(payload, call, item, reflowed, participantArea)];
   });
   const children: RenderableNode[] = [
     call.useAppWallpaper
@@ -140,34 +153,71 @@ function participantNode(
   return { id: participant.id, type: "group", frame: 0, box, style: { overflow: "hidden" }, children };
 }
 
-function participantLayout(call: ReturnType<typeof resolveVideoCallModule>, payload: DesignPreviewPayload, body: RenderableBox, gap: number) {
+function participantBoxes(
+  call: ReturnType<typeof resolveVideoCallModule>,
+  payload: DesignPreviewPayload,
+  participantArea: RenderableBox,
+  gap: number,
+  participants: VideoCallParticipant[],
+) {
+  const byId = participantLayout(call, participantArea, gap, participants);
+  if (call.showPip) {
+    const scale = renderScale(payload);
+    const pipBox = placeChild(
+      participantArea,
+      { width: call.pipSize.width * scale, height: call.pipSize.height * scale },
+      scalePlacement(call.pipPlacement, scale),
+    );
+    for (const item of participants) if (item.role === "pip") byId.set(item.id, pipBox);
+  }
+  return byId;
+}
+
+function participantLayout(
+  call: ReturnType<typeof resolveVideoCallModule>,
+  participantArea: RenderableBox,
+  gap: number,
+  participants: VideoCallParticipant[],
+) {
   if (call.gridHeightMode === "fill") {
-    const items = call.participants.filter((item) =>
+    const items = participants.filter((item) =>
       (item.role === "main" && call.showMainVideo)
       || (item.role === "grid" && call.showGridParticipants));
-    return new Map(grid(items, inset(payload, body, call.participantOuterPadding), gap, call.gridRows).map(({ item, box }) => [item.id, box]));
+    return new Map(grid(items, participantArea, gap, call.gridRows).map(({ item, box }) => [item.id, box]));
   }
 
   const gridItems = call.showGridParticipants
-    ? call.participants.filter((item) => item.role === "grid")
+    ? participants.filter((item) => item.role === "grid")
     : [];
-  const gridHeight = body.height * call.gridHeightPercent / 100;
+  const gridHeight = participantArea.height * call.gridHeightPercent / 100;
   const gridRegion: RenderableBox = {
-    x: body.x,
-    y: body.y + body.height - gridHeight,
-    width: body.width,
+    x: participantArea.x,
+    y: participantArea.y + participantArea.height - gridHeight,
+    width: participantArea.width,
     height: gridHeight,
   };
   const mainRegion: RenderableBox = gridItems.length > 0
-    ? { x: body.x, y: body.y, width: body.width, height: Math.max(1, gridRegion.y - gap - body.y) }
-    : body;
+    ? { x: participantArea.x, y: participantArea.y, width: participantArea.width, height: Math.max(1, gridRegion.y - gap - participantArea.y) }
+    : participantArea;
   const byId = new Map<string, RenderableBox>();
   if (call.showMainVideo) {
-    const mainBox = inset(payload, mainRegion, call.participantOuterPadding);
-    for (const item of call.participants) if (item.role === "main") byId.set(item.id, mainBox);
+    for (const item of participants) if (item.role === "main") byId.set(item.id, mainRegion);
   }
-  for (const { item, box } of grid(gridItems, inset(payload, gridRegion, call.participantOuterPadding), gap, call.gridRows)) byId.set(item.id, box);
+  for (const { item, box } of grid(gridItems, gridRegion, gap, call.gridRows)) byId.set(item.id, box);
   return byId;
+}
+
+function applyParticipantMotion(
+  payload: DesignPreviewPayload,
+  call: VideoCallModuleContract,
+  participant: VideoCallParticipant,
+  node: RenderableNode,
+  parentBox: RenderableBox,
+) {
+  if (!node.box || !participant.presenceMotionFrame || !participant.presenceMotionKind) return node;
+  return participant.presenceMotionKind === "enter"
+    ? wrapMotionFrame(payload, node, call.participantEnterMotion, participant.presenceMotionFrame, node.box, parentBox)
+    : wrapExitMotionFrame(payload, node, call.participantExitMotion, participant.presenceMotionFrame, node.box, parentBox);
 }
 
 function grid(items: VideoCallParticipant[], box: RenderableBox, gap: number, requestedRows: number) {

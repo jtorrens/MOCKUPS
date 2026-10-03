@@ -3,7 +3,7 @@ import type { LabelDesignContract } from "./labelComponentContract.js";
 import type { MediaDesignContract } from "./mediaComponentContract.js";
 import type { ModuleRow } from "./moduleRowSectionContract.js";
 import type { ContentRowDesignContract } from "./contentRowComponentContract.js";
-import type { AlignmentPlacementContract, SpacingPairContract } from "./previewComponentContracts.js";
+import type { AlignmentPlacementContract, ComponentMotionContract, ComponentMotionFrameContract, SpacingPairContract } from "./previewComponentContracts.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface VideoCallComponentSlot extends Record<string, unknown> {
@@ -15,6 +15,7 @@ export type VideoCallParticipantRole = "main" | "pip" | "grid";
 
 export interface VideoCallParticipant {
   id: string;
+  present: boolean;
   role: VideoCallParticipantRole;
   videoPresent: boolean;
   showActorName: boolean;
@@ -30,6 +31,10 @@ export interface VideoCallParticipant {
   avatar?: AvatarDesignContract;
   nameLabel?: LabelDesignContract;
   statusLabel: LabelDesignContract;
+  presenceMotionKind?: "enter" | "exit";
+  presenceMotionFrame?: ComponentMotionFrameContract;
+  reflowStartFrame?: number;
+  reflowFromPresent: boolean;
 }
 
 export interface VideoCallModuleContract {
@@ -64,9 +69,15 @@ export interface VideoCallModuleContract {
   gridHeightPercent: number;
   gridRows: number;
   participantNamePlacement: AlignmentPlacementContract;
+  participantEnterMotion: ComponentMotionContract;
+  participantExitMotion: ComponentMotionContract;
   showStatusBar: boolean;
   showNavigationBar: boolean;
   participants: VideoCallParticipant[];
   statusBarSlot: VideoCallComponentSlot;
   navigationBarSlot: VideoCallComponentSlot;
+  participantReflow?: {
+    progress: number;
+    fromParticipants: VideoCallParticipant[];
+  };
 }

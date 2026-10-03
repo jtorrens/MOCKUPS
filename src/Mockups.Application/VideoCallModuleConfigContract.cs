@@ -25,6 +25,7 @@ internal static class VideoCallModuleConfigContract
             "showGridParticipants", "gridSurfaceSlot", "gridGapToken", "gridHeightMode", "gridHeightPercent", "gridRows",
             "showParticipantSurface", "showParticipantMedia", "showFallbackAvatar", "showFallbackStatus",
             "participantContentPadding", "participantAvatarSize", "participantMediaSlot", "participantAvatarSlot", "participantNameLabelSlot", "participantNamePlacement", "participantStatusLabelSlot",
+            "participantEnterMotion", "participantExitMotion", "participantReflowTiming",
             "showStatusBar", "showNavigationBar",
             "statusBarSlot", "navigationBarSlot"
         ], $"{context}.videoCall");
@@ -43,6 +44,16 @@ internal static class VideoCallModuleConfigContract
         _ = RuntimeInputValueKindContract.ParseValue(ValueKind.IntegerPair, JsonPath.RequiredString(owner, "pipSize", context), $"{context}.videoCall.pipSize");
         _ = AlignmentPlacementValue.Parse(JsonPath.RequiredObject(owner, "pipPlacement", context).ToJsonString());
         _ = AlignmentPlacementValue.Parse(JsonPath.RequiredObject(owner, "participantNamePlacement", context).ToJsonString());
+        MotionVariantValue.Parse(JsonPath.RequiredObject(owner, "participantEnterMotion", context).ToJsonString());
+        MotionVariantValue.Parse(JsonPath.RequiredObject(owner, "participantExitMotion", context).ToJsonString());
+        var participantReflowTiming = MotionTimingValue.Parse(
+            JsonPath.RequiredObject(owner, "participantReflowTiming", context).ToJsonString());
+        if (participantReflowTiming.DurationMs is not > 0
+            || string.IsNullOrWhiteSpace(participantReflowTiming.Easing))
+        {
+            throw new InvalidOperationException(
+                $"{context}.videoCall.participantReflowTiming requires a positive duration and easing.");
+        }
         if (JsonPath.RequiredNumber(owner, "headerHeight", context) < 0 || JsonPath.RequiredNumber(owner, "footerHeight", context) < 0)
             throw new InvalidOperationException($"{context} video call section heights must be non-negative.");
         foreach (var key in new[] { "gridHeightPercent", "gridRows", "participantAvatarSize" })
