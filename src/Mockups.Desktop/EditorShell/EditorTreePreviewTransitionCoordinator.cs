@@ -21,10 +21,13 @@ internal sealed class EditorTreePreviewTransitionCoordinator
     public Task<EditorSessionTransition?> ReloadAsync(
         string source = "tree-load",
         EditorTreeLoadIntent intent =
-            EditorTreeLoadIntent.Workspace)
+            EditorTreeLoadIntent.Workspace,
+        ProjectTreeNode? preferredSelection = null)
     {
         return PrepareAndCommitAsync(
-            _workspace.PrepareTreeReloadAsync(intent),
+            _workspace.PrepareTreeReloadAsync(
+                intent,
+                preferredSelection),
             source);
     }
 

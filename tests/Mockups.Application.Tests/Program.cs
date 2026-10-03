@@ -26,6 +26,7 @@ var tests = new (string Name, Action Run)[]
     ("Design navigation history skips deleted owners", DesignNavigationHistorySkipsDeletedOwners),
     ("a newer tree load cancels and rejects the older result", NewerTreeLoadRejectsOlderResult),
     ("prepared tree data remains invisible until its dependent state can commit", PreparedTreeRemainsInvisibleUntilCommit),
+    ("targeted tree refresh selects the new node in the same commit", TargetedTreeRefreshSelectsNewNode),
     ("async tree reads run on a worker before committing immutable state", AsyncTreeReadRunsOnWorker),
     ("desktop consumers can compile only asynchronous tree loading", OnlyAsyncTreeLoadingIsPublic),
     ("rapid async workspace changes discard the older result", RapidAsyncWorkspaceChangeDiscardsOlderResult),
@@ -2131,6 +2132,49 @@ static void PreparedTreeRemainsInvisibleUntilCommit()
         out _));
     True(coordinator.State.Revision
         > previous.Revision);
+}
+
+static void TargetedTreeRefreshSelectsNewNode()
+{
+    var source = new MutableNavigationDataSource(CreateTree());
+    using var coordinator = new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+    coordinator.SwitchWorkspace(EditorWorkspace.Production);
+    var previous = coordinator.State;
+    var nextTree = CreateTree();
+    var episode = EditorNodeSelectionState.FindNodeById(
+            nextTree,
+            "episode-a")
+        ?? throw new InvalidOperationException(
+            "Missing Episode fixture.");
+    var created = Node(
+        ProjectTreeNodeKind.Shot,
+        "shot-created",
+        "Created Shot",
+        "shot");
+    episode.AddChild(created);
+    source.Tree = nextTree;
+
+    var preparation = coordinator
+        .PrepareTreeReloadAsync(
+            EditorTreeLoadIntent.Workspace,
+            created)
+        .GetAwaiter()
+        .GetResult()
+        ?? throw new InvalidOperationException(
+            "Expected a targeted tree candidate.");
+
+    Equal(previous, coordinator.State);
+    Equal("project-a", preparation.ProjectId);
+    True(coordinator.TryCommitTreeLoad(
+        preparation,
+        "targeted-refresh",
+        out var transition));
+    Equal("shot-created", transition.Current.SelectedNode?.Id);
+    Equal("shot-created", coordinator.State.SelectedNode?.Id);
+    Equal(
+        coordinator.State.Revision,
+        coordinator.State.Preview.Revision);
 }
 
 static void AsyncTreeReadRunsOnWorker()

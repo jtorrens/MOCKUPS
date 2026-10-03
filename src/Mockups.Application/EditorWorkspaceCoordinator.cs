@@ -24,12 +24,16 @@ public sealed class EditorTreeLoadOperation
         long baseRevision,
         EditorWorkspace workspace,
         EditorTreeLoadIntent intent,
+        string preferredSelectionId,
+        string preferredProjectId,
         CancellationTokenSource cancellation)
     {
         Id = id;
         BaseRevision = baseRevision;
         Workspace = workspace;
         Intent = intent;
+        PreferredSelectionId = preferredSelectionId;
+        PreferredProjectId = preferredProjectId;
         Cancellation = cancellation;
         Token = cancellation.Token;
     }
@@ -39,6 +43,8 @@ public sealed class EditorTreeLoadOperation
     public long BaseRevision { get; }
     public EditorWorkspace Workspace { get; }
     public EditorTreeLoadIntent Intent { get; }
+    public string PreferredSelectionId { get; }
+    public string PreferredProjectId { get; }
     public CancellationToken Token { get; }
 }
 
@@ -147,9 +153,13 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
 
     internal EditorSessionTransition ReloadTree(
         string source = "tree-load",
-        EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace)
+        EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace,
+        ProjectTreeNode? preferredSelection = null)
     {
-        var operation = BeginTreeLoad(State.Workspace, intent);
+        var operation = BeginTreeLoad(
+            State.Workspace,
+            intent,
+            preferredSelection);
         try
         {
             var roots = _navigation.LoadProjectTree();
@@ -173,20 +183,24 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
 
     public Task<EditorSessionTransition?> ReloadTreeAsync(
         string source = "tree-load",
-        EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace)
+        EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace,
+        ProjectTreeNode? preferredSelection = null)
     {
         return LoadTreeAsync(
             State.Workspace,
             source,
-            intent);
+            intent,
+            preferredSelection);
     }
 
     public Task<EditorTreeLoadPreparation?> PrepareTreeReloadAsync(
-        EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace)
+        EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace,
+        ProjectTreeNode? preferredSelection = null)
     {
         return PrepareTreeLoadAsync(
             State.Workspace,
-            intent);
+            intent,
+            preferredSelection);
     }
 
     public Task<EditorTreeLoadPreparation?> PrepareWorkspaceSwitchAsync(
@@ -199,7 +213,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
 
         return PrepareTreeLoadAsync(
             workspace,
-            EditorTreeLoadIntent.Workspace);
+            EditorTreeLoadIntent.Workspace,
+            preferredSelection: null);
     }
 
     internal EditorSessionTransition SwitchWorkspace(
@@ -253,7 +268,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
 
     public EditorTreeLoadOperation BeginTreeLoad(
         EditorWorkspace workspace,
-        EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace)
+        EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace,
+        ProjectTreeNode? preferredSelection = null)
     {
         lock (_stateGate)
         {
@@ -264,6 +280,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 _state.Revision,
                 workspace,
                 intent,
+                preferredSelection?.Id ?? "",
+                ProjectId(preferredSelection),
                 new CancellationTokenSource());
             _activeTreeLoad = operation;
             return operation;
@@ -293,12 +311,16 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             var roots = treeRoots.ToArray();
             var productionId = ResolveProductionId(
                 roots,
-                previous.ProductionId);
+                string.IsNullOrWhiteSpace(
+                    operation.PreferredProjectId)
+                    ? previous.ProductionId
+                    : operation.PreferredProjectId);
             var selected = ResolveTreeSelection(
                 roots,
                 operation.Workspace,
                 previous,
-                productionId);
+                productionId,
+                operation.PreferredSelectionId);
             if (selected is not null)
             {
                 _nodeSelection.RememberVariantSelection(selected);
@@ -820,11 +842,13 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
     private async Task<EditorSessionTransition?> LoadTreeAsync(
         EditorWorkspace workspace,
         string source,
-        EditorTreeLoadIntent intent)
+        EditorTreeLoadIntent intent,
+        ProjectTreeNode? preferredSelection = null)
     {
         var preparation = await PrepareTreeLoadAsync(
             workspace,
-            intent);
+            intent,
+            preferredSelection);
         if (preparation is null)
         {
             return null;
@@ -840,11 +864,13 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
     private async Task<EditorTreeLoadPreparation?>
         PrepareTreeLoadAsync(
             EditorWorkspace workspace,
-            EditorTreeLoadIntent intent)
+            EditorTreeLoadIntent intent,
+            ProjectTreeNode? preferredSelection = null)
     {
         var operation = BeginTreeLoad(
             workspace,
-            intent);
+            intent,
+            preferredSelection);
         try
         {
             var roots = await Task.Run(
@@ -860,7 +886,10 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 preparedRoots,
                 ResolveProductionId(
                     preparedRoots,
-                    State.ProductionId));
+                    string.IsNullOrWhiteSpace(
+                        operation.PreferredProjectId)
+                        ? State.ProductionId
+                        : operation.PreferredProjectId));
         }
         catch (OperationCanceledException)
             when (operation.Token.IsCancellationRequested)
@@ -890,7 +919,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         IReadOnlyList<ProjectTreeNode> roots,
         EditorWorkspace workspace,
         EditorSessionState previous,
-        string projectId)
+        string projectId,
+        string preferredSelectionId)
     {
         var project = roots.FirstOrDefault((candidate) =>
             candidate.Id.Equals(projectId, StringComparison.Ordinal));
@@ -898,7 +928,21 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         {
             return null;
         }
-        var selected = previous.SelectedNode is null
+        var selected = string.IsNullOrWhiteSpace(
+                preferredSelectionId)
+            ? null
+            : project.Id.Equals(
+                    preferredSelectionId,
+                    StringComparison.Ordinal)
+                ? project
+                : EditorWorkspaceNavigation.FindNode(
+                    [project],
+                    workspace,
+                    preferredSelectionId);
+        selected = IsValid(selected, workspace, projectId)
+            ? selected
+            : null;
+        selected ??= previous.SelectedNode is null
             ? null
             : EditorWorkspaceNavigation.FindNode(
                 [project],
@@ -927,6 +971,18 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         return selected is null
             ? null
             : _nodeSelection.ResolveSelectionNode(selected);
+    }
+
+    private static string ProjectId(
+        ProjectTreeNode? node)
+    {
+        var current = node;
+        while (current is not null
+            && current.Kind != ProjectTreeNodeKind.Project)
+        {
+            current = current.Parent;
+        }
+        return current?.Id ?? "";
     }
 
     private static bool IsValid(

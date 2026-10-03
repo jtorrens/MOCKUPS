@@ -239,7 +239,7 @@ public partial class MainWindow : SukiWindow
             application.Operations,
             () => _themeController.IsDark,
             () => Session.TreeRoots,
-            LoadProjectTreeAsync,
+            () => LoadProjectTreeAsync(),
             ReloadAndSelectAsync,
             RebuildNavigationCards,
             NavigateToReferenceUsage,
@@ -352,7 +352,7 @@ public partial class MainWindow : SukiWindow
             (nodeId) => NavigateToNodeById(
                 nodeId,
                 "embedded-usage"),
-            LoadProjectTreeAsync,
+            () => LoadProjectTreeAsync(),
             () => Session.SelectedNode,
             _embeddedEditors.Open,
             _messages);
@@ -712,13 +712,15 @@ public partial class MainWindow : SukiWindow
         await RefreshPreviewOptionsAsync();
     }
 
-    private async Task<bool> LoadProjectTreeAsync()
+    private async Task<bool> LoadProjectTreeAsync(
+        ProjectTreeNode? preferredSelection = null)
     {
         CaptureActiveEditorViewState();
         try
         {
             var transition =
-                await _treePreviewTransitions.ReloadAsync();
+                await _treePreviewTransitions.ReloadAsync(
+                    preferredSelection: preferredSelection);
             if (transition is null)
             {
                 return false;
@@ -1711,13 +1713,13 @@ public partial class MainWindow : SukiWindow
     {
         try
         {
-            if (!await LoadProjectTreeAsync())
+            if (!await LoadProjectTreeAsync(node))
             {
                 return;
             }
-            if (NavigateToNodeById(
+            if (Session.SelectedNode?.Id.Equals(
                     node.Id,
-                    "reload-select"))
+                    StringComparison.Ordinal) == true)
             {
                 await _navigationRenderer.BringNodeIntoViewAsync(
                     NavigationCardsPanel,
