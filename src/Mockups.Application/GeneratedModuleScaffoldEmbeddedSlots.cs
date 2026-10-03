@@ -157,6 +157,12 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "component.media",
             ["videoCall", "participantMediaSlot"]),
         new(
+            "module.core.videoCall.participantNameLabel",
+            "label",
+            "Participant name label",
+            "component.label",
+            ["videoCall", "participantNameLabelSlot"]),
+        new(
             "module.core.videoCall.participantStatusLabel",
             "label",
             "Participant status label",

@@ -51,6 +51,23 @@ test("Video Call resolves free-form and empty participant connection text", () =
   assert.ok((node.children?.length ?? 0) > 4);
 });
 
+test("Video Call derives each visible participant name from its Actor", () => {
+  const source = fixture();
+  const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
+  preview.participants[0]!.showActorName = true;
+  preview.participants[1]!.showActorName = false;
+  const edited = { ...source, designPreviewJson: JSON.stringify(preview) };
+  const call = resolveVideoCallModule(edited);
+  assert.equal(call.participants[0]?.nameLabel?.text, "Alex Q");
+  assert.equal(call.participants[0]?.showActorName, true);
+  assert.equal(call.participants[1]?.showActorName, false);
+  const node = videoCallModuleToRenderable(edited);
+  const visible = node.children?.find(child => child.id === "participant_alex");
+  const hidden = node.children?.find(child => child.id === "participant_asia");
+  assert.ok(visible?.children?.some(child => child.id.includes(".name")));
+  assert.equal(hidden?.children?.some(child => child.id.includes(".name")), false);
+});
+
 test("Video Call permits simultaneous participants with the same role", () => {
   const source = fixture();
   const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
@@ -86,7 +103,7 @@ test("Video Call grid rows fill every row without reserving empty columns", () =
   assert.ok(participants[2]!.box!.width > participants[0]!.box!.width * 1.9);
 });
 
-test("Video Call fixed grid anchors below main and above the stacked footer", () => {
+test("Video Call percentage grid uses the stacked available body", () => {
   const source = fixture();
   const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
   preview.participants = preview.participants.slice(0, 3);
@@ -94,12 +111,11 @@ test("Video Call fixed grid anchors below main and above the stacked footer", ()
   preview.participants[1]!.role = "grid";
   preview.participants[2]!.role = "grid";
   const config = JSON.parse(source.configJson) as { videoCall: Record<string, unknown> };
-  config.videoCall.gridHeightMode = "fixed";
-  config.videoCall.gridHeight = 240;
+  config.videoCall.gridHeightMode = "percent";
+  config.videoCall.gridHeightPercent = 50;
   config.videoCall.gridRows = 1;
-  config.videoCall.gridPadding = "theme.spacing.none|theme.spacing.none";
+  config.videoCall.participantOuterPadding = "theme.spacing.none|theme.spacing.none";
   config.videoCall.gridGapToken = "theme.spacing.none";
-  config.videoCall.mainPadding = "theme.spacing.none|theme.spacing.none";
   config.videoCall.showPip = false;
 
   const node = videoCallModuleToRenderable({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(preview) });
@@ -110,16 +126,17 @@ test("Video Call fixed grid anchors below main and above the stacked footer", ()
   assert.ok(participants[1]!.box!.y >= participants[0]!.box!.y + participants[0]!.box!.height);
   assert.equal(participants[1]!.box!.y, participants[2]!.box!.y);
   assert.equal(participants[1]!.box!.y + participants[1]!.box!.height, footer!.box!.y);
+  assert.equal(participants[1]!.box!.height, participants[0]!.box!.height);
 });
 
-test("Video Call fixed main expands through the complete body when there is no grid", () => {
+test("Video Call percentage main expands through the complete body when there is no grid", () => {
   const source = fixture();
   const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
   preview.participants = preview.participants.slice(0, 1);
   preview.participants[0]!.role = "main";
   const config = JSON.parse(source.configJson) as { videoCall: Record<string, unknown> };
-  config.videoCall.gridHeightMode = "fixed";
-  config.videoCall.mainPadding = "theme.spacing.none|theme.spacing.none";
+  config.videoCall.gridHeightMode = "percent";
+  config.videoCall.participantOuterPadding = "theme.spacing.none|theme.spacing.none";
   for (const key of ["showStatusBar", "showHeader", "showFooter", "showPip", "showNavigationBar"]) config.videoCall[key] = false;
 
   const node = videoCallModuleToRenderable({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(preview) });
@@ -138,7 +155,7 @@ test("Video Call fill mode gives main and grid roles the same tile geometry", ()
   const config = JSON.parse(source.configJson) as { videoCall: Record<string, unknown> };
   config.videoCall.gridHeightMode = "fill";
   config.videoCall.gridRows = 2;
-  config.videoCall.gridPadding = "theme.spacing.none|theme.spacing.none";
+  config.videoCall.participantOuterPadding = "theme.spacing.none|theme.spacing.none";
   config.videoCall.gridGapToken = "theme.spacing.none";
   for (const key of ["showStatusBar", "showHeader", "showFooter", "showPip", "showNavigationBar"]) config.videoCall[key] = false;
 

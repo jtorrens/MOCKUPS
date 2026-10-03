@@ -17,6 +17,7 @@ export interface VideoCallParticipant {
   id: string;
   role: VideoCallParticipantRole;
   videoPresent: boolean;
+  showActorName: boolean;
   connectionText: string;
   padding: SpacingPairContract;
   avatarSize: number;
@@ -27,6 +28,7 @@ export interface VideoCallParticipant {
   surface: SurfaceDesignContract;
   media: MediaDesignContract;
   avatar?: AvatarDesignContract;
+  nameLabel?: LabelDesignContract;
   statusLabel: LabelDesignContract;
 }
 
@@ -51,18 +53,17 @@ export interface VideoCallModuleContract {
   footerRowGapToken: string;
   footerRows: [ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>];
   showMainVideo: boolean;
-  mainPadding: SpacingPairContract;
+  participantOuterPadding: SpacingPairContract;
   mainRows: [ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>];
   showPip: boolean;
   pipSize: { width: number; height: number };
   pipPlacement: AlignmentPlacementContract;
-  pipPadding: SpacingPairContract;
   showGridParticipants: boolean;
-  gridPadding: SpacingPairContract;
   gridGapToken: string;
-  gridHeightMode: "fixed" | "fill";
-  gridHeight: number;
+  gridHeightMode: "percent" | "fill";
+  gridHeightPercent: number;
   gridRows: number;
+  participantNamePlacement: AlignmentPlacementContract;
   showStatusBar: boolean;
   showNavigationBar: boolean;
   participants: VideoCallParticipant[];

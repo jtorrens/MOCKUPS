@@ -492,7 +492,7 @@
         }
       ],
       "showMainVideo": true,
-      "mainPadding": "theme.spacing.none|theme.spacing.none",
+      "participantOuterPadding": "theme.spacing.s|theme.spacing.s",
       "showPip": true,
       "pipSize": "104|156",
       "pipPlacement": {
@@ -502,12 +502,10 @@
         "offsetX": -12,
         "offsetY": 12
       },
-      "pipPadding": "theme.spacing.s|theme.spacing.s",
       "showGridParticipants": true,
-      "gridPadding": "theme.spacing.s|theme.spacing.s",
       "gridGapToken": "theme.spacing.s",
-      "gridHeightMode": "fixed",
-      "gridHeight": 360,
+      "gridHeightMode": "percent",
+      "gridHeightPercent": 50,
       "gridRows": 2,
       "showStatusBar": true,
       "showNavigationBar": true,
@@ -573,6 +571,31 @@
       "participantAvatarSlot": {
         "variantReference": "component_project_foqn_s2_avatar::variant::default",
         "overrides": {}
+      },
+      "participantNameLabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {
+          "label": {
+            "dimensionMode": "content",
+            "padding": "theme.spacing.s|theme.spacing.xs",
+            "textAlign": "center",
+            "textColorToken": "theme.colors.textPrimary",
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default",
+              "overrides": {
+                "style": { "cornerRadiusToken": "theme.radii.full" },
+                "surface": { "backgroundColorToken": "theme.colors.background", "backgroundAlpha": 0.6, "borderAlpha": 0 }
+              }
+            }
+          }
+        }
+      },
+      "participantNamePlacement": {
+        "mode": "insideEdge",
+        "alignX": 0,
+        "alignY": -1,
+        "offsetX": 0,
+        "offsetY": 12
       },
       "participantStatusLabelSlot": {
         "variantReference": "component_project_foqn_s2_label::variant::default",
@@ -1511,6 +1534,18 @@
             "resolvedJsonKey": "actor"
           },
           {
+            "id": "showActorName",
+            "label": "Show actor name",
+            "jsonKey": "showActorName",
+            "kind": "boolean",
+            "valueKind": "Boolean",
+            "defaultValue": "true",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ]
+          },
+          {
             "id": "mediaType",
             "label": "Media type",
             "jsonKey": "mediaType",
@@ -1592,6 +1627,7 @@
         "id": "participant_alex",
         "present": true,
         "actorId": "actor_alex",
+        "showActorName": false,
         "mediaType": "image",
         "mediaSource": "avatares/FOTO DE PEFIL DANI.png",
         "videoPresent": true,
@@ -1604,6 +1640,7 @@
         "id": "participant_asia",
         "present": true,
         "actorId": "actor_alex_b",
+        "showActorName": true,
         "mediaType": "image",
         "mediaSource": "avatares/FOTO DE PERFIL ASIA.png",
         "videoPresent": true,
@@ -1616,6 +1653,7 @@
         "id": "participant_jon",
         "present": true,
         "actorId": "actor_0cfce0abbaf84639b9fe20fcf5626c98",
+        "showActorName": true,
         "mediaType": "image",
         "mediaSource": "avatares/FOTO DE PERFIL JON.png",
         "videoPresent": false,
@@ -1628,6 +1666,7 @@
         "id": "participant_sam",
         "present": true,
         "actorId": "actor_sam",
+        "showActorName": true,
         "mediaType": "image",
         "mediaSource": "",
         "videoPresent": false,
@@ -2425,7 +2464,7 @@
           }
         ],
         "showMainVideo": true,
-        "mainPadding": "theme.spacing.none|theme.spacing.none",
+        "participantOuterPadding": "theme.spacing.s|theme.spacing.s",
         "showPip": true,
         "pipSize": "104|156",
         "pipPlacement": {
@@ -2435,12 +2474,10 @@
           "offsetX": -12,
           "offsetY": 12
         },
-        "pipPadding": "theme.spacing.s|theme.spacing.s",
         "showGridParticipants": true,
-        "gridPadding": "theme.spacing.s|theme.spacing.s",
         "gridGapToken": "theme.spacing.s",
-        "gridHeightMode": "fixed",
-        "gridHeight": 360,
+        "gridHeightMode": "percent",
+        "gridHeightPercent": 50,
         "gridRows": 2,
         "showStatusBar": true,
         "showNavigationBar": true,
@@ -2506,6 +2543,31 @@
         "participantAvatarSlot": {
           "variantReference": "component_project_foqn_s2_avatar::variant::default",
           "overrides": {}
+        },
+        "participantNameLabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "dimensionMode": "content",
+              "padding": "theme.spacing.s|theme.spacing.xs",
+              "textAlign": "center",
+              "textColorToken": "theme.colors.textPrimary",
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "style": { "cornerRadiusToken": "theme.radii.full" },
+                  "surface": { "backgroundColorToken": "theme.colors.background", "backgroundAlpha": 0.6, "borderAlpha": 0 }
+                }
+              }
+            }
+          }
+        },
+        "participantNamePlacement": {
+          "mode": "insideEdge",
+          "alignX": 0,
+          "alignY": -1,
+          "offsetX": 0,
+          "offsetY": 12
         },
         "participantStatusLabelSlot": {
           "variantReference": "component_project_foqn_s2_label::variant::default",
@@ -3762,14 +3824,14 @@
       "structuredCollection": null
     },
     {
-      "id": "module.core.videoCall.mainPadding",
-      "label": "Main padding",
+      "id": "module.core.videoCall.participantOuterPadding",
+      "label": "Participant outer padding",
       "valueKind": "ThemeTokenPair",
       "jsonPath": [
         "videoCall",
-        "mainPadding"
+        "participantOuterPadding"
       ],
-      "defaultValue": "theme.spacing.none|theme.spacing.none",
+      "defaultValue": "theme.spacing.s|theme.spacing.s",
       "isEditable": true,
       "options": [
         {
@@ -3893,56 +3955,6 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.videoCall.pipPadding",
-      "label": "PIP padding",
-      "valueKind": "ThemeTokenPair",
-      "jsonPath": [
-        "videoCall",
-        "pipPadding"
-      ],
-      "defaultValue": "theme.spacing.s|theme.spacing.s",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": {
-        "first": "Horizontal",
-        "second": "Vertical"
-      },
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
       "id": "module.core.videoCall.showGridParticipants",
       "label": "Show other participants",
       "valueKind": "Boolean",
@@ -3967,56 +3979,6 @@
       "unit": "",
       "embeddedSlot": null,
       "structuredCollection": null
-    },
-    {
-      "id": "module.core.videoCall.gridPadding",
-      "label": "Grid padding",
-      "valueKind": "ThemeTokenPair",
-      "jsonPath": [
-        "videoCall",
-        "gridPadding"
-      ],
-      "defaultValue": "theme.spacing.s|theme.spacing.s",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": {
-        "first": "Horizontal",
-        "second": "Vertical"
-      },
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
     },
     {
       "id": "module.core.videoCall.gridGapToken",
@@ -4116,12 +4078,12 @@
         "videoCall",
         "gridHeightMode"
       ],
-      "defaultValue": "fixed",
+      "defaultValue": "percent",
       "isEditable": true,
       "options": [
         {
-          "value": "fixed",
-          "label": "Fixed",
+          "value": "percent",
+          "label": "Percentage",
           "colorHex": null,
           "isNeutral": false,
           "groupValue": "",
@@ -4154,21 +4116,21 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.videoCall.gridHeight",
+      "id": "module.core.videoCall.gridHeightPercent",
       "label": "Grid height",
       "valueKind": "Integer",
       "jsonPath": [
         "videoCall",
-        "gridHeight"
+        "gridHeightPercent"
       ],
-      "defaultValue": "360",
+      "defaultValue": "50",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": {
         "minimum": 1,
-        "maximum": 4096,
+        "maximum": 100,
         "increment": 1,
         "decimalPlaces": 0,
         "useSlider": false
@@ -4182,7 +4144,7 @@
       "imagePreview": null,
       "recordReference": null,
       "motionTiming": null,
-      "unit": "px",
+      "unit": "%",
       "embeddedSlot": null
     },
     {
@@ -4656,6 +4618,62 @@
       }
     },
     {
+      "id": "module.core.videoCall.participantNameLabel",
+      "label": "Participant name label",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "videoCall",
+        "participantNameLabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{\"label\":{\"dimensionMode\":\"content\",\"padding\":\"theme.spacing.s|theme.spacing.xs\",\"textAlign\":\"center\",\"textColorToken\":\"theme.colors.textPrimary\",\"surfaceSlot\":{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{\"style\":{\"cornerRadiusToken\":\"theme.radii.full\"},\"surface\":{\"backgroundColorToken\":\"theme.colors.background\",\"backgroundAlpha\":0.6,\"borderAlpha\":0}}}}}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "label",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Participant name label",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "module.core.videoCall.participantNamePlacement",
+      "label": "Participant name placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "videoCall",
+        "participantNamePlacement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0,\"alignY\":-1,\"offsetX\":0,\"offsetY\":12}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
       "id": "module.core.videoCall.showStatusBar",
       "label": "Show status bar",
       "valueKind": "Boolean",
@@ -4853,11 +4871,6 @@
                 "id": "module.core.videoCall.mainSurface",
                 "order": 20,
                 "visible": true
-              },
-              {
-                "id": "module.core.videoCall.mainPadding",
-                "order": 30,
-                "visible": true
               }
             ]
           },
@@ -4912,11 +4925,6 @@
                 "id": "module.core.videoCall.pipPlacement",
                 "order": 40,
                 "visible": true
-              },
-              {
-                "id": "module.core.videoCall.pipPadding",
-                "order": 50,
-                "visible": true
               }
             ]
           }
@@ -4959,6 +4967,11 @@
                 "visible": true
               },
               {
+                "id": "module.core.videoCall.participantOuterPadding",
+                "order": 50,
+                "visible": true
+              },
+              {
                 "id": "module.core.videoCall.participantContentPadding",
                 "order": 60,
                 "visible": true
@@ -4981,6 +4994,16 @@
               {
                 "id": "module.core.videoCall.participantStatusLabel",
                 "order": 100,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.participantNameLabel",
+                "order": 110,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.participantNamePlacement",
+                "order": 120,
                 "visible": true
               }
             ]
@@ -5014,28 +5037,23 @@
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.gridPadding",
+                "id": "module.core.videoCall.gridGapToken",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.gridGapToken",
+                "id": "module.core.videoCall.gridHeightMode",
                 "order": 40,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.gridHeightMode",
+                "id": "module.core.videoCall.gridHeightPercent",
                 "order": 50,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.gridHeight",
-                "order": 60,
-                "visible": true
-              },
-              {
                 "id": "module.core.videoCall.gridRows",
-                "order": 70,
+                "order": 60,
                 "visible": true
               }
             ]

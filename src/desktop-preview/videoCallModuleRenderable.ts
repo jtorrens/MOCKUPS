@@ -64,7 +64,7 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
   };
   const gap = numberToken(payload, call.gridGapToken) * scale;
   const layoutById = participantLayout(call, payload, body, gap);
-  const pipContent = inset(payload, body, call.pipPadding);
+  const pipContent = inset(payload, body, call.participantOuterPadding);
   const pipBox = placeChild(pipContent, { width: call.pipSize.width * scale, height: call.pipSize.height * scale }, scalePlacement(call.pipPlacement, scale));
   const participants = call.participants.flatMap((item) => {
     const box = item.role === "pip" && call.showPip ? pipBox : layoutById.get(item.id);
@@ -121,6 +121,14 @@ function participantNode(
       height: statusSize.height,
     }));
   }
+  if (participant.showActorName && participant.nameLabel) {
+    const nameSize = measureLabelComponent(participant.nameLabel, payload, { maximumWidth: content.width });
+    children.push(labelComponentToRenderableAt(
+      payload,
+      participant.nameLabel,
+      placeChild(content, nameSize, scalePlacement(call.participantNamePlacement, scale)),
+    ));
+  }
   if (participant.role === "main") children.push(alignedRowsOverlayNode(payload, componentBaseConfigs, {
     ownerId: `${call.id}.${participant.id}`,
     section: "mainRows",
@@ -137,13 +145,13 @@ function participantLayout(call: ReturnType<typeof resolveVideoCallModule>, payl
     const items = call.participants.filter((item) =>
       (item.role === "main" && call.showMainVideo)
       || (item.role === "grid" && call.showGridParticipants));
-    return new Map(grid(items, inset(payload, body, call.gridPadding), gap, call.gridRows).map(({ item, box }) => [item.id, box]));
+    return new Map(grid(items, inset(payload, body, call.participantOuterPadding), gap, call.gridRows).map(({ item, box }) => [item.id, box]));
   }
 
   const gridItems = call.showGridParticipants
     ? call.participants.filter((item) => item.role === "grid")
     : [];
-  const gridHeight = Math.min(body.height, call.gridHeight * renderScale(payload));
+  const gridHeight = body.height * call.gridHeightPercent / 100;
   const gridRegion: RenderableBox = {
     x: body.x,
     y: body.y + body.height - gridHeight,
@@ -155,10 +163,10 @@ function participantLayout(call: ReturnType<typeof resolveVideoCallModule>, payl
     : body;
   const byId = new Map<string, RenderableBox>();
   if (call.showMainVideo) {
-    const mainBox = inset(payload, mainRegion, call.mainPadding);
+    const mainBox = inset(payload, mainRegion, call.participantOuterPadding);
     for (const item of call.participants) if (item.role === "main") byId.set(item.id, mainBox);
   }
-  for (const { item, box } of grid(gridItems, inset(payload, gridRegion, call.gridPadding), gap, call.gridRows)) byId.set(item.id, box);
+  for (const { item, box } of grid(gridItems, inset(payload, gridRegion, call.participantOuterPadding), gap, call.gridRows)) byId.set(item.id, box);
   return byId;
 }
 

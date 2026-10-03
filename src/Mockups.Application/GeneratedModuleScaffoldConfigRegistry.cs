@@ -482,13 +482,6 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["videoCall", "gridGapToken"],
             "",
             []),
-        ["module.core.videoCall.gridHeight"] = new(
-            "module.core.videoCall",
-            "module.core.videoCall.gridHeight",
-            ValueKind.Integer,
-            ["videoCall", "gridHeight"],
-            "",
-            []),
         ["module.core.videoCall.gridHeightMode"] = new(
             "module.core.videoCall",
             "module.core.videoCall.gridHeightMode",
@@ -496,11 +489,11 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["videoCall", "gridHeightMode"],
             "",
             []),
-        ["module.core.videoCall.gridPadding"] = new(
+        ["module.core.videoCall.gridHeightPercent"] = new(
             "module.core.videoCall",
-            "module.core.videoCall.gridPadding",
-            ValueKind.ThemeTokenPair,
-            ["videoCall", "gridPadding"],
+            "module.core.videoCall.gridHeightPercent",
+            ValueKind.Integer,
+            ["videoCall", "gridHeightPercent"],
             "",
             []),
         ["module.core.videoCall.gridRows"] = new(
@@ -566,13 +559,6 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["videoCall", "headerSurfaceSlot"],
             "surface",
             []),
-        ["module.core.videoCall.mainPadding"] = new(
-            "module.core.videoCall",
-            "module.core.videoCall.mainPadding",
-            ValueKind.ThemeTokenPair,
-            ["videoCall", "mainPadding"],
-            "",
-            []),
         ["module.core.videoCall.mainRows"] = new(
             "module.core.videoCall",
             "module.core.videoCall.mainRows",
@@ -615,19 +601,33 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["videoCall", "participantMediaSlot"],
             "media",
             []),
+        ["module.core.videoCall.participantNameLabel"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.participantNameLabel",
+            ValueKind.ComponentVariantSlot,
+            ["videoCall", "participantNameLabelSlot"],
+            "label",
+            []),
+        ["module.core.videoCall.participantNamePlacement"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.participantNamePlacement",
+            ValueKind.AlignmentPlacement,
+            ["videoCall", "participantNamePlacement"],
+            "",
+            []),
+        ["module.core.videoCall.participantOuterPadding"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.participantOuterPadding",
+            ValueKind.ThemeTokenPair,
+            ["videoCall", "participantOuterPadding"],
+            "",
+            []),
         ["module.core.videoCall.participantStatusLabel"] = new(
             "module.core.videoCall",
             "module.core.videoCall.participantStatusLabel",
             ValueKind.ComponentVariantSlot,
             ["videoCall", "participantStatusLabelSlot"],
             "label",
-            []),
-        ["module.core.videoCall.pipPadding"] = new(
-            "module.core.videoCall",
-            "module.core.videoCall.pipPadding",
-            ValueKind.ThemeTokenPair,
-            ["videoCall", "pipPadding"],
-            "",
             []),
         ["module.core.videoCall.pipPlacement"] = new(
             "module.core.videoCall",

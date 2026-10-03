@@ -17,6 +17,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
   const owner = requiredRecord(config, "videoCall", "module.core.videoCall");
   const participantMediaConfig = slotConfig(bases, typedSlot(owner, bases, "participantMediaSlot", "media"), "media", "module.core.videoCall.participantMediaSlot");
   const participantAvatarConfig = slotConfig(bases, typedSlot(owner, bases, "participantAvatarSlot", "avatar"), "avatar", "module.core.videoCall.participantAvatarSlot");
+  const participantNameConfig = slotConfig(bases, typedSlot(owner, bases, "participantNameLabelSlot", "label"), "label", "module.core.videoCall.participantNameLabelSlot");
   const participantStatusConfig = slotConfig(bases, typedSlot(owner, bases, "participantStatusLabelSlot", "label"), "label", "module.core.videoCall.participantStatusLabelSlot");
   const surfaceConfigs = {
     main: slotConfig(bases, typedSlot(owner, bases, "mainSurfaceSlot", "surface"), "surface", "module.core.videoCall.mainSurfaceSlot"),
@@ -38,10 +39,12 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
       const avatarConfig = structuredClone(participantAvatarConfig);
       requiredRecord(avatarConfig, "avatar", "module.core.videoCall.participantAvatar").defaultSize = avatarSize;
       const connectionText = requiredPossiblyEmptyString(item, "connectionText", `${itemOwner}.connectionText`);
+      const showActorName = requiredBoolean(item, "showActorName", `${itemOwner}.showActorName`);
       return {
         id: requiredString(item, "id", `${itemOwner}.id`),
         role,
         videoPresent,
+        showActorName,
         connectionText,
         padding: participantPadding,
         avatarSize,
@@ -76,6 +79,13 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
           badgeBackgroundPaletteColor: "blue",
           badgeContentPaletteColor: "gray_100",
         }, bases, `${itemOwner}.avatar`) : undefined,
+        nameLabel: actor ? resolveLabelComponentFromRecords(
+          participantNameConfig,
+          literalLabelPreview(requiredString(actor, "displayName", `${itemOwner}.actor.displayName`)),
+          bases,
+          `${itemOwner}.name`,
+          { localFrame: payload.localFrame, frameRate: payload.frameRate },
+        ) : undefined,
         statusLabel: resolveLabelComponentFromRecords(
           participantStatusConfig,
           literalLabelPreview(connectionText),
@@ -119,7 +129,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
       resolveRow(payload, "module.core.videoCall", "footer", 2, footerRows[1], footerRuntimeRows[1], bases, "contentRow", resolveContentRowComponent),
     ],
     showMainVideo: requiredBoolean(owner, "showMainVideo", "module.core.videoCall.showMainVideo"),
-    mainPadding: pair(owner, "mainPadding"),
+    participantOuterPadding: pair(owner, "participantOuterPadding"),
     mainRows: [
       resolveRow(payload, "module.core.videoCall", "main", 1, mainRows[0]!, mainRuntimeRows[0]!, bases, "contentRow", resolveContentRowComponent),
       resolveRow(payload, "module.core.videoCall", "main", 2, mainRows[1]!, mainRuntimeRows[1]!, bases, "contentRow", resolveContentRowComponent),
@@ -128,13 +138,12 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     showPip: requiredBoolean(owner, "showPip", "module.core.videoCall.showPip"),
     pipSize: { width: positive(pipSize.first, "pipSize.width"), height: positive(pipSize.second, "pipSize.height") },
     pipPlacement: requiredPlacement(owner, "pipPlacement", "module.core.videoCall.pipPlacement"),
-    pipPadding: pair(owner, "pipPadding"),
     showGridParticipants: requiredBoolean(owner, "showGridParticipants", "module.core.videoCall.showGridParticipants"),
-    gridPadding: pair(owner, "gridPadding"),
     gridGapToken: requiredString(owner, "gridGapToken", "module.core.videoCall.gridGapToken"),
     gridHeightMode: gridHeightMode(requiredString(owner, "gridHeightMode", "module.core.videoCall.gridHeightMode")),
-    gridHeight: positive(requiredNumber(owner, "gridHeight", "module.core.videoCall.gridHeight"), "gridHeight"),
+    gridHeightPercent: percentage(requiredNumber(owner, "gridHeightPercent", "module.core.videoCall.gridHeightPercent"), "gridHeightPercent"),
     gridRows: Math.max(1, Math.round(requiredNumber(owner, "gridRows", "module.core.videoCall.gridRows"))),
+    participantNamePlacement: requiredPlacement(owner, "participantNamePlacement", "module.core.videoCall.participantNamePlacement"),
     showStatusBar: requiredBoolean(owner, "showStatusBar", "module.core.videoCall.showStatusBar"),
     showNavigationBar: requiredBoolean(owner, "showNavigationBar", "module.core.videoCall.showNavigationBar"),
     participants,
@@ -148,6 +157,7 @@ function slotConfig(bases: Record<string, unknown>, slot: VideoCallComponentSlot
 function pair(owner: Record<string, unknown>, key: string) { const value = requiredStringPair(owner, key, `module.core.videoCall.${key}`); return { xToken: value.first, yToken: value.second }; }
 function participantRole(value: string): VideoCallParticipantRole { if (value === "main" || value === "pip" || value === "grid") return value; throw new Error(`Unsupported participant role '${value}'`); }
 function sectionLayoutMode(value: string): "stack" | "float" { if (value === "stack" || value === "float") return value; throw new Error(`Unsupported section layout mode '${value}'`); }
-function gridHeightMode(value: string): VideoCallModuleContract["gridHeightMode"] { if (value === "fixed" || value === "fill") return value; throw new Error(`Unsupported grid height mode '${value}'`); }
+function gridHeightMode(value: string): VideoCallModuleContract["gridHeightMode"] { if (value === "percent" || value === "fill") return value; throw new Error(`Unsupported grid height mode '${value}'`); }
 function positive(value: number, path: string) { if (!Number.isFinite(value) || value <= 0) throw new Error(`${path} must be positive`); return value; }
+function percentage(value: number, path: string) { if (!Number.isFinite(value) || value <= 0 || value > 100) throw new Error(`${path} must be greater than 0 and at most 100`); return value; }
 function nonNegative(value: number, path: string) { if (!Number.isFinite(value) || value < 0) throw new Error(`${path} must be non-negative`); return value; }
