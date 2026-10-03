@@ -230,7 +230,6 @@ var tests = new (string Name, Action Run)[]
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
     ("same-owner editor refresh keeps root and embedded cards mounted", SameOwnerEditorRefreshKeepsCardsMounted),
-    ("Production scalar commits keep Screen Payload mounted", ProductionScalarCommitKeepsScreenPayloadMounted),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("Application modals use the shared overlay and displace siblings", ApplicationModalsUseSharedOverlayAndDisplaceSiblings),
     ("presented editor operations own the shared loading scrim", PresentedEditorOperationsOwnSharedLoadingScrim),
@@ -314,6 +313,7 @@ var tests = new (string Name, Action Run)[]
     ("Social Post composes two structure-projected header and footer rows", SocialPostComposesHeaderRows),
     ("Social Post Screen creation persists projected Runtime rows atomically", SocialPostScreenCreationIsAtomic),
     ("Social Post editor exposes its current generic header contract", SocialPostEditorExposesCurrentHeaderContract),
+    ("Production scalar commits keep Screen Payload mounted", ProductionScalarCommitKeepsScreenPayloadMounted),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
@@ -6453,7 +6453,8 @@ static void EditorViewStateSurvivesRealNavigation()
                 avatarOffset,
                 "Design history forward navigation");
 
-            window.Hide();
+            window.Close();
+            Dispatcher.UIThread.RunJobs();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
@@ -6472,6 +6473,7 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
     File.Copy(source, temporary, overwrite: true);
     try
     {
+        var persisted = new SqliteProjectTestContext(temporary);
         using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
@@ -6640,6 +6642,26 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
             var cursor = Component("component.cursor");
             Select(cursor);
             var cursorOwner = Required(WindowSession(window).SelectedNode);
+            True(cursorOwner.IsLocked);
+            var unlock = editorContent.Cards
+                .SelectMany((card) => card.GetVisualDescendants())
+                .OfType<Button>()
+                .Single((button) =>
+                    ToolTip.GetTip(button) as string
+                        == "Unlock variant editing");
+            unlock.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            True(SpinWait.SpinUntil(
+                () =>
+                {
+                    Layout();
+                    return WindowSession(window).SelectedNode is { } selected
+                        && selected.Id == cursorOwner.Id
+                        && !selected.IsLocked
+                        && editorContent.Cards.All((card) =>
+                            card.SessionStateId != "editor:loading");
+                },
+                TimeSpan.FromSeconds(10)));
+            cursorOwner = Required(WindowSession(window).SelectedNode);
             var cursorCard = editorContent.Cards.Single((card) =>
                 card.SessionStateId == "layout:cursor");
             cursorCard.RestoreExpansion(true);
@@ -6663,13 +6685,35 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
             mountedMinimumFade.SetValue(
                 "0.16",
                 commit: true);
-            True(SpinWait.SpinUntil(
+            var cursorCommit = Task.Run(() => SpinWait.SpinUntil(
+                () =>
+                {
+                    var persistedValue = cursorOwner.Kind
+                        == ProjectTreeNodeKind.ComponentVariant
+                        ? persisted.CreateComponentVariantFieldValue(
+                            cursorOwner,
+                            "component.cursor.minimumFade")
+                        : persisted.CreateComponentClassFieldValue(
+                            cursorOwner.Id,
+                            "component.cursor.minimumFade");
+                    return persistedValue.Value == "0.16";
+                },
+                TimeSpan.FromSeconds(10)));
+            if (!SpinWait.SpinUntil(
                 () =>
                 {
                     Layout();
-                    return mountedMinimumFade.IsDefault;
+                    return cursorCommit.IsCompleted;
                 },
-                TimeSpan.FromSeconds(10)));
+                TimeSpan.FromSeconds(12))
+                || !cursorCommit.GetAwaiter().GetResult())
+            {
+                throw new TimeoutException(
+                    $"Cursor minimum fade did not persist for {cursorOwner.Kind} "
+                    + $"'{cursorOwner.Id}' (locked: {cursorOwner.IsLocked}). "
+                    + (window.FindControl<TextBox>("ShellMessagesTextBox")?.Text
+                        ?? "No shell message."));
+            }
             True(ReferenceEquals(
                 mountedCursorCard,
                 editorContent.Cards.Single((card) =>
@@ -6722,7 +6766,8 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
                 "Embedded same-owner refresh");
             True(labelCard.IsExpanded);
 
-            window.Hide();
+            window.Close();
+            Dispatcher.UIThread.RunJobs();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
@@ -6741,11 +6786,27 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
     File.Copy(source, temporary, overwrite: true);
     try
     {
+        var database = new SqliteProjectTestContext(temporary);
+        var screenId = CanonicalProjectNodes(database)
+            .First((node) =>
+                node.Kind == ProjectTreeNodeKind.ModuleInstance
+                && database.GetModuleSettings(
+                        database.GetModuleInstanceSettings(node.Id).ModuleId)
+                    .RecordClassId == "module.core.chat"
+                && JsonPath.RequiredArray(
+                    JsonPath.ParseRequiredObject(
+                        database.GetModuleInstanceSettings(node.Id).ContentJson,
+                        $"Screen '{node.Id}' content"),
+                    "messages",
+                    $"Screen '{node.Id}' content").Count > 0)
+            .Id;
         using var session = HeadlessUnitTestSession.StartNew(
             typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
             var window = CreateTestWindow(temporary);
+            window.Width = 1440;
+            window.Height = 900;
             window.Show();
             Required(window.FindControl<Button>(
                     "ProductionWorkspaceButton"))
@@ -6756,15 +6817,16 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
                 {
                     Dispatcher.UIThread.RunJobs();
                     return WindowSession(window).Workspace
-                        == EditorWorkspace.Production;
+                            == EditorWorkspace.Production
+                        && WindowSession(window).TreeRoots
+                            .SelectMany(DescendantsAndSelf)
+                            .Any((node) => node.Id == screenId);
                 },
                 TimeSpan.FromSeconds(10)));
 
             var screen = WindowSession(window).TreeRoots
                 .SelectMany(DescendantsAndSelf)
-                .First((node) =>
-                    node.Kind == ProjectTreeNodeKind.ModuleInstance
-                    && node.RecordClassId == "module.core.chat");
+                .Single((node) => node.Id == screenId);
             var selectNode = typeof(MainWindow).GetMethod(
                 "SelectNodeById",
                 BindingFlags.Instance | BindingFlags.NonPublic,
@@ -6773,23 +6835,35 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
                 modifiers: null)
                 ?? throw new InvalidOperationException(
                     "Missing MainWindow node selection boundary.");
-            True((bool)(selectNode.Invoke(
-                window,
-                [screen.Id]) ?? false));
             var authoringHost = Required(
                 window.FindControl<ContentControl>(
                     "PreviewAuthoringDataHost"));
-            True(SpinWait.SpinUntil(
+            var previousAuthoringContent = authoringHost.Content;
+            True((bool)(selectNode.Invoke(
+                window,
+                [screen.Id]) ?? false));
+            if (!SpinWait.SpinUntil(
                 () =>
                 {
                     Dispatcher.UIThread.RunJobs();
                     return authoringHost.Content is Control content
+                        && !ReferenceEquals(content, previousAuthoringContent)
                         && content.GetVisualDescendants()
                             .OfType<DictionaryFieldControl>()
                             .Any((field) =>
                                 field.FieldId == "headerSubtitle");
                 },
-                TimeSpan.FromSeconds(10)));
+                TimeSpan.FromSeconds(10)))
+            {
+                var fieldIds = (authoringHost.Content as Control)?
+                    .GetVisualDescendants()
+                    .OfType<DictionaryFieldControl>()
+                    .Select((field) => field.FieldId)
+                    .ToList() ?? [];
+                throw new TimeoutException(
+                    "Production authoring did not present an editable message. Fields: "
+                    + string.Join(", ", fieldIds));
+            }
 
             var mountedSurface = Required(
                 authoringHost.Content as Control);
@@ -6801,13 +6875,22 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
             mountedField.SetValue(
                 "Mounted payload",
                 commit: true);
+            var headerCommit = Task.Run(() => SpinWait.SpinUntil(
+                () => JsonPath.RequiredString(
+                    JsonPath.ParseRequiredObject(
+                        database.GetModuleInstanceSettings(screenId).ContentJson,
+                        $"Screen '{screenId}' content"),
+                    "headerSubtitle",
+                    $"Screen '{screenId}' content") == "Mounted payload",
+                TimeSpan.FromSeconds(10)));
             True(SpinWait.SpinUntil(
                 () =>
                 {
                     Dispatcher.UIThread.RunJobs();
-                    return mountedField.IsDefault;
+                    return headerCommit.IsCompleted;
                 },
-                TimeSpan.FromSeconds(10)));
+                TimeSpan.FromSeconds(12)));
+            True(headerCommit.GetAwaiter().GetResult());
 
             var settle = Stopwatch.StartNew();
             while (settle.Elapsed < TimeSpan.FromSeconds(1))
@@ -6826,27 +6909,82 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
                     .Single((field) =>
                         field.FieldId == "headerSubtitle")));
 
-            var messageText = mountedSurface
+            var runtimeNavigation = mountedSurface
                 .GetVisualDescendants()
-                .OfType<DictionaryFieldControl>()
-                .First((field) => field.FieldId == "text");
-            var messageCard = messageText
-                .GetVisualAncestors()
+                .OfType<EditorInternalNavigation>()
+                .Single();
+            True(runtimeNavigation.RevealAuthoringTarget(
+                "messages",
+                selectsItem: true));
+            Dispatcher.UIThread.RunJobs();
+            var messageItems = mountedSurface
+                .GetVisualDescendants()
+                .OfType<EditorSubcardLayoutHost>()
+                .Single((host) => host.FieldId == "messages");
+            var firstMessageCard = messageItems
+                .GetLogicalDescendants()
                 .OfType<InstantEditorCard>()
-                .First((card) =>
-                    card.GetVisualDescendants()
+                .First();
+            firstMessageCard.IsExpanded = true;
+            Dispatcher.UIThread.RunJobs();
+            var messageNavigation = firstMessageCard
+                .GetVisualDescendants()
+                .OfType<EditorInternalNavigation>()
+                .Single();
+            True(messageNavigation.RevealAuthoringTarget(
+                "text",
+                selectsItem: false));
+            if (!SpinWait.SpinUntil(
+                () =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return firstMessageCard
+                        .GetVisualDescendants()
                         .OfType<DictionaryFieldControl>()
-                        .Any((field) => field.FieldId == "writeOn"));
-            messageCard.IsExpanded = true;
-            var writeOnTiming = messageCard
+                        .Any((field) => field.FieldId == "text")
+                        && firstMessageCard
+                            .GetVisualDescendants()
+                            .OfType<DictionaryFieldControl>()
+                            .Any((field) => field.FieldId == "direction");
+                },
+                TimeSpan.FromSeconds(10)))
+            {
+                throw new TimeoutException(
+                    "Message fields did not become visible. Fields: "
+                    + string.Join(
+                        ", ",
+                        firstMessageCard
+                            .GetLogicalDescendants()
+                            .OfType<DictionaryFieldControl>()
+                            .Select((field) => field.FieldId)));
+            }
+            var messageCard = firstMessageCard;
+            var messageText = messageCard
                 .GetVisualDescendants()
                 .OfType<DictionaryFieldControl>()
-                .Single((field) => field.FieldId == "writeOn");
+                .Single((field) => field.FieldId == "text");
+            var messageDirection = messageCard
+                .GetVisualDescendants()
+                .OfType<DictionaryFieldControl>()
+                .Single((field) => field.FieldId == "direction");
             const string nextMessageText =
                 "Mounted conversation message";
             messageText.SetValue(
                 nextMessageText,
                 commit: true);
+            var messageCommit = Task.Run(() => SpinWait.SpinUntil(
+                () => JsonPath.RequiredArray(
+                        JsonPath.ParseRequiredObject(
+                            database.GetModuleInstanceSettings(screenId).ContentJson,
+                            $"Screen '{screenId}' content"),
+                        "messages",
+                        $"Screen '{screenId}' content")
+                    .OfType<JsonObject>()
+                    .Any((message) => JsonPath.RequiredString(
+                        message,
+                        "text",
+                        $"Screen '{screenId}' message") == nextMessageText),
+                TimeSpan.FromSeconds(10)));
             True(SpinWait.SpinUntil(
                 () =>
                 {
@@ -6859,6 +6997,14 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
                             StringComparison.Ordinal) == true);
                 },
                 TimeSpan.FromSeconds(10)));
+            True(SpinWait.SpinUntil(
+                () =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return messageCommit.IsCompleted;
+                },
+                TimeSpan.FromSeconds(12)));
+            True(messageCommit.GetAwaiter().GetResult());
             True(ReferenceEquals(
                 mountedSurface,
                 authoringHost.Content));
@@ -6867,11 +7013,7 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
                 messageText
                     .GetVisualAncestors()
                     .OfType<InstantEditorCard>()
-                    .First((card) =>
-                        card.GetVisualDescendants()
-                            .OfType<DictionaryFieldControl>()
-                            .Any((field) =>
-                                field.FieldId == "writeOn"))));
+                    .First()));
             True(messageCard.IsExpanded);
             True(ReferenceEquals(
                 messageText,
@@ -6880,12 +7022,13 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
                     .OfType<DictionaryFieldControl>()
                     .Single((field) => field.FieldId == "text")));
             True(ReferenceEquals(
-                writeOnTiming,
+                messageDirection,
                 messageCard
                     .GetVisualDescendants()
                     .OfType<DictionaryFieldControl>()
-                    .Single((field) => field.FieldId == "writeOn")));
-            window.Hide();
+                    .Single((field) => field.FieldId == "direction")));
+            window.Close();
+            Dispatcher.UIThread.RunJobs();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
@@ -7512,7 +7655,12 @@ static void PreviewShellVisualTreeIsResponsive()
                 LayoutCheck(
                     navigationRect.Width >= 0 && editorRect.Width >= 0 && previewRect.Width >= 0,
                     $"{size}: a shell panel has negative width");
-                LayoutCheck(navigationRect.Right <= editorRect.Left + 0.5, $"{size}: Navigation overlaps Editor");
+                if (navigation.IsVisible)
+                {
+                    LayoutCheck(
+                        navigationRect.Right <= editorRect.Left + 0.5,
+                        $"{size}: Navigation overlaps Editor");
+                }
                 LayoutCheck(editorRect.Right <= previewRect.Left + 0.5, $"{size}: Editor overlaps Preview");
                 LayoutCheck(previewRect.Left >= -0.5, $"{size}: Preview starts outside the window");
                 LayoutCheck(
@@ -8402,13 +8550,16 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                     + $"(extent={listRuntimeScroll.Extent.Width:0.##}, "
                     + $"viewport={listRuntimeScroll.Viewport.Width:0.##}).");
             }
-            var visibleNavigationWidths = listSurface.GetVisualDescendants()
+            var visibleNavigations = listSurface.GetVisualDescendants()
                 .OfType<EditorInternalNavigation>()
-                .Where((navigation) => navigation.ColumnDefinitions.Count == 3)
-                .Select((navigation) => navigation.ColumnDefinitions[0].ActualWidth)
                 .ToList();
-            True(visibleNavigationWidths.Count >= 2);
-            True(visibleNavigationWidths.All((width) => width <= 160.5));
+            True(visibleNavigations.Count >= 2);
+            True(visibleNavigations.All((navigation) =>
+                navigation.ColumnDefinitions.Count is 1 or 3));
+            True(visibleNavigations
+                .Where((navigation) => navigation.ColumnDefinitions.Count == 3)
+                .All((navigation) =>
+                    navigation.ColumnDefinitions[0].ActualWidth <= 160.5));
             var actorTransform = nestedActor.TransformToVisual(listRuntimeScroll)
                 ?? throw new InvalidOperationException("Nested Actor field has no scroll transform.");
             var actorRight = actorTransform.Transform(
@@ -17018,8 +17169,12 @@ static void ProductionOutputGeneratesExactShotPlans()
             "");
         var episodesRoot = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.EpisodesRoot);
+        var expectedEpisodeSlug = (episodesRoot.Children.Count + 1)
+            .ToString("00", CultureInfo.InvariantCulture);
         var unprefixedEpisode = database.AddChild(episodesRoot);
-        Equal("03", database.GetEpisodeSettings(unprefixedEpisode.Id).Slug);
+        Equal(
+            expectedEpisodeSlug,
+            database.GetEpisodeSettings(unprefixedEpisode.Id).Slug);
         database.UpdateProjectField(
             plan.ProjectId,
             "project.episodePrefix",
@@ -19405,6 +19560,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "pinned Production Preview keeps its active Screen while editing Design",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",
     "Social Post editor exposes its current generic header contract",
+    "Production scalar commits keep Screen Payload mounted",
 };
 var exhaustiveTests = new HashSet<string>(StringComparer.Ordinal)
 {
@@ -19489,6 +19645,42 @@ if (selectedTests.Length == 0)
 if (args.Contains("--list", StringComparer.Ordinal))
 {
     foreach (var (name, _) in selectedTests) Console.WriteLine(name);
+    return;
+}
+
+if (group == "ui"
+    && exactNames.Count == 0
+    && filters.Count == 0)
+{
+    var executablePath = Environment.ProcessPath
+        ?? throw new InvalidOperationException(
+            "The isolated Desktop UI test executable path is unavailable.");
+    var failedUiTests = new List<string>();
+    foreach (var (name, _) in selectedTests)
+    {
+        var processStart = new ProcessStartInfo
+        {
+            FileName = executablePath,
+            UseShellExecute = false,
+        };
+        processStart.ArgumentList.Add("--group");
+        processStart.ArgumentList.Add("ui");
+        processStart.ArgumentList.Add("--exact");
+        processStart.ArgumentList.Add(name);
+        using var process = Process.Start(processStart)
+            ?? throw new InvalidOperationException(
+                $"Could not start isolated Desktop UI test '{name}'.");
+        process.WaitForExit();
+        if (process.ExitCode != 0)
+        {
+            failedUiTests.Add(name);
+        }
+    }
+
+    Console.WriteLine(
+        $"Isolated Desktop UI tests: "
+        + $"{selectedTests.Length - failedUiTests.Count}/{selectedTests.Length} passed.");
+    if (failedUiTests.Count > 0) Environment.Exit(1);
     return;
 }
 

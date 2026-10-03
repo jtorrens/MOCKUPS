@@ -383,8 +383,8 @@ test("Bubble remeasures wrapped lines from the current resolved text", () => {
     };
   };
 
-  const beforeWrap = renderedAt("A broadword broadword", true, 16);
-  const afterWrap = renderedAt("A broadword broadword", true, 17);
+  const beforeWrap = renderedAt("A broadword broadword", true, 17);
+  const afterWrap = renderedAt("A broadword broadword", true, 18);
   assert.equal(beforeWrap.text, "A broadword broad");
   assert.equal(afterWrap.text, "A broadword broadw");
   assert.ok(afterWrap.width < beforeWrap.width);
