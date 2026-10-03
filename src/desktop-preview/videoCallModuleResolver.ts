@@ -8,7 +8,7 @@ import { resolveMediaComponentFromRecords } from "./mediaComponentResolver.js";
 import { requiredRows, requiredRuntimeRows, resolveRow } from "./moduleRowSectionResolver.js";
 import { resolveContentRowComponent } from "./contentRowComponentResolver.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
-import type { VideoCallComponentSlot, VideoCallConnectionState, VideoCallModuleContract, VideoCallParticipantRole } from "./videoCallModuleContract.js";
+import type { VideoCallComponentSlot, VideoCallModuleContract, VideoCallParticipantRole } from "./videoCallModuleContract.js";
 
 export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCallModuleContract {
   const config = parseObject(payload.configJson);
@@ -25,7 +25,6 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
   };
   const participantPadding = pair(owner, "participantContentPadding");
   const avatarSize = positive(requiredNumber(owner, "participantAvatarSize", "module.core.videoCall.participantAvatarSize"), "participantAvatarSize");
-  const defaultStatusText = requiredString(owner, "defaultStatusText", "module.core.videoCall.defaultStatusText");
   const participants = requiredObjectArray(preview, "participants", "module.core.videoCall.runtime.participants")
     .filter((item, index) => requiredBoolean(item, "present", `module.core.videoCall.runtime.participants[${index}].present`))
     .map((item, index) => {
@@ -38,12 +37,12 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
         : undefined;
       const avatarConfig = structuredClone(participantAvatarConfig);
       requiredRecord(avatarConfig, "avatar", "module.core.videoCall.participantAvatar").defaultSize = avatarSize;
-      const statusOverride = requiredPossiblyEmptyString(item, "statusTextOverride", `${itemOwner}.statusTextOverride`);
+      const connectionText = requiredPossiblyEmptyString(item, "connectionText", `${itemOwner}.connectionText`);
       return {
         id: requiredString(item, "id", `${itemOwner}.id`),
         role,
         videoPresent,
-        connectionState: connectionState(requiredString(item, "connectionState", `${itemOwner}.connectionState`)),
+        connectionText,
         padding: participantPadding,
         avatarSize,
         showSurface: requiredBoolean(owner, "showParticipantSurface", "module.core.videoCall.showParticipantSurface"),
@@ -79,7 +78,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
         }, bases, `${itemOwner}.avatar`) : undefined,
         statusLabel: resolveLabelComponentFromRecords(
           participantStatusConfig,
-          literalLabelPreview(statusOverride.trim() || defaultStatusText),
+          literalLabelPreview(connectionText),
           bases,
           `${itemOwner}.status`,
           { localFrame: payload.localFrame, frameRate: payload.frameRate },
@@ -148,7 +147,6 @@ function typedSlot(owner: Record<string, unknown>, bases: Record<string, unknown
 function slotConfig(bases: Record<string, unknown>, slot: VideoCallComponentSlot, type: string, path: string) { return mergeComponentDefaults(componentVariantConfig(bases, type, requiredString(slot, "variantReference", `${path}.variantReference`)), requiredRecord(slot, "overrides", `${path}.overrides`)); }
 function pair(owner: Record<string, unknown>, key: string) { const value = requiredStringPair(owner, key, `module.core.videoCall.${key}`); return { xToken: value.first, yToken: value.second }; }
 function participantRole(value: string): VideoCallParticipantRole { if (value === "main" || value === "pip" || value === "grid") return value; throw new Error(`Unsupported participant role '${value}'`); }
-function connectionState(value: string): VideoCallConnectionState { if (value === "connecting" || value === "connected" || value === "weak" || value === "lost") return value; throw new Error(`Unsupported connection state '${value}'`); }
 function sectionLayoutMode(value: string): "stack" | "float" { if (value === "stack" || value === "float") return value; throw new Error(`Unsupported section layout mode '${value}'`); }
 function gridHeightMode(value: string): VideoCallModuleContract["gridHeightMode"] { if (value === "fixed" || value === "fill") return value; throw new Error(`Unsupported grid height mode '${value}'`); }
 function positive(value: number, path: string) { if (!Number.isFinite(value) || value <= 0) throw new Error(`${path} must be positive`); return value; }

@@ -36,13 +36,17 @@ function fixture() {
   } finally { database.close(); }
 }
 
-test("Video Call resolves group participants including connecting and connection-loss states", () => {
+test("Video Call resolves free-form and empty participant connection text", () => {
   const source = fixture();
-  const call = resolveVideoCallModule(source);
+  const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
+  preview.participants[0]!.connectionText = "Sin señal";
+  const edited = { ...source, designPreviewJson: JSON.stringify(preview) };
+  const call = resolveVideoCallModule(edited);
   assert.equal(call.participants.length, 4);
-  assert.equal(call.participants.find(item => item.id === "participant_sam")?.statusLabel.text, "Connecting…");
+  assert.equal(call.participants[0]?.statusLabel.text, "Sin señal");
+  assert.equal(call.participants.find(item => item.id === "participant_sam")?.statusLabel.text, "");
   assert.equal(call.participants.find(item => item.id === "participant_jon")?.statusLabel.text, "Connection lost");
-  const node = videoCallModuleToRenderable(source);
+  const node = videoCallModuleToRenderable(edited);
   assert.equal(node.id, "module.core.videoCall");
   assert.ok((node.children?.length ?? 0) > 4);
 });

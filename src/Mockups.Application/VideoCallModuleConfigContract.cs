@@ -24,7 +24,7 @@ internal static class VideoCallModuleConfigContract
             "showPip", "pipSurfaceSlot", "pipSize", "pipPlacement", "pipPadding",
             "showGridParticipants", "gridSurfaceSlot", "gridPadding", "gridGapToken", "gridHeightMode", "gridHeight", "gridRows",
             "showParticipantSurface", "showParticipantMedia", "showFallbackAvatar", "showFallbackStatus",
-            "defaultStatusText", "participantContentPadding", "participantAvatarSize", "participantMediaSlot", "participantAvatarSlot", "participantStatusLabelSlot",
+            "participantContentPadding", "participantAvatarSize", "participantMediaSlot", "participantAvatarSlot", "participantStatusLabelSlot",
             "showStatusBar", "showNavigationBar",
             "statusBarSlot", "navigationBarSlot"
         ], $"{context}.videoCall");
@@ -38,7 +38,6 @@ internal static class VideoCallModuleConfigContract
         foreach (var key in new[] { "headerFloatOffsetY", "footerFloatOffsetY" })
             if (JsonPath.RequiredNumber(owner, key, context) < 0)
                 throw new InvalidOperationException($"{context}.videoCall.{key} must be non-negative.");
-        JsonPath.RequiredString(owner, "defaultStatusText", context);
         foreach (var key in new[] { "mainPadding", "pipPadding", "gridPadding", "participantContentPadding" })
             _ = RuntimeInputValueKindContract.ParseValue(ValueKind.ThemeTokenPair, JsonPath.RequiredString(owner, key, context), $"{context}.videoCall.{key}");
         _ = RuntimeInputValueKindContract.ParseValue(ValueKind.IntegerPair, JsonPath.RequiredString(owner, "pipSize", context), $"{context}.videoCall.pipSize");

@@ -12,13 +12,12 @@ export interface VideoCallComponentSlot extends Record<string, unknown> {
 }
 
 export type VideoCallParticipantRole = "main" | "pip" | "grid";
-export type VideoCallConnectionState = "connecting" | "connected" | "weak" | "lost";
 
 export interface VideoCallParticipant {
   id: string;
   role: VideoCallParticipantRole;
   videoPresent: boolean;
-  connectionState: VideoCallConnectionState;
+  connectionText: string;
   padding: SpacingPairContract;
   avatarSize: number;
   showSurface: boolean;

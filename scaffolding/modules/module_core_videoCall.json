@@ -564,7 +564,6 @@
       "showParticipantMedia": true,
       "showFallbackAvatar": true,
       "showFallbackStatus": true,
-      "defaultStatusText": "Connecting…",
       "participantContentPadding": "theme.spacing.s|theme.spacing.s",
       "participantAvatarSize": 72,
       "participantMediaSlot": {
@@ -1551,42 +1550,13 @@
             ]
           },
           {
-            "id": "statusTextOverride",
-            "label": "Status text",
-            "jsonKey": "statusTextOverride",
+            "id": "connectionText",
+            "label": "Connection",
+            "jsonKey": "connectionText",
             "kind": "text",
             "valueKind": "StringSingleLine",
             "defaultValue": "",
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ]
-          },
-          {
-            "id": "connectionState",
-            "label": "Connection",
-            "jsonKey": "connectionState",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "connecting",
-            "options": [
-              {
-                "value": "connecting",
-                "label": "Connecting"
-              },
-              {
-                "value": "connected",
-                "label": "Connected"
-              },
-              {
-                "value": "weak",
-                "label": "Weak"
-              },
-              {
-                "value": "lost",
-                "label": "Lost"
-              }
-            ],
+            "allowEmpty": true,
             "animatable": true,
             "animationInterpolations": [
               "hold"
@@ -1625,8 +1595,7 @@
         "mediaType": "image",
         "mediaSource": "avatares/FOTO DE PEFIL DANI.png",
         "videoPresent": true,
-        "statusTextOverride": "",
-        "connectionState": "connected",
+        "connectionText": "",
         "mediaScale": 1,
         "mediaOffset": "0|0",
         "role": "main"
@@ -1638,8 +1607,7 @@
         "mediaType": "image",
         "mediaSource": "avatares/FOTO DE PERFIL ASIA.png",
         "videoPresent": true,
-        "statusTextOverride": "",
-        "connectionState": "connected",
+        "connectionText": "",
         "mediaScale": 1,
         "mediaOffset": "0|0",
         "role": "grid"
@@ -1651,8 +1619,7 @@
         "mediaType": "image",
         "mediaSource": "avatares/FOTO DE PERFIL JON.png",
         "videoPresent": false,
-        "statusTextOverride": "Connection lost",
-        "connectionState": "lost",
+        "connectionText": "Connection lost",
         "mediaScale": 1,
         "mediaOffset": "0|0",
         "role": "grid"
@@ -1664,8 +1631,7 @@
         "mediaType": "image",
         "mediaSource": "",
         "videoPresent": false,
-        "statusTextOverride": "",
-        "connectionState": "connecting",
+        "connectionText": "",
         "mediaScale": 1,
         "mediaOffset": "0|0",
         "role": "pip"
@@ -2531,7 +2497,6 @@
         "showParticipantMedia": true,
         "showFallbackAvatar": true,
         "showFallbackStatus": true,
-        "defaultStatusText": "Connecting…",
         "participantContentPadding": "theme.spacing.s|theme.spacing.s",
         "participantAvatarSize": 72,
         "participantMediaSlot": {
@@ -4519,32 +4484,6 @@
       "structuredCollection": null
     },
     {
-      "id": "module.core.videoCall.defaultStatusText",
-      "label": "Default status text",
-      "valueKind": "StringSingleLine",
-      "jsonPath": [
-        "videoCall",
-        "defaultStatusText"
-      ],
-      "defaultValue": "Connecting…",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null,
-      "structuredCollection": null
-    },
-    {
       "id": "module.core.videoCall.participantContentPadding",
       "label": "Participant content padding",
       "valueKind": "ThemeTokenPair",
@@ -5017,11 +4956,6 @@
               {
                 "id": "module.core.videoCall.showFallbackStatus",
                 "order": 40,
-                "visible": true
-              },
-              {
-                "id": "module.core.videoCall.defaultStatusText",
-                "order": 50,
                 "visible": true
               },
               {

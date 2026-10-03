@@ -426,13 +426,6 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "useAppWallpaper"],
             "",
             []),
-        ["module.core.videoCall.defaultStatusText"] = new(
-            "module.core.videoCall",
-            "module.core.videoCall.defaultStatusText",
-            ValueKind.StringSingleLine,
-            ["videoCall", "defaultStatusText"],
-            "",
-            []),
         ["module.core.videoCall.footerFloatHorizontalPaddingToken"] = new(
             "module.core.videoCall",
             "module.core.videoCall.footerFloatHorizontalPaddingToken",
