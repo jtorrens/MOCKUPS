@@ -392,7 +392,9 @@ refresh selectors.
 
 That modal owns only creation of a new batch. Actor is informative and
 immutable. Device, Theme, appearance, output mode, predefined route and base
-name are explicit. The route control shows the resolved relative directory,
+name are explicit. Every new batch starts with Light appearance and MOV ProRes
+4444 with alpha; changing either value affects only that new batch. The route
+control shows the resolved relative directory,
 whether manual or Shot Managed, and proposes the first available option
 when no prior selection applies and has no arbitrary folder alternative. The
 proposed automatic version and final

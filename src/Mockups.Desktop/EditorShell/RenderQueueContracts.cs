@@ -178,6 +178,12 @@ internal static class RenderOutputModes
     }
 }
 
+internal static class RenderQueueCreationDefaults
+{
+    public const string Appearance = RenderQueueAppearance.Light;
+    public const string OutputModeId = RenderOutputModes.MovProRes4444;
+}
+
 internal sealed record RenderShotContext(
     string ProjectId,
     string ShotId,

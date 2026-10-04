@@ -219,9 +219,9 @@ The add modal exposes:
 - Device initialized from the Shot's effective resource;
 - Theme initialized to `Screen`, followed by the same-Project Themes as
   explicit job-only choices;
-- Light, Dark or Both;
+- Light, Dark or Both, initialized to Light for every new batch;
 - the resolved Production Output route;
-- a job-owned output mode;
+- a job-owned output mode initialized to MOV ProRes 4444 with alpha;
 - an editable safe base name.
 
 `Screen` resolves the exact Theme independently for every active Screen. An

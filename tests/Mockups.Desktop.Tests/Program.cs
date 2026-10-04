@@ -138,6 +138,7 @@ var tests = new (string Name, Action Run)[]
     ("local workstation documents reject partial and extended contracts", LocalWorkstationDocumentsAreStrict),
     ("shell window state persists only its exact visual contract", ShellWindowStateIsExactAndVisualOnly),
     ("active Project state persists one exact local identity", ActiveProjectStatePersistsExactIdentity),
+    ("Render Queue creation defaults to Light ProRes 4444 alpha", RenderQueueCreationDefaultsAreExplicit),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
     ("MOV outputs carry exact color metadata and full-scale opaque alpha", MovOutputsCarryExactMetadata),
@@ -15138,6 +15139,18 @@ static void RenderOutputNamingReservesOneBatchVersion()
     {
         Directory.Delete(root, recursive: true);
     }
+}
+
+static void RenderQueueCreationDefaultsAreExplicit()
+{
+    Equal(
+        RenderQueueAppearance.Light,
+        RenderQueueCreationDefaults.Appearance);
+    Equal(
+        RenderOutputModes.MovProRes4444,
+        RenderQueueCreationDefaults.OutputModeId);
+    True(RenderOutputModes.Require(
+        RenderQueueCreationDefaults.OutputModeId).PreservesAlpha);
 }
 
 static void MovH264ModesMatchCreditosProfiles()

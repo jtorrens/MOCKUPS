@@ -59,11 +59,11 @@ internal sealed class RenderQueueDialog
             new FieldOption(RenderQueueAppearance.Dark, "Dark"),
             new FieldOption(RenderQueueAppearance.Both, "Light + Dark"),
         ],
-            RenderQueueAppearance.Both);
+            RenderQueueCreationDefaults.Appearance);
         var outputMode = Combo(
             RenderOutputModes.All.Select((mode) =>
                 new FieldOption(mode.Id, mode.Label)).ToList(),
-            RenderOutputModes.MovProRes422Hq);
+            RenderQueueCreationDefaults.OutputModeId);
         var route = Combo([], null);
         var baseName = EditorTextBoxBehavior.Configure(new TextBox
         {
