@@ -43,20 +43,27 @@ export function resolveRuntimeCollectionPresence(
     : hasTemporalOwner
       ? timeline.screenFrame("present", targetId, resolved.sourceKeyframeFrame)
       : resolved.sourceKeyframeFrame;
+  const enters = present
+    && resolved.previousValue === false
+    && sourceFrame !== undefined
+    && sourceFrame > 0;
+  const exits = !present
+    && resolved.previousValue === true
+    && sourceFrame !== undefined
+    && sourceFrame > 0;
   const exitDurationFrames = Math.ceil(
     motionTotalDurationMs(payload, exitMotion) / 1000 * Math.max(1, payload.frameRate),
   );
-  const exitFrame = !present
-    && sourceFrame !== undefined
+  const exitFrame = exits
     && screenFrame - sourceFrame < exitDurationFrames
       ? sourceFrame
       : undefined;
-  const exitEndFrame = !present && sourceFrame !== undefined
+  const exitEndFrame = exits
     ? sourceFrame + exitDurationFrames
     : undefined;
-  const reflowStartFrame = !present && sourceFrame !== undefined
+  const reflowStartFrame = exits
     ? exitEndFrame
-    : present ? sourceFrame : undefined;
+    : enters ? sourceFrame : undefined;
   const explicitTransition = optionalBoolean(item, "presenceTransition");
   const explicitElapsedMs = Math.max(0, optionalNumber(item, "presenceElapsedMs", 0));
   const motion = present ? enterMotion : exitMotion;
@@ -77,7 +84,7 @@ export function resolveRuntimeCollectionPresence(
               / Math.max(1, payload.frameRate) * 1000,
           }),
         }
-      : present && sourceFrame !== undefined && sourceFrame > 0
+      : enters
         ? {
             motionKind: "enter" as const,
             motionFrame: resolveMotionFrame(payload, enterMotion, {
@@ -93,7 +100,7 @@ export function resolveRuntimeCollectionPresence(
     exitFrame,
     exitEndFrame,
     reflowStartFrame,
-    reflowFromPresent: resolved.previousValue === true,
+    reflowFromPresent: exits,
     ...motionState,
   };
 }

@@ -270,6 +270,63 @@ test("Present keeps an outgoing item through its exit and starts Reflow afterwar
   assert.equal(resolveAt(22).reflow, undefined);
 });
 
+test("Present does not manufacture an exit for an unchanged false keyframe", () => {
+  const item = {
+    id: "absent",
+    variantReference: "stub::variant::absent",
+    overrides: {},
+    inputs: { id: "absent" },
+    present: false,
+    presenceMotion: {
+      transition: "slide", direction: "bottom", bounds: "screen",
+      fade: false, translate: true, scale: false,
+    },
+    alignment: "center",
+    gapBeforeMode: "fixed",
+    gapBeforeToken: "theme.spacing.none",
+    gapBeforeWeight: 1,
+  };
+  const resolved = resolveCollectionStackComponent({
+    ...payload,
+    componentBaseConfigsJson: JSON.stringify({
+      variantTypes: { "stub::variant::absent": "stub" },
+      variants: { "stub::variant::absent": {} },
+    }),
+    instanceJson: JSON.stringify({
+      context: { screenFrame: 0 },
+      animation: { tracks: [{
+        fieldId: "present",
+        targetId: "absent",
+        keyframes: [{ frame: 0, value: false }],
+      }] },
+    }),
+    designPreviewJson: JSON.stringify({
+      distributionMode: "flow",
+      sizingMode: "content",
+      startGapToken: "theme.spacing.none",
+      endGapToken: "theme.spacing.none",
+      stackDirection: "down",
+      stackOffsetToken: "theme.spacing.m",
+      itemSizingMode: "intrinsic",
+      scaleRatio: 1,
+      opacityRatio: 1,
+      items: [item],
+    }),
+    runtimeContractJson: JSON.stringify({
+      collections: [{
+        id: "items",
+        jsonKey: "items",
+        animationTimeline: { sequenceItems: false },
+        fields: [{ id: "present", jsonKey: "present" }],
+      }],
+      items: [item],
+    }),
+  });
+
+  assert.deepEqual(resolved.items, []);
+  assert.equal(resolved.reflow, undefined);
+});
+
 test("an embedded runtime state change supplies the previous item to Reflow", () => {
   const frame = 6;
   const resolved = resolveCollectionStackComponent({

@@ -186,6 +186,34 @@ test("Video Call enters a participant and reflows stable cards from their prior 
   assert.equal(after.main.box.height < middle.main.box.height, true);
 });
 
+test("Video Call keeps an initially absent participant out of Preview", () => {
+  const source = fixture();
+  const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
+  preview.participants = preview.participants.slice(0, 2);
+  preview.participants[1]!.present = false;
+  const targetId = String(preview.participants[1]!.id);
+  const payload = {
+    ...source,
+    localFrame: 0,
+    designPreviewJson: JSON.stringify(preview),
+    runtimeContractJson: JSON.stringify(preview),
+    instanceJson: JSON.stringify({
+      context: { screenFrame: 0 },
+      animation: {
+        schemaVersion: 2,
+        tracks: [{
+          fieldId: "present",
+          targetId,
+          keyframes: [{ frame: 0, value: false, interpolation: "hold" }],
+        }],
+      },
+    }),
+  };
+
+  assert.equal(resolveVideoCallModule(payload).participants.some(({ id }) => id === targetId), false);
+  assert.equal(videoCallModuleToRenderable(payload).children?.some(({ id }) => id === targetId), false);
+});
+
 test("Video Call permits simultaneous participants with the same role", () => {
   const source = fixture();
   const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
