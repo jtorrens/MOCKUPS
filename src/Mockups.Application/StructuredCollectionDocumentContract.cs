@@ -45,8 +45,13 @@ public static class StructuredCollectionDocumentContract
                              && definition.StructureOwnedFieldJsonKeys?.Contains(
                                  candidate.JsonKey) == true)))
             {
+                var isEnabled = CollectionFieldAvailability.IsEnabled(
+                    item,
+                    field,
+                    index);
                 if (!item.TryGetPropertyValue(field.JsonKey, out var value))
                 {
+                    if (!isEnabled) continue;
                     throw new InvalidOperationException(
                         $"{owner} item '{itemId}' requires field '{field.JsonKey}'.");
                 }
@@ -135,6 +140,7 @@ public static class StructuredCollectionDocumentContract
                 $"{owner} fields must not redeclare the stable item id.");
         }
         var allowedKeys = fieldKeys.Append("id").ToHashSet(StringComparer.Ordinal);
+        var structuralKeys = new HashSet<string>(StringComparer.Ordinal) { "id" };
         if (definition.ComponentItems is { } componentItems)
         {
             if (fieldKeys.Contains(componentItems.OverridesJsonKey)
@@ -143,6 +149,8 @@ public static class StructuredCollectionDocumentContract
                 throw new InvalidOperationException(
                     $"{owner} Component item document keys must not overlap field keys.");
             }
+            structuralKeys.Add(componentItems.OverridesJsonKey);
+            structuralKeys.Add(componentItems.InputsJsonKey);
             allowedKeys.Add(componentItems.OverridesJsonKey);
             allowedKeys.Add(componentItems.InputsJsonKey);
         }
@@ -153,6 +161,7 @@ public static class StructuredCollectionDocumentContract
                 throw new InvalidOperationException(
                     $"{owner} Runtime owner contract key must not overlap field keys.");
             }
+            structuralKeys.Add(definition.ItemRuntimeContractJsonKey);
             allowedKeys.Add(definition.ItemRuntimeContractJsonKey);
         }
         if (definition.FixedComponentBoundary is { } boundary)
@@ -172,6 +181,7 @@ public static class StructuredCollectionDocumentContract
                 throw new InvalidOperationException(
                     $"{owner} fixed Component boundary requires one Variant field and a distinct Overrides key.");
             }
+            structuralKeys.Add(boundary.OverridesJsonKey);
             allowedKeys.Add(boundary.OverridesJsonKey);
         }
 
@@ -181,11 +191,21 @@ public static class StructuredCollectionDocumentContract
                 ?? throw new InvalidOperationException(
                     $"{owner} item at index {index} must be an object.");
             var itemId = JsonPath.RequiredString(item, "id", $"{owner} item at index {index}");
+            var activeFields = storedFields
+                .Where((field) =>
+                    CollectionFieldAvailability.IsEnabled(
+                        item,
+                        field,
+                        index))
+                .ToList();
+            var requiredKeys = structuralKeys
+                .Concat(activeFields.Select((field) => field.JsonKey))
+                .ToHashSet(StringComparer.Ordinal);
             var keys = item.Select((entry) => entry.Key).ToHashSet(StringComparer.Ordinal);
-            if (!keys.SetEquals(allowedKeys))
+            var missing = requiredKeys.Except(keys).Order(StringComparer.Ordinal).ToList();
+            var unknown = keys.Except(allowedKeys).Order(StringComparer.Ordinal).ToList();
+            if (missing.Count > 0 || unknown.Count > 0)
             {
-                var missing = allowedKeys.Except(keys).Order(StringComparer.Ordinal).ToList();
-                var unknown = keys.Except(allowedKeys).Order(StringComparer.Ordinal).ToList();
                 throw new InvalidOperationException(
                     $"{owner} item '{itemId}' must use its exact declared collection document"
                     + (missing.Count == 0
@@ -193,7 +213,7 @@ public static class StructuredCollectionDocumentContract
                         : $"; missing: {string.Join(", ", missing)}")
                     + $"{(unknown.Count == 0 ? "" : $"; unknown: {string.Join(", ", unknown)}")}.");
             }
-            foreach (var field in storedFields)
+            foreach (var field in activeFields)
             {
                 if (!item.TryGetPropertyValue(field.JsonKey, out var value))
                 {

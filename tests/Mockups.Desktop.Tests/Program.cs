@@ -3865,6 +3865,43 @@ static void EffectiveCollectionAuthoringClonesExcludeCalculatedFieldsRecursively
         authoring,
         parent,
         "Authoring nested collection");
+
+    var conditional = new RuntimeInputCollectionDefinition(
+        "conditional",
+        "Conditional",
+        "items",
+        "Item",
+        [
+            new ComponentInputDefinition(
+                "kind", "Kind", "kind", ComponentInputKind.Text,
+                ValueKind.StringReadOnly, "text"),
+            new ComponentInputDefinition(
+                "text", "Text", "value", ComponentInputKind.Text,
+                ValueKind.StringSingleLine, "",
+                EnabledWhenItemJsonKey: "kind",
+                EnabledWhenItemValues: ["text"]),
+            new ComponentInputDefinition(
+                "count", "Count", "value", ComponentInputKind.Number,
+                ValueKind.Integer, "0",
+                EnabledWhenItemJsonKey: "kind",
+                EnabledWhenItemValues: ["count"]),
+        ]);
+    var conditionalItems = JsonPath.ParseRequiredArray(
+        """
+        [{"id":"text","kind":"text","value":"Ready"},{"id":"count","kind":"count","value":3}]
+        """,
+        "Conditional collection");
+    var conditionalAuthoring =
+        StructuredCollectionDocumentContract.EffectiveAuthoringClone(
+            conditionalItems,
+            conditional,
+            "Conditional collection");
+    Equal("Ready", conditionalAuthoring[0]?["value"]?.GetValue<string>() ?? "");
+    Equal(3, conditionalAuthoring[1]?["value"]?.GetValue<int>() ?? -1);
+    StructuredCollectionDocumentContract.ValidateEffective(
+        conditionalAuthoring,
+        conditional,
+        "Conditional collection");
 }
 
 static void IconBarVariantsOwnExactZoneTopology()
