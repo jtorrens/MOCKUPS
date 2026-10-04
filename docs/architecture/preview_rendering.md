@@ -70,6 +70,12 @@ to the exact active Production's complete RGB value set and is not a parallel
 config or Runtime path. Typography roles resolve through Theme; Preview rejects
 direct Production Font ids outside Theme.
 
+A Theme-owned Component boundary receives its exact prepared Theme Variant
+reference from the payload and its sparse owner-local Overrides from the
+effective Module document. The shared Theme-boundary resolver validates the
+declared Component type and forms one complete slot for the concrete resolver;
+the Module never persists a parallel Variant reference or chooses a fallback.
+
 Animatable Runtime record references are prepared once as an exact catalog of
 the declared keyframe ids. Frame resolution selects the already prepared
 record by its resolved stable id; it never re-reads persistence per frame,

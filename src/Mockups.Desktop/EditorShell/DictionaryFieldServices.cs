@@ -16,6 +16,7 @@ internal sealed record DictionaryFieldServices(
     Func<IReadOnlyList<FieldOption>>? GetPaletteColorOptions = null,
     Func<string, bool, IReadOnlyList<FieldOption>>? GetRecordReferenceOptions = null,
     Func<string, IReadOnlyList<FieldOption>>? GetComponentVariantOptions = null,
+    Func<ThemeComponentVariantSource, string>? GetThemeComponentVariantReference = null,
     Func<string, IReadOnlyList<ComponentInputBindingDefinition>>? GetComponentVariantRuntimeInputs = null,
     Func<string, JsonObject>? GetComponentVariantRuntimeValues = null,
     Func<string, IReadOnlyList<RuntimeInputCollectionDefinition>>? GetComponentVariantRuntimeCollections = null,

@@ -56,6 +56,29 @@ internal sealed class DictionaryFieldContextDataSource
             : DesignPreviewTestValues.Parse(_database.GetThemeSettings(themeId).TokensJson);
     }
 
+    public string ThemeComponentVariantReference(
+        ProjectTreeNode node,
+        string? selectedThemeId,
+        ThemeComponentVariantSource source)
+    {
+        var themeId = _previewPayloadData.ResolveThemeId(
+            node,
+            selectedThemeId);
+        if (string.IsNullOrWhiteSpace(themeId))
+        {
+            throw new InvalidOperationException(
+                $"Theme Component Variant source '{source}' requires an active Theme.");
+        }
+        var theme = _database.GetThemeSettings(themeId);
+        return source switch
+        {
+            ThemeComponentVariantSource.StatusBar => theme.StatusBarId,
+            ThemeComponentVariantSource.NavigationBar => theme.NavigationBarId,
+            _ => throw new InvalidOperationException(
+                $"Theme Component Variant source '{source}' is not supported."),
+        };
+    }
+
     public string? IconTokenAssetPath(string iconThemeId, string token)
     {
         if (string.IsNullOrWhiteSpace(iconThemeId) || string.IsNullOrWhiteSpace(token)) return null;

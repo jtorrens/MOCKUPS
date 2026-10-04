@@ -107,6 +107,13 @@ internal static class DictionaryControlRegistry
                 request.IsInherited,
                 request.Services.OpenComponentVariantReference,
                 request.Services.OpenRuntimeComponentOverrides),
+            [ValueKind.ComponentVariantOverrides] = (request) =>
+                new DictionaryComponentVariantOverridesControl(
+                    request.Definition,
+                    request.Value,
+                    request.Services.GetThemeComponentVariantReference,
+                    request.Services.OpenComponentVariantReference,
+                    request.Services.OpenRuntimeComponentOverrides),
             [ValueKind.ComponentInputBindings] = (request) => new DictionaryComponentInputBindingsControl(
                 request.Definition,
                 request.Value,

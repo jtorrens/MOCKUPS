@@ -20,6 +20,7 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
     private readonly Button? _openButton;
     private readonly Button? _overrideButton;
     private readonly Button? _restoreButton;
+    private readonly bool _variantSelectionEditable;
     private bool _hasOverrides;
     private bool _isUpdating;
 
@@ -29,9 +30,11 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
         bool isHighlighted,
         Func<string, Task>? openComponentVariantReference,
         Func<string, Task>? openEmbeddedComponent,
-        Func<string, Task>? restoreEmbeddedComponentOverrides)
+        Func<string, Task>? restoreEmbeddedComponentOverrides,
+        bool variantSelectionEditable = true)
     {
         _definition = definition;
+        _variantSelectionEditable = variantSelectionEditable;
         _hasOverrides = isHighlighted;
         _references = definition.Options ?? [];
         var selectsComponentClass = definition.SelectComponentClass;
@@ -222,7 +225,7 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
         MinWidth = 0,
         MinHeight = 36,
         HorizontalAlignment = HorizontalAlignment.Stretch,
-        IsEnabled = _definition.IsEditable,
+        IsEnabled = _definition.IsEditable && _variantSelectionEditable,
     };
 
     private void AddLabel(string text, int row)

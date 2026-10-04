@@ -194,6 +194,8 @@ internal sealed class EditorDictionaryFieldServices
                 context.PaletteColorOptions,
             GetRecordReferenceOptions: context.RecordOptions,
             GetComponentVariantOptions: context.VariantOptions,
+            GetThemeComponentVariantReference:
+                context.ThemeComponentVariantReference,
             GetComponentVariantRuntimeInputs: context.RuntimeInputs,
             GetComponentVariantRuntimeValues: context.RuntimeValues,
             GetComponentVariantRuntimeCollections:

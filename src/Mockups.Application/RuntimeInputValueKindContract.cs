@@ -19,6 +19,7 @@ public static class RuntimeInputValueKindContract
         ValueKind.RecordReference => "recordReference",
         ValueKind.ComponentVariant => "componentVariant",
         ValueKind.ComponentVariantSlot => "componentVariantSlot",
+        ValueKind.ComponentVariantOverrides => "componentVariantOverrides",
         ValueKind.ThemeToken => "themeToken",
         ValueKind.IconToken => "icon",
         ValueKind.IconTokenList => "iconList",
@@ -222,6 +223,7 @@ public static class RuntimeInputValueKindContract
             TypographyStyleValue.Parse(value),
         ValueKind.ComponentInputBindings => ParseComponentInputBindings(value, owner),
         ValueKind.ComponentVariantSlot => ComponentVariantSlotDocumentContract.Parse(value, owner),
+        ValueKind.ComponentVariantOverrides => JsonPath.ParseRequiredObject(value, owner),
         ValueKind.BehaviorTiming => JsonPath.ParseRequiredObject(
             BehaviorTimingValue.Parse(value).ToJson(),
             owner),
@@ -440,6 +442,9 @@ public static class RuntimeInputValueKindContract
                 return;
             case ValueKind.ComponentVariantSlot:
                 ComponentVariantSlotDocumentContract.Validate(RequireObject(value, owner), owner);
+                return;
+            case ValueKind.ComponentVariantOverrides:
+                _ = RequireObject(value, owner);
                 return;
             case ValueKind.BehaviorTiming:
                 _ = BehaviorTimingValue.Parse(RequireObject(value, owner).ToJsonString());

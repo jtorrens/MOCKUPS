@@ -34,7 +34,9 @@ internal sealed record EditorDictionaryContextSnapshot(
         DictionaryComponentVariantSelectionSource>
         ComponentVariantSelections,
     IReadOnlyDictionary<string, string>
-        ComponentVariantNames)
+        ComponentVariantNames,
+    IReadOnlyDictionary<ThemeComponentVariantSource, string>
+        ThemeComponentVariantReferences)
 {
     public JsonObject ThemeTokens() =>
         DesignPreviewTestValues.Parse(ThemeTokensJson);
@@ -110,6 +112,15 @@ internal sealed record EditorDictionaryContextSnapshot(
             : throw MissingVariantContext(
                 variantReference,
                 "Display name");
+
+    public string ThemeComponentVariantReference(
+        ThemeComponentVariantSource source) =>
+        ThemeComponentVariantReferences.TryGetValue(
+            source,
+            out var reference)
+            ? reference
+            : throw new InvalidOperationException(
+                $"Theme Component Variant source '{source}' was not included in the prepared editor context.");
 
     private static InvalidOperationException MissingVariantContext(
         string variantReference,

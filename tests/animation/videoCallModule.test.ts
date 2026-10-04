@@ -37,6 +37,39 @@ function fixture() {
   } finally { database.close(); }
 }
 
+test("Video Call resolves Theme-owned chrome Variants with Module-local overrides", () => {
+  const source = fixture();
+  const config = JSON.parse(source.configJson) as {
+    videoCall: Record<string, unknown>;
+  };
+  config.videoCall.statusBarOverrides = {
+    statusBar: { backgroundAlpha: 0.42 },
+  };
+  config.videoCall.navigationBarOverrides = {
+    navigationBar: { indicatorWidth: 96 },
+  };
+  const resolved = resolveVideoCallModule({
+    ...source,
+    configJson: JSON.stringify(config),
+  });
+  assert.equal(
+    resolved.statusBarSlot.variantReference,
+    source.themeStatusBarVariantReference,
+  );
+  assert.equal(
+    resolved.navigationBarSlot.variantReference,
+    source.themeNavigationBarVariantReference,
+  );
+  assert.deepEqual(
+    resolved.statusBarSlot.overrides,
+    config.videoCall.statusBarOverrides,
+  );
+  assert.deepEqual(
+    resolved.navigationBarSlot.overrides,
+    config.videoCall.navigationBarOverrides,
+  );
+});
+
 test("Video Call resolves free-form and empty participant connection text", () => {
   const source = fixture();
   const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };

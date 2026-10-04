@@ -509,14 +509,8 @@
       "gridRows": 2,
       "showStatusBar": true,
       "showNavigationBar": true,
-      "statusBarSlot": {
-        "variantReference": "component_project_foqn_s2_status_bar::variant::lock_screen",
-        "overrides": {}
-      },
-      "navigationBarSlot": {
-        "variantReference": "component_project_foqn_s2_navigation_bar::variant::lock_screen",
-        "overrides": {}
-      },
+      "statusBarOverrides": {},
+      "navigationBarOverrides": {},
       "mainSurfaceSlot": {
         "variantReference": "component_project_foqn_s2_surface::variant::default",
         "overrides": {
@@ -2512,14 +2506,8 @@
         "gridRows": 2,
         "showStatusBar": true,
         "showNavigationBar": true,
-        "statusBarSlot": {
-          "variantReference": "component_project_foqn_s2_status_bar::variant::lock_screen",
-          "overrides": {}
-        },
-        "navigationBarSlot": {
-          "variantReference": "component_project_foqn_s2_navigation_bar::variant::lock_screen",
-          "overrides": {}
-        },
+        "statusBarOverrides": {},
+        "navigationBarOverrides": {},
         "mainSurfaceSlot": {
           "variantReference": "component_project_foqn_s2_surface::variant::default",
           "overrides": {
@@ -4863,6 +4851,58 @@
       "unit": "",
       "embeddedSlot": null,
       "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.statusBar",
+      "label": "Status bar",
+      "valueKind": "ComponentVariantOverrides",
+      "jsonPath": [
+        "videoCall",
+        "statusBarOverrides"
+      ],
+      "defaultValue": "{}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "ThemeStatusBarVariant",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "status_bar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.navigationBar",
+      "label": "Navigation bar",
+      "valueKind": "ComponentVariantOverrides",
+      "jsonPath": [
+        "videoCall",
+        "navigationBarOverrides"
+      ],
+      "defaultValue": "{}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "ThemeNavigationBarVariant",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "navigation_bar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
     }
   ],
   "editorLayout": {
@@ -5302,6 +5342,11 @@
                 "id": "module.core.videoCall.showStatusBar",
                 "order": 10,
                 "visible": true
+              },
+              {
+                "id": "module.core.videoCall.statusBar",
+                "order": 20,
+                "visible": true
               }
             ]
           }
@@ -5325,6 +5370,11 @@
               {
                 "id": "module.core.videoCall.showNavigationBar",
                 "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.navigationBar",
+                "order": 20,
                 "visible": true
               }
             ]

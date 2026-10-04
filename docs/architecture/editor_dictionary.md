@@ -179,6 +179,24 @@ A fixed boundary exposes Variant, class navigation and Overrides, never a
 Component selector. A polymorphic boundary exposes Component selection only
 when its declared selector explicitly contains `*`.
 
+### Theme-owned Component Variant Overrides
+
+`ComponentVariantOverrides` declares a Component boundary whose Variant
+reference is owned by the active Theme while the current authoring owner keeps
+only a sparse local Overrides object. Its `FieldOptionSource` names the exact
+Theme reference (`ThemeStatusBarVariant` or `ThemeNavigationBarVariant`) and
+its `componentVariantType` declares the required Component type. The persisted
+field value is always an object and never duplicates the Theme Variant
+reference.
+
+The registered control presents the resolved Theme Variant in the same shared
+boundary row with Variant selection disabled. Class navigation, contextual
+Overrides and Restore remain available. Context preparation resolves the exact
+active Theme reference, prepares that Variant through the normal dictionary
+context and passes the reference plus the sparse local document to the shared
+Overrides editor. A concrete Module does not resolve the Theme, construct this
+control or own an alternate Overrides workflow.
+
 A `RecordReference` may declaratively name the referenced record class, sparse
 owner-local document and exact editable field set that support Overrides. The
 registered reference control adds the same compact Overrides action and

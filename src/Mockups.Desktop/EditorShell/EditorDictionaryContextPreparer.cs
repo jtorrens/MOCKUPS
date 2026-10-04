@@ -111,6 +111,19 @@ internal sealed class EditorDictionaryContextPreparer
                 StringComparer.Ordinal);
         var expandedFullRuntimeTypes =
             new HashSet<string>(StringComparer.Ordinal);
+        var themeComponentVariantReferences =
+            new Dictionary<ThemeComponentVariantSource, string>();
+        foreach (var source in requirements.ThemeComponentVariantSources
+                     .OrderBy((candidate) => candidate))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var reference = _contextData.ThemeComponentVariantReference(
+                node,
+                selectedThemeId,
+                source);
+            themeComponentVariantReferences[source] = reference;
+            requirements.AddVariantReference(reference);
+        }
 
         while (true)
         {
@@ -289,7 +302,8 @@ internal sealed class EditorDictionaryContextPreparer
             selections.ToFrozenDictionary(
                 StringComparer.Ordinal),
             variantNames.ToFrozenDictionary(
-                StringComparer.Ordinal));
+                StringComparer.Ordinal),
+            themeComponentVariantReferences.ToFrozenDictionary());
     }
 
     private static ProjectTreeNode ProjectAncestor(
@@ -313,6 +327,8 @@ internal sealed class EditorDictionaryContextPreparer
             new(StringComparer.Ordinal);
         public HashSet<string> VariantReferences { get; } =
             new(StringComparer.Ordinal);
+        public HashSet<ThemeComponentVariantSource>
+            ThemeComponentVariantSources { get; } = [];
         public HashSet<EditorDictionaryRecordOptionsKey>
             RecordOptions { get; } = [];
         public bool NeedsIconAssets { get; private set; }
@@ -327,6 +343,12 @@ internal sealed class EditorDictionaryContextPreparer
             Add(
                 definition.ValueKind,
                 definition.BehaviorTiming);
+            if (definition.ThemeComponentVariantSource
+                != ThemeComponentVariantSource.None)
+            {
+                ThemeComponentVariantSources.Add(
+                    definition.ThemeComponentVariantSource);
+            }
             foreach (var input in
                      definition.ComponentInputBindings ?? [])
             {
@@ -556,7 +578,8 @@ internal sealed class EditorDictionaryContextPreparer
         {
             if (valueKind is not (
                     ValueKind.ComponentVariant
-                    or ValueKind.ComponentVariantSlot)
+                    or ValueKind.ComponentVariantSlot
+                    or ValueKind.ComponentVariantOverrides)
                 || string.IsNullOrWhiteSpace(componentType))
             {
                 return;

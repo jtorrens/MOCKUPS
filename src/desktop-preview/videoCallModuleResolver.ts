@@ -15,6 +15,7 @@ import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { resolveRuntimeCollectionPresence } from "./runtimeCollectionPresence.js";
+import { themeOwnedComponentVariantSlot } from "./themeOwnedComponentVariant.js";
 
 export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCallModuleContract {
   const config = parseObject(payload.configJson);
@@ -215,8 +216,20 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     showStatusBar: requiredBoolean(owner, "showStatusBar", "module.core.videoCall.showStatusBar"),
     showNavigationBar: requiredBoolean(owner, "showNavigationBar", "module.core.videoCall.showNavigationBar"),
     participants,
-    statusBarSlot: typedSlot(owner, bases, "statusBarSlot", "status_bar"),
-    navigationBarSlot: typedSlot(owner, bases, "navigationBarSlot", "navigation_bar"),
+    statusBarSlot: themeOwnedComponentVariantSlot(
+      payload,
+      bases,
+      "status_bar",
+      requiredRecord(owner, "statusBarOverrides", "module.core.videoCall.statusBarOverrides"),
+      "module.core.videoCall.statusBar",
+    ),
+    navigationBarSlot: themeOwnedComponentVariantSlot(
+      payload,
+      bases,
+      "navigation_bar",
+      requiredRecord(owner, "navigationBarOverrides", "module.core.videoCall.navigationBarOverrides"),
+      "module.core.videoCall.navigationBar",
+    ),
     ...(participantReflow ? { participantReflow } : {}),
   };
 }

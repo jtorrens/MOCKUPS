@@ -227,7 +227,10 @@ internal sealed class RecordClassFieldValueService
                 RuntimeInputComponentVariantFieldId: field.RuntimeInputComponentVariantFieldId,
                 RuntimeCollectionComponentVariantFieldId: field.RuntimeCollectionComponentVariantFieldId,
                 Unit: field.Unit,
-                MotionTiming: field.MotionTiming),
+                MotionTiming: field.MotionTiming,
+                ThemeComponentVariantSource:
+                    ResolveThemeComponentVariantSource(
+                        field.OptionSource)),
             value);
         var lockedResult = node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsLocked
             ? result with { Definition = result.Definition with { IsEditable = false } }
@@ -929,13 +932,16 @@ internal sealed class RecordClassFieldValueService
 
         var requiresProjectOptions = field.ValueKind is ValueKind.ComponentVariant
             or ValueKind.ComponentVariantSlot
+            or ValueKind.ComponentVariantOverrides
             or ValueKind.PaletteColorToken
             or ValueKind.PaletteColorPair
             or ValueKind.PaletteColorAlphaPair
             || field.RecordReference is not null;
         if (!requiresProjectOptions) return null;
         var projectId = RequiredProjectId(node);
-        if (field.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot)
+        if (field.ValueKind is ValueKind.ComponentVariant
+            or ValueKind.ComponentVariantSlot
+            or ValueKind.ComponentVariantOverrides)
         {
             if (string.IsNullOrWhiteSpace(field.ComponentVariantType))
             {
@@ -983,6 +989,16 @@ internal sealed class RecordClassFieldValueService
         }
         return null;
     }
+
+    private static ThemeComponentVariantSource ResolveThemeComponentVariantSource(
+        FieldOptionSource source) => source switch
+    {
+        FieldOptionSource.ThemeStatusBarVariant =>
+            ThemeComponentVariantSource.StatusBar,
+        FieldOptionSource.ThemeNavigationBarVariant =>
+            ThemeComponentVariantSource.NavigationBar,
+        _ => ThemeComponentVariantSource.None,
+    };
 
     private static string RequiredProjectId(ProjectTreeNode node)
     {

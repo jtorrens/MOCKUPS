@@ -35,6 +35,7 @@ public enum ValueKind
     EmbeddedComponent,
     ComponentVariant,
     ComponentVariantSlot,
+    ComponentVariantOverrides,
     ComponentInputBindings,
     StructuredCollection,
     AlignmentPlacement,
@@ -118,6 +119,7 @@ public static class ValueKindCommitContract
             or ValueKind.EmbeddedComponent
             or ValueKind.ComponentVariant
             or ValueKind.ComponentVariantSlot
+            or ValueKind.ComponentVariantOverrides
             or ValueKind.ComponentInputBindings
             or ValueKind.StructuredCollection
             or ValueKind.Motion
@@ -299,11 +301,20 @@ public sealed record FieldDefinition(
     string HelpText = "",
     string ValuePattern = "",
     string ValuePatternMessage = "",
-    bool AllowEmpty = false)
+    bool AllowEmpty = false,
+    ThemeComponentVariantSource ThemeComponentVariantSource =
+        ThemeComponentVariantSource.None)
 {
     public string DisplayLabel => string.IsNullOrWhiteSpace(Unit)
         ? Label
         : $"{Label} ({Unit})";
+}
+
+public enum ThemeComponentVariantSource
+{
+    None,
+    StatusBar,
+    NavigationBar,
 }
 
 public sealed record FieldValue(

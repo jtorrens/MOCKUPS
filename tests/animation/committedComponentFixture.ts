@@ -83,8 +83,13 @@ export function committedComponentFixture(
     );
     resolveActors(preview, database, palette);
     const theme = database.prepare(
-      "SELECT tokens_json, icon_theme_id FROM themes WHERE id = 'theme_project_foqn_s2_ios_default'",
-    ).get() as { tokens_json: string; icon_theme_id: string };
+      "SELECT tokens_json, icon_theme_id, status_bar_id, navigation_bar_id FROM themes WHERE id = 'theme_project_foqn_s2_ios_default'",
+    ).get() as {
+      tokens_json: string;
+      icon_theme_id: string;
+      status_bar_id: string;
+      navigation_bar_id: string;
+    };
     const iconTheme = database.prepare(
       "SELECT asset_root, mapping_json FROM icon_themes WHERE id = ?",
     ).get(theme.icon_theme_id) as { asset_root: string; mapping_json: string };
@@ -134,6 +139,8 @@ export function committedComponentFixture(
       ),
       themeMode: "light",
       themeTokensJson: theme.tokens_json,
+      themeStatusBarVariantReference: theme.status_bar_id,
+      themeNavigationBarVariantReference: theme.navigation_bar_id,
     };
   } finally {
     database.close();

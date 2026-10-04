@@ -31,6 +31,8 @@ public enum FieldOptionSource
     ModuleVariants,
     ShotManagerWorkstreams,
     ShotManagerFolders,
+    ThemeStatusBarVariant,
+    ThemeNavigationBarVariant,
 }
 
 public static class RecordClassFieldCatalog
@@ -621,6 +623,28 @@ public static class RecordClassFieldCatalog
             _ = FieldOptionContract.RequireOptions(
                 field.Options,
                 $"Record field '{field.Id}'");
+        }
+
+        foreach (var field in Fields.Values.Where((field) =>
+                     field.ValueKind == ValueKind.ComponentVariantOverrides
+                     || field.OptionSource is FieldOptionSource.ThemeStatusBarVariant
+                         or FieldOptionSource.ThemeNavigationBarVariant))
+        {
+            var expectedType = field.OptionSource switch
+            {
+                FieldOptionSource.ThemeStatusBarVariant => "status_bar",
+                FieldOptionSource.ThemeNavigationBarVariant => "navigation_bar",
+                _ => "",
+            };
+            if (field.ValueKind != ValueKind.ComponentVariantOverrides
+                || string.IsNullOrWhiteSpace(expectedType)
+                || !field.ComponentVariantType.Equals(
+                    expectedType,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Theme-owned Component Variant field '{field.Id}' requires ComponentVariantOverrides and the exact Theme source Component type.");
+            }
         }
     }
 

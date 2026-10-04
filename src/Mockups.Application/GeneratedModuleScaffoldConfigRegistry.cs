@@ -573,6 +573,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["videoCall", "mainSurfaceSlot"],
             "surface",
             []),
+        ["module.core.videoCall.navigationBar"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.navigationBar",
+            ValueKind.ComponentVariantOverrides,
+            ["videoCall", "navigationBarOverrides"],
+            "navigation_bar",
+            []),
         ["module.core.videoCall.participantAvatar"] = new(
             "module.core.videoCall",
             "module.core.videoCall.participantAvatar",
@@ -747,6 +754,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ValueKind.Boolean,
             ["videoCall", "showStatusBar"],
             "",
+            []),
+        ["module.core.videoCall.statusBar"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.statusBar",
+            ValueKind.ComponentVariantOverrides,
+            ["videoCall", "statusBarOverrides"],
+            "status_bar",
             []),
         ["module.core.videoCall.useAppWallpaper"] = new(
             "module.core.videoCall",

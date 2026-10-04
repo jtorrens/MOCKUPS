@@ -27,7 +27,7 @@ internal static class VideoCallModuleConfigContract
             "participantContentPadding", "participantAvatarSize", "participantMediaSlot", "participantAvatarSlot", "participantNameLabelSlot", "participantNamePlacement", "participantStatusLabelSlot",
             "participantEnterMotion", "participantExitMotion", "participantReflowTiming",
             "showStatusBar", "showNavigationBar",
-            "statusBarSlot", "navigationBarSlot"
+            "statusBarOverrides", "navigationBarOverrides"
         ], $"{context}.videoCall");
         foreach (var key in new[] { "useAppWallpaper", "showHeader", "showFooter", "showMainVideo", "showPip", "showGridParticipants", "showParticipantSurface", "showParticipantMedia", "showFallbackAvatar", "showFallbackStatus", "showStatusBar", "showNavigationBar" })
             JsonPath.RequiredBoolean(owner, key, context);
@@ -61,8 +61,10 @@ internal static class VideoCallModuleConfigContract
                 throw new InvalidOperationException($"{context}.videoCall.{key} must be positive.");
         if (JsonPath.RequiredNumber(owner, "gridHeightPercent", context) > 100)
             throw new InvalidOperationException($"{context}.videoCall.gridHeightPercent must be at most 100.");
-        foreach (var key in new[] { "headerSurfaceSlot", "footerSurfaceSlot", "mainSurfaceSlot", "pipSurfaceSlot", "gridSurfaceSlot", "participantMediaSlot", "participantAvatarSlot", "participantNameLabelSlot", "participantStatusLabelSlot", "statusBarSlot", "navigationBarSlot" })
+        foreach (var key in new[] { "headerSurfaceSlot", "footerSurfaceSlot", "mainSurfaceSlot", "pipSurfaceSlot", "gridSurfaceSlot", "participantMediaSlot", "participantAvatarSlot", "participantNameLabelSlot", "participantStatusLabelSlot" })
             ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(owner, key, context), $"{context}.videoCall.{key}");
+        foreach (var key in new[] { "statusBarOverrides", "navigationBarOverrides" })
+            _ = JsonPath.RequiredObject(owner, key, context);
         SocialPostModuleConfigContract.ValidateRows(owner, "headerRows", $"{context}.videoCall");
         SocialPostModuleConfigContract.ValidateRows(owner, "footerRows", $"{context}.videoCall");
         SocialPostModuleConfigContract.ValidateRows(owner, "mainRows", $"{context}.videoCall", 3, "mainRow");
