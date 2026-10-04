@@ -8,6 +8,7 @@ import type {
 import { boundedCenterBox, embeddedVariantComponentPayload, interpolateBox, interpolateRenderableGeometry, numberToken, previewScreenBox, renderScale, translateRenderableNode } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { wrapExitMotionFrame, wrapMotionFrame } from "./previewMotionHelpers.js";
+import { interpolateCollectionReflowBoxes } from "./collectionReflowGeometry.js";
 
 interface MeasuredItem {
   item: ComponentCollectionLayoutItem;
@@ -198,6 +199,17 @@ export function interpolateComponentCollectionReflow(
   const fromChildren = from.children ?? [];
   const toChildren = to.children ?? [];
   const fromById = new Map(fromItems.map((item, index) => [item.id, fromChildren[index]]));
+  const interpolatedBoxes = interpolateCollectionReflowBoxes(
+    fromItems.flatMap((item, index) => {
+      const box = fromChildren[index]?.box;
+      return box ? [{ id: item.id, box }] : [];
+    }),
+    toItems.flatMap((item, index) => {
+      const box = toChildren[index]?.box;
+      return box ? [{ id: item.id, box }] : [];
+    }),
+    progress,
+  );
   const p = Math.max(0, Math.min(1, progress));
   return {
     ...to,
@@ -205,7 +217,15 @@ export function interpolateComponentCollectionReflow(
     children: toItems.map((item, index) => {
       const node = toChildren[index];
       const previous = fromById.get(item.id);
-      return node && previous ? interpolateRenderableGeometry(previous, node, p) : node;
+      if (!node) return undefined;
+      if (previous) return interpolateRenderableGeometry(previous, node, p);
+      const currentBox = interpolatedBoxes.get(item.id);
+      return node.box && currentBox
+        ? translateRenderableNode(node, {
+            x: currentBox.x - node.box.x,
+            y: currentBox.y - node.box.y,
+          })
+        : node;
     }).filter((node): node is RenderableNode => node !== undefined),
   };
 }

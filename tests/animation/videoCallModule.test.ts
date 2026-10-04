@@ -164,10 +164,14 @@ test("Video Call enters a participant and reflows stable cards from their prior 
         },
       }),
     };
+    const renderable = videoCallModuleToRenderable(payload);
+    const enteringNode = renderable.children
+      ?.find(child => child.id === "participant_asia.motion");
     return {
       contract: resolveVideoCallModule(payload),
-      main: videoCallModuleToRenderable(payload).children
+      main: renderable.children
         ?.find(child => child.id === "participant_alex"),
+      enteringBox: enteringNode?.children?.[0]?.box,
     };
   };
 
@@ -180,9 +184,12 @@ test("Video Call enters a participant and reflows stable cards from their prior 
   assert.equal(start.contract.participantReflow?.progress, 0);
   assert.ok(middle.contract.participantReflow?.progress);
   assert.equal(after.contract.participantReflow, undefined);
-  assert.ok(before.main?.box && start.main?.box && middle.main?.box && after.main?.box);
+  assert.ok(before.main?.box && start.main?.box && middle.main?.box && after.main?.box
+    && start.enteringBox && middle.enteringBox);
   assert.equal(start.main.box.height, before.main.box.height);
+  assert.ok(start.main.box.y + start.main.box.height <= start.enteringBox.y);
   assert.ok(middle.main.box.height < start.main.box.height);
+  assert.ok(middle.main.box.y + middle.main.box.height <= middle.enteringBox.y);
   assert.equal(after.main.box.height < middle.main.box.height, true);
 });
 

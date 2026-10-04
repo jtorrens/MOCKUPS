@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { collectionStackComponentToRenderable } from "../../src/desktop-preview/collectionStackComponentRenderable.js";
+import { interpolateCollectionReflowBoxes } from "../../src/desktop-preview/collectionReflowGeometry.js";
 import { interpolateComponentCollectionReflow } from "../../src/desktop-preview/componentCollectionRenderableCommon.js";
 import type { CollectionStackDesignContract } from "../../src/desktop-preview/collectionStackComponentContract.js";
 import { resolveCollectionStackComponent } from "../../src/desktop-preview/collectionStackComponentResolver.js";
@@ -104,6 +105,21 @@ test("Collection Stack anchors upward distribution at the end boundary", () => {
     { x: 170, y: 685, width: 20, height: 20 },
     { x: 170, y: 695, width: 20, height: 20 },
   ]);
+});
+
+test("Collection reflow keeps an entering item beyond its stable neighbour", () => {
+  const boxes = interpolateCollectionReflowBoxes(
+    [{ id: "stable", box: { x: 0, y: 0, width: 100, height: 200 } }],
+    [
+      { id: "stable", box: { x: 0, y: 0, width: 100, height: 100 } },
+      { id: "entering", box: { x: 0, y: 110, width: 100, height: 90 } },
+    ],
+    0.5,
+  );
+  const stable = boxes.get("stable");
+  const entering = boxes.get("entering");
+  assert.ok(stable && entering);
+  assert.equal(stable.y + stable.height + 10, entering.y);
 });
 
 test("Component collections publish every item's exact Component Variant owner", () => {

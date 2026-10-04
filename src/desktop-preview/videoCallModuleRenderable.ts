@@ -3,7 +3,8 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
-import { interpolateRenderableGeometry, numberToken, placeChild, previewPayloadInBox, previewScreenBox, renderScale, scalePlacement, selectedColor } from "./componentRenderableCommon.js";
+import { numberToken, placeChild, previewPayloadInBox, previewScreenBox, renderScale, scalePlacement, selectedColor } from "./componentRenderableCommon.js";
+import { interpolateCollectionReflowBoxes } from "./collectionReflowGeometry.js";
 import { parseObject } from "./componentResolverCommon.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import { mediaComponentToRenderableAt } from "./mediaComponentRenderable.js";
@@ -69,19 +70,18 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
   const previousBoxes = call.participantReflow
     ? participantBoxes(call, payload, participantArea, gap, call.participantReflow.fromParticipants)
     : undefined;
+  const currentBoxes = call.participantReflow && previousBoxes
+    ? interpolateCollectionReflowBoxes(
+        [...previousBoxes].map(([id, box]) => ({ id, box })),
+        [...targetBoxes].map(([id, box]) => ({ id, box })),
+        call.participantReflow.progress,
+      )
+    : targetBoxes;
   const participants = call.participants.flatMap((item) => {
-    const targetBox = targetBoxes.get(item.id);
-    if (!targetBox) return [];
-    const targetNode = participantNode(previewPayloadInBox(payload, targetBox), bases, call, item, targetBox);
-    const previousBox = previousBoxes?.get(item.id);
-    const reflowed = call.participantReflow && previousBox
-      ? interpolateRenderableGeometry(
-          participantNode(previewPayloadInBox(payload, previousBox), bases, call, item, previousBox),
-          targetNode,
-          call.participantReflow.progress,
-        )
-      : targetNode;
-    return [applyParticipantMotion(payload, call, item, reflowed, participantArea)];
+    const currentBox = currentBoxes.get(item.id);
+    if (!currentBox) return [];
+    const currentNode = participantNode(previewPayloadInBox(payload, currentBox), bases, call, item, currentBox);
+    return [applyParticipantMotion(payload, call, item, currentNode, participantArea)];
   });
   const children: RenderableNode[] = [
     call.useAppWallpaper
