@@ -64,6 +64,8 @@ export interface RenderableMetadata {
   imageIntrinsicWidth?: number;
   imageOffsetX?: number;
   imageOffsetY?: number;
+  imageReferenceHeight?: number;
+  imageReferenceWidth?: number;
   imageScale?: number;
   paintRole?: "moduleBackground";
 }

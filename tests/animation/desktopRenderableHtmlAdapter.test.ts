@@ -158,3 +158,38 @@ test("image offset pans a cover crop without exposing the viewport", () => {
   assert.equal(clamped.x, -300);
   assert.equal(clamped.x + clamped.width, image.box.width);
 });
+
+test("image placement keeps its reference size while the viewport shrinks", () => {
+  const image = {
+    id: "media.image",
+    type: "image" as const,
+    frame: 0,
+    box: { x: 0, y: 0, width: 100, height: 100 },
+    asset: { type: "image", uri: "data:image/jpeg;base64,AA==" },
+    style: { objectFit: "cover" },
+    metadata: {
+      imageBaseSize: 200,
+      imageIntrinsicHeight: 100,
+      imageIntrinsicWidth: 100,
+      imageOffsetX: 10,
+      imageOffsetY: -5,
+      imageReferenceHeight: 200,
+      imageReferenceWidth: 200,
+      imageScale: 1.5,
+    },
+  };
+  const initial = renderableImagePaintBox(image);
+  const reduced = renderableImagePaintBox({
+    ...image,
+    box: { x: 0, y: 0, width: 100, height: 50 },
+  });
+  assert.ok(initial && reduced);
+  assert.equal(initial.width, 300);
+  assert.equal(initial.height, 300);
+  assert.equal(reduced.width, initial.width);
+  assert.equal(reduced.height, initial.height);
+  assert.equal(initial.x, -90);
+  assert.equal(initial.y, -105);
+  assert.equal(reduced.x, -90);
+  assert.equal(reduced.y, -130);
+});

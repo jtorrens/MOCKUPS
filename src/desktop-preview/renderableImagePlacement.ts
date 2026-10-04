@@ -7,24 +7,26 @@ export function renderableImagePaintBox(node: RenderableNode): RenderableBox | u
 
   const scale = Math.max(0.01, finite(node.metadata?.imageScale) ?? 1);
   const baseSize = Math.max(1, finite(node.metadata?.imageBaseSize) ?? box.width);
-  const offsetX = ((finite(node.metadata?.imageOffsetX) ?? 0) / baseSize) * box.width;
-  const offsetY = ((finite(node.metadata?.imageOffsetY) ?? 0) / baseSize) * box.width;
+  const referenceWidth = Math.max(1, finite(node.metadata?.imageReferenceWidth) ?? box.width);
+  const referenceHeight = Math.max(1, finite(node.metadata?.imageReferenceHeight) ?? box.height);
+  const offsetX = ((finite(node.metadata?.imageOffsetX) ?? 0) / baseSize) * referenceWidth;
+  const offsetY = ((finite(node.metadata?.imageOffsetY) ?? 0) / baseSize) * referenceWidth;
   const intrinsicWidth = finite(node.metadata?.imageIntrinsicWidth);
   const intrinsicHeight = finite(node.metadata?.imageIntrinsicHeight);
 
   if (!intrinsicWidth || !intrinsicHeight) {
     return {
-      x: box.x + (box.width - box.width * scale) / 2 + offsetX,
-      y: box.y + (box.height - box.height * scale) / 2 + offsetY,
-      width: box.width * scale,
-      height: box.height * scale,
+      x: box.x + (box.width - referenceWidth * scale) / 2 + offsetX,
+      y: box.y + (box.height - referenceHeight * scale) / 2 + offsetY,
+      width: referenceWidth * scale,
+      height: referenceHeight * scale,
     };
   }
 
   const fit = stringValue(node.style?.objectFit, "cover");
   const baseScale = fit === "contain"
-    ? Math.min(box.width / intrinsicWidth, box.height / intrinsicHeight)
-    : Math.max(box.width / intrinsicWidth, box.height / intrinsicHeight);
+    ? Math.min(referenceWidth / intrinsicWidth, referenceHeight / intrinsicHeight)
+    : Math.max(referenceWidth / intrinsicWidth, referenceHeight / intrinsicHeight);
   const width = intrinsicWidth * baseScale * scale;
   const height = intrinsicHeight * baseScale * scale;
   const desiredX = box.x + (box.width - width) / 2 + offsetX;

@@ -188,6 +188,13 @@ it preserves fixed or intrinsic child dimensions and marks the bounded owner
 viewport for clipping. The generic renderer only paints those boxes and the
 resolved overflow policy.
 
+Media viewport dimensions remain the stable framing coordinate space when an
+assigned layout box changes size. The assigned box owns clipping; it does not
+replace the Media viewport or rescale its image. Authored and animated Media
+scale multiplies that stable framing scale, while Media X/Y offset remains in
+the same viewport-relative coordinate system. A collection reflow may resize
+or move the clip, but it never rewrites or substitutes those Media values.
+
 Generic Surface tail geometry belongs to the Surface shape helper. Every tail
 anchors to its declared body edge and overlaps through the complete resolved
 corner radius so tail and rounded body form one seamless silhouette for every

@@ -255,9 +255,6 @@ function mediaContent(
   const frame = mediaFrameUriForPath(payload, media.sourceUri, frameTimeSeconds);
   const uri = frame.uri;
   if (uri) {
-    const customPlacement = Math.abs(media.viewport.scale - 1) > 0.000001
-      || Math.abs(media.viewport.offsetX) > 0.000001
-      || Math.abs(media.viewport.offsetY) > 0.000001;
     return {
       id: `${media.id}.content`,
       type: "image",
@@ -272,17 +269,15 @@ function mediaContent(
       },
       metadata: {
         imageBaseSize: media.viewport.width,
+        imageReferenceHeight: media.viewport.height * renderScale(payload),
+        imageReferenceWidth: media.viewport.width * renderScale(payload),
+        imageOffsetX: media.viewport.offsetX,
+        imageOffsetY: media.viewport.offsetY,
+        imageScale: media.viewport.scale,
         ...(frame.width && frame.height
           ? {
               imageIntrinsicHeight: frame.height,
               imageIntrinsicWidth: frame.width,
-            }
-          : {}),
-        ...(customPlacement
-          ? {
-              imageOffsetX: media.viewport.offsetX,
-              imageOffsetY: media.viewport.offsetY,
-              imageScale: media.viewport.scale,
             }
           : {}),
       },

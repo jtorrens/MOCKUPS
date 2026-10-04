@@ -78,6 +78,8 @@ const RenderableMetadataSchema = z.object({
   imageIntrinsicWidth: z.number().positive().optional(),
   imageOffsetX: z.number().optional(),
   imageOffsetY: z.number().optional(),
+  imageReferenceHeight: z.number().positive().optional(),
+  imageReferenceWidth: z.number().positive().optional(),
   imageScale: z.number().optional(),
   paintRole: z.literal("moduleBackground").optional(),
 }).strict();
