@@ -18254,7 +18254,7 @@ static void DeclaredRecordReferenceOverridesUseSharedAction()
                     == "record-overrides:moduleTransparency");
             True(transparencyCard.IsExpanded);
             Equal(0, window.OwnedWindows.Count);
-            window.Hide();
+            window.Close();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
