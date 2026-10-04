@@ -108,6 +108,7 @@ internal sealed partial class SqliteDesignOwner
                     or ValueKind.IconTokenList
                     or ValueKind.ComponentInputBindings
                     or ValueKind.ComponentVariantSlot
+                    or ValueKind.ComponentVariantOverrides
                     or ValueKind.StructuredCollection
                     or ValueKind.BehaviorTiming =>
                         node.ToJsonString(),

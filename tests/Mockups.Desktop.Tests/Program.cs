@@ -11065,6 +11065,8 @@ static void ModuleConfigsUseOwnerContracts()
         var conversation = nodes.Single((node) => node.Id == "module_core_chat");
         var conversationVariant = nodes.Single((node) => node.Id == "module_core_chat::variant::default");
         var lockScreen = nodes.Single((node) => node.Id == "module_project_foqn_s2_lock_screen");
+        var videoCall = nodes.Single((node) =>
+            node.Id == "module_project_foqn_s2_video_call");
         var beforeRejectedWrites = SHA256.HashData(File.ReadAllBytes(temporary));
 
         Throws<InvalidOperationException>(() => database.UpdateModuleField(
@@ -11110,6 +11112,13 @@ static void ModuleConfigsUseOwnerContracts()
                 headerSurfaceSlot,
                 "overrides",
                 "Conversation Header Surface slot").Count);
+        Equal(
+            0,
+            JsonPath.ParseRequiredObject(
+                database.GetModuleConfigFieldValue(
+                    videoCall.Id,
+                    "module.core.videoCall.statusBar"),
+                "Video Call Status Bar overrides").Count);
         database.UpdateModuleField(
             conversation.Id,
             "module.core.chat.headerUseActorColor",
