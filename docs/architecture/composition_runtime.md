@@ -232,6 +232,14 @@ and cannot remain inline with the text while the row is visible. Bubble receives
 and forwards the complete nested Icon Row Runtime contract; it never copies or
 renames Button Runtime fields.
 
+Conversation owns a separate external message-actions Icon Row boundary. It is
+a sibling of Bubble inside the same message temporal boundary, not Bubble's
+optional internal Icon Row. The Conversation Variant selects its exact Icon Row
+Variant, gap and reveal timing. Incoming and system messages place it to the
+right while shifting Bubble left; outgoing messages place it to the left while
+shifting Bubble right. Its icons are cosmetic Variant content and declare no
+command or semantic action.
+
 Bubble treats `sticker` as an explicit Media presentation. It resolves the
 source through the image Media owner and preserves that owner's viewport,
 scale, offset, crop and corner geometry. The Bubble Surface and the embedded

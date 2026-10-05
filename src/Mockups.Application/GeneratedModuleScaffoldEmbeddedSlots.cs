@@ -43,6 +43,12 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "component.keyboard",
             ["conversation", "keyboardSlot"]),
         new(
+            "module.core.chat.messageActionsIconRow.editor",
+            "iconRow",
+            "Message actions",
+            "component.iconRow",
+            ["conversation", "messageActionsIconRowSlot"]),
+        new(
             "module.core.chat.textInputBarVariant",
             "textInputBar",
             "Text input bar",

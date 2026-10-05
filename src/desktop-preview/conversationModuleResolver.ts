@@ -183,6 +183,16 @@ export function resolveConversationModule(
 export function resolveConversationModuleFrame(
   payload: DesignPreviewPayload,
 ): JsonRecord {
+  const config = parseObject(payload.configJson);
+  const conversation = requiredRecord(config, "conversation", "module config");
+  const messageActionsTiming = requiredReflowTiming(
+    requiredRecord(
+      conversation,
+      "messageActionsTiming",
+      "module.core.chat.messageActionsTiming",
+    ),
+    "module.core.chat.messageActionsTiming",
+  );
   const preview = parseObject(payload.designPreviewJson);
   const instance = parseObject(payload.instanceJson);
   const animation = optionalObject(instance, "animation", "Preview instance envelope");
@@ -387,6 +397,34 @@ export function resolveConversationModuleFrame(
     }
     message.mediaSource = mediaSource;
     message.showIconRow = resolve("showIconRow", message.showIconRow).value;
+    const actionsLocalFrame = timeline.temporalLocalFrame(
+      "actionsRevealed",
+      targetId,
+      screenFrame,
+      message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
+    );
+    const actionsRevealed = resolve(
+      "actionsRevealed",
+      requiredBoolean(
+        message,
+        "actionsRevealed",
+        `module.core.chat.messages[${index}].actionsRevealed`,
+      ),
+    );
+    if (typeof actionsRevealed.value !== "boolean") {
+      throw new Error(
+        `module.core.chat.messages[${index}] actionsRevealed animation must resolve a boolean`,
+      );
+    }
+    message.actionsRevealed = actionsRevealed.value;
+    message.actionsRevealProgress = messageActionsRevealProgress(
+      actionsRevealed.value,
+      actionsRevealed.previousValue,
+      actionsRevealed.sourceKeyframeFrame,
+      actionsLocalFrame,
+      messageActionsTiming,
+      payload.frameRate,
+    );
     const playing = resolve("isPlaying", message.isPlaying);
     message.isPlaying = playing.value;
     if (playing.animated && playing.value === true && playing.sourceKeyframeFrame !== undefined) {
@@ -640,6 +678,19 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
         "iconRowRuntime",
         `${path}.iconRowRuntime`,
       )),
+      actionsRevealed: requiredBoolean(
+        message,
+        "actionsRevealed",
+        `${path}.actionsRevealed`,
+      ),
+      actionsRevealProgress: Math.max(
+        0,
+        Math.min(1, requiredNumber(
+          message,
+          "actionsRevealProgress",
+          `${path}.actionsRevealProgress`,
+        )),
+      ),
       isTypingIndicator: false,
       currentTimeSeconds: requiredNumber(
         message,
@@ -960,7 +1011,27 @@ function validateConversationMessageRuntime(message: JsonRecord, index: number) 
   requiredNumber(message, "controlsElapsedMs", `${path}.controlsElapsedMs`);
   requiredBoolean(message, "showIconRow", `${path}.showIconRow`);
   requiredObjectArray(message, "iconRowRuntime", `${path}.iconRowRuntime`);
+  requiredBoolean(message, "actionsRevealed", `${path}.actionsRevealed`);
   requiredNumber(message, "visibleDurationFrames", `${path}.visibleDurationFrames`);
+}
+
+function messageActionsRevealProgress(
+  revealed: boolean,
+  previousValue: unknown,
+  sourceFrame: number | undefined,
+  localFrame: number,
+  timing: { durationMs: number; easing: string; intensity: number },
+  frameRate: number,
+) {
+  if (sourceFrame === undefined
+      || typeof previousValue !== "boolean"
+      || previousValue === revealed) {
+    return revealed ? 1 : 0;
+  }
+  const elapsedMs = Math.max(0, localFrame - sourceFrame + 1)
+    / Math.max(1, frameRate) * 1000;
+  const progress = resolveReflowProgress(timing, elapsedMs);
+  return revealed ? progress : 1 - progress;
 }
 
 function messagePlaybackTimeSeconds(

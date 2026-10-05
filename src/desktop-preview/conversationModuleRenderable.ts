@@ -19,7 +19,10 @@ import {
 } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { iconRowComponentToRenderableAt, measureIconRowComponent } from "./iconRowComponentRenderable.js";
-import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
+import {
+  resolveConfiguredIconRowComponentFromRecords,
+  resolveIconRowComponentFromRecords,
+} from "./iconRowComponentResolver.js";
 import {
   cssColorWithAlpha,
   numberToken,
@@ -248,6 +251,36 @@ function messageNodes(
     "bubbleSlot",
     "module.core.chat.bubbleSlot",
   );
+  const messageActionsIconRowSlot = requiredRecord(
+    conversation,
+    "messageActionsIconRowSlot",
+    "module.core.chat.messageActionsIconRowSlot",
+  );
+  const messageActionsIconRow = resolveConfiguredIconRowComponentFromRecords(
+    embeddedComponentConfig(
+      componentBaseConfigs,
+      messageActionsIconRowSlot,
+      "iconRow",
+      "module.core.chat.messageActionsIconRowSlot",
+    ),
+    componentBaseConfigs,
+    "module.core.chat.messageActionsIconRow",
+  );
+  const messageActionsIconRowSize = measureIconRowComponent(
+    payload,
+    messageActionsIconRow,
+  );
+  const messageActionsGap = Math.max(
+    0,
+    numberToken(
+      payload,
+      requiredString(
+        conversation,
+        "messageActionsGap",
+        "module.core.chat.messageActionsGap",
+      ),
+    ) * renderScale(payload),
+  );
   const bubbleNode = (message: ConversationMessageContract, writeOnTrigger: boolean) => {
     const messagePayload = authoringCollectionItemPayload(
       payload,
@@ -314,8 +347,17 @@ function messageNodes(
   };
   const resolveEntries = (sourceMessages: ConversationMessageContract[]) => sourceMessages.map((message) => {
     const bubble = bubbleNode(message, message.writeOnTrigger);
-    const node = bubble.renderable;
-    const bounds = renderableVisualBounds(node);
+    const bubbleRenderable = bubble.renderable;
+    const bounds = renderableVisualBounds(bubbleRenderable);
+    const node = messageWithActions(
+      payload,
+      message,
+      bubbleRenderable,
+      bounds,
+      messageActionsIconRow,
+      messageActionsIconRowSize,
+      messageActionsGap,
+    );
     const finalBounds = message.state === "outgoing" && message.writeOnTrigger
       ? renderableVisualBounds(bubbleNode(message, false).renderable)
       : bounds;
@@ -424,6 +466,76 @@ function messageNodes(
           reflowTranslation,
         );
   });
+}
+
+function messageWithActions(
+  payload: DesignPreviewPayload,
+  message: ConversationMessageContract,
+  bubble: RenderableNode,
+  bubbleBounds: RenderableBox,
+  iconRow: ReturnType<typeof resolveConfiguredIconRowComponentFromRecords>,
+  iconRowSize: ReturnType<typeof measureIconRowComponent>,
+  gap: number,
+): RenderableNode {
+  const progress = Math.max(0, Math.min(1, message.actionsRevealProgress));
+  if (progress <= 0 || iconRowSize.width <= 0 || iconRowSize.height <= 0) {
+    return bubble;
+  }
+  const outgoing = message.state === "outgoing";
+  const travel = iconRowSize.width + gap;
+  const translatedBubble = translateRenderableNode(bubble, {
+    x: (outgoing ? travel : -travel) * progress,
+    y: 0,
+  });
+  const iconRowBox = {
+    x: outgoing
+      ? bubbleBounds.x
+      : bubbleBounds.x + bubbleBounds.width - iconRowSize.width,
+    y: bubbleBounds.y + (bubbleBounds.height - iconRowSize.height) * 0.5,
+    width: iconRowSize.width,
+    height: iconRowSize.height,
+  };
+  const iconRowNode = renderAuthoringSlot(
+    payload,
+    "module.core.chat",
+    "module.core.chat.messageActionsIconRow.editor",
+    "component.iconRow",
+    "component.iconRow.items",
+    (slotPayload) => {
+      const node = iconRowComponentToRenderableAt(slotPayload, iconRow, iconRowBox);
+      return {
+        ...node,
+        transform: {
+          ...node.transform,
+          opacity: progress,
+        },
+      };
+    },
+  );
+  const translatedBounds = renderableVisualBounds(translatedBubble);
+  const left = Math.min(translatedBounds.x, iconRowBox.x);
+  const top = Math.min(translatedBounds.y, iconRowBox.y);
+  const right = Math.max(
+    translatedBounds.x + translatedBounds.width,
+    iconRowBox.x + iconRowBox.width,
+  );
+  const bottom = Math.max(
+    translatedBounds.y + translatedBounds.height,
+    iconRowBox.y + iconRowBox.height,
+  );
+  return {
+    id: `module.core.chat.message.${message.id}`,
+    type: "group",
+    frame: 0,
+    box: {
+      x: left,
+      y: top,
+      width: right - left,
+      height: bottom - top,
+    },
+    style: { overflow: "visible" },
+    children: [iconRowNode, translatedBubble],
+  };
 }
 
 function withZIndex(node: RenderableNode, zIndex: number): RenderableNode {

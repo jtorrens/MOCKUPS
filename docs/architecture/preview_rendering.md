@@ -400,6 +400,11 @@ fall outside Text Box's clipped text viewport remain layout results only and
 cannot move the independently painted Cursor.
 
 Conversation Preview prepares message layout transitions by stable message id.
+For each visible message it also resolves the `Actions revealed` hold value and
+the Conversation Variant's reveal timing, then prepares one group containing
+the displaced Bubble and its external actions Icon Row. Direction chooses only
+which sibling side receives that prepared row. The generic renderer paints the
+resolved group; it does not infer an action from the row's cosmetic icons.
 At an appearance it resolves the previous and target vertical layouts once. At
 an explicit disappearance, the Screen Runtime Input `Reflow at message Out
 start` selects either the first Out Motion/Fade frame or the completed-Out

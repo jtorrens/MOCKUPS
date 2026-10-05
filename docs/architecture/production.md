@@ -440,6 +440,16 @@ enabled; it does not change Shot Theme, Shot ownership or message direction.
 Design sample Actors are fixtures and never repair persisted Production
 messages.
 
+Each message owns an independent Boolean `Actions revealed` Runtime Input. It
+uses `hold` and changes only the presentation of the Conversation-owned external
+actions Icon Row. That row and Bubble are siblings within the message temporal
+boundary: incoming and system reveal it on the right, outgoing on the left, and
+Bubble moves into the opposite side. The Conversation Variant owns the exact
+Icon Row Variant, gap and reveal timing; the row's icons are cosmetic and do not
+encode deletion or any other command. Setting the Boolean back to false closes
+the row. Shortening the message's existing explicit Out removes the complete
+message group through the normal shared Motion and collection reflow.
+
 Each message's Media source is also a discrete animation target. It uses only
 `hold`, is relative to that message from text completion and changes the exact
 media path without changing Media type or the message's stable identity.

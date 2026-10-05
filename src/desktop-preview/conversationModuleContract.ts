@@ -54,6 +54,8 @@ export interface ConversationMessageContract {
   controlsElapsedMs: number;
   showIconRow: boolean;
   iconRowRuntime: JsonRecord[];
+  actionsRevealed: boolean;
+  actionsRevealProgress: number;
   isTypingIndicator: boolean;
   presenceMotion: ComponentMotionContract;
   presenceMotionKind?: "enter" | "exit";

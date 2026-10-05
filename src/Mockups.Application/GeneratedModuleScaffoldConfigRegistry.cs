@@ -104,6 +104,27 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["conversation", "keyboardSlot"],
             "keyboard",
             []),
+        ["module.core.chat.messageActionsGap"] = new(
+            "module.core.chat",
+            "module.core.chat.messageActionsGap",
+            ValueKind.ThemeToken,
+            ["conversation", "messageActionsGap"],
+            "",
+            []),
+        ["module.core.chat.messageActionsIconRow.editor"] = new(
+            "module.core.chat",
+            "module.core.chat.messageActionsIconRow.editor",
+            ValueKind.ComponentVariantSlot,
+            ["conversation", "messageActionsIconRowSlot"],
+            "iconRow",
+            []),
+        ["module.core.chat.messageActionsTiming"] = new(
+            "module.core.chat",
+            "module.core.chat.messageActionsTiming",
+            ValueKind.MotionTiming,
+            ["conversation", "messageActionsTiming"],
+            "",
+            []),
         ["module.core.chat.messageGap"] = new(
             "module.core.chat",
             "module.core.chat.messageGap",

@@ -587,6 +587,15 @@ incoming, outgoing or system direction. Changing direction preserves that
 selection. Direction and the chat-level Actor expose standard animation
 activation and discrete `hold` keyframes; resolving a direction keyframe
 immediately applies the complete corresponding Bubble appearance.
+Each message also exposes the Boolean `Show actions`, animatable only with
+discrete `hold` keyframes. Its transition reveals the Conversation-owned
+external Icon Row and displaces the Bubble according to direction: right-side
+actions for incoming/system and left-side actions for outgoing. The Bubble card
+selects the actions Icon Row Variant, gap and timing, but this row remains a
+sibling of Bubble and is distinct from Bubble's internal optional Icon Row.
+The icons carry no editor command. Authors use the existing message visible
+duration to place an Out when the visual action should remove the whole message;
+the normal Out Motion and reflow then apply to Bubble and actions together.
 The Conversation Layout card exposes `Messages reflow timing` as duration and
 easing only. It controls both the upward/downward displacement that closes a
 message gap and the auto-scroll that accommodates a newly visible message;

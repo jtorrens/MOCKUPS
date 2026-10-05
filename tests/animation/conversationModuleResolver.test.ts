@@ -61,6 +61,7 @@ function payload(
       controlsElapsedMs: 0,
       showIconRow: false,
       iconRowRuntime: [],
+      actionsRevealed: false,
       visibleDurationFrames: 0,
       writeOnTiming: {
         mode: "fixed",
@@ -94,6 +95,7 @@ function payload(
     { id: "mediaSource", jsonKey: "mediaSource", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
     { id: "isPlaying", jsonKey: "isPlaying", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
     { id: "showIconRow", jsonKey: "showIconRow", animationTimeline: { origin: { kind: "ownerStart" }, extendsOwnerDuration: false } },
+    { id: "actionsRevealed", jsonKey: "actionsRevealed", animationTimeline: { origin: { kind: "ownerStart" }, extendsOwnerDuration: false } },
     { id: "playDuration", jsonKey: "playDurationFrames" },
     { id: "fullScreen", jsonKey: "isFullScreen", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
     { id: "keepCursorAfterWrite", jsonKey: "keepCursorAfterWrite", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
@@ -103,7 +105,11 @@ function payload(
     componentType: "conversation",
     frameRate: 30,
     localFrame,
-    configJson: "{}",
+    configJson: JSON.stringify({
+      conversation: {
+        messageActionsTiming: { durationMs: 240, easing: "ease-out" },
+      },
+    }),
     designPreviewJson: JSON.stringify({
       headerSubtitle: "base header",
       bubbleRevealMode: "afterWriteOn",
@@ -483,6 +489,31 @@ test("delivery, status, Icon Row visibility and full-screen fields resolve indep
   assert.equal(message.statusText, "new");
   assert.equal(message.showIconRow, true);
   assert.equal(message.isFullScreen, true);
+});
+
+test("message actions reveal from a hold keyframe without changing Bubble Icon Row visibility", () => {
+  const messages = [{
+    id: "m1",
+    direction: "incoming",
+    text: "hello",
+    actionsRevealed: false,
+    showIconRow: false,
+  }];
+  const tracks = [track("actionsRevealed", "m1", [
+    { id: "a0", frame: 0, value: false, interpolation: "hold" },
+    { id: "a1", frame: 5, value: true, interpolation: "hold" },
+  ])];
+
+  const before = (resolveConversationModuleFrame(payload(4, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!;
+  const revealing = (resolveConversationModuleFrame(payload(5, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!;
+  const revealed = (resolveConversationModuleFrame(payload(20, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!;
+
+  assert.equal(before.actionsRevealProgress, 0);
+  assert.equal(revealing.actionsRevealed, true);
+  assert.ok(Number(revealing.actionsRevealProgress) > 0);
+  assert.ok(Number(revealing.actionsRevealProgress) < 1);
+  assert.equal(revealing.showIconRow, false);
+  assert.equal(revealed.actionsRevealProgress, 1);
 });
 
 test("hold full-screen keyframes derive the owning Media Motion clock in both directions", () => {
@@ -1312,6 +1343,7 @@ test("a nested full-screen Media keeps the exact root Screen coordinates", () =>
     controlsElapsedMs: 0,
     showIconRow: false,
     iconRowRuntime: structuredClone(messageTemplate.iconRowRuntime),
+    actionsRevealed: false,
     visibleDurationFrames: 0,
     writeOnTiming: {
       mode: "fixed",

@@ -96,6 +96,14 @@ presence interval. It keeps the Text Input Bar for the complete Screen while
 outgoing write-on alone supplies text; otherwise the Text Box owns placeholder
 rendering. Keyboard presence remains tied to outgoing writing.
 
+Each Conversation message also owns the non-sequencing Boolean
+`Actions revealed`. It uses `hold` from the message owner start. A value change
+drives the Conversation Variant's reveal timing while Conversation displaces
+Bubble and reveals the external actions Icon Row on the direction-owned side.
+The row and Bubble remain one temporal message: shortening that message's
+existing explicit Out removes both through the shared message Motion and
+reflow, while returning `Actions revealed` to false only closes the actions.
+
 Conversation owns message geometry separately from message presence. Its
 `Messages reflow timing` is one duration/easing contract for both keyed
 vertical reflow after an explicit message Out and the vertical auto-scroll

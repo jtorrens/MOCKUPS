@@ -50,6 +50,19 @@ internal static class ConversationModuleConfigContract
         JsonPath.RequiredBoolean(conversation, "showKeyboard", owner);
         RequireSlot(conversation, "keyboardSlot", owner);
         RequireSlot(conversation, "bubbleSlot", owner);
+        RequireSlot(conversation, "messageActionsIconRowSlot", owner);
+        JsonPath.RequiredString(conversation, "messageActionsGap", owner);
+        var messageActionsTiming = MotionTimingValue.Parse(
+            JsonPath.RequiredObject(
+                conversation,
+                "messageActionsTiming",
+                owner).ToJsonString());
+        if (messageActionsTiming.DurationMs is not > 0
+            || string.IsNullOrWhiteSpace(messageActionsTiming.Easing))
+        {
+            throw new InvalidOperationException(
+                $"{owner}.messageActionsTiming requires a positive duration and easing.");
+        }
         RequireRange(
             JsonPath.RequiredNumber(conversation, "bubbleMaxWidth", owner),
             1,

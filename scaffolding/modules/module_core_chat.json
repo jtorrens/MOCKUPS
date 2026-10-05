@@ -60,6 +60,15 @@
         "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
         "overrides": {}
       },
+      "messageActionsIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::message_actions",
+        "overrides": {}
+      },
+      "messageActionsGap": "theme.spacing.s",
+      "messageActionsTiming": {
+        "durationMs": 240,
+        "easing": "ease-out"
+      },
       "screenGutter": "theme.spacing.l|theme.spacing.l",
       "messageGap": "theme.spacing.l",
       "bubbleMaxWidth": 66,
@@ -1064,7 +1073,8 @@
             }
           }
         ],
-        "showIconRow": false
+        "showIconRow": false,
+        "actionsRevealed": false
       },
       {
         "direction": "outgoing",
@@ -1668,7 +1678,8 @@
             }
           }
         ],
-        "showIconRow": false
+        "showIconRow": false,
+        "actionsRevealed": false
       },
       {
         "direction": "system",
@@ -2272,7 +2283,8 @@
             }
           }
         ],
-        "showIconRow": false
+        "showIconRow": false,
+        "actionsRevealed": false
       }
     ],
     "collections": [
@@ -2937,6 +2949,29 @@
             "valueKind": "Integer"
           },
           {
+            "id": "actionsRevealed",
+            "label": "Show actions",
+            "jsonKey": "actionsRevealed",
+            "kind": "boolean",
+            "defaultValue": "false",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              },
+              "extendsOwnerDuration": false
+            },
+            "uiGroupId": "actions",
+            "uiGroupLabel": "Actions",
+            "uiParentGroupId": "",
+            "uiOrder": 10,
+            "uiSectionLabel": "",
+            "valueKind": "Boolean"
+          },
+          {
             "id": "showIconRow",
             "label": "Show Icon Row",
             "jsonKey": "showIconRow",
@@ -3121,6 +3156,15 @@
         "bubbleSlot": {
           "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
           "overrides": {}
+        },
+        "messageActionsIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::message_actions",
+          "overrides": {}
+        },
+        "messageActionsGap": "theme.spacing.s",
+        "messageActionsTiming": {
+          "durationMs": 240,
+          "easing": "ease-out"
         },
         "screenGutter": "theme.spacing.l|theme.spacing.l",
         "messageGap": "theme.spacing.l",
@@ -3345,6 +3389,106 @@
         "label": "Bubble",
         "recordClassId": "component.bubble"
       }
+    },
+    {
+      "id": "module.core.chat.messageActionsIconRow.editor",
+      "label": "Message actions",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "conversation",
+        "messageActionsIconRowSlot"
+      ],
+      "defaultValue": "component_project_foqn_s2_iconRow::variant::message_actions",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "iconRow",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Message actions",
+        "recordClassId": "component.iconRow"
+      }
+    },
+    {
+      "id": "module.core.chat.messageActionsGap",
+      "label": "Actions gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "conversation",
+        "messageActionsGap"
+      ],
+      "defaultValue": "theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        { "value": "theme.spacing.none", "label": "spacing.none" },
+        { "value": "theme.spacing.xs", "label": "spacing.xs" },
+        { "value": "theme.spacing.s", "label": "spacing.s" },
+        { "value": "theme.spacing.m", "label": "spacing.m" },
+        { "value": "theme.spacing.l", "label": "spacing.l" },
+        { "value": "theme.spacing.xl", "label": "spacing.xl" },
+        { "value": "theme.spacing.xxl", "label": "spacing.xxl" }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.messageActionsTiming",
+      "label": "Actions timing",
+      "valueKind": "MotionTiming",
+      "jsonPath": [
+        "conversation",
+        "messageActionsTiming"
+      ],
+      "defaultValue": "{\"durationMs\":240,\"easing\":\"ease-out\"}",
+      "isEditable": true,
+      "options": [
+        { "value": "linear", "label": "Linear" },
+        { "value": "ease-in", "label": "Ease in" },
+        { "value": "ease-out", "label": "Ease out" },
+        { "value": "ease", "label": "Ease" },
+        { "value": "spring", "label": "Spring" },
+        { "value": "bounce", "label": "Bounce" }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": {
+        "showDelay": false,
+        "showIntensity": false
+      },
+      "unit": "",
+      "embeddedSlot": null
     },
     {
       "id": "module.core.chat.headerAvatarAlignment",
@@ -4465,6 +4609,21 @@
               {
                 "id": "module.core.chat.bubbleMaxWidth",
                 "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.chat.messageActionsIconRow.editor",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.core.chat.messageActionsGap",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "module.core.chat.messageActionsTiming",
+                "order": 50,
                 "visible": true
               }
             ]
