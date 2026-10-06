@@ -869,10 +869,17 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 .DefaultIfEmpty(contentDurationFrames)
                 .Min(),
         }).ToList();
-        int LocalFrameForScreenFrame(int screenFrame) => Math.Max(0, (int)Math.Round(
-            RuntimeAnimationFrameOrigin.OwnerLocalFrame(
-                contract, runtime, animation, sourceTargetId, screenFrame, themeTokens, frameRate),
-            MidpointRounding.AwayFromZero));
+        int LocalFrameForScreenFrame(int screenFrame) => (int)Math.Round(
+            RuntimeAnimationFrameOrigin.LocalFrame(
+                contract,
+                runtime,
+                animation,
+                sourceFieldId,
+                sourceTargetId,
+                screenFrame,
+                themeTokens,
+                frameRate),
+            MidpointRounding.AwayFromZero);
         return new PreviewScreenTimelineItem(
             JsonPath.RequiredString(item, "id", "State Timeline item"),
             ItemLabel(collection, item, itemIndex),

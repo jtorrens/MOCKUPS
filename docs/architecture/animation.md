@@ -10,8 +10,7 @@ into the selected Screen's local authoring scale.
 ```text
 Shot frame
 → Screen origin
-→ owner appearance origin
-→ owner-local field frame
+→ Screen-local animation frame
 ```
 
 Frame conversion belongs to the common timeline. Editors, payload factories,
@@ -55,10 +54,10 @@ movement writes the position field selected by its declared positioning mode;
 outgoing resize
 writes its declared parent-owned presence-duration field. Presence duration is
 not retime and never changes the item's local clock, its sequencing completion
-or its keyframes. Neither operation rewrites local keyframes.
+or its keyframes. Neither operation rewrites Screen-local keyframes.
 Collection item lifetime defaults remain collection-contract owned rather than
 inferred from the Screen or collection name. Keyframes outside a resized item
-or Screen range remain authored at their existing owner-local frames.
+or Screen range remain authored at their existing Screen-local frames.
 
 Each serial collection lane begins at the parent-owned position resolved by
 the common owner timeline. By default, a declared `preDurationFieldIds` value
@@ -130,12 +129,13 @@ the target layout at track completion includes every message visible there.
 
 Every temporal entity follows one rule:
 
-- appearance, disappearance, activation and selection are authored in the
-  local time of its parent;
-- the entity's own fields and keyframes are authored relative to its first
-  appearance;
-- moving or reordering an entity recalculates effective frames without
-  rewriting its stored local keyframes;
+- appearance, disappearance, activation and selection are authored by the
+  declared parent owner;
+- an inactive field follows its owner-relative semantic origin and completion;
+- once a field has an animation track, its keyframes use the Screen-local
+  clock and replace that field's semantic origin and completion;
+- moving or reordering an entity changes its parent-owned visibility without
+  rewriting Screen-local keyframes;
 - re-entry restarts parent-owned Enter/Exit Motion but does not restart the
   entity's internal timeline;
 - stable ids, never indices, bind owners and tracks.
@@ -177,16 +177,26 @@ source merely because they also paint the resolved Motion.
 ## Persisted tracks
 
 Parameter animation is persisted only as version 2 tracks identified by stable
-`fieldId` and `targetId`. A track is relative to its declared owner.
+`fieldId` and `targetId`. Every keyframe frame is relative to the start of its
+Production Screen, independently from the field's semantic origin or the
+target owner's appearance.
 
-Keyframe frames are signed integers in that owner-local coordinate space. A
-negative keyframe is authored pre-roll: it never makes the owner appear before
-its parent-owned appearance, but it participates in value resolution at and
-after local frame zero. For example, linear keyframes at `-10` and `10` resolve
-their midpoint at owner-local frame zero. Pre-roll alone never extends the
-owner's calculated end duration. Every track contains at least one enabled
-keyframe, but no frame— including local frame zero—has protected editing
+Keyframe frames are signed integers in that Screen-local coordinate space. A
+negative keyframe is authored pre-roll: it never makes the target owner appear
+before its parent-owned appearance, but it participates in value resolution at
+and after Screen frame zero. For example, linear keyframes at `-10` and `10`
+resolve their midpoint at Screen frame zero. Pre-roll alone never extends the
+Screen's calculated end duration. Every track contains at least one enabled
+keyframe, but no frame—including Screen frame zero—has protected editing
 semantics.
+
+An inactive field keeps the semantic timing declared by its Module contract.
+Activating a track transfers complete value timing to its keyframes: the first
+enabled keyframe holds backwards, declared interpolation applies between
+keyframes and the final keyframe holds forwards. Runtime and Preview do not add
+the field's former semantic origin to an active track. Parent-owned visibility
+still clips the resolved value, so a Screen-local keyframe never makes its
+message, item or nested owner appear early.
 
 Moving a keyframe preserves its stable id, value, interpolation and enabled
 state. Crossing another keyframe only reorders the track by signed frame;
@@ -205,7 +215,7 @@ as `targetId`. The common owner timeline, editor target catalog, persisted-track
 validation and Preview resolution all consume this same identity.
 
 Discrete Conversation direction and chat-Actor tracks use `hold`. Direction is
-message-owner-relative and changes presentation without changing the message's
+Screen-relative and changes presentation without changing the message's
 stable Actor reference. The chat Actor is Screen-owner-relative, resolves
 through the prepared Runtime record-reference catalog and remains independent
 from the Shot Actor. A message also owns the animatable Boolean
@@ -219,10 +229,12 @@ Discrete path values use that same generic parameter-animation contract. A
 `MediaFilePath` keyframe is validated through its declared Runtime Input
 `ValueKind`, accepts only the field's declared interpolations and resolves with
 `hold`: the prior path remains effective until the destination keyframe. In
-Conversation, each message's `mediaSource` track is message-owner-relative,
-starts at that message's text completion and may extend the owner duration.
-The common animation document remains the authored source; Conversation only
-consumes the resolved path for the requested frame.
+Conversation keeps `mediaSource` hidden until text completion when that field
+has no track. Once its track is active, Screen-local keyframes govern the path
+for every frame and replace that semantic delay. Conversation still clips the
+resolved media with the message's parent-owned visibility. The common animation
+document remains the authored source; Conversation only consumes the resolved
+path for the requested Screen frame.
 
 Icon Row Button `enabled` and `pressed` values use the same nested identity and
 only `hold` interpolation. The complete ordered `buttonInputs` collection is
@@ -248,7 +260,8 @@ followed by its hold and the next message delay, sequences message arrival;
 delivery state, media playback and full-screen actions may overlap later
 messages.
 
-An editor never stores absolute Shot frames in a child-owned keyframe.
+An editor never stores absolute Shot frames in a keyframe; the persisted value
+is always relative to its Screen start.
 
 Production Screen animation authoring receives one immutable prepared snapshot
 containing the exact animation document, Screen origin and current duration.
@@ -355,20 +368,20 @@ current common playback state whenever the surface is attached.
 ## Keyframe interaction
 
 Keyframes are selected and dragged through the shared timeline interaction.
-Drag converts pointer movement into the selected temporal owner's authoring
-scale and commits a valid owner-local frame. Screen-owned fields use the Screen
-timeline. Fields owned by one collection item use a timeline starting at that
-item's first appearance; tracks from another item never enter that lane or its
-transport. Multiple animated fields owned by the same item share that one local
-timeline.
+Drag converts pointer movement directly into the selected Screen's local
+authoring scale and commits that signed Screen-local frame. Tracks from another
+selected owner never become editable in the active lane, but every visible
+track uses the same ruler so their relative positions remain directly
+comparable.
 
-The animation playhead and the keyframe lane use the same bounded owner-local
-scale. Preview projects that local frame to the Screen/Shot playhead and projects
-global navigation back while the owner exists. The active track uses compact
-amber diamonds, other tracks from the same owner use discrete circles, and any
-keyframe at the current playhead is blue while retaining its track shape. A
-protected frame-zero keyframe uses the outline form of its vector marker;
-editable keyframes use filled markers. A destination keyframe owns interpolation for the
+The animation playhead and the keyframe lane use the same bounded Screen-local
+scale. Preview projects that Screen frame to the absolute Shot playhead. The
+active track uses compact amber diamonds, other tracks from the same owner use
+discrete circles, and any keyframe at the current playhead is blue while
+retaining its track shape. A
+selected track is painted after inactive tracks so coincident markers cannot
+intercept its drag. Every keyframe, including Screen frame zero, uses the filled
+editable form. A destination keyframe owns interpolation for the
 preceding segment: `hold` preserves the source value, while `writeOn` resolves
 the source-to-destination text at every intervening frame. That one resolved
 value is the value shown by both the animation editor and Preview; a concrete
@@ -405,7 +418,7 @@ phase from the vertical boundary handles. These spans come from the common
 owner timeline after frame-rate and retime resolution; they are informational
 only and never alter presence, sequencing, snapping or keyframes. Collection
 collapse and viewport zoom are session-only. Block edits persist through their
-declared collection fields or animation document and do not rewrite owner-local
+declared collection fields or animation document and do not rewrite Screen-local
 keyframes.
 
 When Production Preview is owned by a Shot, that same Timeline surface changes
@@ -420,12 +433,11 @@ anything outside it.
 Selecting General or one stable item lane selects that exact temporal owner.
 The complete lane receives the selected treatment and one contextual animation
 section opens below the final visible lane. That section contains only tracks
-owned by the selection. Its keyframes are projected onto Screen-relative
-positions for presentation and playhead interaction, while their persisted
-frames remain owner-local. Moving a collection lane therefore moves every
-projected keyframe with its owner without rewriting any keyframe frame. General
-uses the Screen action origin; a collection item uses its first appearance.
-Tracks belonging to another item never enter the selected section.
+owned by the selection. Their persisted frames already are Screen-relative, so
+presentation, playhead interaction, Runtime and Preview consume the same exact
+coordinate. Moving a collection lane changes parent-owned visibility without
+moving or rewriting its keyframes. Tracks belonging to another item never enter
+the selected section.
 
 The Screen Timeline viewport is independent of the Screen duration contract.
 At `1:1` it presents the declared Screen range. Session-only zoom can expand the

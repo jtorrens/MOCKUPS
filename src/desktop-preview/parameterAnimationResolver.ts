@@ -40,8 +40,11 @@ export function resolveParameterAnimation(
         ? requiredString(keyframe, "interpolation", "runtime animation keyframe interpolation")
         : "hold",
     }));
-  if (keyframes.length === 0 || frame < keyframes[0]!.frame) {
+  if (keyframes.length === 0) {
     return { value: baseValue, animated: true };
+  }
+  if (frame < keyframes[0]!.frame) {
+    return { value: keyframes[0]!.value, animated: true };
   }
 
   const exact = keyframes.find((keyframe) => keyframe.frame === frame);

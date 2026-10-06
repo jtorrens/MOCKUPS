@@ -428,6 +428,7 @@ test("message media source resolves as a generic hold path value", () => {
     id: "m1",
     direction: "incoming",
     text: "image",
+    writeOnDurationFrames: 8,
     mediaType: "image",
     mediaSource: "media/base.png",
   }];
@@ -442,6 +443,10 @@ test("message media source resolves as a generic hold path value", () => {
   };
   assert.equal(at(4), "media/first.png");
   assert.equal(at(5), "media/second.png");
+  const duringWriteOn = resolveConversationModuleFrame(payload(2, tracks, messages))
+    .visibleMessages as Array<Record<string, unknown>>;
+  assert.equal(duringWriteOn[0]!.mediaSource, "media/first.png");
+  assert.equal(duringWriteOn[0]!.mediaType, "image");
 });
 
 test("chat Actor resolves hold keyframes through the prepared record catalog", () => {

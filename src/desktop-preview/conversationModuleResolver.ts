@@ -319,10 +319,12 @@ export function resolveConversationModuleFrame(
           `module.core.chat.messages[${index}].postWriteOnHoldFrames`,
         ))
       : 0;
-    message.timelineRevealAtFrame = timeline.itemOwnerFrame(
-      targetId,
-      timeline.fieldCompletionLocal("text", targetId) + postHold,
-    );
+    message.timelineRevealAtFrame = textUsesTrackCompletion
+      ? textCompletionFrame + postHold
+      : timeline.itemOwnerFrame(
+          targetId,
+          timeline.fieldCompletionLocal("text", targetId) + postHold,
+        );
     message.timelineTextStartFrame = textOriginFrame;
     message.writeOnDurationFrames = textUsesTrackCompletion
       ? 0
@@ -389,13 +391,14 @@ export function resolveConversationModuleFrame(
     message.statusVisible = resolve("statusVisible", message.statusVisible).value;
     message.statusState = resolve("status", message.statusState).value;
     message.statusText = resolve("statusText", message.statusText).value;
-    const mediaSource = resolve("mediaSource", message.mediaSource).value;
-    if (typeof mediaSource !== "string") {
+    const resolvedMediaSource = resolve("mediaSource", message.mediaSource);
+    if (typeof resolvedMediaSource.value !== "string") {
       throw new Error(
         `module.core.chat.messages[${index}] mediaSource animation must resolve a string`,
       );
     }
-    message.mediaSource = mediaSource;
+    message.mediaSource = resolvedMediaSource.value;
+    message.mediaSourceAnimated = resolvedMediaSource.animated;
     message.showIconRow = resolve("showIconRow", message.showIconRow).value;
     const actionsLocalFrame = timeline.temporalLocalFrame(
       "actionsRevealed",
@@ -507,6 +510,7 @@ type ResolvedConversationMessage = Omit<
   playbackMode: "once" | "loop";
   playbackFrame: number;
   currentTimeSeconds: number;
+  mediaSourceAnimated?: boolean;
 };
 
 type UndecoratedConversationMessage = ResolvedConversationMessage & {
@@ -869,16 +873,24 @@ function visibleMessages(
     const messageIsWriting = actionFrame < effectiveWriteOnFrames
       && effectiveWriteOnFrames > 0
       && (isOutgoingMessage || incomingWriteOn || incomingTyping);
+    const {
+      mediaSourceAnimated,
+      ...visibleMessage
+    } = message;
     return [{
-      ...message,
+      ...visibleMessage,
       visibleAtFrame: visibleAt,
       text: incomingTyping
         ? timing.typingIndicatorText
         : actionFrame <= 0 && effectiveWriteOnFrames > 0
           ? ""
           : message.text,
-      mediaType: messageIsWriting ? "none" as const : message.mediaType,
-      mediaSource: messageIsWriting ? "" : message.mediaSource,
+      mediaType: messageIsWriting && !mediaSourceAnimated
+        ? "none" as const
+        : message.mediaType,
+      mediaSource: messageIsWriting && !mediaSourceAnimated
+        ? ""
+        : message.mediaSource,
       isTypingIndicator: incomingTyping,
       writeOnTrigger: (isOutgoingMessage || incomingWriteOn)
         && !revealAfterWriteOn

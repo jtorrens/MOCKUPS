@@ -43,7 +43,8 @@ internal static class ModuleInstanceAnimationValueResolver
             .Where((keyframe) => keyframe.Enabled && keyframe.Value is not null)
             .OrderBy((keyframe) => keyframe.Frame)
             .ToList();
-        if (keyframes.Count == 0 || frame < keyframes[0].Frame) return baseValue.DeepClone();
+        if (keyframes.Count == 0) return baseValue.DeepClone();
+        if (frame < keyframes[0].Frame) return keyframes[0].Value!.DeepClone();
 
         var exact = keyframes.FirstOrDefault((keyframe) => Math.Abs(keyframe.Frame - frame) < 0.0000001);
         if (exact?.Value is not null) return exact.Value.DeepClone();

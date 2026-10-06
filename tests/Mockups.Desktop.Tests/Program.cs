@@ -248,7 +248,6 @@ var tests = new (string Name, Action Run)[]
     ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("Write-on track activation preserves the standard action explicitly", WriteOnTrackActivationCreatesStandardAction),
-    ("animation editor isolates owner-local collection timelines", AnimationEditorIsolatesOwnerLocalCollectionTimelines),
     ("Screen Timeline separates preroll content and postroll editing", ScreenTimelineSeparatesPlaybackAndEditingZones),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
@@ -265,7 +264,7 @@ var tests = new (string Name, Action Run)[]
     ("target-owned fields use target-relative origins", TargetFieldsUseRelativeOrigins),
     ("parallel collection targets share the Screen origin", ParallelCollectionTargetsShareScreenOrigin),
     ("entity fields keep their first-appearance origin across re-entry", EntityFieldsKeepFirstAppearanceOrigin),
-    ("target-owned origins include their own delay", TargetOriginsMoveWithOwnDelay),
+    ("active tracks stay anchored to the Screen clock", ActiveTracksStayAnchoredToScreenClock),
     ("animated text replaces base write-on duration", AnimatedTextReplacesWriteOnDuration),
     ("later targets move after prior animated extent", LaterTargetsFollowAnimatedExtent),
     ("later targets move after prior finite media", LaterTargetsFollowFiniteMedia),
@@ -20839,50 +20838,21 @@ static void WriteOnTrackActivationCreatesStandardAction()
         "text",
         "message-1",
         JsonValue.Create("Hello 👋")!,
-        12);
+        4,
+        16);
     var track = Required(document.Track("text", "message-1"));
     Equal(2, track.Keyframes.Count);
-    Equal(0, track.Keyframes[0].Frame);
+    Equal(4, track.Keyframes[0].Frame);
     Equal("", track.Keyframes[0].Value!.GetValue<string>());
     Equal("hold", track.Keyframes[0].Interpolation);
-    Equal(12, track.Keyframes[1].Frame);
+    Equal(16, track.Keyframes[1].Frame);
     Equal("Hello 👋", track.Keyframes[1].Value!.GetValue<string>());
     Equal("writeOn", track.Keyframes[1].Interpolation);
     Equal("Hel", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
         track,
-        6,
+        10,
         JsonValue.Create("ignored")!,
         ValueKind.StringSingleLine));
-}
-
-static void AnimationEditorIsolatesOwnerLocalCollectionTimelines()
-{
-    Equal(5, AnimationTimelineCoordinateSpace.TimelineFrameForScreenFrame(
-        usesOwnerTimeline: true,
-        screenFrame: 125,
-        ownerFrameForScreenFrame: (screenFrame) => screenFrame - 120));
-    Equal(125, AnimationTimelineCoordinateSpace.ScreenFrameForTimelineFrame(
-        usesOwnerTimeline: true,
-        timelineFrame: 5,
-        screenFrameForOwnerFrame: (ownerFrame) => 120 + (int)ownerFrame));
-    Equal(0, AnimationTimelineCoordinateSpace.MarkerFrame(
-        usesOwnerTimeline: true,
-        fieldOwnerFrameOrigin: 0,
-        keyframeFrame: 0,
-        screenFrameForOwnerFrame: (ownerFrame) => 120 + (int)ownerFrame));
-    Equal(30, AnimationTimelineCoordinateSpace.MarkerFrame(
-        usesOwnerTimeline: true,
-        fieldOwnerFrameOrigin: 0,
-        keyframeFrame: 30,
-        screenFrameForOwnerFrame: (ownerFrame) => 120 + (int)ownerFrame));
-    Equal(125, AnimationTimelineCoordinateSpace.TimelineFrameForScreenFrame(
-        usesOwnerTimeline: false,
-        screenFrame: 125,
-        ownerFrameForScreenFrame: (_) => throw new InvalidOperationException()));
-    Equal(30d, AnimationTimelineCoordinateSpace.OwnerFrameForTimelineFrame(
-        usesOwnerTimeline: true,
-        timelineFrame: 30,
-        ownerFrameForScreenFrame: (_) => throw new InvalidOperationException()));
 }
 
 static void ScreenTimelineSeparatesPlaybackAndEditingZones()
@@ -22380,13 +22350,13 @@ static void EntityFieldsKeepFirstAppearanceOrigin()
         """);
 
     Equal(0, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "state-clock"));
-    Equal(10, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "state-password"));
-    Equal(15, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "state-password", 5));
-    Equal(5d, RuntimeAnimationFrameOrigin.LocalFrame(contract, runtime, animation, "text", "state-password", 15));
-    Equal(30d, RuntimeAnimationFrameOrigin.LocalFrame(contract, runtime, animation, "text", "state-password", 40));
+    Equal(0, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "state-password"));
+    Equal(5, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "state-password", 5));
+    Equal(15d, RuntimeAnimationFrameOrigin.LocalFrame(contract, runtime, animation, "text", "state-password", 15));
+    Equal(40d, RuntimeAnimationFrameOrigin.LocalFrame(contract, runtime, animation, "text", "state-password", 40));
 }
 
-static void TargetOriginsMoveWithOwnDelay()
+static void ActiveTracksStayAnchoredToScreenClock()
 {
     var contract = SequenceContract();
     var before = Object("""{"messages":[{"id":"m1","delay":2,"write":3,"hold":1}]}""");
@@ -22398,8 +22368,8 @@ static void TargetOriginsMoveWithOwnDelay()
         ]}]}
         """);
 
-    Equal(2, RuntimeAnimationFrameOrigin.ScreenFrame(contract, before, animation, "text", "m1"));
-    Equal(7, RuntimeAnimationFrameOrigin.ScreenFrame(contract, after, animation, "text", "m1"));
+    Equal(0, RuntimeAnimationFrameOrigin.ScreenFrame(contract, before, animation, "text", "m1"));
+    Equal(0, RuntimeAnimationFrameOrigin.ScreenFrame(contract, after, animation, "text", "m1"));
     SequenceEqual(
         new[] { 0, 4 },
         animation["tracks"]![0]!["keyframes"]!.AsArray().Select((keyframe) => keyframe!["frame"]!.GetValue<int>()));
@@ -22449,8 +22419,8 @@ static void LaterTargetsFollowFiniteMedia()
           {"id":"k1","frame":1,"value":true}
         ]}]}
         """);
-    // Playback starts one frame after text completion: 2 + [1, 6), then hold 1 and delay 3.
-    Equal(12, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "m2"));
+    // The active play track uses Screen frames [1, 6), then hold 1 and delay 3.
+    Equal(10, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "m2"));
 }
 
 static void DurationUsesHalfOpenEndpoints()
@@ -22491,8 +22461,8 @@ static void DurationCombinesSequenceAndAnimation()
           {"id":"k5","frame":5,"value":"late"}
         ]}]}
         """;
-    // m2 begins at 5 + 4 = 9; its local frame 5 occupies the half-open end at 15.
-    Equal(15, RuntimeTimeline.DurationFrames(contract, runtime, animation, 1));
+    // m2 begins at 5 + 4 = 9; its earlier Screen-local keys already hold their final value.
+    Equal(10, RuntimeTimeline.DurationFrames(contract, runtime, animation, 1));
 }
 
 static void ExplicitCollectionPresenceDoesNotExtendCalculatedDuration()
@@ -22611,8 +22581,8 @@ static void NonExtendingFieldsOverlapLaterItems()
         ]}]}
         """);
     Equal(5, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "m2"));
-    Equal(32, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "status", "m1", 30));
-    Equal(33, RuntimeAnimationFrameOrigin.DurationFrames(contract, runtime, animation, 1));
+    Equal(30, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "status", "m1", 30));
+    Equal(31, RuntimeAnimationFrameOrigin.DurationFrames(contract, runtime, animation, 1));
 }
 
 static void ExplicitSequenceCompletionFieldsIsolateIndependentActions()

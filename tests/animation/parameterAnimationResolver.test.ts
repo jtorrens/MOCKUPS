@@ -32,7 +32,7 @@ test("interval boundaries are exact and the last keyframe holds", () => {
     { id: "k0", frame: 2, value: 10, interpolation: "hold", enabled: true },
     { id: "k1", frame: 6, value: 30, interpolation: "linear", enabled: true },
   ]);
-  assert.equal(resolveParameterAnimation(data, "value", "", 1, 5).value, 5);
+  assert.equal(resolveParameterAnimation(data, "value", "", 1, 5).value, 10);
   assert.equal(resolveParameterAnimation(data, "value", "", 2, 5).value, 10);
   assert.equal(resolveParameterAnimation(data, "value", "", 5, 5).value, 25);
   assert.equal(resolveParameterAnimation(data, "value", "", 6, 5).value, 30);
@@ -52,12 +52,12 @@ test("interpolation belongs to the destination keyframe", () => {
   assert.equal(resolveParameterAnimation(linearDestination, "value", "", 5, -1).value, 50);
 });
 
-test("negative local keyframes provide preroll interpolation at owner appearance", () => {
+test("negative Screen-local keyframes provide preroll interpolation at Screen zero", () => {
   const data = animation([
     { id: "before", frame: -10, value: 0, interpolation: "hold", enabled: true },
     { id: "after", frame: 10, value: 100, interpolation: "linear", enabled: true },
   ]);
-  assert.equal(resolveParameterAnimation(data, "value", "", -11, -1).value, -1);
+  assert.equal(resolveParameterAnimation(data, "value", "", -11, -1).value, 0);
   assert.equal(resolveParameterAnimation(data, "value", "", 0, -1).value, 50);
 });
 
