@@ -480,7 +480,7 @@ public static class RuntimeAnimationFrameOrigin
         public double OwnerLocalFrame(string targetId, int screenFrame)
         {
             var rootNatural = Unscale(
-                string.IsNullOrWhiteSpace(targetId) ? Math.Max(0, screenFrame) : screenFrame,
+                screenFrame,
                 _naturalDuration,
                 _effectiveDuration);
             if (string.IsNullOrWhiteSpace(targetId)) return rootNatural;
@@ -530,14 +530,14 @@ public static class RuntimeAnimationFrameOrigin
 
         public int ScreenFrame(string fieldId, string targetId, int localFrame)
         {
-            var rootNaturalFrame = RootNaturalFrame(fieldId, targetId, Math.Max(0, localFrame));
+            var rootNaturalFrame = RootNaturalFrame(fieldId, targetId, localFrame);
             return Round(Scale(rootNaturalFrame, _naturalDuration, _effectiveDuration));
         }
 
         public double LocalFrame(string fieldId, string targetId, int screenFrame)
         {
             var rootNaturalFrame = Unscale(
-                string.IsNullOrWhiteSpace(targetId) ? Math.Max(0, screenFrame) : screenFrame,
+                screenFrame,
                 _naturalDuration,
                 _effectiveDuration);
             if (string.IsNullOrWhiteSpace(targetId))
@@ -701,7 +701,7 @@ public static class RuntimeAnimationFrameOrigin
                 return new FieldTiming(origin, completion, end);
             }
             if (enabledKeyframes.Count == 0) return new FieldTiming(origin, origin, 0);
-            var last = Number(enabledKeyframes[^1]["frame"]);
+            var last = Math.Max(0, Number(enabledKeyframes[^1]["frame"]));
             return new FieldTiming(origin, origin + last, origin + last + 1);
         }
 
@@ -913,7 +913,7 @@ public static class RuntimeAnimationFrameOrigin
                 .Select((keyframe) => Number(keyframe["frame"]))
                 .DefaultIfEmpty(0)
                 .Min();
-            return firstMatch;
+            return Math.Max(0, firstMatch);
         }
 
         private static IReadOnlyList<JsonObject> EnabledKeyframes(JsonObject? track)
@@ -985,17 +985,13 @@ public static class RuntimeAnimationFrameOrigin
                     $"Runtime animation contains duplicate track target '{fieldId}'/'{targetId}'.");
             }
             var frames = new HashSet<int>();
-            var previousFrame = -1;
+            var previousFrame = int.MinValue;
             foreach (var keyframe in JsonPath.OptionalObjectArray(
                 track,
                 "keyframes",
                 "Runtime animation track"))
             {
                 var frame = JsonPath.RequiredInteger(keyframe, "frame", "Runtime animation keyframe");
-                if (frame < 0)
-                {
-                    throw new InvalidOperationException("Runtime animation keyframe frame must not be negative.");
-                }
                 if (!frames.Add(frame))
                 {
                     throw new InvalidOperationException(

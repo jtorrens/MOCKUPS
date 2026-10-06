@@ -255,7 +255,7 @@ var tests = new (string Name, Action Run)[]
     ("nested collection duplication and deletion preserve animation targets", NestedCollectionTargetsFollowIdentity),
     ("keyframe upsert updates and orders", KeyframeUpsertUpdatesAndOrders),
     ("animation timeline edits only the selected track", AnimationTimelineEditsOnlySelectedTrack),
-    ("keyframe moves preserve payload and protect frame zero", KeyframeMovesPreservePayloadAndProtectFrameZero),
+    ("keyframe moves preserve payload and reorder across local zero", KeyframeMovesPreservePayloadAndReorderAcrossZero),
     ("keyframe drag snaps to the Screen authoring grid", KeyframeDragSnapsToScreenGrid),
     ("keyframes and tracks can be removed", KeyframesAndTracksCanBeRemoved),
     ("Screen-owned fields start at Screen zero", ScreenFieldsStartAtZero),
@@ -278,10 +278,10 @@ var tests = new (string Name, Action Run)[]
     ("non-extending fields overlap later collection items", NonExtendingFieldsOverlapLaterItems),
     ("explicit sequence completion fields isolate independent item actions", ExplicitSequenceCompletionFieldsIsolateIndependentActions),
     ("strict validation rejects duplicate targets", StrictValidationRejectsDuplicateTargets),
-    ("strict validation rejects duplicate and negative frames", StrictValidationRejectsInvalidFrames),
+    ("strict validation accepts signed frames and rejects duplicates", StrictValidationAcceptsSignedFramesAndRejectsDuplicates),
     ("strict validation rejects malformed entries and unsorted keyframes", StrictValidationRejectsMalformedEntriesAndOrder),
     ("strict validation rejects invalid target durations", StrictValidationRejectsInvalidTargetDurations),
-    ("strict validation rejects tracks without an origin keyframe", StrictValidationRejectsMissingOrigin),
+    ("strict validation rejects tracks without an enabled keyframe", StrictValidationRejectsMissingEnabledKeyframe),
     ("legacy animation requires explicit migration", LegacyAnimationRequiresExplicitMigration),
     ("Backup Hub Restore initializes only an empty current owner", BackupHubRestoreInitializesOnlyEmptyCurrentOwner),
     ("Backup Hub Restore rejects unowned existing directories", BackupHubRestoreRejectsUnownedExistingDirectories),
@@ -20906,14 +20906,12 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
                 "opacity",
                 "visible_item",
                 12,
-                32,
-                IsProtected: false),
+                32),
             new PreviewScreenTimelineKeyframe(
                 "opacity",
                 "collapsed_item",
                 28,
-                48,
-                IsProtected: false),
+                48),
         ],
     };
     var navigationFrames = PreviewScreenTimelineMath.NavigationFrames(
@@ -21706,9 +21704,8 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         stateSnapshot.Keyframes
             .Where((keyframe) => keyframe.TargetId == "slot")
             .Select((keyframe) => keyframe.ScreenFrame));
-    True(stateSnapshot.Keyframes
-        .Single((keyframe) => keyframe.TargetId == "slot" && keyframe.LocalFrame == 0)
-        .IsProtected);
+    True(stateSnapshot.Keyframes.Any((keyframe) =>
+        keyframe.TargetId == "slot" && keyframe.LocalFrame == 0));
     True(stateSnapshot.Keyframes.All((keyframe) =>
         keyframe.TargetId != "nested-component"));
     True(stateSnapshot.Keyframes.Any((keyframe) =>
@@ -21753,6 +21750,12 @@ static void RuntimeControlsResolveActiveFrameValue()
     Equal("0.5", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
         Required(numericDocument.Track("opacity", "")),
         5,
+        JsonValue.Create(0)!,
+        ValueKind.Decimal));
+    True(numericDocument.TryMoveKeyframe("opacity", "", 0, -10));
+    Equal("0.5", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        Required(numericDocument.Track("opacity", "")),
+        0,
         JsonValue.Create(0)!,
         ValueKind.Decimal));
 
@@ -21803,10 +21806,9 @@ static void KeyframeUpsertUpdatesAndOrders()
     document.UpsertKeyframe("value", "", 10, JsonValue.Create(10)!, "linear");
     document.UpsertKeyframe("value", "", 4, JsonValue.Create(4)!, "easeInOut");
     document.UpsertKeyframe("value", "", 4, JsonValue.Create(5)!, "linear");
-    Throws<ArgumentOutOfRangeException>(() =>
-        document.UpsertKeyframe("value", "", -1, JsonValue.Create(6)!, "hold"));
+    document.UpsertKeyframe("value", "", -1, JsonValue.Create(-1)!, "hold");
     var frames = Required(document.Track("value", "")).Keyframes;
-    SequenceEqual(new[] { 0, 4, 10 }, frames.Select(keyframe => keyframe.Frame));
+    SequenceEqual(new[] { -1, 0, 4, 10 }, frames.Select(keyframe => keyframe.Frame));
     Equal(5, frames.Single(keyframe => keyframe.Frame == 4).Value!.GetValue<int>());
     Equal("linear", frames.Single(keyframe => keyframe.Frame == 4).Interpolation);
 }
@@ -21824,7 +21826,7 @@ static void AnimationTimelineEditsOnlySelectedTrack()
         ("text", "message-1")));
 }
 
-static void KeyframeMovesPreservePayloadAndProtectFrameZero()
+static void KeyframeMovesPreservePayloadAndReorderAcrossZero()
 {
     var document = EmptyDocument();
     document.AddTrack("value", "slot", JsonValue.Create("initial")!, "hold");
@@ -21839,27 +21841,25 @@ static void KeyframeMovesPreservePayloadAndProtectFrameZero()
     True(after.Enabled);
     SequenceEqual([0, 15], Required(document.Track("value", "slot")).Keyframes.Select((keyframe) => keyframe.Frame));
     document.UpsertKeyframe("value", "slot", 20, JsonValue.Create("occupied")!, "hold");
-    True(!document.TryMoveKeyframe("value", "slot", 0, 5));
-    True(!document.TryMoveKeyframe("value", "slot", 15, 0));
-    True(!document.TryMoveKeyframe("value", "slot", 15, 20));
-    True(!document.TryMoveKeyframe("value", "slot", 15, 15));
+    True(document.TryMoveKeyframe("value", "slot", 0, -5));
+    True(document.TryMoveKeyframe("value", "slot", 15, -10));
+    True(!document.TryMoveKeyframe("value", "slot", -10, 20));
+    True(!document.TryMoveKeyframe("value", "slot", -10, -10));
+    SequenceEqual([-10, -5, 20], Required(document.Track("value", "slot")).Keyframes.Select((keyframe) => keyframe.Frame));
     True(document.TryMoveKeyframes(
         "value",
         "slot",
-        new Dictionary<int, int> { [15] = 17, [20] = 22 }));
-    SequenceEqual([0, 17, 22], Required(document.Track("value", "slot")).Keyframes.Select(keyframe => keyframe.Frame));
-    True(!document.TryMoveKeyframes(
-        "value",
-        "slot",
-        new Dictionary<int, int> { [0] = 2 }));
+        new Dictionary<int, int> { [-10] = 5, [-5] = -5, [20] = -15 }));
+    SequenceEqual([-15, -5, 5], Required(document.Track("value", "slot")).Keyframes.Select(keyframe => keyframe.Frame));
 }
 
 static void KeyframeDragSnapsToScreenGrid()
 {
-    Equal(12, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: false, 100, 500, []));
-    Equal(12, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: true, 100, 500, []));
-    Equal(13, TimelineKeyframeDrag.ResolveScreenFrame(12.8, precise: false, 100, 500, [13]));
-    Equal(100, TimelineKeyframeDrag.ResolveScreenFrame(99.9, precise: false, 100, 500, []));
+    Equal(12, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: false, -20, 100, 500, []));
+    Equal(12, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: true, -20, 100, 500, []));
+    Equal(13, TimelineKeyframeDrag.ResolveScreenFrame(12.8, precise: false, -20, 100, 500, [13]));
+    Equal(100, TimelineKeyframeDrag.ResolveScreenFrame(99.9, precise: false, -20, 100, 500, []));
+    Equal(-12, TimelineKeyframeDrag.ResolveScreenFrame(-12.1, precise: false, -20, 100, 500, []));
 }
 
 static void KeyframesAndTracksCanBeRemoved()
@@ -22668,22 +22668,22 @@ static void StrictValidationRejectsDuplicateTargets()
         ModuleInstanceAnimationDocumentContract.Validate(animation, "Test animation_json"));
 }
 
-static void StrictValidationRejectsInvalidFrames()
+static void StrictValidationAcceptsSignedFramesAndRejectsDuplicates()
 {
     var duplicate = Object("""
         {"schemaVersion":2,"tracks":[{"id":"a","fieldId":"text","keyframes":[
           {"id":"k0","frame":0,"value":"a","interpolation":"hold","enabled":true},{"id":"k1","frame":0,"value":"b","interpolation":"hold","enabled":true}
         ]}]}
         """);
-    var negative = Object("""
+    var signed = Object("""
         {"schemaVersion":2,"tracks":[{"id":"a","fieldId":"text","keyframes":[
-          {"id":"k0","frame":-1,"value":"a","interpolation":"hold","enabled":true}
+          {"id":"km","frame":-10,"value":"a","interpolation":"hold","enabled":true},
+          {"id":"kp","frame":10,"value":"b","interpolation":"linear","enabled":true}
         ]}]}
         """);
     Throws<InvalidOperationException>(() =>
         ModuleInstanceAnimationDocumentContract.Validate(duplicate, "Test animation_json"));
-    Throws<InvalidOperationException>(() =>
-        ModuleInstanceAnimationDocumentContract.Validate(negative, "Test animation_json"));
+    ModuleInstanceAnimationDocumentContract.Validate(signed, "Test animation_json");
 }
 
 static void StrictValidationRejectsMalformedEntriesAndOrder()
@@ -22715,9 +22715,9 @@ static void StrictValidationRejectsInvalidTargetDurations()
         ModuleInstanceAnimationDocumentContract.Validate(animation, "Test animation_json"));
 }
 
-static void StrictValidationRejectsMissingOrigin()
+static void StrictValidationRejectsMissingEnabledKeyframe()
 {
-    var animation = Object("""{"schemaVersion":2,"tracks":[{"id":"track","fieldId":"text","targetId":"m1","keyframes":[]}]}""");
+    var animation = Object("""{"schemaVersion":2,"tracks":[{"id":"track","fieldId":"text","targetId":"m1","keyframes":[{"id":"disabled","frame":-1,"value":"a","interpolation":"hold","enabled":false}]}]}""");
     Throws<InvalidOperationException>(() =>
         ModuleInstanceAnimationDocumentContract.Validate(animation, "Test animation_json"));
 }

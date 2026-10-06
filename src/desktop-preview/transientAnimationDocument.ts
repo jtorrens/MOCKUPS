@@ -27,11 +27,11 @@ export function validateTransientAnimationDocument(animation: JsonRecord) {
     }
     trackTargets.add(trackTarget);
     const frames = new Set<number>();
-    let previousFrame = -1;
+    let previousFrame = Number.NEGATIVE_INFINITY;
     for (const keyframe of optionalObjectArray(track, "keyframes", "runtime animation track")) {
       const frame = requiredNumberValue(keyframe.frame, "runtime animation keyframe frame");
-      if (!Number.isInteger(frame) || frame < 0) {
-        throw new Error("runtime animation keyframe frame must be a non-negative integer");
+      if (!Number.isInteger(frame)) {
+        throw new Error("runtime animation keyframe frame must be an integer");
       }
       if (frames.has(frame)) {
         throw new Error(`runtime animation track '${fieldId}'/'${targetId}' contains duplicate frame ${frame}`);

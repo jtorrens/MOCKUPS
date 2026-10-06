@@ -145,7 +145,7 @@ internal static class ModuleInstanceTimeline
                         animation,
                         fieldId,
                         targetId,
-                        System.Math.Max(0, keyframe["frame"]?.GetValue<int>() ?? 0),
+                        keyframe["frame"]?.GetValue<int>() ?? 0,
                         themeTokens,
                         source.FrameRate))
                     ?? [];

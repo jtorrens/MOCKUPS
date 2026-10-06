@@ -52,6 +52,15 @@ test("interpolation belongs to the destination keyframe", () => {
   assert.equal(resolveParameterAnimation(linearDestination, "value", "", 5, -1).value, 50);
 });
 
+test("negative local keyframes provide preroll interpolation at owner appearance", () => {
+  const data = animation([
+    { id: "before", frame: -10, value: 0, interpolation: "hold", enabled: true },
+    { id: "after", frame: 10, value: 100, interpolation: "linear", enabled: true },
+  ]);
+  assert.equal(resolveParameterAnimation(data, "value", "", -11, -1).value, -1);
+  assert.equal(resolveParameterAnimation(data, "value", "", 0, -1).value, 50);
+});
+
 test("ease-in-out uses smoothstep and discrete values hold", () => {
   const numeric = animation([
     { id: "k0", frame: 0, value: 0, interpolation: "hold" },

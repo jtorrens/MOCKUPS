@@ -179,6 +179,22 @@ source merely because they also paint the resolved Motion.
 Parameter animation is persisted only as version 2 tracks identified by stable
 `fieldId` and `targetId`. A track is relative to its declared owner.
 
+Keyframe frames are signed integers in that owner-local coordinate space. A
+negative keyframe is authored pre-roll: it never makes the owner appear before
+its parent-owned appearance, but it participates in value resolution at and
+after local frame zero. For example, linear keyframes at `-10` and `10` resolve
+their midpoint at owner-local frame zero. Pre-roll alone never extends the
+owner's calculated end duration. Every track contains at least one enabled
+keyframe, but no frame— including local frame zero—has protected editing
+semantics.
+
+Moving a keyframe preserves its stable id, value, interpolation and enabled
+state. Crossing another keyframe only reorders the track by signed frame;
+interpolation is then evaluated between the new chronological neighbours.
+Two keyframes in one track may not occupy the same frame. The editor exposes a
+session-only left authoring horizon for pre-roll and a right authoring horizon
+for post-roll; neither horizon is persisted.
+
 An animatable field inside nested structured Runtime collections keeps the
 outer temporal owner's `targetId`. Its `fieldId` is the complete dotted stable
 path formed from each declared field id and collection item id; storage wrapper

@@ -151,13 +151,6 @@ internal sealed class ModuleInstanceAnimationDocument
         JsonNode value,
         string interpolation)
     {
-        if (frame < 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(frame),
-                frame,
-                "Animation keyframe frame must not be negative.");
-        }
         var track = TrackObject(fieldId, targetId)
             ?? throw new InvalidOperationException("Animation track does not exist.");
         var keyframes = (JsonArray)track["keyframes"]!;
@@ -186,12 +179,18 @@ internal sealed class ModuleInstanceAnimationDocument
 
     public void RemoveKeyframe(string fieldId, string targetId, int frame)
     {
-        if (frame == 0) return;
         var track = TrackObject(fieldId, targetId);
         var keyframes = track?["keyframes"] as JsonArray;
         var keyframe = keyframes?.OfType<JsonObject>()
             .FirstOrDefault((candidate) => candidate["frame"]?.GetValue<int>() == frame);
-        if (keyframe is not null) keyframes!.Remove(keyframe);
+        if (keyframe is null) return;
+        var isEnabled = keyframe["enabled"]?.GetValue<bool>() != false;
+        if (isEnabled && keyframes!.OfType<JsonObject>()
+                .Count((candidate) => candidate["enabled"]?.GetValue<bool>() != false) <= 1)
+        {
+            return;
+        }
+        keyframes!.Remove(keyframe);
     }
 
     public bool ReplaceKeyframeValue(
@@ -233,7 +232,7 @@ internal sealed class ModuleInstanceAnimationDocument
 
     public bool TryMoveKeyframe(string fieldId, string targetId, int sourceFrame, int destinationFrame)
     {
-        if (sourceFrame == 0 || destinationFrame < 0 || sourceFrame == destinationFrame) return false;
+        if (sourceFrame == destinationFrame) return false;
         var track = TrackObject(fieldId, targetId);
         var keyframes = track?["keyframes"] as JsonArray;
         if (keyframes is null) return false;
@@ -258,7 +257,7 @@ internal sealed class ModuleInstanceAnimationDocument
         IReadOnlyDictionary<int, int> frameChanges)
     {
         if (frameChanges.Count == 0
-            || frameChanges.Any(change => change.Key == 0 || change.Value < 0)) return false;
+            || frameChanges.All(change => change.Key == change.Value)) return false;
         var track = TrackObject(fieldId, targetId);
         var keyframes = track?["keyframes"] as JsonArray;
         if (keyframes is null) return false;

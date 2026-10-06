@@ -129,7 +129,7 @@ export class RuntimeOwnerTimeline {
   }
 
   screenFrame(fieldId: string, targetId: string, localFrame: number) {
-    const rootNatural = this.rootNaturalFrame(fieldId, targetId, Math.max(0, localFrame));
+    const rootNatural = this.rootNaturalFrame(fieldId, targetId, localFrame);
     return round(scale(rootNatural, this.naturalDuration, this.durationFrames));
   }
 
@@ -139,7 +139,7 @@ export class RuntimeOwnerTimeline {
 
   localFrame(fieldId: string, targetId: string, screenFrame: number) {
     const rootNatural = unscale(
-      targetId ? screenFrame : Math.max(0, screenFrame),
+      screenFrame,
       this.naturalDuration,
       this.durationFrames,
     );
@@ -421,10 +421,10 @@ export class RuntimeOwnerTimeline {
       };
     }
     if (keyframes.length === 0) return { origin, completion: origin, endExclusive: 0 };
-    const last = requiredNumberValue(
+    const last = Math.max(0, requiredNumberValue(
       keyframes[keyframes.length - 1]!.frame,
       "runtime animation keyframe frame",
-    );
+    ));
     return { origin, completion: origin + last, endExclusive: origin + last + 1 };
   }
 
@@ -550,7 +550,7 @@ export class RuntimeOwnerTimeline {
         keyframe.frame,
         "runtime animation keyframe frame",
       ));
-    return matchingFrames.length ? Math.min(...matchingFrames) : 0;
+    return matchingFrames.length ? Math.max(0, Math.min(...matchingFrames)) : 0;
   }
 
   private targetDuration(targetId: string, natural: number) {

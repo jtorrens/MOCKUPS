@@ -78,7 +78,8 @@ public static class ModuleInstanceAnimationDocumentContract
         string trackContext)
     {
         var frames = new HashSet<int>();
-        var previousFrame = -1;
+        var previousFrame = int.MinValue;
+        var hasEnabledKeyframe = false;
         for (var keyframeIndex = 0; keyframeIndex < keyframes.Count; keyframeIndex++)
         {
             var keyframe = keyframes[keyframeIndex] as JsonObject
@@ -89,10 +90,11 @@ public static class ModuleInstanceAnimationDocumentContract
             var frame = RequiredInteger(keyframe, "frame", context);
             _ = RequiredString(keyframe, "interpolation", context);
             if (keyframe["enabled"] is not JsonValue enabled
-                || !enabled.TryGetValue<bool>(out _))
+                || !enabled.TryGetValue<bool>(out var isEnabled))
             {
                 throw new InvalidOperationException($"{context} must contain a boolean 'enabled'.");
             }
+            hasEnabledKeyframe |= isEnabled;
             if (keyframe["value"] is null)
             {
                 throw new InvalidOperationException($"{context} must contain a non-null 'value'.");
@@ -101,7 +103,7 @@ public static class ModuleInstanceAnimationDocumentContract
             {
                 throw new InvalidOperationException($"{trackContext} has duplicate keyframe id '{id}'.");
             }
-            if (frame < 0 || !frames.Add(frame))
+            if (!frames.Add(frame))
             {
                 throw new InvalidOperationException($"{trackContext} has an invalid keyframe frame '{frame}'.");
             }
@@ -113,20 +115,10 @@ public static class ModuleInstanceAnimationDocumentContract
             previousFrame = frame;
         }
 
-        if (keyframes.Count == 0)
+        if (keyframes.Count == 0 || !hasEnabledKeyframe)
         {
             throw new InvalidOperationException(
-                $"{trackContext} must begin with an enabled origin keyframe at frame 0.");
-        }
-        var origin = keyframes[0] as JsonObject;
-        if (origin is null
-            || RequiredInteger(origin, "frame", trackContext) != 0
-            || origin["enabled"] is not JsonValue enabledOrigin
-            || !enabledOrigin.TryGetValue<bool>(out var originEnabled)
-            || !originEnabled)
-        {
-            throw new InvalidOperationException(
-                $"{trackContext} must begin with an enabled origin keyframe at frame 0.");
+                $"{trackContext} must contain at least one enabled keyframe.");
         }
     }
 

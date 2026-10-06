@@ -72,8 +72,7 @@ internal sealed record PreviewScreenTimelineKeyframe(
     string FieldId,
     string TargetId,
     int LocalFrame,
-    int ScreenFrame,
-    bool IsProtected);
+    int ScreenFrame);
 
 internal sealed record PreviewScreenTimelineReferenceMarker(
     string Id,
@@ -624,8 +623,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
                             targetId,
                             localFrame,
                             themeTokens,
-                            frameRate),
-                        localFrame == 0);
+                            frameRate));
                 });
         }).ToList();
 
@@ -2669,8 +2667,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                     keyframe.FieldId == stateEdit.FieldId
                     && keyframe.TargetId == stateEdit.TargetId)
                 .ToList();
-            if (stateKeyframes.Count == 0
-                || stateKeyframes.Any((keyframe) => keyframe.IsProtected))
+            if (stateKeyframes.Count == 0)
             {
                 return true;
             }
@@ -2679,7 +2676,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                 (keyframe) => stateEdit.LocalFrameForScreenFrame(
                     keyframe.ScreenFrame + delta));
             if (changes.Any((change) =>
-                    change.Value <= 0 || change.Value == change.Key)
+                    change.Value == change.Key)
                 || changes.Values.Distinct().Count() != changes.Count)
             {
                 return true;
@@ -2831,12 +2828,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                     geometry.EndFigure(true);
                 }
                 context.DrawGeometry(
-                    keyframe.IsProtected
-                        ? Brushes.Transparent
-                        : EditorAnimationVisuals.ActiveTrackBrush,
-                    keyframe.IsProtected
-                        ? new Pen(EditorAnimationVisuals.ActiveTrackBrush, 1.4)
-                        : null,
+                    EditorAnimationVisuals.ActiveTrackBrush,
+                    null,
                     marker);
             }
         }
