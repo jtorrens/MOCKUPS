@@ -4648,6 +4648,7 @@ static void ProductionAuthoringRefreshesSessionBeforeTimeline()
     var workspace = EditorWorkspace.Design;
     var previewRefreshes = 0;
     var productionRefreshOrder = new List<string>();
+    var productionSessionRefreshed = true;
     var refresh = new PreviewAuthoringRefreshCoordinator(
         () => workspace,
         () => previewRefreshes++,
@@ -4655,7 +4656,12 @@ static void ProductionAuthoringRefreshesSessionBeforeTimeline()
         {
             productionRefreshOrder.Add("session");
             await Task.Yield();
+            return productionSessionRefreshed;
+        },
+        () =>
+        {
             productionRefreshOrder.Add("timeline");
+            return Task.CompletedTask;
         });
 
     refresh.NotifyAsync().GetAwaiter().GetResult();
@@ -4666,6 +4672,11 @@ static void ProductionAuthoringRefreshesSessionBeforeTimeline()
     refresh.NotifyAsync().GetAwaiter().GetResult();
     Equal(1, previewRefreshes);
     SequenceEqual(["session", "timeline"], productionRefreshOrder);
+
+    productionRefreshOrder.Clear();
+    productionSessionRefreshed = false;
+    refresh.NotifyAsync().GetAwaiter().GetResult();
+    SequenceEqual(["session"], productionRefreshOrder);
 }
 
 static void PreviewAuthoringPreparationUsesOperationBoundary()
@@ -21791,6 +21802,8 @@ static void KeyframeUpsertUpdatesAndOrders()
     document.UpsertKeyframe("value", "", 10, JsonValue.Create(10)!, "linear");
     document.UpsertKeyframe("value", "", 4, JsonValue.Create(4)!, "easeInOut");
     document.UpsertKeyframe("value", "", 4, JsonValue.Create(5)!, "linear");
+    Throws<ArgumentOutOfRangeException>(() =>
+        document.UpsertKeyframe("value", "", -1, JsonValue.Create(6)!, "hold"));
     var frames = Required(document.Track("value", "")).Keyframes;
     SequenceEqual(new[] { 0, 4, 10 }, frames.Select(keyframe => keyframe.Frame));
     Equal(5, frames.Single(keyframe => keyframe.Frame == 4).Value!.GetValue<int>());

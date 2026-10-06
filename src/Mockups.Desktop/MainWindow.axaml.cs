@@ -160,6 +160,12 @@ public partial class MainWindow : SukiWindow
             (target) => previewAuthoringNavigator.Navigate(target),
             PreviewPanelBorder,
             this);
+        var previewAuthoringRefresh =
+            new PreviewAuthoringRefreshCoordinator(
+                () => Session.Workspace,
+                _previewController.NotifyAuthoredPreviewInputsChanged,
+                RefreshPreviewOptionsAsync,
+                RefreshCurrentPreviewAuthoringSurfaceAsync);
         _screenTimeline = new PreviewScreenTimelineController(
             PreviewTimelineHost,
             _previewController.ProductionScreenTimelineRange,
@@ -175,7 +181,7 @@ public partial class MainWindow : SukiWindow
             _previewController.ProductionReferenceVideoToolTip,
             _previewController.ToggleProductionReferenceVideo,
             _previewController.UpdateProductionShotScreenTimelineAsync,
-            RefreshProductionPreviewAsync);
+            previewAuthoringRefresh.NotifyAsync);
         _previewController.ConfigureScreenTimelineKeyboardNavigation(
             _screenTimeline.TryStepFrame,
             _screenTimeline.TryMoveToNavigationFrame,
@@ -277,11 +283,6 @@ public partial class MainWindow : SukiWindow
             () => _previewController.ActiveNavigationNodeId,
             _productionNavigationActions.NodeAction);
         _previewController.PlaybackState.Changed += RefreshPreviewNavigationState;
-        var previewAuthoringRefresh =
-            new PreviewAuthoringRefreshCoordinator(
-                () => Session.Workspace,
-                _previewController.NotifyAuthoredPreviewInputsChanged,
-                RefreshProductionPreviewAsync);
         var fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             data.Presentation,
             application.Operations,
@@ -707,9 +708,14 @@ public partial class MainWindow : SukiWindow
         }
     }
 
-    private async Task RefreshProductionPreviewAsync()
+    private Task RefreshCurrentPreviewAuthoringSurfaceAsync()
     {
-        await RefreshPreviewOptionsAsync();
+        return Session.SelectedNode is { } node
+            ? RefreshPreviewAuthoringSurfaceAsync(
+                node,
+                Session.Revision,
+                preserveCurrentSurfaceWhilePreparing: true)
+            : Task.CompletedTask;
     }
 
     private async Task<bool> LoadProjectTreeAsync(

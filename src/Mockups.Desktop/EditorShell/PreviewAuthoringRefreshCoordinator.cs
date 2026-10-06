@@ -7,15 +7,18 @@ internal sealed class PreviewAuthoringRefreshCoordinator
 {
     private readonly Func<EditorWorkspace> _workspace;
     private readonly Action _refreshPreview;
+    private readonly Func<Task<bool>> _refreshProductionSession;
     private readonly Func<Task> _refreshProductionAuthoring;
 
     public PreviewAuthoringRefreshCoordinator(
         Func<EditorWorkspace> workspace,
         Action refreshPreview,
+        Func<Task<bool>> refreshProductionSession,
         Func<Task> refreshProductionAuthoring)
     {
         _workspace = workspace;
         _refreshPreview = refreshPreview;
+        _refreshProductionSession = refreshProductionSession;
         _refreshProductionAuthoring = refreshProductionAuthoring;
     }
 
@@ -25,7 +28,10 @@ internal sealed class PreviewAuthoringRefreshCoordinator
     {
         if (_workspace() == EditorWorkspace.Production)
         {
-            await _refreshProductionAuthoring();
+            if (await _refreshProductionSession())
+            {
+                await _refreshProductionAuthoring();
+            }
             return;
         }
 

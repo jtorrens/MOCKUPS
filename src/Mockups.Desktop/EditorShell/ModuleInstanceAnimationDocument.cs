@@ -151,6 +151,13 @@ internal sealed class ModuleInstanceAnimationDocument
         JsonNode value,
         string interpolation)
     {
+        if (frame < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(frame),
+                frame,
+                "Animation keyframe frame must not be negative.");
+        }
         var track = TrackObject(fieldId, targetId)
             ?? throw new InvalidOperationException("Animation track does not exist.");
         var keyframes = (JsonArray)track["keyframes"]!;
@@ -161,7 +168,7 @@ internal sealed class ModuleInstanceAnimationDocument
             existing = new JsonObject
             {
                 ["id"] = $"keyframe-{Guid.NewGuid():N}",
-                ["frame"] = Math.Max(0, frame),
+                ["frame"] = frame,
             };
             keyframes.Add(existing);
         }

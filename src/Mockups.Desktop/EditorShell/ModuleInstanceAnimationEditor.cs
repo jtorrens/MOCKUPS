@@ -897,6 +897,7 @@ internal sealed class ModuleInstanceAnimationEditor
             DictionaryServices(node));
         void SaveValue(string value, string interpolation)
         {
+            if (localFrame < 0) return;
             _ = saveMutation((candidate) =>
             {
                 candidate.UpsertKeyframe(
@@ -926,8 +927,10 @@ internal sealed class ModuleInstanceAnimationEditor
             }
         };
         keyframeButton.IsEnabled = localFrame >= 0 && (exact is null || localFrame > 0);
+        valueControl.IsEnabled = localFrame >= 0;
         valueControl.ValueCommitted += (_, value) => SaveValue(value, interpolationControl.Value);
         panel.Children.Add(valueControl);
+        interpolationControl.IsEnabled = localFrame >= 0;
         interpolationControl.ValueCommitted += (_, interpolation) =>
         {
             if (exact is not null) SaveValue(valueControl.Value, interpolation);
