@@ -519,6 +519,13 @@ internal sealed class ModuleInstanceAnimationEditor
 
         void RefreshVisuals()
         {
+            if (!string.IsNullOrWhiteSpace(selectedKeyframeId)
+                && selected.Track?.Keyframes.Any((keyframe) =>
+                    keyframe.Id == selectedKeyframeId) != true)
+            {
+                selectedKeyframeId = null;
+                _sessionUiState.Select(keyframeSelectionKey, "");
+            }
             frameText.Text = $"{TimelineFrame()}/{timelineDuration - 1}";
             authoringLimitText.Text = hasOutOfRangeKeyframes
                 ? $"({maximumAuthoredTimelineFrame} · keyframe outside {(usesOwnerTimeline ? "item" : "Screen")})"
@@ -732,12 +739,10 @@ internal sealed class ModuleInstanceAnimationEditor
         bool TryNudgeSelectedKeyframe(int delta)
         {
             if (string.IsNullOrWhiteSpace(selectedKeyframeId)) return false;
-            var target = targets.FirstOrDefault((candidate) =>
-                candidate.Track?.Keyframes.Any((keyframe) =>
-                    keyframe.Id == selectedKeyframeId) == true);
-            var keyframe = target?.Track?.Keyframes.FirstOrDefault(
+            var target = selected;
+            var keyframe = target.Track?.Keyframes.FirstOrDefault(
                 (candidate) => candidate.Id == selectedKeyframeId);
-            if (target?.Track is null || keyframe is null)
+            if (target.Track is null || keyframe is null)
             {
                 selectedKeyframeId = null;
                 _sessionUiState.Select(keyframeSelectionKey, "");
@@ -1100,7 +1105,9 @@ internal sealed class ModuleInstanceAnimationEditor
                         target.Target?.ScreenFrameForOwnerFrame ?? ((_) => keyframe.Frame));
                     var screenKeyframe = target.Target?.ScreenFrameForOwnerFrame(ownerFrame)
                         ?? timelineKeyframe;
-                    var isActive = ReferenceEquals(target, active);
+                    var isActive = AnimationTimelineTrackInteraction.IsEditable(
+                        TargetIdentity(active),
+                        TargetIdentity(target));
                     var isCurrent = timelineKeyframe == currentTimelineFrame;
                     var isSelected = keyframe.Id == selectedKeyframeId;
                     var isProtected = keyframe.Frame == 0;
@@ -1129,7 +1136,9 @@ internal sealed class ModuleInstanceAnimationEditor
                             HorizontalAlignment = HorizontalAlignment.Center,
                             VerticalAlignment = VerticalAlignment.Center,
                         };
-                    var canDrag = keyframe.Frame > 0 && target.Target is not null;
+                    var canDrag = isActive
+                        && keyframe.Frame > 0
+                        && target.Target is not null;
                     var marker = new Border
                     {
                         Width = isActive ? 18 : 12,
@@ -1143,9 +1152,10 @@ internal sealed class ModuleInstanceAnimationEditor
                     };
                     ToolTip.SetTip(
                         marker,
-                        isProtected
+                        (isProtected
                             ? $"Local frame 0 · Screen frame {screenKeyframe} · Protected"
-                            : $"Local frame {keyframe.Frame} · Screen frame {screenKeyframe}");
+                            : $"Local frame {keyframe.Frame} · Screen frame {screenKeyframe}")
+                        + (isActive ? "" : " · Select the track to edit"));
                     var originalLeft = Math.Max(0, Math.Min(
                         width - marker.Width,
                         timelineKeyframe / (double)markerScale * (width - marker.Width)));
@@ -1175,6 +1185,11 @@ internal sealed class ModuleInstanceAnimationEditor
                     marker.PointerPressed += (_, args) =>
                     {
                         if (!args.GetCurrentPoint(marker).Properties.IsLeftButtonPressed) return;
+                        if (!isActive)
+                        {
+                            args.Handled = true;
+                            return;
+                        }
                         selectKeyframe(target, keyframe);
                         if (!canDrag)
                         {
@@ -1350,10 +1365,15 @@ internal sealed class ModuleInstanceAnimationEditor
 
     private static string TargetKey(ResolvedAnimationTarget target)
     {
-        var fieldId = target.Target?.FieldId ?? target.Track?.FieldId ?? "missing";
-        var targetId = target.Target?.TargetId ?? target.Track?.TargetId ?? "";
+        var (fieldId, targetId) = TargetIdentity(target);
         return $"{fieldId}\u001f{targetId}";
     }
+
+    private static (string FieldId, string TargetId) TargetIdentity(
+        ResolvedAnimationTarget target) =>
+        (
+            target.Target?.FieldId ?? target.Track?.FieldId ?? "missing",
+            target.Target?.TargetId ?? target.Track?.TargetId ?? "");
 
     private IReadOnlyList<AnimationTarget> ReadTargets(
         JsonObject preview,
@@ -1635,6 +1655,15 @@ internal sealed class ModuleInstanceAnimationEditor
             Children.Add(grip);
         }
     }
+}
+
+internal static class AnimationTimelineTrackInteraction
+{
+    public static bool IsEditable(
+        (string FieldId, string TargetId) active,
+        (string FieldId, string TargetId) candidate) =>
+        active.FieldId.Equals(candidate.FieldId, StringComparison.Ordinal)
+        && active.TargetId.Equals(candidate.TargetId, StringComparison.Ordinal);
 }
 
 internal sealed record AnimationTargetEditorContent(

@@ -254,6 +254,7 @@ var tests = new (string Name, Action Run)[]
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
     ("nested collection duplication and deletion preserve animation targets", NestedCollectionTargetsFollowIdentity),
     ("keyframe upsert updates and orders", KeyframeUpsertUpdatesAndOrders),
+    ("animation timeline edits only the selected track", AnimationTimelineEditsOnlySelectedTrack),
     ("keyframe moves preserve payload and protect frame zero", KeyframeMovesPreservePayloadAndProtectFrameZero),
     ("keyframe drag snaps to the Screen authoring grid", KeyframeDragSnapsToScreenGrid),
     ("keyframes and tracks can be removed", KeyframesAndTracksCanBeRemoved),
@@ -21808,6 +21809,19 @@ static void KeyframeUpsertUpdatesAndOrders()
     SequenceEqual(new[] { 0, 4, 10 }, frames.Select(keyframe => keyframe.Frame));
     Equal(5, frames.Single(keyframe => keyframe.Frame == 4).Value!.GetValue<int>());
     Equal("linear", frames.Single(keyframe => keyframe.Frame == 4).Interpolation);
+}
+
+static void AnimationTimelineEditsOnlySelectedTrack()
+{
+    True(AnimationTimelineTrackInteraction.IsEditable(
+        ("text", "message-2"),
+        ("text", "message-2")));
+    True(!AnimationTimelineTrackInteraction.IsEditable(
+        ("text", "message-2"),
+        ("pressed", "message-2")));
+    True(!AnimationTimelineTrackInteraction.IsEditable(
+        ("text", "message-2"),
+        ("text", "message-1")));
 }
 
 static void KeyframeMovesPreservePayloadAndProtectFrameZero()
