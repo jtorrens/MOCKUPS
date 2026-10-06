@@ -310,7 +310,8 @@ internal sealed class ModuleInstanceAnimationEditor
                 preview,
                 currentAnimation,
                 durationTargetId,
-                themeTokens)
+                themeTokens,
+                preparedSnapshot.Source.FrameRate)
             : actualScreenDuration;
         int ReferenceNaturalDuration() => Math.Max(
             OwnerNaturalDuration(),

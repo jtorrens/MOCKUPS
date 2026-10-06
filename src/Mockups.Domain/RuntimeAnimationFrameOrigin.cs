@@ -60,16 +60,28 @@ public static class RuntimeAnimationFrameOrigin
         JsonObject runtime,
         JsonObject animation,
         string targetId,
-        JsonObject? themeTokens = null) =>
-        Math.Max(1, Round(Model(contract, runtime, animation, themeTokens: themeTokens).OwnerNaturalDuration(targetId)));
+        JsonObject? themeTokens,
+        int frameRate) =>
+        Math.Max(1, Round(Model(
+            contract,
+            runtime,
+            animation,
+            themeTokens: themeTokens,
+            frameRate: frameRate).OwnerNaturalDuration(targetId)));
 
     public static int OwnerNaturalSequenceDuration(
         JsonObject contract,
         JsonObject runtime,
         JsonObject animation,
         string targetId,
-        JsonObject? themeTokens = null) =>
-        Math.Max(1, Round(Model(contract, runtime, animation, themeTokens: themeTokens).OwnerNaturalSequenceDuration(targetId)));
+        JsonObject? themeTokens,
+        int frameRate) =>
+        Math.Max(1, Round(Model(
+            contract,
+            runtime,
+            animation,
+            themeTokens: themeTokens,
+            frameRate: frameRate).OwnerNaturalSequenceDuration(targetId)));
 
     public static int OwnerSequenceEndScreenFrame(
         JsonObject contract,
