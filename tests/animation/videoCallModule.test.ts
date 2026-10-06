@@ -192,7 +192,10 @@ test("Video Call enters a participant and reflows stable cards from their prior 
           tracks: [{
             fieldId: "present",
             targetId: "participant_asia",
-            keyframes: [{ frame: 10, value: true, interpolation: "hold" }],
+            keyframes: [
+              { frame: 0, value: false, interpolation: "hold" },
+              { frame: 10, value: true, interpolation: "hold" },
+            ],
           }],
         },
       }),

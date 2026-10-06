@@ -107,10 +107,22 @@ function payload(
     localFrame,
     configJson: JSON.stringify({
       conversation: {
+        showKeyboard: false,
+        showTextInputBar: false,
+        messageMotion: {
+          transition: "none",
+          direction: "bottom",
+          bounds: "parent",
+          fade: false,
+          translate: false,
+          scale: false,
+        },
+        messageReflowTiming: { durationMs: 240, easing: "ease-out" },
         messageActionsTiming: { durationMs: 240, easing: "ease-out" },
       },
     }),
     designPreviewJson: JSON.stringify({
+      conversationType: "individual",
       headerSubtitle: "base header",
       bubbleRevealMode: "afterWriteOn",
       incomingRevealMode: "typingIndicator",
@@ -211,6 +223,7 @@ test("a message owner phase freezes incoming content at its initial write state"
         showTextInputBar: false,
         messageMotion: motion,
         messageReflowTiming: { durationMs: 240, easing: "linear" },
+        messageActionsTiming: { durationMs: 240, easing: "ease-out" },
       },
     }),
     designPreviewJson: JSON.stringify(preview),
@@ -285,12 +298,12 @@ test("message tracks use each message start as local frame zero", () => {
       { id: "m21", frame: 2, value: "second end", interpolation: "hold" },
     ]),
   ];
-  // A lone origin keyframe keeps the base write-on: m1 ends at 5 and m2 starts at 9.
-  assert.equal((resolveConversationModuleFrame(payload(1, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!.text, "base 1");
+  // An active track holds its first enabled keyframe backwards from owner-local frame zero.
+  assert.equal((resolveConversationModuleFrame(payload(1, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!.text, "first");
   assert.equal((resolveConversationModuleFrame(payload(2, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!.text, "first");
-  assert.equal((resolveConversationModuleFrame(payload(8, tracks, messages)).messages as Array<Record<string, unknown>>)[1]!.text, "base 2");
-  assert.equal((resolveConversationModuleFrame(payload(9, tracks, messages)).messages as Array<Record<string, unknown>>)[1]!.text, "second start");
-  assert.equal((resolveConversationModuleFrame(payload(11, tracks, messages)).messages as Array<Record<string, unknown>>)[1]!.text, "second end");
+  assert.equal((resolveConversationModuleFrame(payload(6, tracks, messages)).messages as Array<Record<string, unknown>>)[1]!.text, "second start");
+  assert.equal((resolveConversationModuleFrame(payload(7, tracks, messages)).messages as Array<Record<string, unknown>>)[1]!.text, "second start");
+  assert.equal((resolveConversationModuleFrame(payload(9, tracks, messages)).messages as Array<Record<string, unknown>>)[1]!.text, "second end");
 });
 
 test("reordering or inserting messages moves the origin without changing local keyframes", () => {
@@ -405,7 +418,7 @@ test("message arrival follows text completion while finite media continues indep
   assert.equal(resolvedText[1]!.text, "second start");
   // Media remains active on the first message timeline, while text end 2 + hold 1
   // and the next message delay 3 place the next origin at Screen frame 6.
-  assert.equal(beforeMediaSequence[1]!.text, "second base");
+  assert.equal(beforeMediaSequence[1]!.text, "second start");
   assert.equal(resolvedMedia[1]!.text, "second start");
 });
 
@@ -443,7 +456,7 @@ test("message media source resolves as a generic hold path value", () => {
   };
   assert.equal(at(4), "media/first.png");
   assert.equal(at(5), "media/second.png");
-  const duringWriteOn = resolveConversationModuleFrame(payload(2, tracks, messages))
+  const duringWriteOn = resolveConversationModule(payload(2, tracks, messages))
     .visibleMessages as Array<Record<string, unknown>>;
   assert.equal(duringWriteOn[0]!.mediaSource, "media/first.png");
   assert.equal(duringWriteOn[0]!.mediaType, "image");
@@ -575,6 +588,7 @@ test("non-extending delivery keyframes overlap later messages without pushing th
 test("animated media playing is always finite", () => {
   const messages = [{ id: "m1", direction: "incoming", text: "hello", isPlaying: false, playDurationFrames: 3 }];
   const tracks = [track("isPlaying", "m1", [
+    { id: "p-base", frame: 0, value: false, interpolation: "hold" },
     { id: "p0", frame: 1, value: true, interpolation: "hold" },
   ])];
   const at = (frame: number) => (resolveConversationModuleFrame(payload(frame, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!;
@@ -794,10 +808,11 @@ test("Conversation retains an outgoing composer while later messages advance unt
   ];
   source.designPreviewJson = JSON.stringify(runtime);
   const instance = JSON.parse(source.instanceJson) as Record<string, unknown>;
-  const cursorReleaseLocalFrame = 5;
+  const cursorReleaseLocalFrame = 12;
   instance.animation = {
     schemaVersion: 2,
     tracks: [track("keepCursorAfterWrite", "retained", [
+      { id: "retain", frame: 0, value: true, interpolation: "hold" },
       { id: "release", frame: cursorReleaseLocalFrame, value: false, interpolation: "hold" },
     ])],
   };
@@ -807,7 +822,7 @@ test("Conversation retains an outgoing composer while later messages advance unt
   const prepared = resolveConversationModuleFrame(source);
   const retainedTiming = (prepared.messages as Array<Record<string, unknown>>)
     .find(({ id }) => id === "retained")!;
-  const releaseFrame = Number(retainedTiming.timelineRevealAtFrame)
+  const releaseFrame = Number(retainedTiming.timelineTextStartFrame)
     + cursorReleaseLocalFrame;
 
   setConversationFrame(source, releaseFrame - 1);

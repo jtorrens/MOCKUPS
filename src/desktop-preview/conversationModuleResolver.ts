@@ -641,6 +641,7 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
       visibleAtFrame: 0,
       mediaType: messageMediaType(message, path),
       mediaSource: requiredPossiblyEmptyString(message, "mediaSource", `${path}.mediaSource`),
+      mediaSourceAnimated: optionalBoolean(message, "mediaSourceAnimated"),
       viewportSize: requiredString(message, "viewportSize", `${path}.viewportSize`),
       mediaScale: requiredNumber(message, "mediaScale", `${path}.mediaScale`),
       mediaOffset: requiredString(message, "mediaOffset", `${path}.mediaOffset`),

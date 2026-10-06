@@ -135,6 +135,7 @@ export class RuntimeOwnerTimeline {
 
   screenFrame(fieldId: string, targetId: string, localFrame: number) {
     if (this.hasEnabledTrack(fieldId, targetId)) {
+      if (targetId && !this.items.has(targetId)) return localFrame;
       return this.itemOwnerFrame(
         targetId,
         this.trackOwnerFrameOrigin(targetId) + localFrame,
@@ -150,6 +151,7 @@ export class RuntimeOwnerTimeline {
 
   localFrame(fieldId: string, targetId: string, screenFrame: number) {
     if (this.hasEnabledTrack(fieldId, targetId)) {
+      if (targetId && !this.items.has(targetId)) return screenFrame;
       return this.ownerLocalFrame(targetId, screenFrame) - this.trackOwnerFrameOrigin(targetId);
     }
     const rootNatural = unscale(

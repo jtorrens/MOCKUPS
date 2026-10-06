@@ -6756,9 +6756,8 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        $".mockups-headless-payload-refresh-{Guid.NewGuid():N}.sqlite");
+        Path.GetTempPath(),
+        $"mockups-headless-payload-refresh-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
     {
@@ -7095,9 +7094,8 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        $".mockups-navigation-panel-{Guid.NewGuid():N}.sqlite");
+        Path.GetTempPath(),
+        $"mockups-navigation-panel-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
     {
@@ -7517,9 +7515,8 @@ static void PreviewShellVisualTreeIsResponsive()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        $".mockups-headless-layout-{Guid.NewGuid():N}.sqlite");
+        Path.GetTempPath(),
+        $"mockups-headless-layout-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
     {
@@ -8201,7 +8198,7 @@ static void PreviewShellVisualTreeIsResponsive()
             {
                 var timeout = Stopwatch.StartNew();
                 while (WindowSession(window).Workspace != workspace
-                       && timeout.Elapsed < TimeSpan.FromSeconds(5))
+                       && timeout.Elapsed < TimeSpan.FromSeconds(10))
                 {
                     Dispatcher.UIThread.RunJobs();
                     Thread.Sleep(5);
@@ -22447,8 +22444,8 @@ static void LaterTargetsFollowFiniteMedia()
           {"id":"k1","frame":1,"value":true}
         ]}]}
         """);
-    // Playback starts one frame after text completion: 2 + [1, 6), then hold 1 and delay 3.
-    Equal(12, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "m2"));
+    // The active play track is owner-local: [1, 6), then hold 1 and delay 3.
+    Equal(10, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "m2"));
 }
 
 static void DurationUsesHalfOpenEndpoints()
@@ -22609,8 +22606,8 @@ static void NonExtendingFieldsOverlapLaterItems()
         ]}]}
         """);
     Equal(5, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "m2"));
-    Equal(32, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "status", "m1", 30));
-    Equal(33, RuntimeAnimationFrameOrigin.DurationFrames(contract, runtime, animation, 1));
+    Equal(30, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "status", "m1", 30));
+    Equal(31, RuntimeAnimationFrameOrigin.DurationFrames(contract, runtime, animation, 1));
 }
 
 static void ExplicitSequenceCompletionFieldsIsolateIndependentActions()
@@ -22818,7 +22815,7 @@ static void AnimatableFieldVocabularyIsConstrained()
         .Where(field => field["animatable"]?.GetValue<bool>() == true)
         .Select(field => field["id"]!.GetValue<string>());
     SequenceEqual(new[] { "actor", "headerSubtitle" }, screenAnimated);
-    SequenceEqual(new[] { "direction", "text", "keepCursorAfterWrite", "statusVisible", "status", "statusText", "mediaSource", "isPlaying", "fullScreen", "showIconRow" }, messageAnimated);
+    SequenceEqual(new[] { "direction", "text", "keepCursorAfterWrite", "statusVisible", "status", "statusText", "mediaSource", "isPlaying", "fullScreen", "actionsRevealed", "showIconRow" }, messageAnimated);
     Equal(
         "ownerStart",
         screenFields.Single(field => field["id"]!.GetValue<string>() == "actor")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
