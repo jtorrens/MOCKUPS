@@ -384,8 +384,7 @@ public static class RuntimeAnimationFrameOrigin
                         collection,
                         item,
                         targetId,
-                        phase,
-                        start);
+                        phase);
                     var effectiveSpan = TargetDuration(targetId, durations.Span);
                     var effectiveSequence = Scale(durations.Sequence, durations.Span, effectiveSpan);
                     if (!_items.TryAdd(targetId, new ItemTiming(
@@ -420,8 +419,7 @@ public static class RuntimeAnimationFrameOrigin
                     "",
                     inputs,
                     new HashSet<string>(StringComparer.Ordinal),
-                    topPhase,
-                    0);
+                    topPhase);
                 if (!_topFields.TryAdd(fieldId, timing))
                 {
                     throw new InvalidOperationException(
@@ -532,7 +530,7 @@ public static class RuntimeAnimationFrameOrigin
 
         public double FieldOwnerFrameOrigin(string fieldId, string targetId)
         {
-            if (HasEnabledTrack(fieldId, targetId)) return 0;
+            if (HasEnabledTrack(fieldId, targetId)) return TrackOwnerFrameOrigin(targetId);
             if (string.IsNullOrWhiteSpace(targetId)) return TopField(fieldId).Origin;
             return _items.TryGetValue(targetId, out var item) ? ItemField(item, fieldId).Origin : 0;
         }
@@ -555,14 +553,18 @@ public static class RuntimeAnimationFrameOrigin
 
         public int ScreenFrame(string fieldId, string targetId, int localFrame)
         {
-            if (HasEnabledTrack(fieldId, targetId)) return localFrame;
+            if (HasEnabledTrack(fieldId, targetId))
+                return ScreenFrameForOwnerFrame(
+                    targetId,
+                    TrackOwnerFrameOrigin(targetId) + localFrame);
             var rootNaturalFrame = RootNaturalFrame(fieldId, targetId, localFrame);
             return Round(Scale(rootNaturalFrame, _naturalDuration, _effectiveDuration));
         }
 
         public double LocalFrame(string fieldId, string targetId, int screenFrame)
         {
-            if (HasEnabledTrack(fieldId, targetId)) return screenFrame;
+            if (HasEnabledTrack(fieldId, targetId))
+                return OwnerLocalFrame(targetId, screenFrame) - TrackOwnerFrameOrigin(targetId);
             var rootNaturalFrame = Unscale(
                 screenFrame,
                 _naturalDuration,
@@ -599,8 +601,7 @@ public static class RuntimeAnimationFrameOrigin
                 "",
                 Inputs(_contract),
                 new HashSet<string>(StringComparer.Ordinal),
-                OwnerPhaseFrames(Timeline(_contract), _runtime),
-                0);
+                OwnerPhaseFrames(Timeline(_contract), _runtime));
             _topFields[fieldId] = timing;
             return timing;
         }
@@ -617,8 +618,7 @@ public static class RuntimeAnimationFrameOrigin
                 Text(item.Item["id"]),
                 fields,
                 new HashSet<string>(StringComparer.Ordinal),
-                OwnerPhaseFrames(Timeline(item.Collection), item.Item),
-                item.RootStart);
+                OwnerPhaseFrames(Timeline(item.Collection), item.Item));
             item.Fields[fieldId] = timing;
             return timing;
         }
@@ -627,8 +627,7 @@ public static class RuntimeAnimationFrameOrigin
             JsonObject collection,
             JsonObject item,
             string targetId,
-            int phase,
-            double ownerRootStart)
+            int phase)
         {
             var fields = Fields(collection, item);
             var collectionTimeline = Timeline(collection);
@@ -652,8 +651,7 @@ public static class RuntimeAnimationFrameOrigin
                     targetId,
                     fields,
                     new HashSet<string>(StringComparer.Ordinal),
-                    phase,
-                    ownerRootStart).EndExclusive;
+                    phase).EndExclusive;
                 spanEnd = Math.Max(spanEnd, end);
                 var fieldId = JsonPath.RequiredString(
                     definition,
@@ -669,8 +667,7 @@ public static class RuntimeAnimationFrameOrigin
                 item,
                 targetId,
                 fields,
-                phase,
-                ownerRootStart);
+                phase);
             if (sequenceCompletionFieldIds is null)
                 sequenceBodyEnd = Math.Max(sequenceBodyEnd, actionEnd);
             spanEnd = Math.Max(spanEnd, actionEnd);
@@ -686,8 +683,7 @@ public static class RuntimeAnimationFrameOrigin
             string targetId,
             IReadOnlyList<JsonObject> ownerFields,
             HashSet<string> resolving,
-            int phase = 0,
-            double ownerRootStart = 0)
+            int phase = 0)
         {
             var fieldId = Text(definition["id"]);
             if (!resolving.Add(fieldId))
@@ -696,9 +692,8 @@ public static class RuntimeAnimationFrameOrigin
             if (enabledKeyframes.Count > 0)
             {
                 resolving.Remove(fieldId);
-                var first = Math.Max(0, Number(enabledKeyframes[0]["frame"]) - ownerRootStart);
-                var last = Math.Max(0, Number(enabledKeyframes[^1]["frame"]) - ownerRootStart);
-                return new FieldTiming(first, last, last + 1);
+                var last = Math.Max(0, Number(enabledKeyframes[^1]["frame"]));
+                return new FieldTiming(phase, phase + last, phase + last + 1);
             }
             var fieldTimeline = FieldTimeline(definition);
             var originDefinition = JsonPath.OptionalObject(
@@ -717,8 +712,7 @@ public static class RuntimeAnimationFrameOrigin
                         targetId,
                         ownerFields,
                         resolving,
-                        phase,
-                        ownerRootStart).Completion
+                        phase).Completion
                     + JsonPath.RequiredInteger(
                         originDefinition!,
                         "offsetFrames",
@@ -806,8 +800,7 @@ public static class RuntimeAnimationFrameOrigin
             JsonObject item,
             string targetId,
             IReadOnlyList<JsonObject> fields,
-            int phase,
-            double ownerRootStart)
+            int phase)
         {
             var lastEnd = 0d;
             foreach (var action in ItemActions(collection, item))
@@ -845,8 +838,10 @@ public static class RuntimeAnimationFrameOrigin
                     targetId,
                     fields,
                     new HashSet<string>(StringComparer.Ordinal),
-                    phase,
-                    ownerRootStart).Origin;
+                    phase).Origin;
+                var trackOrigin = HasEnabledTrack(playFieldId, targetId)
+                    ? phase
+                    : fieldOrigin;
                 var enabledJsonKey = JsonPath.RequiredString(
                     action,
                     "durationEnabledInputId",
@@ -882,15 +877,13 @@ public static class RuntimeAnimationFrameOrigin
                             keyframes[index],
                             "value",
                             $"Finite runtime action '{actionId}' play keyframe")) continue;
-                    var start = Math.Max(
+                    var start = trackOrigin + Math.Max(
                         0,
-                        Number(keyframes[index]["frame"])
-                        - ownerRootStart);
+                        Number(keyframes[index]["frame"]));
                     var replacement = index + 1 < keyframes.Count
-                        ? Math.Max(
+                        ? trackOrigin + Math.Max(
                             0,
-                            Number(keyframes[index + 1]["frame"])
-                            - ownerRootStart)
+                            Number(keyframes[index + 1]["frame"]))
                         : double.MaxValue;
                     lastEnd = Math.Max(lastEnd, Math.Min(start + duration, replacement));
                 }
@@ -933,6 +926,13 @@ public static class RuntimeAnimationFrameOrigin
             JsonPath.OptionalObjectArray(_animation, "tracks", "Runtime owner animation").FirstOrDefault((track) =>
                 Text(track["fieldId"]) == fieldId
                 && Text(track["targetId"]) == targetId);
+
+        private double TrackOwnerFrameOrigin(string targetId) =>
+            string.IsNullOrWhiteSpace(targetId)
+                ? OwnerPhaseFrames(Timeline(_contract), _runtime)
+                : _items.TryGetValue(targetId, out var item)
+                    ? item.OwnerPhaseFrames
+                    : 0;
 
         private bool HasEnabledTrack(string fieldId, string targetId) =>
             EnabledKeyframes(Track(fieldId, targetId)).Count > 0;

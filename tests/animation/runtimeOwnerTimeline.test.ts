@@ -68,13 +68,13 @@ const animation = {
   ],
 };
 
-test("active tracks use the Screen clock independently from owner appearance", () => {
+test("entity-owned keyframes move with first appearance and do not restart on re-entry", () => {
   const timeline = new RuntimeOwnerTimeline(contract, runtime, animation);
   assert.equal(timeline.screenFrame("text", "state-clock", 0), 0);
-  assert.equal(timeline.screenFrame("text", "state-password", 0), 0);
-  assert.equal(timeline.screenFrame("text", "state-password", 5), 5);
-  assert.equal(timeline.localFrame("text", "state-password", 15), 15);
-  assert.equal(timeline.localFrame("text", "state-password", 40), 40);
+  assert.equal(timeline.screenFrame("text", "state-password", 0), 10);
+  assert.equal(timeline.screenFrame("text", "state-password", 5), 15);
+  assert.equal(timeline.localFrame("text", "state-password", 15), 5);
+  assert.equal(timeline.localFrame("text", "state-password", 40), 30);
 });
 
 test("serial collection offsets may overlap the preceding item", () => {

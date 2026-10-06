@@ -67,8 +67,7 @@ internal sealed class ModuleInstanceAnimationDocument
         string fieldId,
         string targetId,
         JsonNode initialValue,
-        string interpolation,
-        int initialFrame = 0)
+        string interpolation)
     {
         if (HasTrack(fieldId, targetId)) return;
         var track = new JsonObject
@@ -80,7 +79,7 @@ internal sealed class ModuleInstanceAnimationDocument
                 new JsonObject
                 {
                     ["id"] = $"keyframe-{Guid.NewGuid():N}",
-                    ["frame"] = initialFrame,
+                    ["frame"] = 0,
                     ["value"] = initialValue.DeepClone(),
                     ["interpolation"] = interpolation,
                     ["enabled"] = true,
@@ -95,25 +94,14 @@ internal sealed class ModuleInstanceAnimationDocument
         string fieldId,
         string targetId,
         JsonNode finalValue,
-        int startFrame,
         int completionFrame)
     {
-        if (completionFrame <= startFrame)
+        if (completionFrame <= 0)
         {
-            AddTrack(
-                fieldId,
-                targetId,
-                finalValue,
-                "hold",
-                startFrame);
+            AddTrack(fieldId, targetId, finalValue, "hold");
             return;
         }
-        AddTrack(
-            fieldId,
-            targetId,
-            JsonValue.Create("")!,
-            "hold",
-            startFrame);
+        AddTrack(fieldId, targetId, JsonValue.Create("")!, "hold");
         UpsertKeyframe(
             fieldId,
             targetId,

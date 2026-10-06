@@ -52,7 +52,7 @@ test("interpolation belongs to the destination keyframe", () => {
   assert.equal(resolveParameterAnimation(linearDestination, "value", "", 5, -1).value, 50);
 });
 
-test("negative Screen-local keyframes provide preroll interpolation at Screen zero", () => {
+test("negative owner-local keyframes provide preroll interpolation at owner zero", () => {
   const data = animation([
     { id: "before", frame: -10, value: 0, interpolation: "hold", enabled: true },
     { id: "after", frame: 10, value: 100, interpolation: "linear", enabled: true },

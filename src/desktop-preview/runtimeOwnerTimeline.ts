@@ -90,7 +90,6 @@ export class RuntimeOwnerTimeline {
           item,
           targetId,
           phase,
-          start,
         );
         const effectiveSpan = this.targetDuration(targetId, durations.span);
         const effectiveSequence = scale(durations.sequence, durations.span, effectiveSpan);
@@ -125,7 +124,6 @@ export class RuntimeOwnerTimeline {
         topInputs,
         new Set(),
         this.topPhase,
-        0,
       );
       this.topFields.set(fieldId, timing);
       naturalEnd = Math.max(naturalEnd, timing.endExclusive);
@@ -136,7 +134,12 @@ export class RuntimeOwnerTimeline {
   }
 
   screenFrame(fieldId: string, targetId: string, localFrame: number) {
-    if (this.hasEnabledTrack(fieldId, targetId)) return localFrame;
+    if (this.hasEnabledTrack(fieldId, targetId)) {
+      return this.itemOwnerFrame(
+        targetId,
+        this.trackOwnerFrameOrigin(targetId) + localFrame,
+      );
+    }
     const rootNatural = this.rootNaturalFrame(fieldId, targetId, localFrame);
     return round(scale(rootNatural, this.naturalDuration, this.durationFrames));
   }
@@ -146,7 +149,9 @@ export class RuntimeOwnerTimeline {
   }
 
   localFrame(fieldId: string, targetId: string, screenFrame: number) {
-    if (this.hasEnabledTrack(fieldId, targetId)) return screenFrame;
+    if (this.hasEnabledTrack(fieldId, targetId)) {
+      return this.ownerLocalFrame(targetId, screenFrame) - this.trackOwnerFrameOrigin(targetId);
+    }
     const rootNatural = unscale(
       screenFrame,
       this.naturalDuration,
@@ -171,7 +176,9 @@ export class RuntimeOwnerTimeline {
     screenFrame: number,
     presenceEndFrame?: number,
   ) {
-    if (this.hasEnabledTrack(fieldId, targetId)) return screenFrame;
+    if (this.hasEnabledTrack(fieldId, targetId)) {
+      return this.temporalOwnerFrame(targetId, screenFrame, presenceEndFrame);
+    }
     if (!targetId) return this.temporalOwnerFrame("", screenFrame, presenceEndFrame) - this.topField(fieldId).origin + this.topPhase;
     const item = this.items.get(targetId);
     if (!item) return 0;
@@ -254,10 +261,22 @@ export class RuntimeOwnerTimeline {
   }
 
   itemOwnerFrame(targetId: string, naturalOwnerFrame: number) {
+    if (!targetId) {
+      return round(scale(naturalOwnerFrame, this.naturalDuration, this.durationFrames));
+    }
     const item = this.items.get(targetId);
     if (!item) return 0;
     const ownerEffective = scale(naturalOwnerFrame, item.naturalSpan, item.effectiveSpan);
     return round(scale(item.rootStart + ownerEffective, this.naturalDuration, this.durationFrames));
+  }
+
+  private ownerLocalFrame(targetId: string, screenFrame: number) {
+    const rootNatural = unscale(screenFrame, this.naturalDuration, this.durationFrames);
+    if (!targetId) return rootNatural;
+    const item = this.items.get(targetId);
+    if (!item) return 0;
+    const ownerEffective = rootNatural - item.rootStart;
+    return unscale(ownerEffective, item.naturalSpan, item.effectiveSpan);
   }
 
   fieldCompletionLocal(fieldId: string, targetId: string) {
@@ -269,10 +288,13 @@ export class RuntimeOwnerTimeline {
   fieldCompletionFrame(fieldId: string, targetId: string) {
     const keyframes = enabledKeyframes(this.track(fieldId, targetId));
     if (keyframes.length > 0) {
-      return Math.max(0, requiredNumberValue(
-        keyframes[keyframes.length - 1]!.frame,
-        "runtime animation keyframe frame",
-      ));
+      return this.itemOwnerFrame(
+        targetId,
+        this.trackOwnerFrameOrigin(targetId) + Math.max(0, requiredNumberValue(
+          keyframes[keyframes.length - 1]!.frame,
+          "runtime animation keyframe frame",
+        )),
+      );
     }
     if (!targetId) return this.screenFrame(fieldId, "", round(this.topField(fieldId).completion));
     const item = this.items.get(targetId);
@@ -311,7 +333,6 @@ export class RuntimeOwnerTimeline {
           fields,
           new Set(),
           this.topPhase,
-          0,
         )
       : { origin: 0, completion: 0, endExclusive: 0 };
     this.topFields.set(fieldId, timing);
@@ -331,7 +352,6 @@ export class RuntimeOwnerTimeline {
           fields,
           new Set(),
           item.phase,
-          item.rootStart,
         )
       : { origin: 0, completion: 0, endExclusive: 0 };
     item.fields.set(fieldId, timing);
@@ -343,7 +363,6 @@ export class RuntimeOwnerTimeline {
     item: JsonRecord,
     targetId: string,
     phase: number,
-    ownerRootStart: number,
   ) {
     const fields = itemFields(collection, item);
     const collectionTimeline = optionalObject(
@@ -368,7 +387,6 @@ export class RuntimeOwnerTimeline {
         fields,
         new Set(),
         phase,
-        ownerRootStart,
       ).endExclusive;
       spanEnd = Math.max(spanEnd, end);
       const fieldId = requiredString(definition, "id", "runtime owner item field");
@@ -384,7 +402,6 @@ export class RuntimeOwnerTimeline {
       targetId,
       fields,
       phase,
-      ownerRootStart,
     );
     if (!sequenceCompletionFieldIds) sequenceBodyEnd = Math.max(sequenceBodyEnd, actionEnd);
     spanEnd = Math.max(spanEnd, actionEnd);
@@ -405,7 +422,6 @@ export class RuntimeOwnerTimeline {
     ownerFields: JsonRecord[],
     resolving: Set<string>,
     phase = 0,
-    ownerRootStart = 0,
   ): FieldTiming {
     const fieldId = optionalString(definition, "id");
     if (resolving.has(fieldId)) throw new Error(`Animation timeline dependency cycle at field '${fieldId}'.`);
@@ -413,15 +429,15 @@ export class RuntimeOwnerTimeline {
     const keyframes = enabledKeyframes(this.track(fieldId, targetId));
     if (keyframes.length > 0) {
       resolving.delete(fieldId);
-      const first = Math.max(0, requiredNumberValue(
-        keyframes[0]!.frame,
-        "runtime animation keyframe frame",
-      ) - ownerRootStart);
       const last = Math.max(0, requiredNumberValue(
         keyframes[keyframes.length - 1]!.frame,
         "runtime animation keyframe frame",
-      ) - ownerRootStart);
-      return { origin: first, completion: last, endExclusive: last + 1 };
+      ));
+      return {
+        origin: phase,
+        completion: phase + last,
+        endExclusive: phase + last + 1,
+      };
     }
     const fieldTimeline = optionalFieldTimeline(
       definition,
@@ -444,7 +460,6 @@ export class RuntimeOwnerTimeline {
         ownerFields,
         resolving,
         phase,
-        ownerRootStart,
       ).completion
         + requiredNonNegativeInteger(
           originDefinition.offsetFrames,
@@ -482,7 +497,6 @@ export class RuntimeOwnerTimeline {
     targetId: string,
     fields: JsonRecord[],
     phase: number,
-    ownerRootStart: number,
   ) {
     let lastEnd = 0;
     for (const action of itemActions(collection, item)) {
@@ -512,8 +526,10 @@ export class RuntimeOwnerTimeline {
         fields,
         new Set(),
         phase,
-        ownerRootStart,
       ).origin;
+      const trackOrigin = this.hasEnabledTrack(playFieldId, targetId)
+        ? phase
+        : origin;
       const keyframes = enabledKeyframes(this.track(playFieldId, targetId));
       const enabledJsonKey = requiredString(
         action,
@@ -541,15 +557,15 @@ export class RuntimeOwnerTimeline {
           keyframe.value,
           `finite runtime action '${actionId}' play keyframe value`,
         )) continue;
-        const start = Math.max(0, requiredNumberValue(
+        const start = trackOrigin + Math.max(0, requiredNumberValue(
           keyframe.frame,
           "runtime animation keyframe frame",
-        ) - ownerRootStart);
+        ));
         const replacement = keyframes[index + 1]
-          ? Math.max(0, requiredNumberValue(
+          ? trackOrigin + Math.max(0, requiredNumberValue(
               keyframes[index + 1]!.frame,
               "runtime animation keyframe frame",
-            ) - ownerRootStart)
+            ))
           : Number.POSITIVE_INFINITY;
         lastEnd = Math.max(lastEnd, Math.min(start + duration, replacement));
       }
@@ -570,6 +586,11 @@ export class RuntimeOwnerTimeline {
     return optionalObjectArray(this.animation, "tracks", "runtime owner animation").find((track) =>
       optionalString(track, "fieldId") === fieldId
       && optionalString(track, "targetId") === targetId);
+  }
+
+  private trackOwnerFrameOrigin(targetId: string) {
+    if (!targetId) return this.topPhase;
+    return this.items.get(targetId)?.phase ?? 0;
   }
 
   private hasEnabledTrack(fieldId: string, targetId: string) {
