@@ -45,8 +45,9 @@ if (args.Length == 2
     return;
 }
 
+var committedDatabasePath = ParityDatabasePath();
 var desktopTestDatabasePath = CreateDesktopTestDatabase(
-    ParityDatabasePath());
+    committedDatabasePath);
 Environment.SetEnvironmentVariable(
     "MOCKUPS_VALIDATION_DATABASE",
     desktopTestDatabasePath);
@@ -160,7 +161,7 @@ var tests = new (string Name, Action Run)[]
     ("declared RecordReference Overrides use the shared action", DeclaredRecordReferenceOverridesUseSharedAction),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
-    ("committed Production Screens render sampled frames without changing authored data", ProductionScreensRenderCommittedFramesReadOnly),
+    ("committed Production Screens render sampled frames without changing authored data", () => ProductionScreensRenderCommittedFramesReadOnly(committedDatabasePath, SingleArgumentValue(args, "--production-project"))),
     ("Production Runtime commits discard transient Preview values", ProductionRuntimeCommitsDiscardTransientPreviewValues),
     ("Shot Screen tracks resolve independent lanes gaps and overlap priority", ShotScreenTracksResolveIndependentLanes),
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
@@ -18406,9 +18407,8 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
     }
 }
 
-static void ProductionScreensRenderCommittedFramesReadOnly()
+static void ProductionScreensRenderCommittedFramesReadOnly(string source, string? projectId)
 {
-    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetDirectoryName(source)!,
         $".mockups-production-frame-regression-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary);
@@ -18416,13 +18416,18 @@ static void ProductionScreensRenderCommittedFramesReadOnly()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectTestContext(temporary);
+        if (projectId is not null) _ = database.GetProjectSettings(projectId);
         var preparer = new ProductionPreviewPayloadPreparer(
             new DesignPreviewPayloadDataSource(database.PreviewInputs, database.Production,
                 database.Resources, database.Resources, database.ProjectPaths),
             new ProductionPreviewRuntimeResolver(database.Resources, database.ProjectPaths));
         var screens = Descendants(database.LoadProjectTree())
-            .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance).ToList();
+            .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance)
+            .Where((node) => projectId is null || database.GetShotSettings(
+                database.GetModuleInstanceSettings(node.Id).ShotId).ProjectId == projectId)
+            .ToList();
         True(screens.Count > 0);
+        Console.WriteLine($"PRODUCTION SCOPE {projectId ?? "all Projects"}: {screens.Count} committed Screens");
         var rendered = 0;
         foreach (var screen in screens)
         {
@@ -18445,10 +18450,12 @@ static void ProductionScreensRenderCommittedFramesReadOnly()
                 }
                 catch (Exception exception)
                 {
+                    Console.WriteLine($"FAIL SCREEN {screen.Id} ({screen.Name}), {mode}, frame {frame}");
                     throw new InvalidOperationException(
                         $"Production Screen '{screen.Id}' ({screen.Name}), {mode}, frame {frame}: {exception.Message}", exception);
                 }
             }
+            Console.WriteLine($"PASS SCREEN {screen.Id} ({screen.Name}); {rendered} frames rendered");
         }
         True(before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(temporary))));
         Console.WriteLine($"PASS PRODUCTION {screens.Count} Screens, {rendered} sampled frames, authored database unchanged");
@@ -19636,6 +19643,7 @@ var knownArguments = new HashSet<string>(StringComparer.Ordinal)
     "--exact",
     "--filter",
     "--owner",
+    "--production-project",
     "--list",
 };
 for (var index = 0; index < args.Length; index++)
@@ -19646,6 +19654,11 @@ for (var index = 0; index < args.Length; index++)
         throw new InvalidOperationException($"Unknown desktop test argument '{argument}'.");
     }
     if (argument != "--list") index++;
+}
+if (SingleArgumentValue(args, "--production-project") is not null
+    && (exactNames.Count != 1 || exactNames[0] != "committed Production Screens render sampled frames without changing authored data"))
+{
+    throw new InvalidOperationException("--production-project requires the exact committed Production Screen sampling test.");
 }
 foreach (var exactName in exactNames)
 {

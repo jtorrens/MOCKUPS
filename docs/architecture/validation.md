@@ -309,6 +309,22 @@ Their required Production Shot and Screens are then created through the real
 generic mutation owners in that temporary source, so normal authoring changes
 cannot silently become test preconditions.
 
+The committed Production Screen sampling test instead reads a disposable copy
+of the original parity source, before those synthetic fixtures are created.
+It renders the first, middle and last action frames in Light and Dark and
+verifies byte-for-byte database preservation. It covers every Project by
+default. An explicitly requested scope may select one exact Project id:
+
+```text
+npm run test:focus:desktop -- --exact "committed Production Screens render sampled frames without changing authored data" --production-project <project-id>
+```
+
+This selector applies only to that exact test. Unknown Projects and empty
+Screen scopes fail. It never changes authored data, substitutes assets or
+suppresses a failure inside the selected Project. Output reports the scope,
+each checked Screen and the total number of rendered samples; an excluded
+Project must not be reported as validated.
+
 The scoped owner is conservative about coverage but never selects `npm test`
 implicitly. A path without a declared validation owner stops immediately,
 prints every unclassified path and requires the route plus its focused checks
