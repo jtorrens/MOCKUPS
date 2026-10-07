@@ -1,5 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig, prepareRuntimeValues, projectRuntimeValues } from "./runtimePreviewDocumentContract.js";
+import { buttonRuntimeValueBindings, buttonLabelValueLinks } from "./buttonComponentContract.js";
 import {
   parseObject,
   requiredBoolean,
@@ -9,6 +10,7 @@ import {
   requiredStringPair,
   requiredString,
   requiredRecord,
+  requiredPossiblyEmptyString,
 } from "./componentResolverCommon.js";
 import type { ButtonAppearanceContract, ButtonContentMode, ButtonDesignContract } from "./buttonComponentContract.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
@@ -28,6 +30,7 @@ export function resolveButtonComponentFromRecords(
   bases: Record<string, unknown>,
   id: string,
 ): ButtonDesignContract {
+  preview = prepareRuntimeValues(config, preview, buttonRuntimeValueBindings, bases);
   const button = requiredRecord(config, "button", "component.button");
   const contentMode = buttonContentMode(
     requiredString(button, "contentMode", "component.button.contentMode"),
@@ -49,7 +52,7 @@ export function resolveButtonComponentFromRecords(
   const rawSize = requiredNumberPair(button, "size", "component.button.size");
   const size = { width: rawSize.first, height: rawSize.second };
   const rawPadding = requiredStringPair(button, "padding", "component.button.padding");
-  const text = typeof preview.sampleText === "string" ? preview.sampleText : "";
+  const text = requiredPossiblyEmptyString(preview, "sampleText", "component.button.input.sampleText");
   const badgeSlot = requiredRecord(button, "badgeSlot", "component.button.badgeSlot");
   const showBadge = requiredBoolean(preview, "showBadge", "component.button.input.showBadge");
 
@@ -64,9 +67,7 @@ export function resolveButtonComponentFromRecords(
     size,
     padding: { xToken: rawPadding.first, yToken: rawPadding.second },
     contentGapToken: requiredString(button, "contentGapToken", "component.button.contentGapToken"),
-    iconToken: Object.hasOwn(preview, "iconToken")
-      ? requiredNullableString(preview, "iconToken", "component.button.input.iconToken")
-      : requiredString(button, "iconToken", "component.button.iconToken"),
+    iconToken: requiredNullableString(preview, "iconToken", "component.button.input.iconToken"),
     iconSizeToken: requiredString(preview, "iconSizeToken", "component.button.input.iconSizeToken"),
     appearance: resolveButtonAppearance(button, contentMode, text, preview, bases, size),
     badge: showBadge ? resolveBadgeComponentFromRecords(
@@ -96,17 +97,12 @@ function resolveButtonAppearance(
   const surfaceSlot = requiredRecord(appearance, "surfaceSlot", "component.button.appearance.surfaceSlot");
   const labelSlot = requiredRecord(appearance, "labelSlot", "component.button.appearance.labelSlot");
   return {
-    iconColorToken: typeof preview.iconColorToken === "string" && preview.iconColorToken.trim()
-      ? preview.iconColorToken
-      : requiredString(appearance, "iconColorToken", "component.button.appearance.iconColorToken"),
+    iconColorToken: requiredString(preview, "iconColorToken", "component.button.input.iconColorToken"),
     label: contentMode === "icon" || !text.trim() ? undefined : resolveLabelComponentFromRecords(
       embeddedComponentConfig(bases, labelSlot, "label", "component.button.appearance.labelSlot"),
       {
         ...literalLabelPreview(text),
-        textSizeToken: requiredString(preview, "textSizeToken", "component.button.input.textSizeToken"),
-        ...(typeof preview.textColorToken === "string" && preview.textColorToken.trim()
-          ? { textColorToken: preview.textColorToken }
-          : {}),
+        ...projectRuntimeValues(preview, buttonLabelValueLinks),
       },
       bases,
       "component.button.appearance.label",

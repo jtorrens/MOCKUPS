@@ -3,7 +3,7 @@ import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { bubbleComponentToRenderable } from "./bubbleComponentRenderable.js";
 import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
-import { componentVariantConfig, embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { prepareComponentConfiguration, embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import {
   componentClassToRenderable,
   resolveComponentRenderable,
@@ -78,11 +78,11 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   ) && themeStatusBarVariantReference
     ? childRenderable(
         payload,
-        componentBaseConfigs,
         "status_bar",
         "component.status_bar",
         themeStatusBarVariantReference,
         {},
+        prepareComponentConfiguration(componentBaseConfigs, "status_bar", themeStatusBarVariantReference, {}),
       )
     : undefined;
   const navigation = requiredBoolean(
@@ -92,11 +92,11 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   ) && themeNavigationBarVariantReference
     ? childRenderable(
         payload,
-        componentBaseConfigs,
         "navigation_bar",
         "component.navigation_bar",
         themeNavigationBarVariantReference,
         {},
+        prepareComponentConfiguration(componentBaseConfigs, "navigation_bar", themeNavigationBarVariantReference, {}),
       )
     : undefined;
   const { composer, timing } = contract;
@@ -115,7 +115,6 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const keyboard = keyboardVisible
     ? childRenderable(
         payload,
-        componentBaseConfigs,
         "keyboard",
         "component.keyboard",
         requiredString(keyboardSlot, "variantReference", "module.core.chat.keyboardSlot"),
@@ -136,14 +135,13 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const textInput = textInputVisible
     ? childRenderable(
         payload,
-        componentBaseConfigs,
         "textInputBar",
         "component.textInputBar",
         requiredString(textInputBarSlot, "variantReference", "module.core.chat.textInputBarSlot"),
         {
           availableWidth: screen.width / scale,
         },
-        contract.textInputConfig,
+        requiredRecord({ config: contract.textInputConfig }, "config", "Conversation prepared composer"),
       )
     : undefined;
 
@@ -554,12 +552,11 @@ function lerp(from: number, to: number, progress: number) {
 
 function childRenderable(
   payload: DesignPreviewPayload,
-  componentBaseConfigs: JsonRecord,
   componentType: string,
   childRecordClassId: string,
   variantReference: string,
   designPreviewPatch: JsonRecord,
-  resolvedConfig?: JsonRecord,
+  resolvedConfig: JsonRecord,
 ) {
   return componentClassToRenderable(childPayload(
     payload,
@@ -567,8 +564,7 @@ function childRenderable(
     childRecordClassId,
     variantReference,
     designPreviewPatch,
-    resolvedConfig
-      ?? componentVariantConfig(componentBaseConfigs, componentType, variantReference),
+    resolvedConfig,
   ));
 }
 

@@ -1,5 +1,5 @@
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
-import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import { optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredNumberPair, requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
 import { screenPercentToDesignWidth } from "./previewGeometryHelpers.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";

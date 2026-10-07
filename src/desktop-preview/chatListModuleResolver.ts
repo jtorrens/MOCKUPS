@@ -1,5 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { requireComponentVariantType } from "./componentPreviewDefaults.js";
+import { requireComponentVariantType } from "./runtimePreviewDocumentContract.js";
 import type {
   ChatListComponentSlot,
   ChatListModuleContract,

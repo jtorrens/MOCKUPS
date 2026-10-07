@@ -1,5 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { prepareComponentConfiguration } from "./runtimePreviewDocumentContract.js";
 import { optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { optionalObject, optionalObjectArray, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
@@ -62,10 +62,7 @@ export function resolveComponentCollectionItem(
     if (typeof componentType !== "string" || !componentType) {
       throw new Error(`Missing component type for ${itemPath} Variant ${variantReference}`);
     }
-    const config = mergeComponentDefaults(
-      componentVariantConfig(bases, componentType, variantReference),
-      requiredRecord(item, "overrides", `${itemPath}.overrides`),
-    );
+    const config = prepareComponentConfiguration(bases, componentType, variantReference, requiredRecord(item, "overrides", `${itemPath}.overrides`));
     const presenceMotion = optionalComponentBoundaryMotion(config, `${itemPath}.component`)
       ?? requiredMotionContract(
         item,

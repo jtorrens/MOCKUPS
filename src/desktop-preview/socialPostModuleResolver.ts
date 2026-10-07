@@ -3,7 +3,7 @@ import { naturalWriteOnFrame, resolveBehaviorTimingFrames } from "./behaviorTimi
 import {
   embeddedComponentConfig,
   requireComponentVariantType,
-} from "./componentPreviewDefaults.js";
+} from "./runtimePreviewDocumentContract.js";
 import type {
   SocialPostComponentSlot,
   SocialPostModuleContract,

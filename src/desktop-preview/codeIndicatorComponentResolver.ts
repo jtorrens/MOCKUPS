@@ -1,6 +1,6 @@
 import {
   embeddedComponentConfig,
-} from "./componentPreviewDefaults.js";
+} from "./runtimePreviewDocumentContract.js";
 import {
   parseObject,
   requiredNumber,

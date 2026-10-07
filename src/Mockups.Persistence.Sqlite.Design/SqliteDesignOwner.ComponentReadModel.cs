@@ -192,6 +192,7 @@ internal sealed partial class SqliteDesignOwner
         var configs = new JsonObject();
         var variants = new JsonObject();
         var variantTypes = new JsonObject();
+        var inputDefaults = new JsonObject();
         foreach (var row in _componentClassRepository
                      .QueryAll(connection))
         {
@@ -201,6 +202,10 @@ internal sealed partial class SqliteDesignOwner
                 variantTypes[
                     VariantReferenceId.Format(row.Id, variant.Id)] =
                     row.ComponentType;
+                inputDefaults[VariantReferenceId.Format(row.Id, variant.Id)] =
+                    RuntimePreviewDocumentContract.PrepareDeclaredInputDefaults(
+                        ParseJsonObject(row.DesignPreviewJson),
+                        ParseJsonObject(variant.ConfigJson));
             }
 
             if (configs.ContainsKey(row.ComponentType))
@@ -224,6 +229,7 @@ internal sealed partial class SqliteDesignOwner
 
         configs["variants"] = variants;
         configs["variantTypes"] = variantTypes;
+        configs["inputDefaults"] = inputDefaults;
         return configs.ToJsonString();
     }
 

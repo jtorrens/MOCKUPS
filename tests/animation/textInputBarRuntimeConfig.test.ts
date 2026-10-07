@@ -53,6 +53,10 @@ test("a parent Runtime value changes an Icon Bar glyph without changing its Vari
     designPreviewJson: JSON.stringify({
       ...JSON.parse(fixture.designPreviewJson),
       [forwardedIconKey]: "media_camera",
+      inputs: [
+        ...JSON.parse(fixture.designPreviewJson).inputs,
+        { id: "forwarded.component.iconBar.activeRight.button_001.iconToken", jsonKey: forwardedIconKey },
+      ],
     }),
   };
   const config = resolvedTextInputBarRuntimeConfig(

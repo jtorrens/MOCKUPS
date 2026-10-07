@@ -1,4 +1,4 @@
-import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import {
   parseObject,
   requiredNumberPair,

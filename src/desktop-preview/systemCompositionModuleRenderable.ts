@@ -1,6 +1,6 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
-import { componentVariantConfig, embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
@@ -75,25 +75,13 @@ function componentSlotPayload(
   slot: SystemCompositionComponentSlot,
 ): DesignPreviewPayload {
   return {
-    ...componentPayload(payload, componentBaseConfigs, componentType, slot.variantReference),
+    ...payload,
+    componentType,
     configJson: JSON.stringify(embeddedComponentConfig(
       componentBaseConfigs,
       { ...slot },
       componentType,
       `module.system.composition.${componentType}`,
     )),
-  };
-}
-
-function componentPayload(
-  payload: DesignPreviewPayload,
-  componentBaseConfigs: Record<string, unknown>,
-  componentType: "status_bar" | "navigation_bar",
-  variant: string,
-): DesignPreviewPayload {
-  return {
-    ...payload,
-    componentType,
-    configJson: JSON.stringify(componentVariantConfig(componentBaseConfigs, componentType, variant)),
   };
 }

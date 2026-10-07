@@ -1,9 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import {
-  embeddedComponentConfig,
-  componentVariantConfig,
-  mergeComponentDefaults,
-} from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig, prepareComponentConfiguration } from "./runtimePreviewDocumentContract.js";
 import type { TextInputBarDesignContract } from "./textInputBarComponentContract.js";
 import {
   parseObject,
@@ -19,7 +15,7 @@ import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.j
 import {
   applyRuntimeInputForwarding,
   forwardedRuntimeInputPatch,
-} from "./runtimeInputForwarding.js";
+} from "./runtimePreviewDocumentContract.js";
 
 export function resolvedTextInputBarRuntimeConfig(
   payload: DesignPreviewPayload,
@@ -47,6 +43,7 @@ export function resolvedTextInputBarRuntimeConfig(
         config,
         "forwarded.component.textInputBar.textBox.inputs.sampleText",
         text,
+        parentRuntime,
       ),
       availableWidth,
     }),
@@ -92,50 +89,29 @@ export function resolveTextInputBarComponent(
   );
   const isTyping = sampleText.trim().length > 0;
   const height = requiredNumber(textInput, "height", "component.textInputBar.height");
-  const embeddedBarSurfaceConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "surface",
-      requiredString(
+  const embeddedBarSurfaceConfig = prepareComponentConfiguration(componentBaseConfigs, "surface", requiredString(
         barSurfaceSlot,
         "variantReference",
         "component.textInputBar.barSurfaceSlot.variantReference",
-      ),
-    ),
-    requiredRecord(
+      ), requiredRecord(
       barSurfaceSlot,
       "overrides",
       "component.textInputBar.barSurfaceSlot.overrides",
-    ),
-  );
-  const embeddedTextBoxConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "textBox",
-      requiredString(
+    ));
+  const embeddedTextBoxConfig = prepareComponentConfiguration(componentBaseConfigs, "textBox", requiredString(
         textBoxSlot,
         "variantReference",
         "component.textInputBar.textBoxSlot.variantReference",
-      ),
-    ),
-    requiredRecord(
+      ), requiredRecord(
       textBoxSlot,
       "overrides",
       "component.textInputBar.textBoxSlot.overrides",
-    ),
-  );
-  const embeddedIconBarConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "iconBar",
-      requiredString(iconBarSlot, "variantReference", "component.textInputBar.iconBarSlot.variantReference"),
-    ),
-    requiredRecord(
+    ));
+  const embeddedIconBarConfig = prepareComponentConfiguration(componentBaseConfigs, "iconBar", requiredString(iconBarSlot, "variantReference", "component.textInputBar.iconBarSlot.variantReference"), requiredRecord(
       iconBarSlot,
       "overrides",
       "component.textInputBar.iconBarSlot.overrides",
-    ),
-  );
+    ));
 
   const resolvedTextBox = resolveTextBoxComponentFromRecords(
     embeddedTextBoxConfig,

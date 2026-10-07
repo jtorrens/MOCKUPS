@@ -1,11 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import {
-  componentVariantConfig,
-  mergeComponentDefaults,
-} from "./componentPreviewDefaults.js";
-import {
-  type TypographyStyleContract,
-} from "./previewComponentContracts.js";
+import { prepareRuntimeValues, prepareComponentConfiguration } from "./runtimePreviewDocumentContract.js";
 import {
   optionalNumber,
   optionalString,
@@ -23,6 +17,7 @@ import {
 import { resolveCursorComponentAtHeight } from "./cursorComponentResolver.js";
 import { resolveConfiguredIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
+import { textBoxRuntimeValueBindings } from "./textBoxComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 export function resolveTextBoxComponent(
@@ -48,6 +43,7 @@ export function resolveTextBoxComponentFromRecords(
   frameContext: Pick<DesignPreviewPayload, "localFrame" | "frameRate">,
 ): TextBoxDesignContract {
   rejectVariantOwnedTextBoxInputs(inputs);
+  inputs = prepareRuntimeValues(config, inputs, textBoxRuntimeValueBindings);
   const textBox = requiredRecord(config, "textBox", "component.textBox");
   const surfaceSlot = requiredRecord(textBox, "surfaceSlot", "component.textBox.surfaceSlot");
   const cursorSlot = requiredRecord(textBox, "cursorSlot", "component.textBox.cursorSlot");
@@ -100,42 +96,28 @@ export function resolveTextBoxComponentFromRecords(
   }
 
   const padding = requiredStringPair(textBox, "padding", "component.textBox.padding");
-  const embeddedSurfaceConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "surface",
-      requiredString(
+  const embeddedSurfaceConfig = prepareComponentConfiguration(componentBaseConfigs, "surface", requiredString(
         surfaceSlot,
         "variantReference",
         "component.textBox.surfaceSlot.variantReference",
-      ),
-    ),
-    requiredRecord(surfaceSlot, "overrides", "component.textBox.surfaceSlot.overrides"),
-  );
-  const embeddedCursorConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "cursor",
-      requiredString(
+      ), requiredRecord(surfaceSlot, "overrides", "component.textBox.surfaceSlot.overrides"));
+  const embeddedCursorConfig = prepareComponentConfiguration(componentBaseConfigs, "cursor", requiredString(
         cursorComponentSlot,
         "variantReference",
         "component.textBox.cursorSlot.componentSlot.variantReference",
-      ),
-    ),
-    requiredRecord(
+      ), requiredRecord(
       cursorComponentSlot,
       "overrides",
       "component.textBox.cursorSlot.componentSlot.overrides",
-    ),
-  );
-  const typography = typographyWithInputSizeOverride(
-    requiredTypographyStyle(
+    ));
+  const typography = {
+    ...requiredTypographyStyle(
       textBox,
       "typography",
       "component.textBox.typography",
     ),
-    inputs,
-  );
+    sizeToken: requiredString(inputs, "textSizeToken", "component.textBox.input.textSizeToken"),
+  };
 
   return {
     id,
@@ -205,14 +187,6 @@ export function resolveTextBoxComponentFromRecords(
   };
 }
 
-function typographyWithInputSizeOverride(
-  typography: TypographyStyleContract,
-  inputs: Record<string, unknown>,
-): TypographyStyleContract {
-  const sizeToken = optionalString(inputs, "textSizeToken");
-  return sizeToken ? { ...typography, sizeToken } : typography;
-}
-
 function textAnimationMode(value: string | undefined): TextBoxDesignContract["textAnimation"]["mode"] {
   return value === "pulsating" || value === "wave" ? value : "none";
 }
@@ -222,16 +196,8 @@ function resolveTextBoxIconRowComponentFromRecords(
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ) {
-  const iconRowConfig = componentVariantConfig(
-    componentBaseConfigs,
-    "iconRow",
-    iconRowSlot.variantReference,
-  );
   return resolveConfiguredIconRowComponentFromRecords(
-    mergeComponentDefaults(
-      iconRowConfig,
-      iconRowSlot.overrides,
-    ),
+    prepareComponentConfiguration(componentBaseConfigs, "iconRow", iconRowSlot.variantReference, iconRowSlot.overrides),
     componentBaseConfigs,
     id,
   );

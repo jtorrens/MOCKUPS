@@ -1,5 +1,5 @@
 import { resolveCollectionStackComponent } from "./collectionStackComponentResolver.js";
-import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { prepareComponentConfiguration } from "./runtimePreviewDocumentContract.js";
 import { parseObject, requiredBoolean, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { NotificationsDesignContract } from "./notificationsComponentContract.js";
@@ -26,19 +26,13 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
   const preview = parseObject(payload.designPreviewJson);
   const distributionMotion = requiredMotionContract(notifications, "distributionMotion", "component.notifications.distributionMotion");
   const distribution = resolveDistribution(payload, preview, distributionMotion);
-  const stackConfig = mergeComponentDefaults(
-    componentVariantConfig(bases, "collectionStack", requiredString(slot, "variantReference", "component.notifications.collectionStackSlot.variantReference")),
-    requiredRecord(slot, "overrides", "component.notifications.collectionStackSlot.overrides"),
-  );
+  const stackConfig = prepareComponentConfiguration(bases, "collectionStack", requiredString(slot, "variantReference", "component.notifications.collectionStackSlot.variantReference"), requiredRecord(slot, "overrides", "component.notifications.collectionStackSlot.overrides"));
   const notificationVariantReference = requiredString(
     notificationSlot,
     "variantReference",
     "component.notifications.notificationSlot.variantReference",
   );
-  const notificationConfig = mergeComponentDefaults(
-    componentVariantConfig(bases, "notification", notificationVariantReference),
-    requiredRecord(notificationSlot, "overrides", "component.notifications.notificationSlot.overrides"),
-  );
+  const notificationConfig = prepareComponentConfiguration(bases, "notification", notificationVariantReference, requiredRecord(notificationSlot, "overrides", "component.notifications.notificationSlot.overrides"));
   const stackItems = requiredObjectArray(preview, "items", "component.notifications runtime").map((rawItem, index) => notificationStackItem(
     rawItem,
     index,
@@ -99,10 +93,7 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
       }
     : undefined;
   const showBadge = requiredBoolean(notifications, "showBadge", "component.notifications.showBadge");
-  const badgeConfig = mergeComponentDefaults(
-    componentVariantConfig(bases, "badge", requiredString(badgeSlot, "variantReference", "component.notifications.badgeSlot.variantReference")),
-    requiredRecord(badgeSlot, "overrides", "component.notifications.badgeSlot.overrides"),
-  );
+  const badgeConfig = prepareComponentConfiguration(bases, "badge", requiredString(badgeSlot, "variantReference", "component.notifications.badgeSlot.variantReference"), requiredRecord(badgeSlot, "overrides", "component.notifications.badgeSlot.overrides"));
   return {
     id: "component.notifications",
     stack: visibleStack,

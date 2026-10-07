@@ -1,7 +1,9 @@
 import {
   embeddedComponentConfig,
   mergeComponentDefaults,
-} from "./componentPreviewDefaults.js";
+  projectRuntimeValues,
+} from "./runtimePreviewDocumentContract.js";
+import { bubbleTextBoxValueLinks } from "./bubbleComponentContract.js";
 import {
   optionalBoolean,
   optionalNumber,
@@ -186,7 +188,7 @@ export function resolveBubbleComponent(
 
   const textBoxInputs = {
     sampleText: visibleText,
-    textSizeToken: optionalString(preview, "textSizeToken"),
+    ...projectRuntimeValues(preview, bubbleTextBoxValueLinks),
     textAnimationMode: optionalString(preview, "textAnimationMode"),
     textAnimationElapsedMs: optionalNumber(preview, "textAnimationElapsedMs", 0),
     size: `${maxWidth}|1`,

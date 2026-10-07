@@ -1,4 +1,4 @@
-import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import { requiredBoolean, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { ModuleRow } from "./moduleRowSectionContract.js";

@@ -1,7 +1,7 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   embeddedComponentConfig,
-} from "./componentPreviewDefaults.js";
+} from "./runtimePreviewDocumentContract.js";
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";

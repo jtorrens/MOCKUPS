@@ -6,7 +6,7 @@ import {
 import type { KeyboardDesignContract, KeyboardMode } from "./keyboardComponentContract.js";
 import {
   embeddedComponentConfig,
-} from "./componentPreviewDefaults.js";
+} from "./runtimePreviewDocumentContract.js";
 import {
   parseObject,
   requiredBoolean,

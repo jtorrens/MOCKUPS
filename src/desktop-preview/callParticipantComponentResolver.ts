@@ -1,5 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { componentVariantConfig, mergeComponentDefaults, requireComponentVariantType } from "./componentPreviewDefaults.js";
+import { requireComponentVariantType, prepareComponentConfiguration } from "./runtimePreviewDocumentContract.js";
 import { parseObject, requiredBoolean, requiredNumber, requiredNumberPair, requiredPlacement, requiredPossiblyEmptyString, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
 import { requiredComponentBoundaryMotion } from "./componentBoundaryMotion.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
@@ -76,7 +76,7 @@ function slotConfig(bases: Record<string, unknown>, owner: Record<string, unknow
   const path = `component.callParticipant.${key}`;
   const slot = requiredRecord(owner, key, path);
   requireComponentVariantType(bases, slot, type, path);
-  return mergeComponentDefaults(componentVariantConfig(bases, type, requiredString(slot, "variantReference", `${path}.variantReference`)), requiredRecord(slot, "overrides", `${path}.overrides`));
+  return prepareComponentConfiguration(bases, type, requiredString(slot, "variantReference", `${path}.variantReference`), requiredRecord(slot, "overrides", `${path}.overrides`));
 }
 function microphone(value: string): CallParticipantMicrophoneState { if (value === "on" || value === "muted") return value; throw new Error(`Unsupported microphone state ${value}`); }
 function connection(value: string): CallParticipantConnectionState { if (value === "connecting" || value === "connected" || value === "weak" || value === "lost") return value; throw new Error(`Unsupported connection state ${value}`); }

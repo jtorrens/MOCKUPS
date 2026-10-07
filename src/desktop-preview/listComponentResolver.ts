@@ -1,10 +1,7 @@
 import { resolveCollectionStackComponent } from "./collectionStackComponentResolver.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentVariantConfig,
-  mergeComponentDefaults,
-  requireComponentVariantType,
-} from "./componentPreviewDefaults.js";
+  requireComponentVariantType, prepareComponentConfiguration } from "./runtimePreviewDocumentContract.js";
 import {
   parseObject,
   requiredNumber,
@@ -63,22 +60,15 @@ export function resolveListComponent(
     "surface",
     "component.list.surfaceSlot",
   );
-  const stackConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      bases,
-      "collectionStack",
-      requiredString(
+  const stackConfig = prepareComponentConfiguration(bases, "collectionStack", requiredString(
         stackSlot,
         "variantReference",
         "component.list.collectionStackSlot.variantReference",
-      ),
-    ),
-    requiredRecord(
+      ), requiredRecord(
       stackSlot,
       "overrides",
       "component.list.collectionStackSlot.overrides",
-    ),
-  );
+    ));
   const itemVariantReference = requiredString(
     itemSlot,
     "variantReference",
@@ -89,22 +79,15 @@ export function resolveListComponent(
     "overrides",
     "component.list.listItemSlot.overrides",
   );
-  const surfaceConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      bases,
-      "surface",
-      requiredString(
+  const surfaceConfig = prepareComponentConfiguration(bases, "surface", requiredString(
         surfaceSlot,
         "variantReference",
         "component.list.surfaceSlot.variantReference",
-      ),
-    ),
-    requiredRecord(
+      ), requiredRecord(
       surfaceSlot,
       "overrides",
       "component.list.surfaceSlot.overrides",
-    ),
-  );
+    ));
   const itemsPlacement = requiredString(
     list,
     "itemsPlacement",

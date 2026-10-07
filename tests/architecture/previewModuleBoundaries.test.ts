@@ -36,6 +36,23 @@ const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
   modules: Record<string, DesktopPreviewModuleManifestEntry>;
 };
 
+test("Preview value-source preparation has one shared owner", () => {
+  const owner = path.join(previewDirectory, "runtimePreviewDocumentContract.ts");
+  for (const retired of ["componentPreviewDefaults.ts", "runtimeInputForwarding.ts"]) {
+    assert.equal(existsSync(path.join(previewDirectory, retired)), false, `${retired} is a parallel value-source owner`);
+  }
+  for (const file of previewSourceFiles()) {
+    const source = readFileSync(file, "utf8");
+    assert.doesNotMatch(source, /(?:from|import\()\s*["']\.\/(?:componentPreviewDefaults|runtimeInputForwarding)\.js/);
+    if (file !== owner) {
+      assert.doesNotMatch(source, /\bcomponentVariantConfig\s*\(/,
+        `${repositoryPath(file)} must consume shared Variant/Override preparation`);
+      assert.doesNotMatch(source, /(?:function|const)\s+(?:prepareRuntimeValues|prepareComponentConfiguration|applyRuntimeInputForwarding)\b/,
+        `${repositoryPath(file)} duplicates the shared value-source owner`);
+    }
+  }
+});
+
 function repositoryPath(fullPath: string): string {
   return path.relative(repositoryRoot, fullPath).split(path.sep).join("/");
 }

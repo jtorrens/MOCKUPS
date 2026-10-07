@@ -70,6 +70,24 @@ to the exact active Production's complete RGB value set and is not a parallel
 config or Runtime path. Typography roles resolve through Theme; Preview rejects
 direct Production Font ids outside Theme.
 
+The TypeScript stage of that same boundary is
+`runtimePreviewDocumentContract.ts`. It owns exact Variant/Override composition,
+declared Runtime/config bindings, explicit parent/child value links and
+forwarding. Component contracts declare bindings using stable field ids, exact
+storage paths and, where needed, exact embedded boundary paths. Concrete
+resolvers validate and interpret the resulting values; they do not select
+alternative sources themselves. Missing declared Runtime values are errors;
+`false`, zero, empty text and `null` are present values, not missing values.
+
+Forwarded scalar values are evaluated at the common temporal owner's frame
+before registry dispatch. This does not replace the authored Runtime envelope:
+presence, previous-value transitions and action clocks still receive their
+original data. Static embedded inputs use declared, typed definition defaults
+prepared by Application for the exact Variant; configured bindings and explicit
+Runtime values take precedence. No Component manufactures a private set of
+default Runtime values. Prepared configuration is isolated from its source
+Variant and local Overrides, including nested objects and arrays.
+
 A Theme-owned Component boundary receives its exact prepared Theme Variant
 reference from the payload and its sparse owner-local Overrides from the
 effective Module document. The shared Theme-boundary resolver validates the

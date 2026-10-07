@@ -1,5 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import type {
   MediaDesignContract,
   MediaDisplayState,

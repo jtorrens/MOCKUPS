@@ -36,6 +36,7 @@ var tests = new (string Name, Action Run)[]
     ("a failed tree read leaves the prior session state current", FailedTreeReadLeavesStateCurrent),
     ("session revisions identify only the current owner transition", SessionRevisionGuardsOwner),
     ("Runtime definitions preserve their explicit owner", RuntimeDefinitionsPreserveOwner),
+    ("Runtime default preparation preserves declared types and active Variant fields", RuntimeDefaultPreparationUsesDeclaredContract),
     ("projected Runtime collections reconcile by stable id", ProjectedRuntimeCollectionsReconcileById),
     ("Component Input bindings project exact structure-owned Runtime values", ComponentInputBindingsProjectExactStructuredRuntimeValues),
     ("Component Input projection ownership covers Module and Component parents", ComponentInputProjectionOwnershipCoversParents),
@@ -51,6 +52,44 @@ var tests = new (string Name, Action Run)[]
     ("presented editor operations publish their complete activity lifetime", PresentedEditorOperationsPublishActivityLifetime),
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
 };
+
+static void RuntimeDefaultPreparationUsesDeclaredContract()
+{
+    JsonObject Input(string id, string key, string kind, string valueKind, string value) => new()
+    {
+        ["id"] = id, ["label"] = id, ["jsonKey"] = key,
+        ["kind"] = kind, ["valueKind"] = valueKind,
+        ["source"] = "runtime", ["defaultValue"] = value,
+    };
+    var first = Input("field-a", "amount", "number", "Integer", "0");
+    first["visibleWhenPath"] = "owner.mode";
+    first["visibleWhenValue"] = "first";
+    var second = Input("field-b", "amount", "number", "Integer", "10");
+    second["visibleWhenPath"] = "owner.mode";
+    second["visibleWhenValue"] = "second";
+    var document = new JsonObject
+    {
+        ["inputs"] = new JsonArray(
+            first, second,
+            Input("field-c", "enabled", "boolean", "Boolean", "false"),
+            Input("field-d", "caption", "text", "StringSingleLine", "")),
+        ["caption"] = "Design Test Values do not replace declaration defaults",
+    };
+    var baseline = document.ToJsonString();
+    foreach (var (mode, expected) in new[] { ("first", 0), ("second", 10) })
+    {
+        var config = new JsonObject { ["owner"] = new JsonObject { ["mode"] = mode } };
+        var values = RuntimePreviewDocumentContract.PrepareDeclaredInputDefaults(document, config);
+        Equal(expected, values["amount"]!.GetValue<int>());
+        Equal(false, values["enabled"]!.GetValue<bool>());
+        Equal("", values["caption"]!.GetValue<string>());
+    }
+    Equal(baseline, document.ToJsonString());
+    var duplicate = Input("field-e", "caption", "text", "StringSingleLine", "duplicate");
+    document["inputs"]!.AsArray().Add(duplicate);
+    Throws<InvalidOperationException>(() => RuntimePreviewDocumentContract.PrepareDeclaredInputDefaults(
+        document, new JsonObject { ["owner"] = new JsonObject { ["mode"] = "first" } }));
+}
 
 static void ProductionCollectionCreationRequiresActorsButNotMedia()
 {

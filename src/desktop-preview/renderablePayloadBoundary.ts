@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { parseObject } from "./previewJsonHelpers.js";
-import { applyRuntimeInputForwarding } from "./runtimeInputForwarding.js";
+import { applyRuntimeInputForwarding } from "./runtimePreviewDocumentContract.js";
 import { requiredDeviceModuleTransparency } from "./deviceModuleTransparency.js";
 
 const requiredObjectDocuments = [

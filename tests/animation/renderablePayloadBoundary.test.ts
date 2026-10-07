@@ -3,7 +3,7 @@ import test from "node:test";
 
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { resolveRenderablePayload } from "../../src/desktop-preview/renderablePayloadBoundary.js";
-import { forwardedRuntimeInputPatch } from "../../src/desktop-preview/runtimeInputForwarding.js";
+import { forwardedRuntimeInputPatch } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
 
 const payload: DesignPreviewPayload = {
   kind: "componentClass",
@@ -95,7 +95,7 @@ test("renderable payload rejects invalid runtime field id metadata", () => {
         __runtimeFieldIds: [],
       },
     }),
-    designPreviewJson: JSON.stringify({ titleValue: "Title" }),
+    designPreviewJson: JSON.stringify({ inputs: [{ id: "forwarded.title", jsonKey: "titleValue" }], titleValue: "Title" }),
   }));
 });
 
@@ -111,11 +111,11 @@ test("a parent addresses one forwarded child input by its stable field id", () =
     },
   };
   assert.deepEqual(
-    forwardedRuntimeInputPatch(config, "forwarded.child.title", "Runtime title"),
-    { forwarded_child_title: "Runtime title" },
+    forwardedRuntimeInputPatch(config, "forwarded.child.title", "Runtime title", {}),
+    { inputs: [{ id: "forwarded.child.title", jsonKey: "forwarded_child_title", source: "runtime" }], forwarded_child_title: "Runtime title" },
   );
   assert.throws(
-    () => forwardedRuntimeInputPatch(config, "forwarded.child.missing", "Missing"),
+    () => forwardedRuntimeInputPatch(config, "forwarded.child.missing", "Missing", {}),
     /exactly one target; found 0/,
   );
 });
@@ -129,7 +129,7 @@ test("a duplicated forwarded field id is rejected at the parent boundary", () =>
     () => forwardedRuntimeInputPatch({
       first: { $forwardedInputs: { title: definition } },
       second: { $forwardedInputs: { title: definition } },
-    }, "forwarded.child.title", "Ambiguous"),
+    }, "forwarded.child.title", "Ambiguous", {}),
     /exactly one target; found 2/,
   );
 });

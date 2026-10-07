@@ -1,9 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import {
-  componentVariantConfig,
-  mergeComponentDefaults,
-  requireComponentVariantType,
-} from "./componentPreviewDefaults.js";
+import { requireComponentVariantType, prepareComponentConfiguration } from "./runtimePreviewDocumentContract.js";
 import {
   parseObject,
   requiredBoolean,
@@ -322,14 +318,7 @@ function slotConfig(
   componentType: string,
   path: string,
 ) {
-  return mergeComponentDefaults(
-    componentVariantConfig(
-      bases,
-      componentType,
-      requiredString(slot, "variantReference", `${path}.variantReference`),
-    ),
-    requiredRecord(slot, "overrides", `${path}.overrides`),
-  );
+  return prepareComponentConfiguration(bases, componentType, requiredString(slot, "variantReference", `${path}.variantReference`), requiredRecord(slot, "overrides", `${path}.overrides`));
 }
 
 function positiveInteger(value: number, path: string) {

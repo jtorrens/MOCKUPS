@@ -7,7 +7,7 @@ import {
   componentVariantConfig,
   embeddedComponentConfig,
   mergeComponentDefaults,
-} from "../../src/desktop-preview/componentPreviewDefaults.js";
+} from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { withAuthoringTarget } from "../../src/desktop-preview/previewAuthoringTarget.js";
 

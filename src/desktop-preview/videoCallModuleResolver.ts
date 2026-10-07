@@ -1,5 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { componentVariantConfig, mergeComponentDefaults, requireComponentVariantType } from "./componentPreviewDefaults.js";
+import { requireComponentVariantType, prepareComponentConfiguration } from "./runtimePreviewDocumentContract.js";
 import { parseObject, requiredBoolean, requiredComponentVariantSlot, requiredNumber, requiredNumberPair, requiredPlacement, requiredPossiblyEmptyString, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
 import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
@@ -240,7 +240,7 @@ function resolveParticipantReflow(
 }
 
 function typedSlot(owner: Record<string, unknown>, bases: Record<string, unknown>, key: string, type: string): VideoCallComponentSlot { const slot = requiredComponentVariantSlot(owner, key, `module.core.videoCall.${key}`); requireComponentVariantType(bases, slot, type, `module.core.videoCall.${key}`); return slot; }
-function slotConfig(bases: Record<string, unknown>, slot: VideoCallComponentSlot, type: string, path: string) { return mergeComponentDefaults(componentVariantConfig(bases, type, requiredString(slot, "variantReference", `${path}.variantReference`)), requiredRecord(slot, "overrides", `${path}.overrides`)); }
+function slotConfig(bases: Record<string, unknown>, slot: VideoCallComponentSlot, type: string, path: string) { return prepareComponentConfiguration(bases, type, requiredString(slot, "variantReference", `${path}.variantReference`), requiredRecord(slot, "overrides", `${path}.overrides`)); }
 function pair(owner: Record<string, unknown>, key: string) { const value = requiredStringPair(owner, key, `module.core.videoCall.${key}`); return { xToken: value.first, yToken: value.second }; }
 function participantRole(value: string): VideoCallParticipantRole { if (value === "main" || value === "pip" || value === "grid") return value; throw new Error(`Unsupported participant role '${value}'`); }
 function sectionLayoutMode(value: string): "stack" | "float" { if (value === "stack" || value === "float") return value; throw new Error(`Unsupported section layout mode '${value}'`); }

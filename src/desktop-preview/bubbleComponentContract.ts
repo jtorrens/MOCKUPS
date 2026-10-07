@@ -3,6 +3,7 @@ import type {
   SpacingPairContract,
 } from "./previewComponentContracts.js";
 import type { AudioDesignContract } from "./audioComponentContract.js";
+import type { RuntimeValueLink } from "./runtimePreviewDocumentContract.js";
 import type { AvatarDesignContract } from "./avatarComponentContract.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
@@ -86,3 +87,6 @@ export interface BubbleDesignContract {
   maxWidth: number;
   padding: SpacingPairContract;
 }
+export const bubbleTextBoxValueLinks = [
+  { sourceFieldId: "textSizeToken", sourceJsonKey: "textSizeToken", targetFieldId: "textSizeToken", targetJsonKey: "textSizeToken" },
+] as const satisfies readonly RuntimeValueLink[];

@@ -1,7 +1,8 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   embeddedComponentConfig,
-} from "./componentPreviewDefaults.js";
+  prepareRuntimeValues,
+} from "./runtimePreviewDocumentContract.js";
 import {
   parseObject,
   requiredBoolean,
@@ -12,6 +13,7 @@ import {
   requiredTypographyStyle,
 } from "./componentResolverCommon.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
+import { labelRuntimeValueBindings } from "./labelComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import {
   resolveCalculatedText,
@@ -86,6 +88,7 @@ export function resolveLabelComponentFromRecords(
   id: string,
   frame: LabelFrameContext,
 ): LabelDesignContract {
+  preview = prepareRuntimeValues(config, preview, labelRuntimeValueBindings);
   const label = requiredRecord(config, "label", "component.label");
   const surfaceSlot = requiredRecord(label, "surfaceSlot", "component.label.surfaceSlot");
   const embeddedSurfaceConfig = embeddedComponentConfig(
@@ -172,14 +175,10 @@ export function resolveLabelComponentFromRecords(
       "textShadowEnabled",
       "component.label.textShadowEnabled",
     ),
-    textColorToken: typeof preview.textColorToken === "string" && preview.textColorToken.trim()
-      ? preview.textColorToken
-      : requiredString(label, "textColorToken", "component.label.textColorToken"),
+    textColorToken: requiredString(preview, "textColorToken", "component.label.textColorToken"),
     textTypography: {
       ...requiredTypographyStyle(label, "textTypography", "component.label.textTypography"),
-      ...(typeof preview.textSizeToken === "string" && preview.textSizeToken.trim()
-        ? { sizeToken: preview.textSizeToken }
-        : {}),
+      sizeToken: requiredString(preview, "textSizeToken", "component.label.textSizeToken"),
     },
     textAlign,
     textGapToken: requiredString(label, "textGapToken", "component.label.textGapToken"),
@@ -190,9 +189,7 @@ export function resolveLabelComponentFromRecords(
     ),
     subtextVerticalPosition,
     subtextHorizontalAlign,
-    subtextColorToken: typeof preview.subtextColorToken === "string" && preview.subtextColorToken.trim()
-      ? preview.subtextColorToken
-      : requiredString(label, "subtextColorToken", "component.label.subtextColorToken"),
+    subtextColorToken: requiredString(preview, "subtextColorToken", "component.label.subtextColorToken"),
     subtextTypography: requiredTypographyStyle(
       label,
       "subtextTypography",

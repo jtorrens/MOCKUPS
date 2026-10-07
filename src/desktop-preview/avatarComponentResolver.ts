@@ -1,7 +1,7 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   embeddedComponentConfig,
-} from "./componentPreviewDefaults.js";
+} from "./runtimePreviewDocumentContract.js";
 import {
   parseObject,
   requiredBoolean,

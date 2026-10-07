@@ -10,6 +10,23 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 /// </summary>
 public static class RuntimePreviewDocumentContract
 {
+    public static JsonObject PrepareDeclaredInputDefaults(
+        JsonObject runtimeContract,
+        JsonObject effectiveConfig)
+    {
+        var values = new JsonObject();
+        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(
+                     runtimeContract, effectiveConfig))
+        {
+            if (input.Source != ComponentInputSource.Runtime) continue;
+            if (values.ContainsKey(input.JsonKey))
+                throw new InvalidOperationException(
+                    $"Runtime defaults contain duplicate storage key '{input.JsonKey}'.");
+            values[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, input.DefaultValue);
+        }
+        return values;
+    }
+
     public static void ApplyProductionMediaFallback(
         JsonObject runtimeContract,
         JsonObject effectiveConfig,

@@ -1,7 +1,7 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
-import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import { numberToken, placeChild, previewPayloadInBox, previewScreenBox, renderScale, scalePlacement, selectedColor } from "./componentRenderableCommon.js";
 import { interpolateCollectionReflowBoxes } from "./collectionReflowGeometry.js";

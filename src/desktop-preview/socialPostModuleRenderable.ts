@@ -1,5 +1,5 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
-import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import {
   numberToken,

@@ -1,5 +1,6 @@
 import type { SpacingPairContract, TypographyStyleContract } from "./previewComponentContracts.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
+import type { RuntimeValueBinding } from "./runtimePreviewDocumentContract.js";
 
 export interface LabelDesignContract {
   id: string;
@@ -22,3 +23,8 @@ export interface LabelDesignContract {
   subtextTypography: TypographyStyleContract;
   surface: SurfaceDesignContract;
 }
+export const labelRuntimeValueBindings = [
+  { fieldId: "textColorToken", runtimeJsonKey: "textColorToken", configPath: ["label", "textColorToken"] },
+  { fieldId: "subtextColorToken", runtimeJsonKey: "subtextColorToken", configPath: ["label", "subtextColorToken"] },
+  { fieldId: "textSizeToken", runtimeJsonKey: "textSizeToken", configPath: ["label", "textTypography", "sizeToken"] },
+] as const satisfies readonly RuntimeValueBinding[];

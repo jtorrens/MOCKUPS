@@ -1,7 +1,7 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import {
   embeddedComponentConfig,
-} from "./componentPreviewDefaults.js";
+} from "./runtimePreviewDocumentContract.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import {
   previewPayloadInBox,

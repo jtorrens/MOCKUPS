@@ -51,6 +51,7 @@ export function committedComponentFixture(
     assert.ok(component);
     const variants: Record<string, unknown> = {};
     const variantTypes: Record<string, string> = {};
+    const inputDefaults: Record<string, unknown> = {};
     for (const row of rows) {
       const metadata = JSON.parse(row.metadata_json) as {
         variants: Array<{ id: string; config: Record<string, unknown> }>;
@@ -59,6 +60,9 @@ export function committedComponentFixture(
         const reference = `${row.id}::variant::${variant.id}`;
         variants[reference] = variant.config;
         variantTypes[reference] = row.component_type;
+        // These are explicit test-fixture values. Production defaults are
+        // prepared by RuntimePreviewDocumentContract in Application.
+        inputDefaults[reference] = JSON.parse(row.design_preview_json);
       }
     }
     const selectedReference = `${component.id}::variant::${variantId}`;
@@ -96,7 +100,7 @@ export function committedComponentFixture(
     return {
       kind: "componentClass",
       componentType,
-      componentBaseConfigsJson: JSON.stringify({ variants, variantTypes }),
+      componentBaseConfigsJson: JSON.stringify({ variants, variantTypes, inputDefaults }),
       appConfigJson: "{}",
       instanceJson: "{}",
       frameRate: 25,

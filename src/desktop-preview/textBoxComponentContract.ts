@@ -3,6 +3,7 @@ import type {
   TypographyStyleContract,
 } from "./previewComponentContracts.js";
 import type { CursorDesignContract } from "./cursorComponentContract.js";
+import type { RuntimeValueBinding } from "./runtimePreviewDocumentContract.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
@@ -33,3 +34,6 @@ export interface TextBoxTextAnimationContract {
   phase: number;
   minimumOpacity: number;
 }
+export const textBoxRuntimeValueBindings = [
+  { fieldId: "textSizeToken", runtimeJsonKey: "textSizeToken", configPath: ["textBox", "typography", "sizeToken"] },
+] as const satisfies readonly RuntimeValueBinding[];
