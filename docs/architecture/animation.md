@@ -240,10 +240,12 @@ resolved media with the message's parent-owned visibility. The common animation
 document remains the authored source; Conversation only consumes the resolved
 path projected for the requested Screen frame.
 
-Icon Row Button `enabled` and `pressed` values use the same nested identity and
-only `hold` interpolation. The complete ordered `buttonInputs` collection is
-retained in the message Screen payload; resolution changes the two declared
-values without replacing ids, topology or the local Button boundary.
+Every scalar Icon Row Button Runtime value uses the same nested identity and
+only `hold` interpolation. This includes text, icon, sizes, Badge values,
+colors, `enabled` and `pressed`. The complete ordered `buttonInputs`
+collection is retained in the owner payload; resolution changes only the
+declared scalar value without replacing ids, topology, order, the full Button
+Variant reference or its local Override boundary.
 
 The common owner timeline derives:
 
@@ -489,13 +491,14 @@ passes that number to its renderable. Text Box and Text Input Bar forward the
 frame through their declared embedded boundaries; they do not restart the
 Cursor clock or paint a fixed replacement opacity.
 
-Button `enabled` and `pressed` are independent animatable Runtime booleans.
-They use explicit hold keyframes on the owner timeline and declare no action,
+Every scalar Button Runtime field in an Icon Row is independently animatable.
+Each uses explicit hold keyframes on the owner timeline and declares no action,
 duration, Motion or `BehaviorTiming`; the Screen author controls exactly how
-long either value remains visible. Likewise, Text Input Bar persists no Cursor
-blink duration. It forwards the
-resolved child frame and Cursor remains the only owner of that continuous
-state.
+long text, icon, sizing, Badge, color, `enabled` or `pressed` values remain
+visible. Button identity, Variant selection and Icon Row structure remain
+non-animatable. Likewise, Text Input Bar persists no Cursor blink duration. It
+forwards the resolved child frame and Cursor remains the only owner of that
+continuous state.
 
 Screen transition composition follows the same frame-data boundary. Payload
 preparation selects every Screen lane active at the Shot frame, resolves its

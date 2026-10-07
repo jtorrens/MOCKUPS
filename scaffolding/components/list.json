@@ -2283,7 +2283,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -2311,7 +2320,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -2359,7 +2377,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -2407,7 +2434,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -2434,7 +2470,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -2470,7 +2515,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -2497,7 +2551,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -2524,7 +2587,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -2551,7 +2623,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -2578,7 +2659,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -2605,7 +2695,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -2632,7 +2731,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -2659,7 +2767,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -2851,7 +2968,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -2879,7 +3005,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -2927,7 +3062,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -2975,7 +3119,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -3002,7 +3155,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -3038,7 +3200,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -3065,7 +3236,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -3092,7 +3272,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -3119,7 +3308,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -3146,7 +3344,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -3173,7 +3380,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -3200,7 +3416,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -3227,7 +3452,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -3419,7 +3653,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -3447,7 +3690,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -3495,7 +3747,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -3543,7 +3804,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -3570,7 +3840,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -3606,7 +3885,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -3633,7 +3921,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -3660,7 +3957,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -3687,7 +3993,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -3714,7 +4029,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -3741,7 +4065,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -3768,7 +4101,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -3795,7 +4137,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -5841,7 +6192,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -5869,7 +6229,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -5917,7 +6286,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -5965,7 +6343,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -5992,7 +6379,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -6028,7 +6424,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -6055,7 +6460,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -6082,7 +6496,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -6109,7 +6532,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -6136,7 +6568,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -6163,7 +6604,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -6190,7 +6640,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -6217,7 +6676,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -6409,7 +6877,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -6437,7 +6914,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -6485,7 +6971,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -6533,7 +7028,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -6560,7 +7064,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -6596,7 +7109,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -6623,7 +7145,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -6650,7 +7181,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -6677,7 +7217,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -6704,7 +7253,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -6731,7 +7289,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -6758,7 +7325,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -6785,7 +7361,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -6977,7 +7562,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -7005,7 +7599,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -7053,7 +7656,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -7101,7 +7713,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -7128,7 +7749,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -7164,7 +7794,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -7191,7 +7830,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -7218,7 +7866,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -7245,7 +7902,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -7272,7 +7938,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -7299,7 +7974,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -7326,7 +8010,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -7353,7 +8046,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -9399,7 +10101,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -9427,7 +10138,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -9475,7 +10195,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -9523,7 +10252,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -9550,7 +10288,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -9586,7 +10333,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -9613,7 +10369,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -9640,7 +10405,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -9667,7 +10441,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -9694,7 +10477,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -9721,7 +10513,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -9748,7 +10549,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -9775,7 +10585,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -9967,7 +10786,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -9995,7 +10823,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -10043,7 +10880,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -10091,7 +10937,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -10118,7 +10973,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -10154,7 +11018,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -10181,7 +11054,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -10208,7 +11090,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -10235,7 +11126,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -10262,7 +11162,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -10289,7 +11198,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -10316,7 +11234,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -10343,7 +11270,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -10535,7 +11471,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -10563,7 +11508,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -10611,7 +11565,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -10659,7 +11622,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -10686,7 +11658,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -10722,7 +11703,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -10749,7 +11739,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -10776,7 +11775,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -10803,7 +11811,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -10830,7 +11847,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -10857,7 +11883,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -10884,7 +11919,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -10911,7 +11955,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -12957,7 +14010,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -12985,7 +14047,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -13033,7 +14104,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -13081,7 +14161,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -13108,7 +14197,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -13144,7 +14242,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -13171,7 +14278,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -13198,7 +14314,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -13225,7 +14350,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -13252,7 +14386,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -13279,7 +14422,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -13306,7 +14458,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -13333,7 +14494,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -13525,7 +14695,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -13553,7 +14732,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -13601,7 +14789,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -13649,7 +14846,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -13676,7 +14882,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -13712,7 +14927,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -13739,7 +14963,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -13766,7 +14999,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -13793,7 +15035,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -13820,7 +15071,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -13847,7 +15107,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -13874,7 +15143,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -13901,7 +15179,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -14093,7 +15380,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -14121,7 +15417,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -14169,7 +15474,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -14217,7 +15531,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -14244,7 +15567,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -14280,7 +15612,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -14307,7 +15648,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -14334,7 +15684,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -14361,7 +15720,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -14388,7 +15756,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -14415,7 +15792,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -14442,7 +15828,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -14469,7 +15864,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -16515,7 +17919,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -16543,7 +17956,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -16591,7 +18013,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -16639,7 +18070,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -16666,7 +18106,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -16702,7 +18151,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -16729,7 +18187,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -16756,7 +18223,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -16783,7 +18259,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -16810,7 +18295,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -16837,7 +18331,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -16864,7 +18367,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -16891,7 +18403,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -17083,7 +18604,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -17111,7 +18641,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -17159,7 +18698,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -17207,7 +18755,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -17234,7 +18791,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -17270,7 +18836,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -17297,7 +18872,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -17324,7 +18908,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -17351,7 +18944,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -17378,7 +18980,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -17405,7 +19016,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -17432,7 +19052,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -17459,7 +19088,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {
@@ -17651,7 +19289,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 21
+                          "uiOrder": 21,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconToken",
@@ -17679,7 +19326,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconSizeToken",
@@ -17727,7 +19383,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 23
+                          "uiOrder": 23,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textSizeToken",
@@ -17775,7 +19440,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 24
+                          "uiOrder": 24,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "showBadge",
@@ -17802,7 +19476,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 40
+                          "uiOrder": 40,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentMode",
@@ -17838,7 +19521,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 41
+                          "uiOrder": 41,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeIconToken",
@@ -17865,7 +19557,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 42
+                          "uiOrder": 42,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeText",
@@ -17892,7 +19593,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 43
+                          "uiOrder": 43,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeSize",
@@ -17919,7 +19629,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 44
+                          "uiOrder": 44,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeBackgroundPaletteColor",
@@ -17946,7 +19665,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 45
+                          "uiOrder": 45,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "badgeContentPaletteColor",
@@ -17973,7 +19701,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 46
+                          "uiOrder": 46,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "iconColorToken",
@@ -18000,7 +19737,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "textColorToken",
@@ -18027,7 +19773,16 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 22
+                          "uiOrder": 22,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         }
                       ],
                       "itemPresentation": {

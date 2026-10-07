@@ -1383,14 +1383,23 @@ test("a nested full-screen Media keeps the exact root Screen coordinates", () =>
   });
 });
 
-test("message Icon Row button states resolve as nested hold tracks owned by the message", () => {
+test("message Icon Row button fields resolve as nested hold tracks owned by the message", () => {
   const source = committedConversationPayload(true);
   const runtime = JSON.parse(source.designPreviewJson) as {
     messages: Array<{
       id: string;
       iconRowRuntime: Array<{
         id: string;
-        runtimeInputs: { buttonInputs: Array<{ id: string; enabled: boolean; pressed: boolean }> };
+        runtimeInputs: {
+          buttonInputs: Array<{
+            id: string;
+            enabled: boolean;
+            pressed: boolean;
+            sampleText: string;
+            iconColorToken: string;
+            textColorToken: string;
+          }>;
+        };
       }>;
     }>;
   };
@@ -1410,6 +1419,18 @@ test("message Icon Row button states resolve as nested hold tracks owned by the 
         { id: "pressed-base", frame: 0, value: false, interpolation: "hold", enabled: true },
         { id: "pressed-on", frame: 1, value: true, interpolation: "hold", enabled: true },
       ]),
+      track(`${prefix}.sampleText`, message.id, [
+        { id: "text-base", frame: 0, value: "", interpolation: "hold", enabled: true },
+        { id: "text-on", frame: 1, value: "Animated", interpolation: "hold", enabled: true },
+      ]),
+      track(`${prefix}.iconColorToken`, message.id, [
+        { id: "icon-color-base", frame: 0, value: "theme.colors.icon", interpolation: "hold", enabled: true },
+        { id: "icon-color-on", frame: 1, value: "theme.colors.negative", interpolation: "hold", enabled: true },
+      ]),
+      track(`${prefix}.textColorToken`, message.id, [
+        { id: "text-color-base", frame: 0, value: "theme.colors.textPrimary", interpolation: "hold", enabled: true },
+        { id: "text-color-on", frame: 1, value: "theme.colors.positive", interpolation: "hold", enabled: true },
+      ]),
     ],
   };
   source.instanceJson = JSON.stringify(instance);
@@ -1421,6 +1442,9 @@ test("message Icon Row button states resolve as nested hold tracks owned by the 
   assert.equal(resolvedButtons[0]!.id, button.id);
   assert.equal(resolvedButtons[0]!.enabled, false);
   assert.equal(resolvedButtons[0]!.pressed, true);
+  assert.equal(resolvedButtons[0]!.sampleText, "Animated");
+  assert.equal(resolvedButtons[0]!.iconColorToken, "theme.colors.negative");
+  assert.equal(resolvedButtons[0]!.textColorToken, "theme.colors.positive");
 });
 
 function committedConversationPayload(keepMessages = false): DesignPreviewPayload {

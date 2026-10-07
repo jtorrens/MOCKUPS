@@ -284,8 +284,11 @@ collection definitions and stable item ids; no concrete collection or
 Component receives a discovery or persistence branch. An Icon Row item is one
 instance of that contract through its fixed Button boundary and typed local
 `buttonOverrides` document. Its selected icon, label and Button Variant
-reference remain direct Icon Row Variant data and are not projected. The
-independent `enabled` and `pressed` values belong to the projected Runtime row.
+reference remain direct Icon Row Variant data and do not appear in the flat
+Overrides projection. The effective projected Runtime row still carries the
+complete scalar Button value—including content, sizing, Badge, colors,
+`enabled` and `pressed`—and exposes the common `hold` animation activation;
+item identity, Variant selection and collection structure do not.
 
 ## Session view state
 

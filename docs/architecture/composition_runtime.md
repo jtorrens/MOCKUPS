@@ -175,6 +175,11 @@ Button Runtime value for every stable Variant item id, including icon, label,
 the independent `enabled` and `pressed` booleans, colors and Badge values.
 `enabled=false` applies the Variant opacity and `pressed=true` applies the
 Variant scale; both may be true independently and neither rewrites the other.
+Every scalar field in that complete Button Runtime value is animatable with
+`hold` interpolation. This includes content, sizing, colors, Badge values,
+`enabled` and `pressed`. Animation retains the Icon Row item's stable id and
+its enclosing temporal owner; it never makes the Button Variant reference,
+item identity, collection topology or order animatable.
 Runtime never adds, removes or reorders Icon Row items. An owning parent
 receives and forwards that same Icon Row Runtime contract; it does not declare
 a reduced or renamed copy of Button fields.

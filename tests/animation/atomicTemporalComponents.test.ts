@@ -28,16 +28,30 @@ test("Button resolves independent enabled opacity and pressed scale", () => {
   assert.equal(modified.scale, 0.94);
 });
 
-test("Button declares only independent hold-animatable enabled and pressed state", () => {
+test("Button declares every scalar Runtime field as independently hold-animatable", () => {
   const source = committedComponentFixture("button");
   const preview = JSON.parse(source.designPreviewJson) as {
     inputs: Array<Record<string, unknown>>;
     actions: unknown[];
   };
-  const stateInputs = preview.inputs.filter((input) =>
-    input.id === "enabled" || input.id === "pressed");
-  assert.deepEqual(stateInputs.map((input) => input.id), ["enabled", "pressed"]);
-  for (const input of stateInputs) {
+  assert.deepEqual(preview.inputs.map((input) => input.id), [
+    "enabled",
+    "pressed",
+    "sampleText",
+    "iconToken",
+    "iconSizeToken",
+    "textSizeToken",
+    "showBadge",
+    "badgeContentMode",
+    "badgeIconToken",
+    "badgeText",
+    "badgeSize",
+    "badgeBackgroundPaletteColor",
+    "badgeContentPaletteColor",
+    "iconColorToken",
+    "textColorToken",
+  ]);
+  for (const input of preview.inputs) {
     assert.equal(input.animatable, true);
     assert.deepEqual(input.animationInterpolations, ["hold"]);
     assert.deepEqual(input.animationTimeline, { origin: { kind: "ownerStart" } });

@@ -22816,6 +22816,90 @@ static void AnimatableFieldVocabularyIsConstrained()
         .Select(field => field["id"]!.GetValue<string>());
     SequenceEqual(new[] { "actor", "headerSubtitle" }, screenAnimated);
     SequenceEqual(new[] { "direction", "text", "keepCursorAfterWrite", "statusVisible", "status", "statusText", "mediaSource", "isPlaying", "fullScreen", "actionsRevealed", "showIconRow" }, messageAnimated);
+    var buttonFieldIds = new[]
+    {
+        "enabled",
+        "pressed",
+        "sampleText",
+        "iconToken",
+        "iconSizeToken",
+        "textSizeToken",
+        "showBadge",
+        "badgeContentMode",
+        "badgeIconToken",
+        "badgeText",
+        "badgeSize",
+        "badgeBackgroundPaletteColor",
+        "badgeContentPaletteColor",
+        "iconColorToken",
+        "textColorToken",
+    };
+    foreach (var message in JsonPath.RequiredArray(
+                 preview,
+                 "messages",
+                 "Conversation Runtime fixture").OfType<JsonObject>())
+    {
+        var iconRow = JsonPath.RequiredArray(
+                message,
+                "iconRowRuntime",
+                "Conversation message Icon Row Runtime")
+            .OfType<JsonObject>()
+            .Single();
+        var runtime = JsonPath.RequiredObject(
+            iconRow,
+            "runtimeInputs",
+            "Conversation message Icon Row Runtime");
+        var buttonInputs = JsonPath.RequiredArray(
+                runtime,
+                "inputs",
+                "Conversation message Icon Row Runtime")
+            .OfType<JsonObject>()
+            .Single((input) => JsonPath.RequiredString(
+                input,
+                "id",
+                "Conversation message Icon Row Runtime input") == "buttonInputs");
+        var buttonFields = JsonPath.RequiredArray(
+                JsonPath.RequiredObject(
+                    buttonInputs,
+                    "structuredCollection",
+                    "Conversation message Button Runtime"),
+                "fields",
+                "Conversation message Button Runtime")
+            .OfType<JsonObject>()
+            .ToList();
+        SequenceEqual(
+            buttonFieldIds,
+            buttonFields.Select((field) => JsonPath.RequiredString(
+                field,
+                "id",
+                "Conversation message Button Runtime field")));
+        foreach (var field in buttonFields)
+        {
+            True(JsonPath.RequiredBoolean(
+                field,
+                "animatable",
+                "Conversation message Button Runtime field"));
+            SequenceEqual(
+                ["hold"],
+                JsonPath.RequiredArray(
+                        field,
+                        "animationInterpolations",
+                        "Conversation message Button Runtime field")
+                    .Select((interpolation) => interpolation!.GetValue<string>()));
+            Equal(
+                "ownerStart",
+                JsonPath.RequiredString(
+                    JsonPath.RequiredObject(
+                        JsonPath.RequiredObject(
+                            field,
+                            "animationTimeline",
+                            "Conversation message Button Runtime field"),
+                        "origin",
+                        "Conversation message Button Runtime field"),
+                    "kind",
+                    "Conversation message Button Runtime field"));
+        }
+    }
     Equal(
         "ownerStart",
         screenFields.Single(field => field["id"]!.GetValue<string>() == "actor")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());

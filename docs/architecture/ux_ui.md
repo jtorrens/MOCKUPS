@@ -587,6 +587,11 @@ incoming, outgoing or system direction. Changing direction preserves that
 selection. Direction and the chat-level Actor expose standard animation
 activation and discrete `hold` keyframes; resolving a direction keyframe
 immediately applies the complete corresponding Bubble appearance.
+Every scalar Runtime field of each Button in the message actions Icon Row uses
+the same standard activation and discrete `hold` keyframes. Text, icon, sizes,
+Badge values, colors, `enabled` and `pressed` remain independent tracks under
+the stable message and Icon Row item identities; Variant selection, item ids,
+order and collection structure do not expose animation activation.
 Each message also exposes the Boolean `Show actions`, animatable only with
 discrete `hold` keyframes. Its transition reveals the Conversation-owned
 external Icon Row and displaces the Bubble according to direction: right-side
