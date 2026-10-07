@@ -229,6 +229,22 @@ test("Video Call enters a participant and reflows stable cards from their prior 
   assert.equal(after.main.box.height < middle.main.box.height, true);
 });
 
+test("Video Call presence consumes the original parameter transition, not an evaluated value as its base", () => {
+  const source = fixture();
+  const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
+  const participant = preview.participants[1]!;
+  participant.present = false;
+  source.designPreviewJson = JSON.stringify(preview);
+  source.runtimeContractJson = source.designPreviewJson;
+  source.localFrame = 10;
+  source.instanceJson = JSON.stringify({ context: { screenFrame: 10 }, animation: { tracks: [{
+    fieldId: "present", targetId: participant.id,
+    keyframes: [{ frame: 10, value: true, interpolation: "hold" }],
+  }] } });
+  const resolved = resolveVideoCallModule(source).participants.find(({ id }) => id === participant.id);
+  assert.equal(resolved?.presenceMotionKind, "enter");
+});
+
 test("Video Call keeps an initially absent participant out of Preview", () => {
   const source = fixture();
   const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };

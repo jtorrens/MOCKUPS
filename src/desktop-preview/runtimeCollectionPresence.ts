@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { optionalBoolean, optionalNumber } from "./componentResolverCommon.js";
-import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
+import type { ResolvedParameterAnimation } from "./parameterAnimationResolver.js";
 import type { ComponentMotionContract, ComponentMotionFrameContract } from "./previewComponentContracts.js";
 import { motionTotalDurationMs, resolveMotionFrame } from "./previewMotionHelpers.js";
 import type { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
@@ -19,7 +19,7 @@ export interface RuntimeCollectionPresence {
 export function resolveRuntimeCollectionPresence(
   payload: DesignPreviewPayload,
   timeline: RuntimeOwnerTimeline,
-  animation: Record<string, unknown>,
+  resolved: ResolvedParameterAnimation,
   item: Record<string, unknown>,
   targetId: string,
   screenFrame: number,
@@ -27,16 +27,6 @@ export function resolveRuntimeCollectionPresence(
   exitMotion: ComponentMotionContract,
 ): RuntimeCollectionPresence {
   const hasTemporalOwner = timeline.ownsTarget(targetId);
-  const ownerFrame = hasTemporalOwner
-    ? Math.floor(timeline.temporalLocalFrame("present", targetId, screenFrame))
-    : screenFrame;
-  const resolved = resolveParameterAnimation(
-    animation,
-    "present",
-    targetId,
-    ownerFrame,
-    item.present === true,
-  );
   const present = resolved.value === true;
   const sourceFrame = resolved.sourceKeyframeFrame === undefined
     ? undefined

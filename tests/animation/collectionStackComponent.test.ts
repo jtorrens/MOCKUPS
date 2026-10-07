@@ -366,6 +366,10 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
         fieldId: "forwarded_mode_field",
         targetId: "notice",
         keyframes: [{ frame: 0, value: "base" }, { frame: 5, value: "changed" }],
+      }, {
+        fieldId: "members.child.caption",
+        targetId: "notice",
+        keyframes: [{ frame: 0, value: "before" }, { frame: 5, value: "after" }],
       }] },
     }),
     designPreviewJson: JSON.stringify({
@@ -376,7 +380,13 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
       items: [{
         id: "notice", variantReference: "stub::variant::notice", overrides: {},
         inputs: {
-          inputs: [{ id: "display_mode_field", jsonKey: "displayMode", valueKind: "OptionToken" }],
+          inputs: [
+            { id: "display_mode_field", jsonKey: "displayMode", valueKind: "OptionToken" },
+            { id: "members", jsonKey: "children", valueKind: "StructuredCollection", structuredCollection: {
+              fields: [{ id: "caption", jsonKey: "text", valueKind: "StringSingleLine" }],
+            } },
+          ],
+          children: [{ id: "child", text: "before" }],
           displayMode: "summary",
           undeclaredMode: "base",
           forwardedMode: "base",
@@ -392,6 +402,13 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
   assert.equal(resolved.items[0]?.inputs.undeclaredMode, "base");
   assert.equal(resolved.items[0]?.inputs.forwardedMode, "changed");
   assert.equal(resolved.reflow?.fromItems[0]?.inputs.displayMode, "summary");
+  const children = resolved.items[0]?.inputs.children as Array<Record<string, unknown>>;
+  const previousChildren = resolved.reflow?.fromItems[0]?.inputs.children as Array<Record<string, unknown>>;
+  assert.equal(children[0]!.text, "after");
+  assert.equal(previousChildren[0]!.text, "before");
+  assert.deepEqual(children[0]!.__runtimeTransitions, {
+    text: { sourceFrame: 5, previousValue: "before" },
+  });
 });
 
 test("embedded Runtime field identities reject malformed or inferred metadata", () => {

@@ -13,24 +13,29 @@ import { requiredMotionContract } from "./previewMotionHelpers.js";
 import { requiredReflowTiming, resolveReflowProgress } from "./previewReflowHelpers.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
-import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
+import { resolveRuntimeDocumentAnimationValues } from "./runtimeNestedAnimationFields.js";
 import { resolveRuntimeCollectionPresence } from "./runtimeCollectionPresence.js";
 import { themeOwnedComponentVariantSlot } from "./themeOwnedComponentVariant.js";
 
 export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCallModuleContract {
   const config = parseObject(payload.configJson);
-  const preview = parseObject(payload.designPreviewJson);
+  const authored = parseObject(payload.designPreviewJson);
   const instance = parseObject(payload.instanceJson);
   const animation = optionalObject(instance, "animation", "Preview instance envelope");
   const screenFrame = rootScreenFrame(payload);
   const timeline = new RuntimeOwnerTimeline(
-    preview,
-    preview,
+    authored,
+    authored,
     animation,
     parseObject(payload.themeTokensJson),
     0,
     payload.frameRate,
   );
+  const frameValues = resolveRuntimeDocumentAnimationValues(
+    authored, animation,
+    (fieldId, targetId) => Math.floor(timeline.temporalLocalFrame(fieldId, targetId, screenFrame)),
+  );
+  const preview = frameValues.values;
   const bases = parseObject(payload.componentBaseConfigsJson);
   const owner = requiredRecord(config, "videoCall", "module.core.videoCall");
   const participantMediaConfig = slotConfig(bases, typedSlot(owner, bases, "participantMediaSlot", "media"), "media", "module.core.videoCall.participantMediaSlot");
@@ -53,46 +58,26 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     .map((item, index) => {
       const itemOwner = `module.core.videoCall.runtime.participants[${index}]`;
       const id = requiredString(item, "id", `${itemOwner}.id`);
-      const resolve = (fieldId: string, value: unknown, valueKind?: "decimalPair") => resolveParameterAnimation(
-        animation,
-        fieldId,
-        id,
-        Math.floor(timeline.temporalLocalFrame(fieldId, id, screenFrame)),
-        value,
-        valueKind,
-      ).value;
       const presence = resolveRuntimeCollectionPresence(
         payload,
         timeline,
-        animation,
+        frameValues.field("present", id),
         item,
         id,
         screenFrame,
         participantEnterMotion,
         participantExitMotion,
       );
-      const role = participantRole(resolvedString(
-        resolve("role", requiredString(item, "role", `${itemOwner}.role`)),
-        `${itemOwner}.role animation`,
-      ));
-      const videoPresent = resolvedBoolean(
-        resolve("videoPresent", requiredBoolean(item, "videoPresent", `${itemOwner}.videoPresent`)),
-        `${itemOwner}.videoPresent animation`,
-      );
+      const role = participantRole(requiredString(item, "role", `${itemOwner}.role`));
+      const videoPresent = requiredBoolean(item, "videoPresent", `${itemOwner}.videoPresent`);
       const actorId = requiredPossiblyEmptyString(item, "actorId", `${itemOwner}.actorId`);
       const actor = actorId.trim()
         ? requiredRecord(item, "actor", `${itemOwner}.actor`)
         : undefined;
       const avatarConfig = structuredClone(participantAvatarConfig);
       requiredRecord(avatarConfig, "avatar", "module.core.videoCall.participantAvatar").defaultSize = avatarSize;
-      const connectionText = resolvedString(
-        resolve("connectionText", requiredPossiblyEmptyString(item, "connectionText", `${itemOwner}.connectionText`)),
-        `${itemOwner}.connectionText animation`,
-      );
-      const showActorName = resolvedBoolean(
-        resolve("showActorName", requiredBoolean(item, "showActorName", `${itemOwner}.showActorName`)),
-        `${itemOwner}.showActorName animation`,
-      );
+      const connectionText = requiredPossiblyEmptyString(item, "connectionText", `${itemOwner}.connectionText`);
+      const showActorName = requiredBoolean(item, "showActorName", `${itemOwner}.showActorName`);
       return {
         id,
         present: presence.present,
@@ -111,14 +96,8 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
           mediaType: requiredString(item, "mediaType", `${itemOwner}.mediaType`),
           mediaSource: requiredPossiblyEmptyString(item, "mediaSource", `${itemOwner}.mediaSource`),
           viewportSize: "390|844",
-          mediaScale: resolvedNumber(
-            resolve("mediaScale", requiredNumber(item, "mediaScale", `${itemOwner}.mediaScale`)),
-            `${itemOwner}.mediaScale animation`,
-          ),
-          mediaOffset: resolvedString(
-            resolve("mediaOffset", requiredString(item, "mediaOffset", `${itemOwner}.mediaOffset`), "decimalPair"),
-            `${itemOwner}.mediaOffset animation`,
-          ),
+          mediaScale: requiredNumber(item, "mediaScale", `${itemOwner}.mediaScale`),
+          mediaOffset: requiredString(item, "mediaOffset", `${itemOwner}.mediaOffset`),
           isPlaying: videoPresent,
           currentTimeSeconds: Math.max(0, payload.localFrame / Math.max(1, payload.frameRate)),
           durationSeconds: 0,
@@ -269,6 +248,3 @@ function gridHeightMode(value: string): VideoCallModuleContract["gridHeightMode"
 function positive(value: number, path: string) { if (!Number.isFinite(value) || value <= 0) throw new Error(`${path} must be positive`); return value; }
 function percentage(value: number, path: string) { if (!Number.isFinite(value) || value <= 0 || value > 100) throw new Error(`${path} must be greater than 0 and at most 100`); return value; }
 function nonNegative(value: number, path: string) { if (!Number.isFinite(value) || value < 0) throw new Error(`${path} must be non-negative`); return value; }
-function resolvedString(value: unknown, path: string) { if (typeof value !== "string") throw new Error(`${path} must resolve to a string`); return value; }
-function resolvedBoolean(value: unknown, path: string) { if (typeof value !== "boolean") throw new Error(`${path} must resolve to a boolean`); return value; }
-function resolvedNumber(value: unknown, path: string) { if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`${path} must resolve to a finite number`); return value; }

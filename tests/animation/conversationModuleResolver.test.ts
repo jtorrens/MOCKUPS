@@ -122,6 +122,7 @@ function payload(
       },
     }),
     designPreviewJson: JSON.stringify({
+      actorId: "actor_test",
       conversationType: "individual",
       headerSubtitle: "base header",
       bubbleRevealMode: "afterWriteOn",
@@ -879,7 +880,7 @@ test("Conversation timing requires one complete prepared Runtime document", () =
     source.designPreviewJson = JSON.stringify(runtime);
     assert.throws(
       () => resolveConversationModule(source),
-      new RegExp(`module\\.core\\.chat\\.input\\.${key}`),
+      new RegExp(`missing its prepared value '${key}'`),
       key,
     );
   }

@@ -3,6 +3,7 @@ import { componentVariantConfig, mergeComponentDefaults } from "./componentPrevi
 import { optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { optionalObject, optionalObjectArray, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
+import { resolveRuntimeAnimationValues } from "./runtimeNestedAnimationFields.js";
 import { requiredMotionContract } from "./previewMotionHelpers.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
@@ -75,7 +76,12 @@ export function resolveComponentCollectionItem(
       ? resolveRuntimeCollectionPresence(
           payload,
           timeline,
-          animation,
+          resolveParameterAnimation(
+            animation, "present", rawId,
+            timeline.ownsTarget(rawId)
+              ? Math.floor(timeline.temporalLocalFrame("present", rawId, frame)) : frame,
+            item.present === true,
+          ),
           item,
           rawId,
           frame,
@@ -150,38 +156,31 @@ function resolveAnimatedInputs(
 ) {
   const definitions = runtimeInputDefinitions(inputs);
   const runtimeFieldIds = runtimeFieldIdMap(inputs);
-  const declaredFields = definitions.flatMap(({ id, jsonKey }) => {
-    if (!Object.hasOwn(inputs, jsonKey)) return [];
-    return [{
+  const declaredFields = definitions.map(({ definition, id, jsonKey }) => ({
+      ...definition,
       jsonKey,
-      fieldId: Object.hasOwn(runtimeFieldIds, jsonKey)
+      id: Object.hasOwn(runtimeFieldIds, jsonKey)
         ? requiredString(runtimeFieldIds, jsonKey, `component collection Runtime field id '${jsonKey}'`)
         : id,
-    }];
-  });
+  }));
   const declaredKeys = new Set(definitions.map((definition) => definition.jsonKey));
-  const fields = [
+  const contract = { fields: [
     ...declaredFields,
     ...Object.keys(runtimeFieldIds)
       .filter((jsonKey) => !declaredKeys.has(jsonKey))
       .map((jsonKey) => ({
         jsonKey,
-        fieldId: requiredString(runtimeFieldIds, jsonKey, `component collection Runtime field id '${jsonKey}'`),
+        id: requiredString(runtimeFieldIds, jsonKey, `component collection Runtime field id '${jsonKey}'`),
       })),
-  ];
+  ] };
   const localFrame = (fieldId: string, frame = screenFrame) => timeline.ownsTarget(targetId)
     ? Math.floor(timeline.temporalLocalFrame(fieldId, targetId, frame, presenceEndFrame))
     : frame;
-  const resolved: Record<string, unknown> = { ...inputs };
-  for (const field of fields) {
-    resolved[field.jsonKey] = resolveParameterAnimation(
-      animation,
-      field.fieldId,
-      targetId,
-      localFrame(field.fieldId),
-      inputs[field.jsonKey],
-    ).value;
-  }
+  const evaluate = (frame: number) => resolveRuntimeAnimationValues(
+    contract, inputs, animation, targetId, (fieldId) => localFrame(fieldId, frame),
+  );
+  const current = evaluate(screenFrame);
+  const resolved = current.values;
   resolveAnimatedActions(
     resolved,
     definitions.map(({ definition }) => definition),
@@ -194,51 +193,32 @@ function resolveAnimatedInputs(
     frameRate,
     presenceEndFrame,
   );
-  const sourceFrames = fields.flatMap((field) => {
-    const source = resolveParameterAnimation(
-      animation,
-      field.fieldId,
-      targetId,
-      localFrame(field.fieldId),
-      inputs[field.jsonKey],
-    ).sourceKeyframeFrame;
+  const sourceFrames = current.fields.flatMap((field) => {
+    const source = field.resolution.sourceKeyframeFrame;
     return source === undefined || source <= 0 ? [] : [timeline.screenFrame(field.fieldId, targetId, source)];
   });
   const changeFrame = sourceFrames.length ? Math.max(...sourceFrames) : undefined;
   if (changeFrame === undefined) return { values: resolved, changeFrame, previousValues: undefined };
-  const previousValues: Record<string, unknown> = { ...inputs };
-  for (const field of fields) {
-    previousValues[field.jsonKey] = resolveParameterAnimation(
-      animation,
-      field.fieldId,
-      targetId,
-      localFrame(field.fieldId, Math.max(0, changeFrame - 1)),
-      inputs[field.jsonKey],
-    ).value;
-  }
-  const transitionValues = Object.fromEntries(fields.flatMap((field) => {
-    const sourceLocalFrame = resolveParameterAnimation(
-      animation,
-      field.fieldId,
-      targetId,
-      localFrame(field.fieldId),
-      inputs[field.jsonKey],
-    ).sourceKeyframeFrame;
+  const previousValues = evaluate(Math.max(0, changeFrame - 1)).values;
+  const priorFrames = new Map<number, ReturnType<typeof evaluate>>();
+  for (const field of current.fields) {
+    const sourceLocalFrame = field.resolution.sourceKeyframeFrame;
     const sourceFrame = sourceLocalFrame === undefined
       ? undefined
       : timeline.screenFrame(field.fieldId, targetId, sourceLocalFrame);
-    return sourceFrame === undefined || sourceFrame <= 0
-      ? []
-      : [[field.jsonKey, { sourceFrame, previousValue: resolveParameterAnimation(
-          animation,
-          field.fieldId,
-          targetId,
-          localFrame(field.fieldId, Math.max(0, sourceFrame - 1)),
-          inputs[field.jsonKey],
-        ).value }]];
-  }));
+    if (sourceFrame === undefined || sourceFrame <= 0) continue;
+    const previousFrame = Math.max(0, sourceFrame - 1);
+    if (!priorFrames.has(previousFrame)) priorFrames.set(previousFrame, evaluate(previousFrame));
+    const transitions = Object.hasOwn(field.values, "__runtimeTransitions")
+      ? requiredRecord(field.values, "__runtimeTransitions", "prepared Runtime transitions") : {};
+    transitions[field.jsonKey] = {
+      sourceFrame,
+      previousValue: priorFrames.get(previousFrame)!.field(field.fieldId).value,
+    };
+    field.values.__runtimeTransitions = transitions;
+  }
   return {
-    values: { ...resolved, __runtimeTransitions: transitionValues },
+    values: resolved,
     changeFrame,
     previousValues,
   };

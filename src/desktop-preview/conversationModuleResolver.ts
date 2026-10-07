@@ -14,7 +14,6 @@ import {
   requiredObjectArray,
   type JsonRecord,
 } from "./previewJsonHelpers.js";
-import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { naturalWriteOnFrame } from "./behaviorTiming.js";
@@ -42,7 +41,7 @@ import {
   requiredReflowTiming,
   resolveReflowProgress,
 } from "./previewReflowHelpers.js";
-import { resolveNestedRuntimeAnimationValues } from "./runtimeNestedAnimationFields.js";
+import { resolveRuntimeDocumentAnimationValues } from "./runtimeNestedAnimationFields.js";
 
 export function resolveConversationModule(
   payload: DesignPreviewPayload,
@@ -193,14 +192,14 @@ export function resolveConversationModuleFrame(
     ),
     "module.core.chat.messageActionsTiming",
   );
-  const preview = parseObject(payload.designPreviewJson);
+  const authored = parseObject(payload.designPreviewJson);
   const instance = parseObject(payload.instanceJson);
   const animation = optionalObject(instance, "animation", "Preview instance envelope");
   const screenFrame = rootScreenFrame(payload);
   const themeTokens = parseObject(payload.themeTokensJson);
-  const messages = requiredObjectArray(preview, "messages", "module.conversation runtime");
+  const messages = requiredObjectArray(authored, "messages", "module.conversation runtime");
   const messagesCollection = requiredObjectArray(
-    preview,
+    authored,
     "collections",
     "module.conversation Runtime collections",
   ).find((collection) => requiredString(
@@ -213,8 +212,8 @@ export function resolveConversationModuleFrame(
   }
   messages.forEach(validateConversationMessageRuntime);
   const timeline = new RuntimeOwnerTimeline(
-    preview,
-    preview,
+    authored,
+    authored,
     animation,
     themeTokens,
     0,
@@ -224,21 +223,18 @@ export function resolveConversationModuleFrame(
     1,
     payload.screenTiming?.actionDurationFrames ?? timeline.durationFrames,
   );
-  preview.timelineDurationFrames = automaticEndFrame;
-  preview.headerSubtitle = resolveParameterAnimation(
+  const rootResolution = resolveRuntimeDocumentAnimationValues(
+    authored,
     animation,
-    "headerSubtitle",
-    "",
-    timeline.temporalLocalFrame("headerSubtitle", "", screenFrame),
-    preview.headerSubtitle,
-  ).value;
-  const resolvedActorId = resolveParameterAnimation(
-    animation,
-    "actor",
-    "",
-    timeline.temporalLocalFrame("actor", "", screenFrame),
-    preview.actorId,
+    (fieldId, targetId) => timeline.temporalLocalFrame(
+      fieldId, targetId, screenFrame,
+      targetId && timeline.itemHasExplicitPresenceEnd(targetId)
+        ? timeline.itemPresenceEndFrame(targetId, automaticEndFrame) : undefined,
+    ),
   );
+  const preview = rootResolution.values;
+  preview.timelineDurationFrames = automaticEndFrame;
+  const resolvedActorId = rootResolution.field("actor");
   if (resolvedActorId.animated) {
     if (typeof resolvedActorId.value !== "string" || !resolvedActorId.value.trim()) {
       throw new Error("module.core.chat.input.actor animation must resolve a non-empty Actor id");
@@ -252,25 +248,17 @@ export function resolveConversationModuleFrame(
     );
   }
 
-  preview.messages = messages.map((value, index) => {
-    const message = { ...value };
+  preview.messages = requiredObjectArray(preview, "messages", "Conversation prepared Runtime").map((value, index) => {
     const targetId = requiredString(
-      message,
+      value,
       "id",
       `module.core.chat.messages[${index}]`,
     );
-    const authoredDirection = requiredString(
-      message,
-      "direction",
-      `module.core.chat.messages[${index}]`,
-    );
-    const resolvedDirection = resolveParameterAnimation(
-      animation,
-      "direction",
-      targetId,
-      timeline.temporalLocalFrame("direction", targetId, screenFrame),
-      authoredDirection,
-    ).value;
+    const presenceEndFrame = timeline.itemPresenceEndFrame(targetId, automaticEndFrame);
+    const hasExplicitPresenceEnd = timeline.itemHasExplicitPresenceEnd(targetId);
+    const message = value;
+    const resolve = (fieldId: string) => rootResolution.field(fieldId, targetId);
+    const resolvedDirection = message.direction;
     if (typeof resolvedDirection !== "string") {
       throw new Error(
         `module.core.chat.messages[${index}] direction animation must resolve a string`,
@@ -285,30 +273,13 @@ export function resolveConversationModuleFrame(
     message.direction = direction;
     message.timelineStartFrame = timeline.itemStartFrame(targetId);
     message.timelineEndFrame = timeline.itemEndFrame(targetId);
-    const presenceEndFrame = timeline.itemPresenceEndFrame(targetId, automaticEndFrame);
     message.presenceEndFrame = presenceEndFrame;
-    message.hasExplicitPresenceEnd = timeline.itemHasExplicitPresenceEnd(targetId);
+    message.hasExplicitPresenceEnd = hasExplicitPresenceEnd;
     message.timelineTemporalFrame = timeline.temporalOwnerFrame(
       targetId,
       screenFrame,
       message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
     );
-    const resolve = (fieldId: string, baseValue: unknown) =>
-      resolveParameterAnimation(
-        animation,
-        fieldId,
-        targetId,
-        timeline.temporalLocalFrame(
-          fieldId,
-          targetId,
-          screenFrame,
-          message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
-        ),
-        baseValue,
-      );
-
-    const resolvedText = resolve("text", message.text);
-    message.text = resolvedText.value;
     const textCompletionFrame = timeline.fieldCompletionFrame("text", targetId);
     const textOriginFrame = timeline.screenFrame("text", targetId, 0);
     const textUsesTrackCompletion = timeline.usesTrackCompletion("text", targetId);
@@ -353,15 +324,7 @@ export function resolveConversationModuleFrame(
       optionalNumber(message, "writeOnDurationFrames", 0),
       `${targetId}:${messageText}`,
     );
-    const keepCursorAfterWrite = resolve(
-      "keepCursorAfterWrite",
-      requiredBoolean(
-        message,
-        "keepCursorAfterWrite",
-        `module.core.chat.messages[${index}].keepCursorAfterWrite`,
-      ),
-    );
-    message.keepCursorAfterWrite = keepCursorAfterWrite.value;
+    const keepCursorAfterWrite = resolve("keepCursorAfterWrite");
     delete message.keepCursorReleaseFrame;
     if (keepCursorAfterWrite.value === false
         && keepCursorAfterWrite.previousValue === true
@@ -388,10 +351,7 @@ export function resolveConversationModuleFrame(
       optionalNumber(message, "composerWriteOnDurationFrames", 0),
       `${targetId}:${messageText}`,
     );
-    message.statusVisible = resolve("statusVisible", message.statusVisible).value;
-    message.statusState = resolve("status", message.statusState).value;
-    message.statusText = resolve("statusText", message.statusText).value;
-    const resolvedMediaSource = resolve("mediaSource", message.mediaSource);
+    const resolvedMediaSource = resolve("mediaSource");
     if (typeof resolvedMediaSource.value !== "string") {
       throw new Error(
         `module.core.chat.messages[${index}] mediaSource animation must resolve a string`,
@@ -399,21 +359,13 @@ export function resolveConversationModuleFrame(
     }
     message.mediaSource = resolvedMediaSource.value;
     message.mediaSourceAnimated = resolvedMediaSource.animated;
-    message.showIconRow = resolve("showIconRow", message.showIconRow).value;
     const actionsLocalFrame = timeline.temporalLocalFrame(
       "actionsRevealed",
       targetId,
       screenFrame,
       message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
     );
-    const actionsRevealed = resolve(
-      "actionsRevealed",
-      requiredBoolean(
-        message,
-        "actionsRevealed",
-        `module.core.chat.messages[${index}].actionsRevealed`,
-      ),
-    );
+    const actionsRevealed = resolve("actionsRevealed");
     if (typeof actionsRevealed.value !== "boolean") {
       throw new Error(
         `module.core.chat.messages[${index}] actionsRevealed animation must resolve a boolean`,
@@ -428,7 +380,7 @@ export function resolveConversationModuleFrame(
       messageActionsTiming,
       payload.frameRate,
     );
-    const playing = resolve("isPlaying", message.isPlaying);
+    const playing = resolve("isPlaying");
     message.isPlaying = playing.value;
     if (playing.animated && playing.value === true && playing.sourceKeyframeFrame !== undefined) {
       const elapsed = Math.max(
@@ -448,7 +400,7 @@ export function resolveConversationModuleFrame(
       message.isPlaying = elapsed < duration;
       message.playbackFrame = Math.min(elapsed, duration);
     }
-    const fullScreen = resolve("fullScreen", message.isFullScreen);
+    const fullScreen = resolve("fullScreen");
     message.isFullScreen = fullScreen.value;
     const fullScreenChanged = fullScreen.sourceKeyframeFrame !== undefined
       && typeof fullScreen.previousValue === "boolean"
@@ -467,18 +419,7 @@ export function resolveConversationModuleFrame(
         ownerFrame - fullScreen.sourceKeyframeFrame!,
       ) / Math.max(1, payload.frameRate) * 1000;
     }
-    return resolveNestedRuntimeAnimationValues(
-      messagesCollection,
-      message,
-      animation,
-      targetId,
-      (fieldId) => timeline.temporalLocalFrame(
-        fieldId,
-        targetId,
-        screenFrame,
-        message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
-      ),
-    );
+    return message;
   });
   return preview;
 }

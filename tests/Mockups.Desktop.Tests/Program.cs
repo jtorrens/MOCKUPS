@@ -160,6 +160,7 @@ var tests = new (string Name, Action Run)[]
     ("declared RecordReference Overrides use the shared action", DeclaredRecordReferenceOverridesUseSharedAction),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
+    ("committed Production Screens render sampled frames without changing authored data", ProductionScreensRenderCommittedFramesReadOnly),
     ("Production Runtime commits discard transient Preview values", ProductionRuntimeCommitsDiscardTransientPreviewValues),
     ("Shot Screen tracks resolve independent lanes gaps and overlap priority", ShotScreenTracksResolveIndependentLanes),
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
@@ -18398,6 +18399,59 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
             if (value is not null) command.Parameters.AddWithValue("$value", value);
             Equal(1, command.ExecuteNonQuery());
         }
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ProductionScreensRenderCommittedFramesReadOnly()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(Path.GetDirectoryName(source)!,
+        $".mockups-production-frame-regression-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SqliteProjectTestContext(temporary);
+        var preparer = new ProductionPreviewPayloadPreparer(
+            new DesignPreviewPayloadDataSource(database.PreviewInputs, database.Production,
+                database.Resources, database.Resources, database.ProjectPaths),
+            new ProductionPreviewRuntimeResolver(database.Resources, database.ProjectPaths));
+        var screens = Descendants(database.LoadProjectTree())
+            .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance).ToList();
+        True(screens.Count > 0);
+        var rendered = 0;
+        foreach (var screen in screens)
+        {
+            var range = ModuleInstanceTimeline.ScreenRange(
+                new ModuleInstanceTimelineDataSource(database.Production, database.Resources), screen.Id);
+            foreach (var mode in new[] { "light", "dark" })
+            foreach (var offset in new[] { 0, range.ActionDurationFrames / 2, Math.Max(0, range.ActionDurationFrames - 1) }.Distinct())
+            {
+                var frame = range.StartFrame + range.ActionStartFrame + offset;
+                try
+                {
+                    var payload = preparer.PrepareRequired(screen, null, mode, frame);
+                    var html = WebDesignPreviewRenderer.RenderBodyAsync(
+                        database.GetDevicePreviewMetrics(payload.DeviceId), false, payload)
+                        .GetAwaiter().GetResult();
+                    True(!string.IsNullOrWhiteSpace(html));
+                    True(!html.Contains("preview-error", StringComparison.Ordinal));
+                    True(html.Contains("data-renderable-id=", StringComparison.Ordinal));
+                    rendered++;
+                }
+                catch (Exception exception)
+                {
+                    throw new InvalidOperationException(
+                        $"Production Screen '{screen.Id}' ({screen.Name}), {mode}, frame {frame}: {exception.Message}", exception);
+                }
+            }
+        }
+        True(before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(temporary))));
+        Console.WriteLine($"PASS PRODUCTION {screens.Count} Screens, {rendered} sampled frames, authored database unchanged");
     }
     finally
     {

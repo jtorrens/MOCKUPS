@@ -390,6 +390,29 @@ test("Social Post renders its two header rows against one Surface", () => {
   assert.equal(header.children?.[0]?.type, "surface");
 });
 
+test("Social Post resolves row fields by the declared nested ids, without positional aliases", () => {
+  const source = fixture();
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    socialPostRows: Array<{ id: string; slotInputs: Array<{ id: string; label: string }> }>;
+  };
+  const row = runtime.socialPostRows[1]!;
+  const slot = row.slotInputs[2]!;
+  slot.label = "payload";
+  source.designPreviewJson = JSON.stringify(runtime);
+  source.runtimeContractJson = source.designPreviewJson;
+  source.instanceJson = JSON.stringify({ animation: { schemaVersion: 2, tracks: [{
+    fieldId: `slotInputs.${slot.id}.label`, targetId: row.id,
+    keyframes: [{ frame: 0, value: "before", interpolation: "hold" },
+      { frame: 5, value: "after", interpolation: "hold" }],
+  }] } });
+  for (const [frame, expected] of [[4, "before"], [5, "after"], [10, "after"]] as const) {
+    source.localFrame = frame;
+    const content = resolveSocialPostModule(source).rows[1].content.slots[2].content;
+    assert.ok(content && "text" in content);
+    assert.equal(content.text, expected);
+  }
+});
+
 test("Social Post excludes invisible rows from section measurement and gaps", () => {
   const source = fixture();
   const config = JSON.parse(source.configJson) as {

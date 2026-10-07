@@ -16,12 +16,11 @@ import {
   requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
-  stringValue,
 } from "./componentResolverCommon.js";
 import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { requiredRows, requiredRuntimeRows, resolveRow } from "./moduleRowSectionResolver.js";
 import { resolveContentRowComponent } from "./contentRowComponentResolver.js";
-import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
+import { resolveRuntimeDocumentAnimationValues } from "./runtimeNestedAnimationFields.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { projectMediaDirectorySources } from "./projectMediaDirectorySources.js";
@@ -264,45 +263,26 @@ function requiredMediaHeightMode(socialPost: Record<string, unknown>): "fixed" |
 }
 
 function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
-  const preview = parseObject(payload.designPreviewJson);
+  const authored = parseObject(payload.designPreviewJson);
   const instance = parseObject(payload.instanceJson);
   const animation = optionalObject(instance, "animation", "Preview instance envelope");
   const screenFrame = rootScreenFrame(payload);
   const themeTokens = parseObject(payload.themeTokensJson);
   const timeline = new RuntimeOwnerTimeline(
-    preview,
-    preview,
+    authored,
+    authored,
     animation,
     themeTokens,
     0,
     payload.frameRate,
   );
-  for (const fieldId of [
-    "showGallery",
-    "gallerySelectedIndex",
-    "galleryScrollRow",
-    "mediaScale",
-    "mediaOffset",
-    "messageKeyboardVisible",
-  ] as const) {
-    const resolved = resolveParameterAnimation(
-      animation,
-      fieldId,
-      "",
-      timeline.temporalLocalFrame(fieldId, "", screenFrame),
-      preview[fieldId],
-      fieldId === "mediaOffset" ? "integerPair" : undefined,
-    );
-    preview[fieldId] = resolved.value;
-  }
-  const playing = resolveParameterAnimation(
+  const resolution = resolveRuntimeDocumentAnimationValues(
+    authored,
     animation,
-    "isPlaying",
-    "",
-    timeline.temporalLocalFrame("isPlaying", "", screenFrame),
-    preview.isPlaying,
+    (fieldId, targetId) => timeline.temporalLocalFrame(fieldId, targetId, screenFrame),
   );
-  preview.isPlaying = playing.value;
+  const preview = resolution.values;
+  const playing = resolution.field("isPlaying");
   if (playing.animated
       && playing.value === true
       && playing.sourceKeyframeFrame !== undefined) {
@@ -318,14 +298,7 @@ function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
     preview.currentTimeSeconds = Math.min(elapsedSeconds, durationSeconds);
     preview.isPlaying = durationSeconds > 0 && elapsedSeconds < durationSeconds;
   }
-  const fullScreen = resolveParameterAnimation(
-    animation,
-    "isFullScreen",
-    "",
-    timeline.temporalLocalFrame("isFullScreen", "", screenFrame),
-    preview.isFullScreen,
-  );
-  preview.isFullScreen = fullScreen.value;
+  const fullScreen = resolution.field("isFullScreen");
   const fullScreenChanged = fullScreen.sourceKeyframeFrame !== undefined
     && typeof fullScreen.previousValue === "boolean"
     && typeof fullScreen.value === "boolean"
@@ -338,55 +311,11 @@ function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
         - fullScreen.sourceKeyframeFrame!,
     ) / Math.max(1, payload.frameRate) * 1000;
   }
-  const resolvedText = resolveParameterAnimation(
-    animation,
-    "messageText",
-    "",
-    timeline.temporalLocalFrame("messageText", "", screenFrame),
-    preview.messageText,
-  );
+  const resolvedText = resolution.field("messageText");
   preview.messageText = requiredAnimatedString(
     resolvedText.value,
     "module.core.socialPost.messageText",
   );
-  for (const collectionKey of ["socialPostRows", "socialPostFooterRows"] as const) {
-    preview[collectionKey] = requiredObjectArray(
-      preview,
-      collectionKey,
-      "module.core.socialPost Runtime",
-    ).map((value, index) => {
-      const row = { ...value };
-      const targetId = requiredString(
-        row,
-        "id",
-        `module.core.socialPost.${collectionKey}[${index}].id`,
-      );
-      for (let slot = 1; slot <= 5; slot += 1) {
-        resolveRowText("label", `slot${slot}Label`, slot);
-        resolveRowText("sublabel", `slot${slot}Sublabel`, slot);
-      }
-      return row;
-
-      function resolveRowText(
-        part: "label" | "sublabel",
-        jsonKey: string,
-        slot: number,
-      ) {
-        const fieldId = `slot${slot}.${part}`;
-        const resolved = resolveParameterAnimation(
-          animation,
-          fieldId,
-          targetId,
-          timeline.temporalLocalFrame(fieldId, targetId, screenFrame),
-          stringValue(row[jsonKey]),
-        );
-        row[jsonKey] = requiredAnimatedString(
-          resolved.value,
-          `module.core.socialPost.${collectionKey}.${targetId}.${fieldId}`,
-        );
-      }
-    });
-  }
   return {
     preview,
     messageTextAnimated: resolvedText.animated,

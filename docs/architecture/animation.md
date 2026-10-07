@@ -218,6 +218,25 @@ Icon Row Button state is addressed as
 as `targetId`. The common owner timeline, editor target catalog, persisted-track
 validation and Preview resolution all consume this same identity.
 
+`runtimeNestedAnimationFields` is the shared traversal for parameter values as
+well as timeline fields. `resolveRuntimeDocumentAnimationValues` evaluates
+declared root inputs and collection items; `resolveRuntimeAnimationValues`
+evaluates one collection owner, including its nested structures and embedded
+Runtime contracts. Conversation, Social Post, Video Call and generic Component
+collections use this traversal instead of enumerating scalar property names.
+The evaluator copies the prepared document, preserves explicit `false`, `0`,
+empty strings and null, and requires every declared Runtime scalar to have its
+prepared value. It never reads defaults or Variant configuration. Numeric pair
+interpolation uses the declared `ValueKind`, not the field name. Variant and
+calculated fields remain outside Runtime parameter substitution.
+
+The traversal obtains each field's local frame from the common owner timeline.
+Its results include the source keyframe and previous value so behavior owners
+can derive playback, release and reflow events without evaluating the parameter
+again. Nested collection reflow snapshots retain the complete nested document,
+and transition metadata stays on the exact nested value owner. Presence and
+Enter/Exit Motion continue to use the independent parent-owned event clock.
+
 Discrete Conversation direction and chat-Actor tracks use `hold`. Direction is
 message-owner-relative and changes presentation without changing the message's
 stable Actor reference. The chat Actor is Screen-owner-relative, resolves
