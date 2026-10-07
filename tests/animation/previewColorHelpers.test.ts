@@ -4,6 +4,7 @@ import type { DesignPreviewPayload } from "../../src/desktop-preview/designPrevi
 import {
   numberToken,
   selectedColor,
+  signedColorBlend,
   variants,
 } from "../../src/desktop-preview/previewColorHelpers.js";
 
@@ -27,6 +28,23 @@ const tokens = {
   spacing: { m: 8 },
   neutralTint: { hueDeg: 120, saturation: 0 },
 };
+
+test("signed blend screens negative amounts, multiplies positive amounts and preserves alpha", () => {
+  assert.equal(signedColorBlend("#808080", "#808080", -1), "#C0C0C0");
+  assert.equal(signedColorBlend("#808080", "#808080", 1), "#404040");
+  assert.equal(signedColorBlend("#808080", "#808080", -0.5), "#A0A0A0");
+  assert.equal(signedColorBlend("#808080", "#808080", 0.5), "#606060");
+  assert.equal(signedColorBlend("rgba(128, 128, 128, 0.35)", "#808080", 1), "rgba(64, 64, 64, 0.35)");
+  assert.equal(signedColorBlend("#808080", "rgba(128, 128, 128, 0.5)", 1), "#606060");
+  assert.equal(signedColorBlend("#804020", "#FF0080", 1), "#800010");
+  for (const value of ["#abcdef", "transparent", "rgba(1, 2, 3, 0.1)"]) {
+    assert.equal(signedColorBlend(value, "#808080", 0), value);
+  }
+  for (const value of [-1.01, 1.01, NaN, Infinity]) {
+    assert.throws(() => signedColorBlend("#808080", "#808080", value), /between -1 and 1/);
+  }
+  assert.throws(() => signedColorBlend("invalid", "#808080", 1), /Unsupported resolved RGB/);
+});
 
 test("Theme colors preserve explicit mode and global token precedence", () => {
   assert.deepEqual(variants(payload(tokens)), ["light", "dark"]);

@@ -53,7 +53,9 @@
         "vertical": "top",
         "size": "40|30",
         "outerCornerRadius": 0
-      }
+      },
+      "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+      "tintAmount": 0
     }
   },
   "defaultVariant": {
@@ -85,7 +87,9 @@
           "vertical": "top",
           "size": "40|30",
           "outerCornerRadius": 0
-        }
+        },
+        "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+        "tintAmount": 0
       }
     }
   },
@@ -119,7 +123,9 @@
             "vertical": "bottom",
             "size": "18|14",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -152,7 +158,9 @@
             "vertical": "bottom",
             "size": "18|14",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -185,7 +193,9 @@
             "vertical": "bottom",
             "size": "18|14",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -218,7 +228,9 @@
             "vertical": "bottom",
             "size": "18|14",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -251,7 +263,9 @@
             "vertical": "top",
             "size": "40|20",
             "outerCornerRadius": 5
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -284,7 +298,9 @@
             "vertical": "top",
             "size": "40|30",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -317,7 +333,9 @@
             "vertical": "top",
             "size": "40|30",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -350,7 +368,9 @@
             "vertical": "top",
             "size": "40|30",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -383,7 +403,9 @@
             "vertical": "top",
             "size": "40|30",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -416,7 +438,9 @@
             "vertical": "top",
             "size": "40|30",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -449,7 +473,9 @@
             "vertical": "top",
             "size": "40|30",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -482,7 +508,9 @@
             "vertical": "top",
             "size": "40|30",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     },
@@ -515,7 +543,9 @@
             "vertical": "top",
             "size": "40|30",
             "outerCornerRadius": 0
-          }
+          },
+          "tintPaletteColor": "palette_project_foqn_s2_gray_050",
+          "tintAmount": 0
         }
       }
     }
@@ -1183,6 +1213,58 @@
       "valuePattern": "",
       "valuePatternMessage": "",
       "embeddedSlot": null
+    },
+    {
+      "id": "component.surface.tintPaletteColor",
+      "label": "Tint color",
+      "valueKind": "PaletteColorToken",
+      "jsonPath": [
+        "surface",
+        "tintPaletteColor"
+      ],
+      "defaultValue": "palette_project_foqn_s2_gray_050",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.surface.tintAmount",
+      "label": "Tint amount",
+      "valueKind": "Decimal",
+      "jsonPath": [
+        "surface",
+        "tintAmount"
+      ],
+      "defaultValue": "0",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": -1,
+        "maximum": 1,
+        "increment": 0.01,
+        "decimalPlaces": 2,
+        "useSlider": true
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {
@@ -1288,6 +1370,24 @@
               {
                 "id": "component.surface.tail.outerCornerRadius",
                 "order": 60,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "tint",
+            "label": "Tint",
+            "order": 15,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.surface.tintPaletteColor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.surface.tintAmount",
+                "order": 20,
                 "visible": true
               }
             ]

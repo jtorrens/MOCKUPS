@@ -224,6 +224,15 @@ anchors to its declared body edge and overlaps through the complete resolved
 corner radius so tail and rounded body form one seamless silhouette for every
 side, vertical position and tail style.
 
+Surface resolves its signed Palette tint after its final semantic background
+color, before producing either a generic surface node or tail SVG. For each
+RGB channel, negative intensity blends toward screen (`1-(1-base)*(1-tint)`),
+positive intensity toward multiply (`base*tint`), with absolute intensity as
+the blend weight. Base alpha is preserved; zero preserves the exact original
+color. Light/Dark backgrounds use the same operation. The bridge and web
+renderer receive final colors and never interpret tint parameters or Button
+state.
+
 ## Bridge
 
 The bridge translates only standard resolved values:

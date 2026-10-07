@@ -682,11 +682,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             Options: options,
             PairLabels: input.PairLabels,
             Number: input.ValueKind is ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha
-                ? new NumberDefinition(
-                    input.Minimum,
-                    input.Maximum,
-                    input.Increment,
-                    input.ValueKind == ValueKind.Integer ? 0 : 2)
+                ? input.Number
                 : null,
             RecordReference: input.ValueKind == ValueKind.RecordReference
                 ? new RecordReferenceDefinition(input.TableId, AllowEmpty: input.AllowEmpty)

@@ -484,6 +484,7 @@ public static class RuntimeInputForwardingContract
             ["minimum"] = input.Number?.Minimum,
             ["maximum"] = input.Number?.Maximum,
             ["increment"] = input.Number?.Increment,
+            ["useSlider"] = input.Number?.UseSlider == true,
             ["options"] = input.Options is null
                 ? new JsonArray()
                 : new JsonArray(input.Options.Select((option) => (JsonNode?)new JsonObject

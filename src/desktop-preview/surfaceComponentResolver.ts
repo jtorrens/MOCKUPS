@@ -1,4 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { prepareRuntimeValues } from "./runtimePreviewDocumentContract.js";
+import { surfaceRuntimeValueBindings } from "./surfaceComponentContract.js";
 import {
   parseObject,
   requiredAlpha,
@@ -27,15 +29,22 @@ export function resolveSurfaceComponentFromRecords(
   inputs: Record<string, unknown>,
   id: string,
 ): SurfaceDesignContract {
+  inputs = prepareRuntimeValues(config, inputs, surfaceRuntimeValueBindings);
   const surface = requiredRecord(config, "surface", "component.surface");
   const tail = requiredRecord(surface, "tail", "component.surface.tail");
   const style = requiredRecord(config, "style", "component.surface.style");
   const size = requiredNumberPair(inputs, "size", "component.surface.input.size");
+  const tintAmount = requiredNumber(inputs, "tintAmount", "component.surface.tintAmount");
+  if (!Number.isFinite(tintAmount) || tintAmount < -1 || tintAmount > 1) {
+    throw new Error("Surface tint amount must be between -1 and 1");
+  }
 
   return {
     id,
     width: size.first,
     height: size.second,
+    tintPaletteColor: requiredString(inputs, "tintPaletteColor", "component.surface.tintPaletteColor"),
+    tintAmount,
     backgroundColorToken: requiredString(
       surface,
       "backgroundColorToken",

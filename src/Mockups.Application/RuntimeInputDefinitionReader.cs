@@ -65,6 +65,7 @@ public static class RuntimeInputDefinitionReader
                 JsonString(item, "unit")) with
             {
                 UiOrder = (int)JsonDecimal(item, "uiOrder", 0),
+                UseSlider = item["useSlider"]?.GetValue<bool>() == true,
                 UiSectionLabel = JsonString(item, "uiSectionLabel"),
                 EnabledWhenPath = JsonString(item, "enabledWhenPath"),
                 EnabledWhenValue = JsonString(item, "enabledWhenValue"),
@@ -176,6 +177,7 @@ public static class RuntimeInputDefinitionReader
                     EnabledWhenItemValues = JsonStringArray(field, "enabledWhenItemValues"),
                     MinimumItemIndex = (int)JsonDecimal(field, "minimumItemIndex", 0),
                     UiOrder = (int)JsonDecimal(field, "uiOrder", 0),
+                    UseSlider = field["useSlider"]?.GetValue<bool>() == true,
                     UiSectionLabel = JsonString(field, "uiSectionLabel"),
                     Animation = ReadAnimationDefinition(field),
                     BehaviorTiming = ReadBehaviorTimingDefinition(field),

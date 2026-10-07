@@ -83,6 +83,45 @@ export function selectedPaletteColor(payload: DesignPreviewPayload, token: strin
   return cssColorWithAlpha(resolvePaletteColor(payload, token), alpha);
 }
 
+/** Signed RGB blend: negative = screen, positive = multiply; alpha stays with the base. */
+export function signedColorBlend(background: string, tint: string, amount: number): string {
+  if (!Number.isFinite(amount) || amount < -1 || amount > 1) {
+    throw new Error("Color blend amount must be between -1 and 1");
+  }
+  if (amount === 0) return background;
+  const base = resolvedRgba(background);
+  const color = resolvedRgba(tint);
+  const strength = Math.abs(amount) * color.alpha;
+  const channel = (source: number, target: number) => {
+    const blend = amount < 0
+      ? 255 - (255 - source) * (255 - target) / 255
+      : source * target / 255;
+    return Math.round(source + (blend - source) * strength);
+  };
+  const red = channel(base.red, color.red);
+  const green = channel(base.green, color.green);
+  const blue = channel(base.blue, color.blue);
+  return base.alpha === 1
+    ? `#${byteHex(red)}${byteHex(green)}${byteHex(blue)}`
+    : `rgba(${red}, ${green}, ${blue}, ${base.alpha})`;
+}
+
+function resolvedRgba(color: string) {
+  if (color === "transparent") return { red: 0, green: 0, blue: 0, alpha: 0 };
+  const hex = parseHex(color);
+  if (hex) return { ...hex, alpha: hex.alpha / 255 };
+  const match = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i.exec(color);
+  if (match) {
+    const [red, green, blue] = match.slice(1, 4).map(Number);
+    const alpha = match[4] === undefined ? 1 : Number(match[4]);
+    if ([red, green, blue].every((value) => Number.isFinite(value) && value >= 0 && value <= 255)
+        && Number.isFinite(alpha) && alpha >= 0 && alpha <= 1) {
+      return { red: red!, green: green!, blue: blue!, alpha };
+    }
+  }
+  throw new Error(`Unsupported resolved RGB color '${color}'`);
+}
+
 export function numberToken(payload: DesignPreviewPayload, token: string) {
   const raw = tokenValueForMode(payload, token, requiredThemeMode(payload));
   const value = numberValue(raw, NaN);

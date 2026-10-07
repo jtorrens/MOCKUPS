@@ -163,7 +163,9 @@
                       "iconColorToken": "theme.colors.icon",
                       "textColorToken": "theme.colors.textPrimary",
                       "enabled": true,
-                      "pressed": false
+                      "pressed": false,
+                      "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
+                      "surfaceTintAmount": 0
                     }
                   ]
                 },

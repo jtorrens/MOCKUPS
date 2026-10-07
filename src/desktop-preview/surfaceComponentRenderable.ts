@@ -12,6 +12,7 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { surfaceShapeDataUri } from "./previewSurfaceShapeHelpers.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
+import { resolvePaletteColor, signedColorBlend } from "./previewColorHelpers.js";
 
 export interface SurfaceColorOverride {
   background: string;
@@ -50,12 +51,13 @@ export function surfaceComponentToRenderableAtWithColors(
   box: RenderableBox,
   colors?: SurfaceColorOverride,
 ): RenderableNode {
+  const resolvedColors = surfacePaintColors(payload, surface, colors);
   if (surface.tail.enabled && surface.tail.width > 0 && surface.tail.height > 0) {
-    return surfaceComponentTailRenderable(payload, surface, box, colors);
+    return surfaceComponentTailRenderable(payload, surface, box, resolvedColors);
   }
 
   const visualPadding = surfaceComponentVisualPadding(payload, surface);
-  const surfaceNode = surfaceComponentSurfaceNode(payload, surface, box, colors);
+  const surfaceNode = surfaceComponentSurfaceNode(payload, surface, box, resolvedColors);
   if (visualPadding <= 0) {
     return surfaceNode;
   }
@@ -86,14 +88,12 @@ function surfaceComponentTailRenderable(
   payload: DesignPreviewPayload,
   surface: SurfaceDesignContract,
   box: RenderableBox,
-  colors?: SurfaceColorOverride,
+  colors: Required<SurfaceColorOverride>,
 ): RenderableNode {
   const scale = renderScale(payload);
   const cornerRadius = numberToken(payload, surface.surface.cornerRadiusToken) * scale;
-  const background = colors?.background
-    ?? selectedColor(payload, surface.backgroundColorToken, surface.backgroundAlpha);
-  const borderColor = colors?.borderColor
-    ?? selectedColor(payload, surface.surface.borderColorToken, surface.borderAlpha);
+  const background = colors.background;
+  const borderColor = colors.borderColor;
   const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
   const surfaceRelief = surfaceComponentRelief(surface, scale);
   const shape = surfaceShapeDataUri({
@@ -121,7 +121,7 @@ function surfaceComponentTailRenderable(
     box,
     style: {
       overflow: "visible",
-      colorModes: colors?.colorModes ?? surfaceColorModes(payload, surface),
+      colorModes: colors.colorModes,
     },
     children: [
       {
@@ -147,7 +147,7 @@ function surfaceComponentSurfaceNode(
   payload: DesignPreviewPayload,
   surface: SurfaceDesignContract,
   box: RenderableBox,
-  colors?: SurfaceColorOverride,
+  colors: Required<SurfaceColorOverride>,
 ): RenderableNode {
   const scale = renderScale(payload);
   const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
@@ -159,16 +159,33 @@ function surfaceComponentSurfaceNode(
     frame: 0,
     box,
     style: {
-      background: colors?.background
-        ?? selectedColor(payload, surface.backgroundColorToken, surface.backgroundAlpha),
-      borderColor: colors?.borderColor
-        ?? selectedColor(payload, surface.surface.borderColorToken, surface.borderAlpha),
+      background: colors.background,
+      borderColor: colors.borderColor,
       borderRadius: numberToken(payload, surface.surface.cornerRadiusToken) * scale,
       borderWidth: surface.surface.borderWidth * scale,
       shadow: surfaceShadow,
       surfaceRelief,
-      colorModes: colors?.colorModes ?? surfaceColorModes(payload, surface),
+      colorModes: colors.colorModes,
     },
+  };
+}
+
+function surfacePaintColors(
+  payload: DesignPreviewPayload,
+  surface: SurfaceDesignContract,
+  colors: SurfaceColorOverride | undefined,
+): Required<SurfaceColorOverride> {
+  const tint = resolvePaletteColor(payload, surface.tintPaletteColor);
+  const blend = (background: string) => signedColorBlend(background, tint, surface.tintAmount);
+  const modes = colors?.colorModes ?? surfaceColorModes(payload, surface);
+  return {
+    background: blend(colors?.background
+      ?? selectedColor(payload, surface.backgroundColorToken, surface.backgroundAlpha)),
+    borderColor: colors?.borderColor
+      ?? selectedColor(payload, surface.surface.borderColorToken, surface.borderAlpha),
+    colorModes: Object.fromEntries(Object.entries(modes).map(([mode, values]) => [
+      mode, { ...values, background: blend(values.background) },
+    ])),
   };
 }
 

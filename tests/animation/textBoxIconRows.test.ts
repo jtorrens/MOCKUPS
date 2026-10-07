@@ -31,6 +31,8 @@ const bases = {
         backgroundColorToken: "theme.colors.surface",
         backgroundAlpha: 1,
         borderAlpha: 1,
+        tintPaletteColor: "palette-neutral",
+        tintAmount: 0,
         tail: {
           enabled: false,
           style: "rounded_wedge",

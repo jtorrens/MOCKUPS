@@ -241,10 +241,7 @@ public sealed record ComponentInputBindingDefinition(
             ComponentInputBindingSource.Runtime,
             input.DefaultValue,
             input.Options,
-            new NumberDefinition(
-                input.Minimum,
-                input.Maximum,
-                input.Increment),
+            input.Number,
             input.PairLabels,
             input.ComponentType,
             input.UiGroupId,

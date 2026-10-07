@@ -36,6 +36,7 @@ var tests = new (string Name, Action Run)[]
     ("a failed tree read leaves the prior session state current", FailedTreeReadLeavesStateCurrent),
     ("session revisions identify only the current owner transition", SessionRevisionGuardsOwner),
     ("Runtime definitions preserve their explicit owner", RuntimeDefinitionsPreserveOwner),
+    ("Runtime numeric presentation survives collection and forwarding boundaries", RuntimeNumericPresentationSurvivesBoundaries),
     ("Runtime default preparation preserves declared types and active Variant fields", RuntimeDefaultPreparationUsesDeclaredContract),
     ("projected Runtime collections reconcile by stable id", ProjectedRuntimeCollectionsReconcileById),
     ("Component Input bindings project exact structure-owned Runtime values", ComponentInputBindingsProjectExactStructuredRuntimeValues),
@@ -52,6 +53,39 @@ var tests = new (string Name, Action Run)[]
     ("presented editor operations publish their complete activity lifetime", PresentedEditorOperationsPublishActivityLifetime),
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
 };
+
+static void RuntimeNumericPresentationSurvivesBoundaries()
+{
+    var scalar = new JsonObject
+    {
+        ["id"] = "amount", ["jsonKey"] = "amount", ["label"] = "Amount",
+        ["kind"] = "number", ["valueKind"] = "Decimal", ["defaultValue"] = "0",
+        ["minimum"] = -1, ["maximum"] = 1, ["increment"] = 0.01m, ["useSlider"] = true,
+    };
+    var collection = new JsonObject
+    {
+        ["id"] = "items", ["jsonKey"] = "items", ["label"] = "Items", ["itemLabel"] = "Item",
+        ["fields"] = new JsonArray(scalar.DeepClone()),
+    };
+    var root = RuntimeInputDefinitionReader.ReadInputs(
+        new JsonObject { ["inputs"] = new JsonArray(scalar.DeepClone()) }, new JsonObject()).Single();
+    var nested = RuntimeInputDefinitionReader.ReadCollections(
+        new JsonObject { ["collections"] = new JsonArray(collection) }, new JsonObject()).Single().Fields.Single();
+    foreach (var field in new[] { root, nested })
+    {
+        Equal(new NumberDefinition(-1, 1, 0.01m, 2, UseSlider: true), field.Number);
+        var binding = ComponentInputBindingDefinition.FromRuntimeInput(field);
+        Equal(field.Number, binding.Number);
+        var forwarded = RuntimeInputForwardingContract.Definition(
+            new FieldDefinition("slot", "Slot", ValueKind.ComponentVariantSlot), binding, "Amount", "0");
+        var read = RuntimeInputDefinitionReader.ReadInputs(
+            new JsonObject { ["inputs"] = new JsonArray(forwarded) }, new JsonObject()).Single();
+        Equal(field.Number, read.Number);
+    }
+    scalar["useSlider"] = false;
+    True(!RuntimeInputDefinitionReader.ReadInputs(
+        new JsonObject { ["inputs"] = new JsonArray(scalar.DeepClone()) }, new JsonObject()).Single().Number.UseSlider);
+}
 
 static void RuntimeDefaultPreparationUsesDeclaredContract()
 {

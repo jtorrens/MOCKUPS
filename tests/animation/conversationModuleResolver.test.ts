@@ -1399,6 +1399,8 @@ test("message Icon Row button fields resolve as nested hold tracks owned by the 
             sampleText: string;
             iconColorToken: string;
             textColorToken: string;
+            surfaceTintPaletteColor: string;
+            surfaceTintAmount: number;
           }>;
         };
       }>;
@@ -1432,6 +1434,13 @@ test("message Icon Row button fields resolve as nested hold tracks owned by the 
         { id: "text-color-base", frame: 0, value: "theme.colors.textPrimary", interpolation: "hold", enabled: true },
         { id: "text-color-on", frame: 1, value: "theme.colors.positive", interpolation: "hold", enabled: true },
       ]),
+      track(`${prefix}.surfaceTintPaletteColor`, message.id, [
+        { id: "tint-color-on", frame: 1, value: "palette_project_foqn_s2_blue", interpolation: "hold", enabled: true },
+      ]),
+      track(`${prefix}.surfaceTintAmount`, message.id, [
+        { id: "tint-base", frame: 0, value: 0, interpolation: "hold", enabled: true },
+        { id: "tint-on", frame: 1, value: -0.7, interpolation: "hold", enabled: true },
+      ]),
     ],
   };
   source.instanceJson = JSON.stringify(instance);
@@ -1446,6 +1455,8 @@ test("message Icon Row button fields resolve as nested hold tracks owned by the 
   assert.equal(resolvedButtons[0]!.sampleText, "Animated");
   assert.equal(resolvedButtons[0]!.iconColorToken, "theme.colors.negative");
   assert.equal(resolvedButtons[0]!.textColorToken, "theme.colors.positive");
+  assert.equal(resolvedButtons[0]!.surfaceTintPaletteColor, "palette_project_foqn_s2_blue");
+  assert.equal(resolvedButtons[0]!.surfaceTintAmount, -0.7);
 });
 
 function committedConversationPayload(keepMessages = false): DesignPreviewPayload {

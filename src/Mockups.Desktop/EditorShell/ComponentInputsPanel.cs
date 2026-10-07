@@ -1700,6 +1700,7 @@ internal sealed class ComponentPreviewInputSession
             input.Minimum.ToString(CultureInfo.InvariantCulture),
             input.Maximum.ToString(CultureInfo.InvariantCulture),
             input.Increment.ToString(CultureInfo.InvariantCulture),
+            input.UseSlider,
             input.TableId,
             input.ResolvedJsonKey,
             input.ComponentType,

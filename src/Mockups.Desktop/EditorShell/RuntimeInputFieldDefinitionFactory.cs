@@ -50,7 +50,7 @@ internal static class RuntimeInputFieldDefinitionFactory
                 input.PairLabels,
                 $"Runtime Input '{input.Id}'"),
             Number: input.ValueKind is ValueKind.Decimal or ValueKind.Integer or ValueKind.Alpha
-                ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
+                ? input.Number
                 : null,
             RecordReference: input.ValueKind == ValueKind.RecordReference
                 ? new RecordReferenceDefinition(input.TableId, AllowEmpty: permitsEmpty)

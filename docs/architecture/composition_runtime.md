@@ -170,6 +170,23 @@ former Normal appearance and remains authoritative for every Runtime value.
 Content layout is not a Runtime Input and therefore changes with the exact
 Button Variant without rewriting current content values.
 
+Surface owns a Palette color identity (`surface.tintPaletteColor`) and signed
+intensity (`surface.tintAmount`, -1 to 1). Zero is an exact visual no-op;
+negative values apply screen and positive values multiply to its resolved
+background, interpolating by absolute intensity. Border, opacity and geometry
+are unchanged. The same operation covers rectangular bodies and tails.
+Button exposes `surfaceTintPaletteColor` and `surfaceTintAmount` as explicit
+Runtime inputs, linked to its exact Surface boundary through the common
+Runtime Preview document contract. Icon Rows carry them unchanged for each
+stable Button item, with Hold-only tracks, independently of `pressed`.
+Other Surface consumers use their Variant and local Overrides without needing
+a Button or a second pressed Variant. Existing documents start at intensity 0.
+
+Runtime numeric declarations carry `useSlider` alongside minimum, maximum and
+increment. The common input definition owns their NumberDefinition projection;
+root inputs, structured item fields and forwarded bindings preserve this
+presentation metadata through the dictionary controls.
+
 Icon Row structure is authored in the Variant. Runtime supplies one exact
 Button Runtime value for every stable Variant item id, including icon, label,
 the independent `enabled` and `pressed` booleans, colors and Badge values.

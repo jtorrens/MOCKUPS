@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { embeddedComponentConfig, prepareRuntimeValues, projectRuntimeValues } from "./runtimePreviewDocumentContract.js";
-import { buttonRuntimeValueBindings, buttonLabelValueLinks } from "./buttonComponentContract.js";
+import { buttonRuntimeValueBindings, buttonLabelValueLinks, buttonSurfaceValueLinks } from "./buttonComponentContract.js";
 import {
   parseObject,
   requiredBoolean,
@@ -14,7 +14,7 @@ import {
 } from "./componentResolverCommon.js";
 import type { ButtonAppearanceContract, ButtonContentMode, ButtonDesignContract } from "./buttonComponentContract.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
-import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
+import { resolveSurfaceComponentFromRecords } from "./surfaceComponentResolver.js";
 import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
 
 export function resolveButtonComponent(payload: DesignPreviewPayload): ButtonDesignContract {
@@ -108,9 +108,9 @@ function resolveButtonAppearance(
       "component.button.appearance.label",
       staticLabelFrameContext,
     ),
-    surface: resolveSurfaceComponentAtSize(
+    surface: resolveSurfaceComponentFromRecords(
       embeddedComponentConfig(bases, surfaceSlot, "surface", "component.button.appearance.surfaceSlot"),
-      size,
+      { size: `${size.width}|${size.height}`, ...projectRuntimeValues(preview, buttonSurfaceValueLinks) },
       "component.button.appearance.surface",
     ),
   };

@@ -29,6 +29,14 @@ export interface ButtonDesignContract {
   badge?: BadgeDesignContract;
 }
 export const buttonRuntimeValueBindings = [
+  {
+    fieldId: "surfaceTintPaletteColor", runtimeJsonKey: "surfaceTintPaletteColor", configPath: ["surface", "tintPaletteColor"],
+    boundaries: [{ fieldId: "component.button.appearance.surfaceSlot", slotPath: ["button", "appearance", "surfaceSlot"], componentType: "surface" }],
+  },
+  {
+    fieldId: "surfaceTintAmount", runtimeJsonKey: "surfaceTintAmount", configPath: ["surface", "tintAmount"],
+    boundaries: [{ fieldId: "component.button.appearance.surfaceSlot", slotPath: ["button", "appearance", "surfaceSlot"], componentType: "surface" }],
+  },
   { fieldId: "iconToken", runtimeJsonKey: "iconToken", configPath: ["button", "iconToken"] },
   { fieldId: "iconColorToken", runtimeJsonKey: "iconColorToken", configPath: ["button", "appearance", "iconColorToken"] },
   {
@@ -44,4 +52,9 @@ export const buttonRuntimeValueBindings = [
 export const buttonLabelValueLinks = [
   { sourceFieldId: "textColorToken", sourceJsonKey: "textColorToken", targetFieldId: "textColorToken", targetJsonKey: "textColorToken" },
   { sourceFieldId: "textSizeToken", sourceJsonKey: "textSizeToken", targetFieldId: "textSizeToken", targetJsonKey: "textSizeToken" },
+] as const satisfies readonly RuntimeValueLink[];
+
+export const buttonSurfaceValueLinks = [
+  { sourceFieldId: "surfaceTintPaletteColor", sourceJsonKey: "surfaceTintPaletteColor", targetFieldId: "tintPaletteColor", targetJsonKey: "tintPaletteColor" },
+  { sourceFieldId: "surfaceTintAmount", sourceJsonKey: "surfaceTintAmount", targetFieldId: "tintAmount", targetJsonKey: "tintAmount" },
 ] as const satisfies readonly RuntimeValueLink[];

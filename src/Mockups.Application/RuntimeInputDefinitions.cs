@@ -77,7 +77,14 @@ public sealed record ComponentInputDefinition(
     bool ShowInEditor = true,
     string HelpText = "",
     string ValuePattern = "",
-    string ValuePatternMessage = "");
+    string ValuePatternMessage = "",
+    bool UseSlider = false)
+{
+    public NumberDefinition Number => new(
+        Minimum, Maximum, Increment,
+        ValueKind is ValueKind.Integer or ValueKind.IntegerPair ? 0 : 2,
+        UseSlider);
+}
 
 public sealed record RuntimeInputCollectionDefinition(
     string Id,

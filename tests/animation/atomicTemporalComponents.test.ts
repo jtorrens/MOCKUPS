@@ -50,6 +50,8 @@ test("Button declares every scalar Runtime field as independently hold-animatabl
     "badgeContentPaletteColor",
     "iconColorToken",
     "textColorToken",
+    "surfaceTintPaletteColor",
+    "surfaceTintAmount",
   ]);
   for (const input of preview.inputs) {
     assert.equal(input.animatable, true);

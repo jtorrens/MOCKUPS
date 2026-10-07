@@ -1,4 +1,5 @@
 import type { SurfaceStyleContract } from "./previewComponentContracts.js";
+import type { RuntimeValueBinding } from "./runtimePreviewDocumentContract.js";
 
 export interface SurfaceTailContract {
   enabled: boolean;
@@ -16,7 +17,14 @@ export interface SurfaceDesignContract {
   height: number;
   backgroundColorToken: string;
   backgroundAlpha: number;
+  tintPaletteColor: string;
+  tintAmount: number;
   borderAlpha: number;
   tail: SurfaceTailContract;
   surface: SurfaceStyleContract;
 }
+
+export const surfaceRuntimeValueBindings = [
+  { fieldId: "tintPaletteColor", runtimeJsonKey: "tintPaletteColor", configPath: ["surface", "tintPaletteColor"] },
+  { fieldId: "tintAmount", runtimeJsonKey: "tintAmount", configPath: ["surface", "tintAmount"] },
+] as const satisfies readonly RuntimeValueBinding[];

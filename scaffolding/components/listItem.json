@@ -3148,6 +3148,79 @@
                         "kind": "ownerStart"
                       }
                     }
+                  },
+                  {
+                    "id": "surfaceTintPaletteColor",
+                    "label": "Surface tint color",
+                    "jsonKey": "surfaceTintPaletteColor",
+                    "kind": "text",
+                    "valueKind": "PaletteColorToken",
+                    "defaultValue": "palette_project_foqn_s2_gray_050",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "self",
+                    "uiGroupId": "surfaceTint",
+                    "uiGroupLabel": "Surface tint",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 30,
+                    "animatable": true,
+                    "animationInterpolations": [
+                      "hold"
+                    ],
+                    "animationTimeline": {
+                      "origin": {
+                        "kind": "ownerStart"
+                      }
+                    }
+                  },
+                  {
+                    "id": "surfaceTintAmount",
+                    "label": "Surface tint amount",
+                    "jsonKey": "surfaceTintAmount",
+                    "kind": "number",
+                    "valueKind": "Decimal",
+                    "defaultValue": "0",
+                    "minimum": -1,
+                    "maximum": 1,
+                    "increment": 0.01,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "self",
+                    "uiGroupId": "surfaceTint",
+                    "uiGroupLabel": "Surface tint",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 31,
+                    "animatable": true,
+                    "animationInterpolations": [
+                      "hold"
+                    ],
+                    "animationTimeline": {
+                      "origin": {
+                        "kind": "ownerStart"
+                      }
+                    },
+                    "useSlider": true
                   }
                 ],
                 "itemPresentation": {
@@ -3179,7 +3252,9 @@
               "badgeBackgroundPaletteColor": "green",
               "badgeContentPaletteColor": "gray_100",
               "enabled": true,
-              "pressed": false
+              "pressed": false,
+              "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
+              "surfaceTintAmount": 0
             },
             {
               "id": "secondary",
@@ -3197,7 +3272,9 @@
               "badgeBackgroundPaletteColor": "green",
               "badgeContentPaletteColor": "gray_100",
               "enabled": true,
-              "pressed": false
+              "pressed": false,
+              "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
+              "surfaceTintAmount": 0
             }
           ]
         }
@@ -3833,6 +3910,79 @@
                         "kind": "ownerStart"
                       }
                     }
+                  },
+                  {
+                    "id": "surfaceTintPaletteColor",
+                    "label": "Surface tint color",
+                    "jsonKey": "surfaceTintPaletteColor",
+                    "kind": "text",
+                    "valueKind": "PaletteColorToken",
+                    "defaultValue": "palette_project_foqn_s2_gray_050",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "self",
+                    "uiGroupId": "surfaceTint",
+                    "uiGroupLabel": "Surface tint",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 30,
+                    "animatable": true,
+                    "animationInterpolations": [
+                      "hold"
+                    ],
+                    "animationTimeline": {
+                      "origin": {
+                        "kind": "ownerStart"
+                      }
+                    }
+                  },
+                  {
+                    "id": "surfaceTintAmount",
+                    "label": "Surface tint amount",
+                    "jsonKey": "surfaceTintAmount",
+                    "kind": "number",
+                    "valueKind": "Decimal",
+                    "defaultValue": "0",
+                    "minimum": -1,
+                    "maximum": 1,
+                    "increment": 0.01,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "self",
+                    "uiGroupId": "surfaceTint",
+                    "uiGroupLabel": "Surface tint",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 31,
+                    "animatable": true,
+                    "animationInterpolations": [
+                      "hold"
+                    ],
+                    "animationTimeline": {
+                      "origin": {
+                        "kind": "ownerStart"
+                      }
+                    },
+                    "useSlider": true
                   }
                 ],
                 "itemPresentation": {
@@ -3864,7 +4014,9 @@
               "badgeBackgroundPaletteColor": "green",
               "badgeContentPaletteColor": "gray_100",
               "enabled": true,
-              "pressed": false
+              "pressed": false,
+              "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
+              "surfaceTintAmount": 0
             },
             {
               "id": "secondary",
@@ -3882,7 +4034,9 @@
               "badgeBackgroundPaletteColor": "green",
               "badgeContentPaletteColor": "gray_100",
               "enabled": true,
-              "pressed": false
+              "pressed": false,
+              "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
+              "surfaceTintAmount": 0
             }
           ]
         }
@@ -4518,6 +4672,79 @@
                         "kind": "ownerStart"
                       }
                     }
+                  },
+                  {
+                    "id": "surfaceTintPaletteColor",
+                    "label": "Surface tint color",
+                    "jsonKey": "surfaceTintPaletteColor",
+                    "kind": "text",
+                    "valueKind": "PaletteColorToken",
+                    "defaultValue": "palette_project_foqn_s2_gray_050",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "self",
+                    "uiGroupId": "surfaceTint",
+                    "uiGroupLabel": "Surface tint",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 30,
+                    "animatable": true,
+                    "animationInterpolations": [
+                      "hold"
+                    ],
+                    "animationTimeline": {
+                      "origin": {
+                        "kind": "ownerStart"
+                      }
+                    }
+                  },
+                  {
+                    "id": "surfaceTintAmount",
+                    "label": "Surface tint amount",
+                    "jsonKey": "surfaceTintAmount",
+                    "kind": "number",
+                    "valueKind": "Decimal",
+                    "defaultValue": "0",
+                    "minimum": -1,
+                    "maximum": 1,
+                    "increment": 0.01,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "self",
+                    "uiGroupId": "surfaceTint",
+                    "uiGroupLabel": "Surface tint",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 31,
+                    "animatable": true,
+                    "animationInterpolations": [
+                      "hold"
+                    ],
+                    "animationTimeline": {
+                      "origin": {
+                        "kind": "ownerStart"
+                      }
+                    },
+                    "useSlider": true
                   }
                 ],
                 "itemPresentation": {
@@ -4549,7 +4776,9 @@
               "badgeBackgroundPaletteColor": "green",
               "badgeContentPaletteColor": "gray_100",
               "enabled": true,
-              "pressed": false
+              "pressed": false,
+              "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
+              "surfaceTintAmount": 0
             },
             {
               "id": "secondary",
@@ -4567,7 +4796,9 @@
               "badgeBackgroundPaletteColor": "green",
               "badgeContentPaletteColor": "gray_100",
               "enabled": true,
-              "pressed": false
+              "pressed": false,
+              "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
+              "surfaceTintAmount": 0
             }
           ]
         }
