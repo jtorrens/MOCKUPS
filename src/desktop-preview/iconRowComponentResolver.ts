@@ -2,16 +2,14 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import {
   parseObject,
-  requiredBoolean,
-  requiredNumber,
   requiredNullableString,
-  requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
 } from "./componentResolverCommon.js";
 import { resolveButtonComponentFromRecords } from "./buttonComponentResolver.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import { requiredObjectArray } from "./previewJsonHelpers.js";
+import { projectRuntimeCollectionItemInputs } from "./runtimeCollectionProjection.js";
 
 export function resolveIconRowComponent(payload: DesignPreviewPayload): IconRowDesignContract {
   const config = parseObject(payload.configJson);
@@ -119,48 +117,18 @@ export function resolveIconRowComponentFromRecords(
       componentVariantConfig(componentBaseConfigs, "button", buttonVariantReference),
       requiredRecord(item, "buttonOverrides", `component.iconRow.items[${index}].buttonOverrides`),
     );
-    const enabled = requiredBoolean(runtime, "enabled", `component.iconRow.buttonInputs[${index}].enabled`);
-    const pressed = requiredBoolean(runtime, "pressed", `component.iconRow.buttonInputs[${index}].pressed`);
-    const showBadge = runtime.showBadge === true;
     return {
       id: itemId,
       button: resolveButtonComponentFromRecords(
         baseButtonConfig,
-        {
-          enabled,
-          pressed,
-          iconToken: requiredNullableString(runtime, "iconToken", `component.iconRow.buttonInputs[${index}].iconToken`),
+        projectRuntimeCollectionItemInputs(runtime, {
           iconSizeToken: sizeSource === "perButton" && !inheritedIconSize
             ? requiredString(runtime, "iconSizeToken", `component.iconRow.buttonInputs[${index}].iconSizeToken`)
             : sharedIconSize,
           textSizeToken: sizeSource === "perButton" && !inheritedTextSize
             ? requiredString(runtime, "textSizeToken", `component.iconRow.buttonInputs[${index}].textSizeToken`)
             : sharedTextSize,
-          sampleText: requiredPossiblyEmptyString(
-            runtime,
-            "sampleText",
-            `component.iconRow.buttonInputs[${index}].sampleText`,
-          ),
-          showBadge,
-          badgeContentMode: showBadge
-            ? requiredString(runtime, "badgeContentMode", `component.iconRow.buttonInputs[${index}].badgeContentMode`)
-            : "text",
-          badgeIconToken: showBadge
-            ? requiredString(runtime, "badgeIconToken", `component.iconRow.buttonInputs[${index}].badgeIconToken`)
-            : "system_check",
-          badgeText: showBadge
-            ? requiredString(runtime, "badgeText", `component.iconRow.buttonInputs[${index}].badgeText`)
-            : "1",
-          badgeSize: showBadge
-            ? requiredNumber(runtime, "badgeSize", `component.iconRow.buttonInputs[${index}].badgeSize`)
-            : 20,
-          badgeBackgroundPaletteColor: showBadge
-            ? requiredString(runtime, "badgeBackgroundPaletteColor", `component.iconRow.buttonInputs[${index}].badgeBackgroundPaletteColor`)
-            : "blue",
-          badgeContentPaletteColor: showBadge
-            ? requiredString(runtime, "badgeContentPaletteColor", `component.iconRow.buttonInputs[${index}].badgeContentPaletteColor`)
-            : "gray_100",
-        },
+        }),
         componentBaseConfigs,
         `${id}.${itemId}`,
       ),

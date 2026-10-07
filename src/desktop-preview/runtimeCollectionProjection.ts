@@ -1,6 +1,13 @@
 import { optionalString, requiredString } from "./componentResolverCommon.js";
 import { isRecord, requiredObjectArray } from "./previewJsonHelpers.js";
 
+export function projectRuntimeCollectionItemInputs(
+  runtimeItem: Record<string, unknown>,
+  contextualInputs: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return { ...runtimeItem, ...contextualInputs };
+}
+
 export function resolvedRuntimeCollectionItems(
   preview: Record<string, unknown>,
   jsonKey: string,
