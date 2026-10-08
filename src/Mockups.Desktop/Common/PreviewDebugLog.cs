@@ -68,30 +68,14 @@ internal static class PreviewDebugLog
             return;
         }
 
-        var directory = Path.Combine(FindRepositoryRoot(), "logs");
-        Directory.CreateDirectory(directory);
-        _filePath = Path.Combine(directory, FileName);
+        var filePath = CurrentLocalDocument.ApplicationDataPath(
+            Path.Combine("logs", FileName));
+        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
         File.AppendAllText(
-            _filePath,
+            filePath,
             $"{Environment.NewLine}--- preview debug session {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz} ---{Environment.NewLine}");
+        _filePath = filePath;
         _initialized = true;
-    }
-
-    private static string FindRepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "package.json"))
-                && Directory.Exists(Path.Combine(directory.FullName, "src", "Mockups.Desktop")))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
     }
 
     private static string FormatValue(object? value)

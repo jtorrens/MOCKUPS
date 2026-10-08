@@ -320,6 +320,15 @@ explicit boundary.
 Atomic installation preserves those relative links verbatim; it never expands
 them to paths in the build checkout, so copying the signed bundle cannot change
 its resource seal or create a dependency on `out/desktop`.
+The shared `PreviewDebugLog` writes only to
+`LocalApplicationData/MOCKUPS/logs/desktop-preview-debug.log`, using the same
+`CurrentLocalDocument.ApplicationDataPath` owner as workstation-local state.
+Development and installed builds use that identical path policy, which is also
+passed explicitly to Preview child processes. Diagnostics never search for a
+repository or derive a writable root from the executable location. If native
+application data is unavailable, resolution fails explicitly without another
+destination. The installed bundle stays immutable while running; final macOS
+review verifies its strict signature again after startup and Preview activity.
 The stable Team-backed designated requirement lets macOS retain local privacy
 authorization across rebuilds without changing the application bundle id.
 Automated macOS UI review uses one of these launchers; headless checks continue
