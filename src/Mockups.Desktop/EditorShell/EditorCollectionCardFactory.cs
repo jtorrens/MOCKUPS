@@ -54,7 +54,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>>
         _mutatePreviewCollection;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeCollection;
-    private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
+    private readonly Func<ProjectTreeNode, Task<bool>> _resetPreviewTestValues;
     private readonly Func<ProjectTreeNode, ComponentPreviewTransientState> _captureTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
@@ -104,7 +104,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             setPreviewCollectionItemValues,
         Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>> mutatePreviewCollection,
         Action<ProjectTreeNode, string> discardCommittedProductionRuntimeCollection,
-        Func<ProjectTreeNode, bool> resetPreviewTestValues,
+        Func<ProjectTreeNode, Task<bool>> resetPreviewTestValues,
         Func<ProjectTreeNode, ComponentPreviewTransientState> captureTestValues,
         PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode,

@@ -541,6 +541,14 @@ Successful Production commits discard temporary field/collection values by the
 exact edited owner identity, never by the active Preview scope; this also applies
 before a first Preview is prepared and while another owner is pinned.
 
+`Reset test values` enters that same operation queue with its exact owner even
+when no temporary values have been published yet. It clears and publishes on
+the UI thread before releasing the gate: earlier pending edits are discarded,
+later edits start from the persisted baseline, and unrelated owners retain their
+temporary values. The button and successful Save-as-defaults cleanup await this
+operation; neither invokes a synchronous bypass or disables editing to enforce
+ordering.
+
 Design `Save as defaults` and its dirty-state indicator capture that same
 owner-keyed transient state, including structured item edits, rather than the
 document originally captured by the mounted controls. Their document reads and

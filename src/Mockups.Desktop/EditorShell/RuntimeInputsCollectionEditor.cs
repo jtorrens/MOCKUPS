@@ -69,7 +69,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>>
         _mutatePreviewCollection;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeCollection;
-    private readonly Func<ProjectTreeNode, bool> _resetTestValues;
+    private readonly Func<ProjectTreeNode, Task<bool>> _resetTestValues;
     private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
     private readonly Func<string, Task<bool>> _confirmCollectionItemDelete;
     private readonly Func<string, Task<bool>> _confirmAnimationDisable;
@@ -123,7 +123,7 @@ internal sealed class RuntimeInputsCollectionEditor
             setPreviewCollectionItemValues,
         Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>> mutatePreviewCollection,
         Action<ProjectTreeNode, string> discardCommittedProductionRuntimeCollection,
-        Func<ProjectTreeNode, bool> resetTestValues,
+        Func<ProjectTreeNode, Task<bool>> resetTestValues,
         Func<string, IReadOnlyList<string>, Task<bool>> confirmSaveDefaults,
         Func<string, Task<bool>> confirmCollectionItemDelete,
         Func<string, Task<bool>> confirmAnimationDisable,
@@ -509,12 +509,20 @@ internal sealed class RuntimeInputsCollectionEditor
                 Content = "Reset test values",
             };
             ToolTip.SetTip(reset, "Discard temporary changes for this Preview.");
-            reset.Click += (_, args) =>
+            reset.Click += async (_, args) =>
             {
                 args.Handled = true;
-                if (!_resetTestValues(owner.Node)) return;
-                _onChanged();
-                _reloadAndSelect?.Invoke(owner.Node);
+                try
+                {
+                    if (!await _resetTestValues(owner.Node)) return;
+                    _onChanged();
+                    _reloadAndSelect?.Invoke(owner.Node);
+                }
+                catch (OperationCanceledException) { }
+                catch (Exception exception)
+                {
+                    _messages.Error("Reset Test Values", exception);
+                }
             };
             buttons.Children.Add(reset);
             var saveDefaults = new Button
@@ -558,7 +566,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     if (current.Differences.Count == 0 || !await _confirmSaveDefaults(
                             owner.Node.Name, current.Differences.Select(difference => difference.Label).ToList())) return;
                     await _ownerDocuments.PromoteDefaultsAsync(current.Owner.Source, current.Preview);
-                    _resetTestValues(owner.Node);
+                    await _resetTestValues(owner.Node);
                     _onChanged();
                 }
                 catch (OperationCanceledException) { }

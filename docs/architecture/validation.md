@@ -516,6 +516,11 @@ Queued Test Values lifecycle regressions exercise real Conversation and Video
 Call collection actions: a field edit followed immediately by two duplications,
 then move/delete, an immutable Add prototype, a rejected mutation without publication and a subsequent
 successful operation. Neither fixture writes its temporary values to persistence.
+Both fixtures also hold the shared operation gate, enqueue an edit and duplicate,
+then activate the real Reset button before publication. They require Reset to
+discard both pending changes even when the owner initially has no temporary
+values, preserve another owner's values, and retain an edit queued after Reset
+with the original collection identities. The gate is always released in cleanup.
 A declared editable nested fixture checks that child mutations and field edits
 preserve the complete root, its siblings and the original source document.
 Runtime scalar regressions queue Conversation item edits and duplication before

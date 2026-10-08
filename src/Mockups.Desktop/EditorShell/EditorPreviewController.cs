@@ -2197,7 +2197,11 @@ internal sealed class EditorPreviewController : IDisposable
     public ComponentPreviewTransientState CaptureDesignPreviewTransientState(ProjectTreeNode node) =>
         _designInputsPanel.CaptureTransientState(node, node.Kind == ProjectTreeNodeKind.ModuleInstance);
 
-    public bool ResetDesignPreviewTestValues(ProjectTreeNode node) => _designInputsPanel.ResetTestValues(node);
+    public Task<bool> ResetDesignPreviewTestValues(ProjectTreeNode node) =>
+        _operations.ExecuteAsync(async cancellationToken =>
+            await Dispatcher.UIThread.InvokeAsync(
+                () => !_disposed && _designInputsPanel.ResetTestValues(node),
+                DispatcherPriority.Normal, cancellationToken));
 
     private async Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition? requestedAction)
     {

@@ -9706,6 +9706,69 @@ static void DesignCollectionMutationsSerialize(string moduleId, string collectio
                 Wait(() => recovery.IsCompleted);
                 recovery.GetAwaiter().GetResult();
                 Equal(items.Count + 1, CurrentItems().Count);
+                var baselineReset = controller.ResetDesignPreviewTestValues(current.Owner.Node);
+                Wait(() => baselineReset.IsCompleted);
+                True(baselineReset.GetAwaiter().GetResult());
+                var other = CanonicalProjectNodes(database).Single(node =>
+                    node.Id == "component_project_foqn_s2_list::variant::default");
+                var otherEdit = controller.SetDesignPreviewTestValue(other, "itemWidth", "419");
+                Wait(() => otherEdit.IsCompleted);
+                otherEdit.GetAwaiter().GetResult();
+                var otherBefore = controller.CaptureDesignPreviewTransientState(other);
+                var operations = Required(typeof(EditorPreviewController).GetField("_operations",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(controller) as EditorOperationCoordinator);
+                foreach (var editAfterReset in new[] { false, true })
+                {
+                    // Block the shared gate while the real button queues Reset.
+                    // In the first round there are no published values to reset yet.
+                    var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var blocker = operations.ExecuteAsync(async _ =>
+                    {
+                        entered.SetResult(true);
+                        await release.Task;
+                        return true;
+                    });
+                    Task pending;
+                    Task<bool> drained;
+                    try
+                    {
+                        Wait(() => entered.Task.IsCompleted);
+                        var pendingEdit = controller.SetDesignPreviewCollectionItemValues(current.Owner.Node, address, firstId,
+                            new Dictionary<string, JsonNode?> { [input.JsonKey] = JsonValue.Create("Before Reset") });
+                        var pendingDuplicate = controller.MutateDesignPreviewCollectionAsync(current.Owner.Node,
+                            new DuplicateStructuredCollectionItem(address, firstId));
+                        var host = Required(window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
+                        Required((host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
+                            .Single(button => button.Content as string == "Reset test values"))
+                            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        var after = editAfterReset
+                            ? controller.SetDesignPreviewCollectionItemValues(current.Owner.Node, address, firstId,
+                                new Dictionary<string, JsonNode?> { [input.JsonKey] = JsonValue.Create("After Reset") })
+                            : Task.CompletedTask;
+                        pending = Task.WhenAll(blocker, pendingEdit, pendingDuplicate, after);
+                        drained = operations.ExecuteAsync(_ => Task.FromResult(true));
+                    }
+                    finally { release.TrySetResult(true); }
+                    Wait(() => pending.IsCompleted && drained.IsCompleted);
+                    pending.GetAwaiter().GetResult();
+                    drained.GetAwaiter().GetResult();
+                    var resetState = controller.CaptureDesignPreviewTransientState(current.Owner.Node);
+                    if (editAfterReset)
+                    {
+                        SequenceEqual(items.Select(item => item["id"]!.GetValue<string>()),
+                            CurrentItems().Select(item => item!["id"]!.GetValue<string>()));
+                        Equal("After Reset", DesignPreviewTestValues.CollectionValue(CurrentItems()[0]!.AsObject(), input));
+                    }
+                    else
+                    {
+                        True(!resetState.HasCollectionTestValues);
+                        Equal(0, resetState.Values.Count);
+                    }
+                    var otherAfter = controller.CaptureDesignPreviewTransientState(other);
+                    SequenceEqual(otherBefore.Values.OrderBy(pair => pair.Key), otherAfter.Values.OrderBy(pair => pair.Key));
+                    Equal(otherBefore.CollectionTestValuesJson, otherAfter.CollectionTestValuesJson);
+                }
                 Equal(before, database.GetModuleSettings(moduleId).DesignPreviewJson);
             }
             finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
