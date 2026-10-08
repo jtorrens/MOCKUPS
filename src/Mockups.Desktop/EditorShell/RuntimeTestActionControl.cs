@@ -7,6 +7,7 @@ using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -23,7 +24,7 @@ internal sealed class RuntimeTestActionControl : Border
     private readonly Func<bool> _canRestore;
     private readonly Func<bool> _isPlaying;
     private readonly Func<int, bool> _canStep;
-    private readonly Action<string?, int> _setFrame;
+    private readonly Func<string?, int, Task> _setFrame;
     private readonly Func<int> _currentFrame;
     private readonly Func<int> _maximumFrame;
     private readonly PreviewPlaybackState _playbackState;
@@ -36,13 +37,13 @@ internal sealed class RuntimeTestActionControl : Border
 
     public RuntimeTestActionControl(
         string label,
-        Action<string?> play,
-        Action restore,
+        Func<string?, Task> play,
+        Func<Task> restore,
         Func<bool> canRestore,
         Func<bool> isPlaying,
-        Action<string?, int> step,
+        Func<string?, int, Task> step,
         Func<int, bool> canStep,
-        Action<string?, int> setFrame,
+        Func<string?, int, Task> setFrame,
         Func<int> currentFrame,
         Func<int> maximumFrame,
         PreviewPlaybackState playbackState,
@@ -100,21 +101,21 @@ internal sealed class RuntimeTestActionControl : Border
         }
 
         _playButton = CreateButton(EditorIcons.Play, $"Play {label}");
-        _playButton.Click += (_, args) =>
+        _playButton.Click += async (_, args) =>
         {
             args.Handled = true;
             _pendingTargetValue = _targetCombo?.SelectedItem?.Value;
-            play(_pendingTargetValue);
+            await play(_pendingTargetValue);
             RefreshState();
         };
         Grid.SetColumn(_playButton, 1);
         layout.Children.Add(_playButton);
 
         _restoreButton = CreateButton(EditorIcons.Refresh, $"Restore {label}");
-        _restoreButton.Click += (_, args) =>
+        _restoreButton.Click += async (_, args) =>
         {
             args.Handled = true;
-            restore();
+            await restore();
             _pendingTargetValue = null;
             UpdateTargetCombo(_initialTargetValue);
             RefreshState();
@@ -125,10 +126,10 @@ internal sealed class RuntimeTestActionControl : Border
         _previousFrameButton = CreateButton(
             EditorIcons.TimelinePreviousFrame,
             $"Previous frame · {label}");
-        _previousFrameButton.Click += (_, args) =>
+        _previousFrameButton.Click += async (_, args) =>
         {
             args.Handled = true;
-            step(_targetCombo?.SelectedItem?.Value, -1);
+            await step(_targetCombo?.SelectedItem?.Value, -1);
             RefreshState();
         };
         Grid.SetColumn(_previousFrameButton, 3);
@@ -147,7 +148,7 @@ internal sealed class RuntimeTestActionControl : Border
             VerticalAlignment = VerticalAlignment.Center,
         });
         ToolTip.SetTip(_frameInput, $"Current frame · {label}");
-        _frameInput.PropertyChanged += (_, change) =>
+        _frameInput.PropertyChanged += async (_, change) =>
         {
             if (change.Property != NumericUpDown.ValueProperty
                 || _isUpdatingFrame
@@ -156,7 +157,7 @@ internal sealed class RuntimeTestActionControl : Border
                 return;
             }
 
-            _setFrame(
+            await _setFrame(
                 _targetCombo?.SelectedItem?.Value,
                 decimal.ToInt32(decimal.Truncate(value)));
             RefreshState();
@@ -176,10 +177,10 @@ internal sealed class RuntimeTestActionControl : Border
         _nextFrameButton = CreateButton(
             EditorIcons.TimelineNextFrame,
             $"Next frame · {label}");
-        _nextFrameButton.Click += (_, args) =>
+        _nextFrameButton.Click += async (_, args) =>
         {
             args.Handled = true;
-            step(_targetCombo?.SelectedItem?.Value, 1);
+            await step(_targetCombo?.SelectedItem?.Value, 1);
             RefreshState();
         };
         Grid.SetColumn(_nextFrameButton, 6);
@@ -204,7 +205,7 @@ internal sealed class RuntimeTestActionControl : Border
             $"Navigate frames · {label}",
             "Move to an exact frame in the Preview action",
             showToolTip: false);
-        _frameSlider.PropertyChanged += (_, change) =>
+        _frameSlider.PropertyChanged += async (_, change) =>
         {
             if (change.Property != Slider.ValueProperty
                 || _isUpdatingFrame)
@@ -212,7 +213,7 @@ internal sealed class RuntimeTestActionControl : Border
                 return;
             }
 
-            _setFrame(
+            await _setFrame(
                 _targetCombo?.SelectedItem?.Value,
                 Convert.ToInt32(
                     Math.Round(

@@ -517,6 +517,18 @@ request a new static preparation, while Hold Final retains the prepared final
 frame. Action timing is shared by input preparation, the session and frame
 generation through `ComponentPreviewActionRuntimeValue`.
 
+Play/Pause, Restore, frame stepping and frame selection carry the exact Design
+owner as well as the declared action id, including nested item actions. They
+enter the same operation queue as Runtime edits and Reset. Static and action
+preparation capture the current temporary state on the UI thread only after
+acquiring that gate, prepare it on the worker, and publish it on the UI thread
+before releasing the gate. An action applies to that freshly prepared state
+inside the same operation. Owner and selection-revision checks cancel obsolete
+requests; an old control never redirects its action or transport queries to a
+new owner, even if both declare the same action id. Controls await command
+publication before refreshing their state. Frame generation and playback remain
+asynchronous outside the mutation gate; the gate is not held during playback.
+
 Scalar Test Value callbacks carry their exact owner, including when Preview is
 pinned elsewhere or the owner's first preparation is pending. Structured item
 edits enter the same operation queue and capture the latest temporary document

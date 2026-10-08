@@ -38,15 +38,15 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Action _onChanged;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly IEditorShellMessageSink _messages;
-    private readonly Action<string, string?> _triggerPreviewAction;
-    private readonly Action<string> _restorePreviewAction;
-    private readonly Func<string, bool> _canRestorePreviewAction;
-    private readonly Func<string, bool> _isPreviewActionPlaying;
-    private readonly Action<string, int, string?> _stepPreviewAction;
-    private readonly Func<string, int, bool> _canStepPreviewAction;
-    private readonly Action<string, int, string?> _setPreviewActionFrame;
-    private readonly Func<string, int> _currentPreviewActionFrame;
-    private readonly Func<string, int> _maximumPreviewActionFrame;
+    private readonly Func<ProjectTreeNode, string, string?, Task> _triggerPreviewAction;
+    private readonly Func<ProjectTreeNode, string, Task> _restorePreviewAction;
+    private readonly Func<ProjectTreeNode, string, bool> _canRestorePreviewAction;
+    private readonly Func<ProjectTreeNode, string, bool> _isPreviewActionPlaying;
+    private readonly Func<ProjectTreeNode, string, int, string?, Task> _stepPreviewAction;
+    private readonly Func<ProjectTreeNode, string, int, bool> _canStepPreviewAction;
+    private readonly Func<ProjectTreeNode, string, int, string?, Task> _setPreviewActionFrame;
+    private readonly Func<ProjectTreeNode, string, int> _currentPreviewActionFrame;
+    private readonly Func<ProjectTreeNode, string, int> _maximumPreviewActionFrame;
     private readonly Func<ProjectTreeNode, string, string, Task> _setPreviewTestValue;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
@@ -89,15 +89,15 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Action onChanged,
         EditorDictionaryFieldServices dictionaryServices,
         IEditorShellMessageSink messages,
-        Action<string, string?> triggerPreviewAction,
-        Action<string> restorePreviewAction,
-        Func<string, bool> canRestorePreviewAction,
-        Func<string, bool> isPreviewActionPlaying,
-        Action<string, int, string?> stepPreviewAction,
-        Func<string, int, bool> canStepPreviewAction,
-        Action<string, int, string?> setPreviewActionFrame,
-        Func<string, int> currentPreviewActionFrame,
-        Func<string, int> maximumPreviewActionFrame,
+        Func<ProjectTreeNode, string, string?, Task> triggerPreviewAction,
+        Func<ProjectTreeNode, string, Task> restorePreviewAction,
+        Func<ProjectTreeNode, string, bool> canRestorePreviewAction,
+        Func<ProjectTreeNode, string, bool> isPreviewActionPlaying,
+        Func<ProjectTreeNode, string, int, string?, Task> stepPreviewAction,
+        Func<ProjectTreeNode, string, int, bool> canStepPreviewAction,
+        Func<ProjectTreeNode, string, int, string?, Task> setPreviewActionFrame,
+        Func<ProjectTreeNode, string, int> currentPreviewActionFrame,
+        Func<ProjectTreeNode, string, int> maximumPreviewActionFrame,
         Func<ProjectTreeNode, string, string, Task> setPreviewTestValue,
         Action<ProjectTreeNode, string> discardCommittedProductionRuntimeValue,
         Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>

@@ -521,6 +521,11 @@ then activate the real Reset button before publication. They require Reset to
 discard both pending changes even when the owner initially has no temporary
 values, preserve another owner's values, and retain an edit queued after Reset
 with the original collection identities. The gate is always released in cleanup.
+Design transport regressions exercise the real Media and Incoming Call Notification
+Play and Restore buttons after pending edits. They verify the captured origin,
+ordered frame selection/stepping and cancellation of commands from an old owner
+after navigation, including a destination declaring the same action id. Both
+fixtures preserve persisted defaults and exercise the shared preparation route.
 A declared editable nested fixture checks that child mutations and field edits
 preserve the complete root, its siblings and the original source document.
 Runtime scalar regressions queue Conversation item edits and duplication before

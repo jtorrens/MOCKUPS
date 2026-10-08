@@ -376,6 +376,12 @@ retain their own declared contracts; they do not stretch parameter keyframes.
 
 ## Action transport
 
+Design transport requests retain the exact owner and declared action id.
+Preparation and command application share the Runtime-edit operation queue;
+pending earlier edits publish before an action captures its origin. Requests
+from superseded owners are canceled rather than redirected to the active owner.
+This ordering boundary does not hold the queue while generating or playing frames.
+
 A finite Runtime action captures one temporary origin before its first Play.
 Completion leaves the visible result and playhead at the final frame, returns
 the transport to idle and enables Play again. Repeated Play first restores that

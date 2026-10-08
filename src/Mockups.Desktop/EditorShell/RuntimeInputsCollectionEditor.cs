@@ -53,15 +53,15 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<ProjectTreeNode, ComponentPreviewTransientState> _captureTestValues;
     private readonly Action _onChanged;
-    private readonly Action<string, string?> _triggerAction;
-    private readonly Action<string> _restoreAction;
-    private readonly Func<string, bool> _canRestoreAction;
-    private readonly Func<string, bool> _isActionPlaying;
-    private readonly Action<string, int, string?> _stepAction;
-    private readonly Func<string, int, bool> _canStepAction;
-    private readonly Action<string, int, string?> _setActionFrame;
-    private readonly Func<string, int> _currentActionFrame;
-    private readonly Func<string, int> _maximumActionFrame;
+    private readonly Func<ProjectTreeNode, string, string?, Task> _triggerAction;
+    private readonly Func<ProjectTreeNode, string, Task> _restoreAction;
+    private readonly Func<ProjectTreeNode, string, bool> _canRestoreAction;
+    private readonly Func<ProjectTreeNode, string, bool> _isActionPlaying;
+    private readonly Func<ProjectTreeNode, string, int, string?, Task> _stepAction;
+    private readonly Func<ProjectTreeNode, string, int, bool> _canStepAction;
+    private readonly Func<ProjectTreeNode, string, int, string?, Task> _setActionFrame;
+    private readonly Func<ProjectTreeNode, string, int> _currentActionFrame;
+    private readonly Func<ProjectTreeNode, string, int> _maximumActionFrame;
     private readonly Func<ProjectTreeNode, string, string, Task> _setPreviewTestValue;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
@@ -108,15 +108,15 @@ internal sealed class RuntimeInputsCollectionEditor
         IEditorShellMessageSink messages,
         Func<ProjectTreeNode, ComponentPreviewTransientState> captureTestValues,
         Action onChanged,
-        Action<string, string?> triggerAction,
-        Action<string> restoreAction,
-        Func<string, bool> canRestoreAction,
-        Func<string, bool> isActionPlaying,
-        Action<string, int, string?> stepAction,
-        Func<string, int, bool> canStepAction,
-        Action<string, int, string?> setActionFrame,
-        Func<string, int> currentActionFrame,
-        Func<string, int> maximumActionFrame,
+        Func<ProjectTreeNode, string, string?, Task> triggerAction,
+        Func<ProjectTreeNode, string, Task> restoreAction,
+        Func<ProjectTreeNode, string, bool> canRestoreAction,
+        Func<ProjectTreeNode, string, bool> isActionPlaying,
+        Func<ProjectTreeNode, string, int, string?, Task> stepAction,
+        Func<ProjectTreeNode, string, int, bool> canStepAction,
+        Func<ProjectTreeNode, string, int, string?, Task> setActionFrame,
+        Func<ProjectTreeNode, string, int> currentActionFrame,
+        Func<ProjectTreeNode, string, int> maximumActionFrame,
         Func<ProjectTreeNode, string, string, Task> setPreviewTestValue,
         Action<ProjectTreeNode, string> discardCommittedProductionRuntimeValue,
         Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
@@ -613,7 +613,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var actionPanel = CreateActionPanel();
             foreach (var action in rootActions)
             {
-                AddActionControl(actionPanel, CreateActionControl(action, inputs, preview));
+                AddActionControl(actionPanel, CreateActionControl(owner, action, inputs, preview));
             }
             fixedPanel.Children.Add(actionPanel);
         }
@@ -1861,7 +1861,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     var nestedActionPanel = CreateActionPanel();
                     foreach (var nestedAction in applicableNestedActions)
                     {
-                        AddActionControl(nestedActionPanel, CreateActionControl(nestedAction, nestedInputs, itemRuntimeContract));
+                        AddActionControl(nestedActionPanel, CreateActionControl(owner, nestedAction, nestedInputs, itemRuntimeContract));
                     }
                     nestedPanel.Children.Add(nestedActionPanel);
                 }
@@ -1917,7 +1917,7 @@ internal sealed class RuntimeInputsCollectionEditor
             RuntimeTestActionControl Control)>();
         foreach (var action in itemActions)
         {
-            var control = CreateActionControl(action, collection.Fields, item);
+            var control = CreateActionControl(owner, action, collection.Fields, item);
             actionControls.Add((action, control));
             AddActionControl(actionRow, control);
         }
@@ -2637,6 +2637,7 @@ internal sealed class RuntimeInputsCollectionEditor
     }
 
     private RuntimeTestActionControl CreateActionControl(
+        RuntimeInputOwner owner,
         ComponentPreviewActionDefinition action,
         IReadOnlyList<ComponentInputDefinition> inputs,
         JsonObject values)
@@ -2652,15 +2653,15 @@ internal sealed class RuntimeInputsCollectionEditor
             : DesignPreviewTestValues.Value(values, targetInput);
         return new RuntimeTestActionControl(
             action.Label,
-            (targetValue) => _triggerAction(action.Id, targetValue),
-            () => _restoreAction(action.Id),
-            () => _canRestoreAction(action.Id),
-            () => _isActionPlaying(action.Id),
-            (targetValue, delta) => _stepAction(action.Id, delta, targetValue),
-            (delta) => _canStepAction(action.Id, delta),
-            (targetValue, frame) => _setActionFrame(action.Id, frame, targetValue),
-            () => _currentActionFrame(action.Id),
-            () => _maximumActionFrame(action.Id),
+            (targetValue) => _triggerAction(owner.Node, action.Id, targetValue),
+            () => _restoreAction(owner.Node, action.Id),
+            () => _canRestoreAction(owner.Node, action.Id),
+            () => _isActionPlaying(owner.Node, action.Id),
+            (targetValue, delta) => _stepAction(owner.Node, action.Id, delta, targetValue),
+            (delta) => _canStepAction(owner.Node, action.Id, delta),
+            (targetValue, frame) => _setActionFrame(owner.Node, action.Id, frame, targetValue),
+            () => _currentActionFrame(owner.Node, action.Id),
+            () => _maximumActionFrame(owner.Node, action.Id),
             _playbackState,
             targetOptions,
             currentTargetValue);

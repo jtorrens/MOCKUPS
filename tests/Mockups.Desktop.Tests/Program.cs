@@ -262,6 +262,8 @@ var tests = new (string Name, Action Run)[]
     ("Design Preview session accepts prepared values without persistence capabilities", DesignPreviewSessionConsumesPreparedValues),
     ("Conversation Test Values serialize lifecycle and field edits", () => DesignCollectionMutationsSerialize("module_core_chat", "messages", "text")),
     ("Video Call Test Values serialize lifecycle and field edits", () => DesignCollectionMutationsSerialize("module_project_foqn_s2_video_call", "participants", "connectionText")),
+    ("Media Design actions consume queued edits and retain exact ownership", () => DesignActionsSerialize("component_project_foqn_s2_media", "fullScreen", "Full screen", "isFullScreen")),
+    ("Notification Design actions consume queued edits and retain exact ownership", () => DesignActionsSerialize("component_project_foqn_s2_incoming_call_notification", "togglePresent", "Presence", "present")),
     ("Design nested mutations preserve their complete root and sibling values", DesignNestedMutationsPreserveRoot),
     ("Runtime scalar effects publish every affected collection together", RuntimeScalarEffectsPublishTogether),
     ("Design Preview requires explicit record references across Component fixtures", DesignPreviewRequiresExplicitRecordReferences),
@@ -9770,6 +9772,126 @@ static void DesignCollectionMutationsSerialize(string moduleId, string collectio
                     Equal(otherBefore.CollectionTestValuesJson, otherAfter.CollectionTestValuesJson);
                 }
                 Equal(before, database.GetModuleSettings(moduleId).DesignPreviewJson);
+            }
+            finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally { File.Delete(temporary); }
+}
+
+static void DesignActionsSerialize(string componentId, string actionId, string label, string targetKey)
+{
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data",
+        $".mockups-headless-design-actions-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var database = new SqliteProjectTestContext(temporary);
+            var before = database.GetComponentClassSettings(componentId).DesignPreviewJson;
+            var nodes = CanonicalProjectNodes(database);
+            var owner = nodes.Single(node => node.Id == $"{componentId}::variant::default");
+            var window = CreateTestWindow(temporary);
+            window.Show();
+            void Wait(Func<bool> ready) => True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                return ready();
+            }, TimeSpan.FromSeconds(30)), "Design action did not complete. "
+                + window.FindControl<TextBox>("ShellMessagesTextBox")?.Text);
+            try
+            {
+                var select = Required(typeof(MainWindow).GetMethod("SelectNodeById",
+                    BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(string)], null));
+                True((bool)Required(select.Invoke(window, [owner.Id])));
+                var controller = Required(typeof(MainWindow).GetField("_previewController",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
+                var inputSession = Required(typeof(EditorPreviewController).GetField("_designInputsPanel",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(controller) as ComponentPreviewInputSession);
+                var operations = Required(typeof(EditorPreviewController).GetField("_operations",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(controller) as EditorOperationCoordinator);
+                var host = Required(window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
+                Button? play = null;
+                Wait(() =>
+                {
+                    play = (host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
+                        .SingleOrDefault(button => ToolTip.GetTip(button) as string == $"Play {label}");
+                    return play is not null && controller.CanRestoreDesignPreviewAction(owner, actionId);
+                });
+                var playButton = Required(play);
+                var initial = controller.CaptureDesignPreviewTransientState(owner);
+                var initialValue = initial.Values[$"{initial.ScopeKey}:{targetKey}"];
+                var editedValue = initialValue == "true" ? "false" : "true";
+                string? targetAtPlay = null;
+                inputSession.PlaybackBusyChanged += busy =>
+                {
+                    if (busy) targetAtPlay = controller.CaptureDesignPreviewTransientState(owner)
+                        .Values[$"{initial.ScopeKey}:{targetKey}"];
+                };
+                var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var blocker = operations.ExecuteAsync(async _ =>
+                {
+                    entered.SetResult(true);
+                    await release.Task;
+                    return true;
+                });
+                Task edit;
+                try
+                {
+                    Wait(() => entered.Task.IsCompleted);
+                    edit = controller.SetDesignPreviewTestValue(owner, targetKey, editedValue);
+                    playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    True(targetAtPlay is null, "Play must wait for the preceding edit at the shared gate.");
+                }
+                finally { release.TrySetResult(true); }
+                Wait(() => edit.IsCompleted && targetAtPlay is not null);
+                edit.GetAwaiter().GetResult();
+                blocker.GetAwaiter().GetResult();
+                Equal(initialValue, targetAtPlay); // Toggle the edited value, not the old mounted value.
+                Wait(() => !inputSession.IsPreparingPlayback);
+                var restoreButton = Required((host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
+                    .Single(button => ToolTip.GetTip(button) as string == $"Restore {label}"));
+                var laterEdit = controller.SetDesignPreviewTestValue(owner, targetKey, initialValue);
+                restoreButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var drained = operations.ExecuteAsync(_ => Task.FromResult(true));
+                Wait(() => laterEdit.IsCompleted && drained.IsCompleted);
+                laterEdit.GetAwaiter().GetResult();
+                drained.GetAwaiter().GetResult();
+                Equal(editedValue, controller.CaptureDesignPreviewTransientState(owner)
+                    .Values[$"{initial.ScopeKey}:{targetKey}"]);
+                Equal(0, controller.CurrentDesignPreviewActionFrame(owner, actionId));
+                True(controller.MaximumDesignPreviewActionFrame(owner, actionId) >= 3);
+                var frame = controller.SetDesignPreviewActionFrame(owner, actionId, 2);
+                var next = controller.StepDesignPreviewAction(owner, actionId, 1);
+                var commands = Task.WhenAll(frame, next);
+                Wait(() => commands.IsCompleted);
+                commands.GetAwaiter().GetResult();
+                Equal(3, controller.CurrentDesignPreviewActionFrame(owner, actionId));
+
+                // An old control must not redirect an action to the new owner,
+                // even when that owner declares the same action id (fullScreen).
+                var other = nodes.Single(node => node.Id == "component_project_foqn_s2_bubble::variant::default");
+                True((bool)Required(select.Invoke(window, [other.Id])));
+                Wait(() => inputSession.IsPreparedFor(other));
+                var otherBefore = controller.CaptureDesignPreviewTransientState(other);
+                var ownerBefore = controller.CaptureDesignPreviewTransientState(owner);
+                True(!controller.CanRestoreDesignPreviewAction(owner, actionId));
+                True(!controller.CanStepDesignPreviewAction(owner, actionId, 1));
+                playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                commands = Task.WhenAll(
+                    controller.RestoreDesignPreviewAction(owner, actionId),
+                    controller.StepDesignPreviewAction(owner, actionId, 1),
+                    controller.SetDesignPreviewActionFrame(owner, actionId, 5));
+                Wait(() => commands.IsCompleted);
+                commands.GetAwaiter().GetResult();
+                SequenceEqual(otherBefore.Values.OrderBy(pair => pair.Key),
+                    controller.CaptureDesignPreviewTransientState(other).Values.OrderBy(pair => pair.Key));
+                SequenceEqual(ownerBefore.Values.OrderBy(pair => pair.Key),
+                    controller.CaptureDesignPreviewTransientState(owner).Values.OrderBy(pair => pair.Key));
+                Equal(before, database.GetComponentClassSettings(componentId).DesignPreviewJson);
             }
             finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
         }, CancellationToken.None).GetAwaiter().GetResult();
@@ -21219,6 +21341,8 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "Media Design actions consume queued edits and retain exact ownership",
+    "Notification Design actions consume queued edits and retain exact ownership",
     "Conversation Test Values serialize lifecycle and field edits",
     "Video Call Test Values serialize lifecycle and field edits",
     "declared RecordReference Overrides use the shared action",
@@ -24835,13 +24959,13 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         playbackState.SetPlaying(true);
         var control = new RuntimeTestActionControl(
             "Test Action",
-            (_) => { },
-            () => currentFrame = 0,
+            (_) => Task.CompletedTask,
+            () => { currentFrame = 0; return Task.CompletedTask; },
             () => true,
             () => playbackState.IsPlaying,
-            (_, delta) => currentFrame = Math.Clamp(currentFrame + delta, 0, 10),
+            (_, delta) => { currentFrame = Math.Clamp(currentFrame + delta, 0, 10); return Task.CompletedTask; },
             (_) => true,
-            (_, frame) => currentFrame = Math.Clamp(frame, 0, 10),
+            (_, frame) => { currentFrame = Math.Clamp(frame, 0, 10); return Task.CompletedTask; },
             () => currentFrame,
             () => 10,
             playbackState);

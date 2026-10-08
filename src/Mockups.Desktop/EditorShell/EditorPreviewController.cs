@@ -1769,49 +1769,63 @@ internal sealed class EditorPreviewController : IDisposable
     private sealed record PreparedDesignPreview(
         DesignPreviewPayload? Payload, PreviewContextState ContextState);
 
-    private async Task<PreparedDesignPreview> PrepareDesignPreviewAsync(CancellationToken cancellationToken)
+    private Task<PreparedDesignPreview> PrepareDesignPreviewAsync(CancellationToken cancellationToken) =>
+        PrepareDesignPreviewAsync(DesignPreviewNodeForSelection(), null, cancellationToken);
+
+    private bool IsCurrentDesignOwner(ProjectTreeNode? node)
     {
-        var revision = Volatile.Read(ref _selectionRefreshGeneration);
-        var node = DesignPreviewNodeForSelection();
-        var lockedOwner = LockedNode(EditorWorkspace.Design);
-        var capture = node is null ? null : _designInputsPanel.CapturePreparation(node);
-        var themeId = _selectedThemeId;
-        var mode = _selectedMode;
-        var frame = _shotPreviewFrame;
-        var projectId = _projectId;
-        var prepared = await _operations.ExecuteAsync(() =>
+        var current = DesignPreviewNodeForSelection();
+        return PreviewWorkspace() == EditorWorkspace.Design
+            && node?.Kind == current?.Kind && node?.Id == current?.Id;
+    }
+
+    private Task<PreparedDesignPreview> PrepareDesignPreviewAsync(
+        ProjectTreeNode? node, Action? applyCommand, CancellationToken cancellationToken) =>
+        _operations.ExecuteAsync(async token =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var payload = DesignPreviewPayloadFactory.Create(_previewPayloadData, node, themeId, mode, frame);
-            if (lockedOwner is not null && payload is null)
-                throw new InvalidOperationException($"Locked Design Preview context '{lockedOwner.Id}' is no longer renderable.");
-            PreparedDesignPreviewInputs? inputs = null;
-            if (payload is not null && capture is not null)
+            var request = await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                inputs = _designInputPreparer.Prepare(payload, capture, mode,
-                    projectId ?? throw new InvalidOperationException("Design Preview requires an exact Project."));
+                if (_disposed || !IsCurrentDesignOwner(node))
+                    throw new OperationCanceledException("Design Preview owner was superseded.");
+                return (Revision: Volatile.Read(ref _selectionRefreshGeneration),
+                    Capture: node is null ? null : _designInputsPanel.CapturePreparation(node),
+                    LockedOwner: LockedNode(EditorWorkspace.Design), ThemeId: _selectedThemeId,
+                    Mode: _selectedMode, Frame: _shotPreviewFrame, ProjectId: _projectId);
+            }, DispatcherPriority.Normal, token);
+            token.ThrowIfCancellationRequested();
+            var payload = DesignPreviewPayloadFactory.Create(
+                _previewPayloadData, node, request.ThemeId, request.Mode, request.Frame);
+            if (request.LockedOwner is not null && payload is null)
+                throw new InvalidOperationException($"Locked Design Preview context '{request.LockedOwner.Id}' is no longer renderable.");
+            PreparedDesignPreviewInputs? inputs = null;
+            if (payload is not null && request.Capture is not null)
+            {
+                inputs = _designInputPreparer.Prepare(payload, request.Capture, request.Mode,
+                    request.ProjectId ?? throw new InvalidOperationException("Design Preview requires an exact Project."));
                 payload = inputs.Payload;
             }
             var context = payload is null
-                ? NonRenderableStateForSelection(node, themeId, mode, frame, cancellationToken)
+                ? NonRenderableStateForSelection(node, request.ThemeId, request.Mode, request.Frame, token)
                 : PreviewContextState.Renderable;
-            cancellationToken.ThrowIfCancellationRequested();
-            return (Payload: payload, Inputs: inputs, Context: context);
+            token.ThrowIfCancellationRequested();
+            return await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (_disposed || !IsCurrentDesignOwner(node)
+                    || request.Revision != Volatile.Read(ref _selectionRefreshGeneration))
+                    throw new OperationCanceledException("Design Preview preparation was superseded.");
+                if (inputs is not null) _designInputsPanel.ApplyPrepared(inputs);
+                else _designInputsPanel.ClearPreparedContext();
+                if (payload is not null && node is not null)
+                {
+                    _activeDesignPreviewNode = PreviewNodeKey.From(node);
+                    _lastDesignPreviewNode = _activeDesignPreviewNode;
+                }
+                else _activeDesignPreviewNode = null;
+                applyCommand?.Invoke();
+                PlaybackState.NotifyFrameChanged();
+                return new PreparedDesignPreview(payload, context);
+            }, DispatcherPriority.Normal, token);
         }, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
-        if (_disposed || revision != Volatile.Read(ref _selectionRefreshGeneration))
-            throw new OperationCanceledException("Design Preview preparation was superseded.");
-        if (prepared.Inputs is not null) _designInputsPanel.ApplyPrepared(prepared.Inputs);
-        else _designInputsPanel.ClearPreparedContext();
-        if (prepared.Payload is not null && node is not null)
-        {
-            _activeDesignPreviewNode = PreviewNodeKey.From(node);
-            _lastDesignPreviewNode = _activeDesignPreviewNode;
-        }
-        else _activeDesignPreviewNode = null;
-        PlaybackState.NotifyFrameChanged();
-        return new(prepared.Payload, prepared.Context);
-    }
 
     private void RefreshDesignPlaybackFrame()
     {
@@ -2076,17 +2090,18 @@ internal sealed class EditorPreviewController : IDisposable
         _messages.Clear();
     }
 
-    private bool HasCurrentDesignInputs => DesignPreviewNodeForSelection() is { } node
-        && _designInputsPanel.IsPreparedFor(node);
+    private bool HasCurrentDesignInputs(ProjectTreeNode node) =>
+        IsCurrentDesignOwner(node) && _designInputsPanel.IsPreparedFor(node);
 
-    private async Task RunDesignActionAsync(Func<bool> command)
+    private async Task RunDesignActionAsync(ProjectTreeNode node, Func<bool> command)
     {
         try
         {
-            if (!HasCurrentDesignInputs)
-                await PrepareDesignPreviewAsync(CancellationToken.None);
-            if (HasCurrentDesignInputs && !command())
-                throw new InvalidOperationException("The requested Design action is not declared by the current owner.");
+            await PrepareDesignPreviewAsync(node, () =>
+            {
+                if (!HasCurrentDesignInputs(node) || !command())
+                    throw new InvalidOperationException("The requested Design action is not available for its exact owner.");
+            }, CancellationToken.None);
         }
         catch (OperationCanceledException) { }
         catch (Exception exception)
@@ -2095,32 +2110,32 @@ internal sealed class EditorPreviewController : IDisposable
         }
     }
 
-    public void TriggerDesignPreviewAction(string actionId, string? targetValue = null) =>
-        _ = RunDesignActionAsync(() => _designInputsPanel.TriggerAction(actionId, targetValue));
+    public Task TriggerDesignPreviewAction(ProjectTreeNode node, string actionId, string? targetValue = null) =>
+        RunDesignActionAsync(node, () => _designInputsPanel.TriggerAction(actionId, targetValue));
 
-    public bool CanRestoreDesignPreviewAction(string actionId) =>
-        HasCurrentDesignInputs && _designInputsPanel.CanRestoreAction(actionId);
+    public bool CanRestoreDesignPreviewAction(ProjectTreeNode node, string actionId) =>
+        HasCurrentDesignInputs(node) && _designInputsPanel.CanRestoreAction(actionId);
 
-    public bool IsDesignPreviewActionPlaying(string actionId) =>
-        HasCurrentDesignInputs && _designInputsPanel.IsActionPlaying(actionId);
+    public bool IsDesignPreviewActionPlaying(ProjectTreeNode node, string actionId) =>
+        HasCurrentDesignInputs(node) && _designInputsPanel.IsActionPlaying(actionId);
 
-    public bool CanStepDesignPreviewAction(string actionId, int delta) =>
-        HasCurrentDesignInputs && _designInputsPanel.CanStepActionFrame(actionId, delta);
+    public bool CanStepDesignPreviewAction(ProjectTreeNode node, string actionId, int delta) =>
+        HasCurrentDesignInputs(node) && _designInputsPanel.CanStepActionFrame(actionId, delta);
 
-    public int CurrentDesignPreviewActionFrame(string actionId) =>
-        HasCurrentDesignInputs ? _designInputsPanel.CurrentActionFrame(actionId) : 0;
+    public int CurrentDesignPreviewActionFrame(ProjectTreeNode node, string actionId) =>
+        HasCurrentDesignInputs(node) ? _designInputsPanel.CurrentActionFrame(actionId) : 0;
 
-    public int MaximumDesignPreviewActionFrame(string actionId) =>
-        HasCurrentDesignInputs ? _designInputsPanel.MaximumActionFrame(actionId) : 0;
+    public int MaximumDesignPreviewActionFrame(ProjectTreeNode node, string actionId) =>
+        HasCurrentDesignInputs(node) ? _designInputsPanel.MaximumActionFrame(actionId) : 0;
 
-    public void StepDesignPreviewAction(string actionId, int delta, string? targetValue = null) =>
-        _ = RunDesignActionAsync(() => _designInputsPanel.StepActionFrame(actionId, delta, targetValue));
+    public Task StepDesignPreviewAction(ProjectTreeNode node, string actionId, int delta, string? targetValue = null) =>
+        RunDesignActionAsync(node, () => _designInputsPanel.StepActionFrame(actionId, delta, targetValue));
 
-    public void SetDesignPreviewActionFrame(string actionId, int frame, string? targetValue = null) =>
-        _ = RunDesignActionAsync(() => _designInputsPanel.SetActionFrame(actionId, frame, targetValue));
+    public Task SetDesignPreviewActionFrame(ProjectTreeNode node, string actionId, int frame, string? targetValue = null) =>
+        RunDesignActionAsync(node, () => _designInputsPanel.SetActionFrame(actionId, frame, targetValue));
 
-    public void RestoreDesignPreviewAction(string actionId) =>
-        _ = RunDesignActionAsync(() => _designInputsPanel.RestoreAction(actionId));
+    public Task RestoreDesignPreviewAction(ProjectTreeNode node, string actionId) =>
+        RunDesignActionAsync(node, () => _designInputsPanel.RestoreAction(actionId));
 
     public Task SetDesignPreviewTestValue(ProjectTreeNode node, string jsonKey, string value) =>
         EditDesignPreviewInputsAsync(node,
