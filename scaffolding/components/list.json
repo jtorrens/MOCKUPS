@@ -358,9 +358,9 @@
               "id": "activeSet",
               "label": "Active Set",
               "jsonKey": "activeSet",
-              "kind": "number",
-              "valueKind": "Integer",
-              "defaultValue": "1",
+              "kind": "option",
+              "valueKind": "OptionToken",
+              "defaultValue": "list_item_diana_set_a",
               "minimum": 1,
               "maximum": 100,
               "increment": 1,
@@ -382,7 +382,10 @@
               "animatable": true,
               "animationInterpolations": [
                 "hold"
-              ]
+              ],
+              "optionsSourceCollectionJsonKey": "contentSets",
+              "optionsSourceValueJsonKey": "id",
+              "optionsSourceLabelJsonKey": "id"
             },
             {
               "id": "state",
@@ -476,7 +479,7 @@
               "canEditStructure": false
             }
           ],
-          "activeSet": 1,
+          "activeSet": "list_item_diana_set_a",
           "width": 360,
           "height": 84,
           "state": "normal",
@@ -4498,9 +4501,9 @@
               "id": "activeSet",
               "label": "Active Set",
               "jsonKey": "activeSet",
-              "kind": "number",
-              "valueKind": "Integer",
-              "defaultValue": "1",
+              "kind": "option",
+              "valueKind": "OptionToken",
+              "defaultValue": "list_item_missed_set_b",
               "minimum": 1,
               "maximum": 100,
               "increment": 1,
@@ -4522,7 +4525,10 @@
               "animatable": true,
               "animationInterpolations": [
                 "hold"
-              ]
+              ],
+              "optionsSourceCollectionJsonKey": "contentSets",
+              "optionsSourceValueJsonKey": "id",
+              "optionsSourceLabelJsonKey": "id"
             },
             {
               "id": "state",
@@ -4616,7 +4622,7 @@
               "canEditStructure": false
             }
           ],
-          "activeSet": 1,
+          "activeSet": "list_item_missed_set_b",
           "width": 360,
           "height": 84,
           "state": "normal",
@@ -8638,9 +8644,9 @@
               "id": "activeSet",
               "label": "Active Set",
               "jsonKey": "activeSet",
-              "kind": "number",
-              "valueKind": "Integer",
-              "defaultValue": "1",
+              "kind": "option",
+              "valueKind": "OptionToken",
+              "defaultValue": "list_item_dave_set_c",
               "minimum": 1,
               "maximum": 100,
               "increment": 1,
@@ -8662,7 +8668,10 @@
               "animatable": true,
               "animationInterpolations": [
                 "hold"
-              ]
+              ],
+              "optionsSourceCollectionJsonKey": "contentSets",
+              "optionsSourceValueJsonKey": "id",
+              "optionsSourceLabelJsonKey": "id"
             },
             {
               "id": "state",
@@ -8756,7 +8765,7 @@
               "canEditStructure": false
             }
           ],
-          "activeSet": 1,
+          "activeSet": "list_item_dave_set_c",
           "width": 360,
           "height": 84,
           "state": "normal",
@@ -12778,9 +12787,9 @@
               "id": "activeSet",
               "label": "Active Set",
               "jsonKey": "activeSet",
-              "kind": "number",
-              "valueKind": "Integer",
-              "defaultValue": "1",
+              "kind": "option",
+              "valueKind": "OptionToken",
+              "defaultValue": "list_item_sam_set_c",
               "minimum": 1,
               "maximum": 100,
               "increment": 1,
@@ -12802,7 +12811,10 @@
               "animatable": true,
               "animationInterpolations": [
                 "hold"
-              ]
+              ],
+              "optionsSourceCollectionJsonKey": "contentSets",
+              "optionsSourceValueJsonKey": "id",
+              "optionsSourceLabelJsonKey": "id"
             },
             {
               "id": "state",
@@ -12896,7 +12908,7 @@
               "canEditStructure": false
             }
           ],
-          "activeSet": 1,
+          "activeSet": "list_item_sam_set_c",
           "width": 360,
           "height": 84,
           "state": "normal",
@@ -16918,9 +16930,9 @@
               "id": "activeSet",
               "label": "Active Set",
               "jsonKey": "activeSet",
-              "kind": "number",
-              "valueKind": "Integer",
-              "defaultValue": "1",
+              "kind": "option",
+              "valueKind": "OptionToken",
+              "defaultValue": "list_item_recent_set_a",
               "minimum": 1,
               "maximum": 100,
               "increment": 1,
@@ -16942,7 +16954,10 @@
               "animatable": true,
               "animationInterpolations": [
                 "hold"
-              ]
+              ],
+              "optionsSourceCollectionJsonKey": "contentSets",
+              "optionsSourceValueJsonKey": "id",
+              "optionsSourceLabelJsonKey": "id"
             },
             {
               "id": "state",
@@ -17036,7 +17051,7 @@
               "canEditStructure": false
             }
           ],
-          "activeSet": 1,
+          "activeSet": "list_item_recent_set_a",
           "width": 360,
           "height": 84,
           "state": "normal",

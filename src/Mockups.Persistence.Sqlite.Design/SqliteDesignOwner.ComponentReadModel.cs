@@ -395,29 +395,6 @@ internal sealed partial class SqliteDesignOwner
             allowEmpty);
     }
 
-    internal string DefaultComponentVariantReference(
-        SqliteConnection connection,
-        string projectId,
-        string componentType)
-    {
-        var componentClass = ComponentClassRowsByType(
-                connection,
-                componentType)
-            .FirstOrDefault()
-            ?? throw new InvalidOperationException(
-                $"The System catalog has no {componentType} component class.");
-        var variant = RequiredComponentClassVariants(componentClass)
-            .FirstOrDefault((candidate) =>
-                candidate.Id.Equals(
-                    VariantEnvelopeContract.DefaultId,
-                    StringComparison.Ordinal))
-            ?? throw new InvalidOperationException(
-                $"Component class '{componentClass.Id}' has no protected default variant.");
-        return VariantReferenceId.Format(
-            componentClass.Id,
-            variant.Id);
-    }
-
     private List<ComponentClassDefinitionRecord> ComponentClassRowsByType(
         SqliteConnection connection,
         string componentType) =>

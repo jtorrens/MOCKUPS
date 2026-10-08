@@ -46,7 +46,8 @@ var tests = new (string Name, Action Run)[]
     ("Runtime contract transitions retain only current values and animation owners", RuntimeContractTransitionsRetainCurrentOwners),
     ("structured collection mutations update nested content and animation together", StructuredCollectionMutationsAreAtomicDocuments),
     ("Production collection creation requires Actors but not media", ProductionCollectionCreationRequiresActorsButNotMedia),
-    ("Production media falls back to the declared Design default", ProductionMediaFallsBackToDesignDefault),
+    ("Production media preserves absent authored resources", ProductionMediaPreservesAuthoredResources),
+    ("Dynamic Runtime selectors close exact local IDs for animation", DynamicRuntimeSelectorsCloseExactLocalIds),
     ("Shot Manager readonly documents expose only the strict stable projection", ShotManagerReadonlyDocumentsAreStrict),
     ("editor operations execute away from the caller thread", EditorOperationsRunOnWorker),
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
@@ -238,7 +239,41 @@ static void ProductionCollectionCreationRequiresActorsButNotMedia()
         message["reactions"]?[0]?["actorId"]?.GetValue<string>());
 }
 
-static void ProductionMediaFallsBackToDesignDefault()
+static void DynamicRuntimeSelectorsCloseExactLocalIds()
+{
+    foreach (var (key, collectionKey) in new[] { ("selection", "choices"), ("chosenState", "states") })
+    {
+        var preview = new JsonObject
+        {
+            ["inputs"] = new JsonArray(new JsonObject
+            {
+                ["id"] = "field-unique", ["jsonKey"] = key, ["label"] = "Select",
+                ["kind"] = "option", ["valueKind"] = "OptionToken", ["defaultValue"] = "id-a",
+                ["source"] = "runtime", ["options"] = new JsonArray(),
+                ["optionsSourceCollectionJsonKey"] = collectionKey,
+                ["optionsSourceValueJsonKey"] = "id", ["optionsSourceLabelJsonKey"] = "label",
+                ["animatable"] = true, ["animationInterpolations"] = new JsonArray("hold"),
+            }),
+            ["collections"] = new JsonArray(), [key] = "id-a",
+            [collectionKey] = new JsonArray(
+                new JsonObject { ["id"] = "id-b", ["label"] = "Second" },
+                new JsonObject { ["id"] = "id-a", ["label"] = "First" }),
+        };
+        var original = preview.DeepClone();
+        var target = RuntimeInputAnimationValueContract.ReadTargets(preview, new JsonObject(), preview).Single();
+        Equal("id-a", target.BaseValue);
+        Equal("id-b", target.Input.Options![0].Value);
+        Equal("id-a", target.Input.Options![1].Value);
+        RuntimeInputValueKindContract.ValidateRuntimeValue(target.Input, JsonValue.Create("id-b"), "test keyframe");
+        var rejected = false;
+        try { RuntimeInputValueKindContract.ValidateRuntimeValue(target.Input, JsonValue.Create("2"), "test keyframe"); }
+        catch (InvalidOperationException) { rejected = true; }
+        True(rejected);
+        True(JsonNode.DeepEquals(original, preview));
+    }
+}
+
+static void ProductionMediaPreservesAuthoredResources()
 {
     var mediaDefinition = new JsonObject
     {
@@ -282,19 +317,14 @@ static void ProductionMediaFallsBackToDesignDefault()
         },
     };
 
-    RuntimePreviewDocumentContract.ApplyProductionMediaFallback(
-        runtime,
-        new JsonObject(),
-        animation,
-        (_, reference) => reference.StartsWith(
-            SystemPreviewFixtureCatalog.MediaScheme,
-            StringComparison.Ordinal));
+    var prepared = RuntimePreviewDocumentContract.PrepareRuntime(
+        runtime, new JsonObject(), new JsonObject { ["mediaSource"] = "/missing/production.mov" });
 
     Equal(
-        "system-preview://media/test-video.mp4",
-        runtime["mediaSource"]?.GetValue<string>());
+        "/missing/production.mov",
+        prepared["mediaSource"]?.GetValue<string>());
     Equal(
-        "system-preview://media/test-video.mp4",
+        "/missing/keyframe.mov",
         animation["tracks"]?[0]?["keyframes"]?[0]?["value"]?.GetValue<string>());
 }
 

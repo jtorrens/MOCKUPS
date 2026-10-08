@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
@@ -75,11 +74,11 @@ internal sealed class ShotModulePickerDialog
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        var nameBox = EditorTextBoxBehavior.Configure(new TextBox
-        {
-            MinHeight = 36,
-            VerticalContentAlignment = VerticalAlignment.Center,
-        });
+        var nameValue = "";
+        var nameField = new DictionaryFieldControl(
+            new FieldValue(new FieldDefinition("core.name", "Name", ValueKind.StringSingleLine), nameValue),
+            new DictionaryFieldServices(AllowIncompleteDraft: true),
+            valueOnly: true);
         var addButton = new Button
         {
             Content = "Add Screen",
@@ -96,14 +95,15 @@ internal sealed class ShotModulePickerDialog
         ShotModuleChoice? SelectedModule() => modules.FirstOrDefault((module) => module.Id == moduleCombo.SelectedItem?.Value);
         void RefreshAddButton() => addButton.IsEnabled = SelectedModule() is not null
             && variantCombo.SelectedItem is not null
-            && !string.IsNullOrWhiteSpace(nameBox.Text);
+            && !string.IsNullOrWhiteSpace(nameValue);
         void ApplyDefaultName()
         {
             if (nameEdited) return;
             var module = SelectedModule();
             var variant = variantCombo.SelectedItem;
             automaticName = module is null || variant is null ? "" : $"{module.Name} · {variant.Label}";
-            nameBox.Text = automaticName;
+            nameValue = automaticName;
+            nameField.SetValue(automaticName);
             RefreshAddButton();
         }
         void RefreshVariants()
@@ -121,27 +121,23 @@ internal sealed class ShotModulePickerDialog
         {
             var module = SelectedModule();
             var variant = variantCombo.SelectedItem;
-            var name = nameBox.Text?.Trim();
+            var name = nameValue.Trim();
             if (module is null || variant is null || string.IsNullOrWhiteSpace(name)) return;
             EditorModalWindowScope.Close(dialog, new ShotModuleInstanceDraft(module, variant.Value, variant.Label, name));
         }
 
         moduleCombo.SelectionChanged += (_, _) => RefreshVariants();
         variantCombo.SelectionChanged += (_, _) => ApplyDefaultName();
-        nameBox.TextChanged += (_, _) =>
+        void NameChanged(string currentName)
         {
-            var currentName = nameBox.Text ?? "";
+            nameValue = currentName;
             nameEdited = !string.IsNullOrWhiteSpace(currentName)
                 && !currentName.Equals(automaticName, StringComparison.Ordinal);
             if (!nameEdited && string.IsNullOrWhiteSpace(currentName)) ApplyDefaultName();
             RefreshAddButton();
-        };
-        nameBox.KeyDown += (_, eventArgs) =>
-        {
-            if (eventArgs.Key != Key.Enter || addButton.IsEnabled != true) return;
-            eventArgs.Handled = true;
-            Commit();
-        };
+        }
+        nameField.ValueChanged += (_, value) => NameChanged(value);
+        nameField.ValueCommitted += (_, value) => NameChanged(value);
         cancelButton.Click += (_, _) => EditorModalWindowScope.Close<ShotModuleInstanceDraft>(dialog, null);
         addButton.Click += (_, _) => Commit();
 
@@ -154,7 +150,7 @@ internal sealed class ShotModulePickerDialog
         };
         AddField("Module", moduleCombo, 0);
         AddField("Variant", variantCombo, 1);
-        AddField("Name", nameBox, 2);
+        AddField("Name", nameField, 2);
 
         var actions = new StackPanel
         {

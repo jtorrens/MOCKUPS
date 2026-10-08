@@ -4,11 +4,25 @@ import { requiredRecord, requiredString } from "./previewValueHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
+import { resolveRuntimeAnimationValues } from "./runtimeNestedAnimationFields.js";
 
 type JsonRecord = Record<string, unknown>;
 const storageKey = "$forwardedInputs";
 const runtimeFieldIdsKey = "__runtimeFieldIds";
 const runtimeCollectionSourcesKey = "__runtimeCollectionSources";
+
+export function prepareRuntimePreviewPayload(payload: DesignPreviewPayload): DesignPreviewPayload {
+  const forwarded = applyRuntimeInputForwarding(payload);
+  if (payload.runtimeValuesPrepared || payload.kind !== "componentClass") return forwarded;
+  const document = parseObject(payload.designPreviewJson, "Component Runtime values");
+  const animation = optionalObject(parseObject(payload.instanceJson), "animation", "Preview instance");
+  const contract = parseObject(payload.runtimeContractJson, "Runtime temporal envelope");
+  const timeline = new RuntimeOwnerTimeline(contract, contract, animation,
+    parseObject(payload.themeTokensJson), 0, payload.frameRate);
+  const resolved = resolveRuntimeAnimationValues({ fields: optionalObjectArray(document, "inputs", "Component Runtime") }, document, animation, "",
+    (fieldId) => timeline.temporalLocalFrame(fieldId, "", rootScreenFrame(payload)));
+  return { ...forwarded, runtimeValuesPrepared: true, designPreviewJson: JSON.stringify(resolved.values) };
+}
 
 export function applyRuntimeInputForwarding(
   payload: DesignPreviewPayload,

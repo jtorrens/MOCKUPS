@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -40,11 +41,13 @@ internal sealed class EditorShellMessageSink : IEditorShellMessageSink
 
     public void Error(string area, Exception exception)
     {
+        PreviewDebugLog.Write("shell.error.detail", ("area", area), ("exception", exception.ToString()));
         Error(area, $"{exception.GetType().Name}: {exception.Message}");
     }
 
     public void Error(string area, string message)
     {
+        PreviewDebugLog.Write("shell.error", ("area", area), ("message", message));
         Set($"Error · {area} · {message}", "#F87171");
     }
 

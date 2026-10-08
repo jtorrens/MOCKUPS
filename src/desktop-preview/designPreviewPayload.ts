@@ -66,6 +66,8 @@ export interface PreviewAuthoringRuntimeComponentSlotPayload {
 }
 
 export interface DesignPreviewPayload {
+  /** Internal boundary state: embedded values have already crossed their temporal owner. */
+  runtimeValuesPrepared?: boolean;
   kind: "componentClass" | "module" | "moduleInstance" | "screenTransition";
   authoringOwnerId?: string;
   authoringFocusFieldId?: string;

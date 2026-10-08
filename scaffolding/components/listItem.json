@@ -727,9 +727,9 @@
         "id": "activeSet",
         "label": "Active Set",
         "jsonKey": "activeSet",
-        "kind": "number",
-        "valueKind": "Integer",
-        "defaultValue": "1",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "set_a",
         "minimum": 1,
         "maximum": 100,
         "increment": 1,
@@ -752,7 +752,10 @@
         "animationInterpolations": [
           "hold"
         ],
-        "uiOrder": 30
+        "uiOrder": 30,
+        "optionsSourceCollectionJsonKey": "contentSets",
+        "optionsSourceValueJsonKey": "id",
+        "optionsSourceLabelJsonKey": "id"
       },
       {
         "id": "state",
@@ -847,7 +850,7 @@
         "canEditStructure": false
       }
     ],
-    "activeSet": 1,
+    "activeSet": "set_a",
     "width": 360,
     "height": 84,
     "state": "normal",

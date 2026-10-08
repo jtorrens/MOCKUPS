@@ -349,12 +349,31 @@ their resolved width and height when they exceed the Runtime frame. The List
 Item content viewport clips that overflow in both axes; its renderable never
 rejects a valid positive child size merely because it does not fit.
 
-Runtime owns numbered Content Set rows, a positive numeric `activeSet` and the
-current item state. Each row contains the exact Runtime contracts of Avatar,
+Runtime owns stable-ID Content Set rows, an exact string `activeSet` reference
+and the current item state. The selector obtains its ID values from the declared
+`contentSets` collection through generic dynamic-option metadata. Numeric
+indices are invalid, including keyframes; reordering never changes selection.
+`RuntimeInputOptionSourceContract` closes declared options from the exact local
+value document for Dictionary controls, nested Runtime editing and animation
+validation. Unknown IDs fail; no index conversion or first-item recovery runs
+in normal reads. Display labels never determine the stored reference.
+Each row contains the exact Runtime contracts of Avatar,
 Label and Icon Row. List Item never copies Actor, text, color, Button or Badge
 fields into a parent-specific schema. The active set and current state are
 separate animatable fields. Each embedded child Runtime keeps a stable target
 id under its Content Set.
+
+The common Runtime Preview boundary evaluates root Component scalar tracks at
+the requested owner frame. Embedded boundaries receive already-prepared values
+and retain the original temporal envelope; concrete List Item resolution never
+re-reads or evaluates parameter tracks. Keypad likewise accepts only exact key
+IDs for active/pushed selection. Password owns the conversion from a credential
+digit to the exact key ID before crossing its declared Keypad boundary.
+
+Component Stack layout receives an explicit boundary-location declaration.
+Inline boundaries and exact `ComponentVariantSlot` fields are read at their
+declared location; Surface Stack never manufactures flattened reference and
+Override fields, nor accepts those fields in place of its required slot.
 
 The Runtime collection declares `uiPresentation: itemSections`. This generic
 editor metadata promotes each fixed Content Set to a section beside General;

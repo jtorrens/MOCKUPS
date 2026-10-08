@@ -636,14 +636,8 @@ internal sealed class RuntimeInputsCollectionEditor
         var definition = RuntimeInputFieldDefinitionFactory.Create(
             ActiveInputOptions,
             owner.Node,
-            input);
-        if (!string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey))
-        {
-            definition = definition with
-            {
-                Options = RuntimeInputDynamicOptions.Resolve(ActiveInputOptions, input, preview),
-            };
-        }
+            input,
+            values: preview);
         var control = new DictionaryFieldControl(
             new FieldValue(definition, value),
             DictionaryServices(
@@ -1365,7 +1359,8 @@ internal sealed class RuntimeInputsCollectionEditor
         var definition = RuntimeInputFieldDefinitionFactory.Create(
             ActiveInputOptions,
             owner.Node,
-            input);
+            input,
+            values: runtimeContract);
         var control = new DictionaryFieldControl(
             new FieldValue(
                 definition,
@@ -2226,11 +2221,8 @@ internal sealed class RuntimeInputsCollectionEditor
             ActiveInputOptions,
             owner.Node,
             input,
-            CollectionFieldAvailability.AllowsEmpty(item, input));
-        if (!string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey))
-        {
-            definition = definition with { Options = RuntimeInputDynamicOptions.Resolve(ActiveInputOptions, input, item) };
-        }
+            CollectionFieldAvailability.AllowsEmpty(item, input),
+            values: item);
         var control = new DictionaryFieldControl(
             new FieldValue(
                 definition,
@@ -2374,7 +2366,8 @@ internal sealed class RuntimeInputsCollectionEditor
         var definition = RuntimeInputFieldDefinitionFactory.Create(
             ActiveInputOptions,
             owner.Node,
-            input);
+            input,
+            values: componentInputs);
         var control = new DictionaryFieldControl(
             new FieldValue(
                 definition,

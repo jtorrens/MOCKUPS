@@ -21,7 +21,6 @@ export function resolveSurfaceStackComponent(
   const padding = requiredStringPair(stackConfig, "padding", "component.surfaceStack.padding");
   const surfaceSlot = requiredRecord(stackConfig, "surfaceSlot", "component.surfaceStack.surfaceSlot");
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const stackRuntime = normalizedSurfaceStackRuntime(preview);
   return {
     id: "surfaceStack",
     width: Math.max(0, size.first),
@@ -40,44 +39,12 @@ export function resolveSurfaceStackComponent(
     ),
     layout: resolveComponentStackLayout(
       payload,
-      stackRuntime,
+      preview,
       "surfaceStack.layout",
       "fill",
       requiredString(stackConfig, "startGapToken", "component.surfaceStack.startGapToken"),
       requiredString(stackConfig, "endGapToken", "component.surfaceStack.endGapToken"),
+      { kind: "slot", jsonKey: "componentSlot" },
     ),
-  };
-}
-
-function normalizedSurfaceStackRuntime(
-  preview: Record<string, unknown>,
-): Record<string, unknown> {
-  const items = Array.isArray(preview.items)
-    ? preview.items.map((item) => normalizeSlot(item))
-    : preview.items;
-  return { ...preview, items };
-}
-
-function normalizeSlot(value: unknown): unknown {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
-  const slot = value as Record<string, unknown>;
-  const alternatives = Array.isArray(slot.alternatives)
-    ? slot.alternatives.map((alternative) => normalizeAlternative(alternative))
-    : slot.alternatives;
-  return { ...slot, alternatives };
-}
-
-function normalizeAlternative(value: unknown): unknown {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
-  const alternative = value as Record<string, unknown>;
-  const componentSlot = alternative.componentSlot;
-  if (!componentSlot || typeof componentSlot !== "object" || Array.isArray(componentSlot)) {
-    return alternative;
-  }
-  const boundary = componentSlot as Record<string, unknown>;
-  return {
-    ...alternative,
-    variantReference: boundary.variantReference,
-    overrides: boundary.overrides,
   };
 }

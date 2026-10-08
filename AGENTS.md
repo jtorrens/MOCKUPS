@@ -402,8 +402,12 @@ data changes, commit the corresponding artifacts in the same revision:
 - changed files under `assets/FOQN_S2`;
 - changed files under `assets/system/system_icons`.
 
-Font, icon and media references resolve from their Project assets and fail
-explicitly when missing. Keep resource-specific logic out of repositories,
+Font and media references use their exact Project asset context; Icon Theme
+references use the exact global System mapping. Missing fonts fail explicitly.
+Missing media paints `Media ausente`, read/extraction errors paint
+`Error al leer media`, and missing mapped icons paint a red square at the
+authored icon size. These nonblocking notices remain in exports and never
+substitute another root, Design value, icon mapping or video frame. Keep resource-specific logic out of repositories,
 trees and `MainWindow`.
 
 Keyboard owns its continuous pressed-popup geometry, single exterior shadow,

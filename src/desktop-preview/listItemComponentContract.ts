@@ -42,7 +42,7 @@ export interface ListItemDesignContract {
   id: "component.listItem";
   size: { width: number; height: number };
   state: ListItemState;
-  activeSet: number;
+  activeSet: string;
   padding: { xToken: string; yToken: string };
   gapToken: string;
   surface: SurfaceDesignContract;

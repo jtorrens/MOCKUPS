@@ -504,51 +504,51 @@
         "targetMode": "option",
         "targetOptions": [
           {
-            "value": "1",
+            "value": "key_1",
             "label": "1"
           },
           {
-            "value": "2",
+            "value": "key_2",
             "label": "2"
           },
           {
-            "value": "3",
+            "value": "key_3",
             "label": "3"
           },
           {
-            "value": "4",
+            "value": "key_4",
             "label": "4"
           },
           {
-            "value": "5",
+            "value": "key_5",
             "label": "5"
           },
           {
-            "value": "6",
+            "value": "key_6",
             "label": "6"
           },
           {
-            "value": "7",
+            "value": "key_7",
             "label": "7"
           },
           {
-            "value": "8",
+            "value": "key_8",
             "label": "8"
           },
           {
-            "value": "9",
+            "value": "key_9",
             "label": "9"
           },
           {
-            "value": "*",
+            "value": "key_star",
             "label": "*"
           },
           {
-            "value": "0",
+            "value": "key_0",
             "label": "0"
           },
           {
-            "value": "#",
+            "value": "key_hash",
             "label": "#"
           }
         ],

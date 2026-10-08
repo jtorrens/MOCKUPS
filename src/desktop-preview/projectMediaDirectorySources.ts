@@ -5,6 +5,7 @@ export function projectMediaDirectorySources(
   directoryValue: string,
   mediaRoot: string,
 ) {
+  if (!directoryValue.trim()) return [];
   const directory = normalizeDirectory(directoryValue, mediaRoot);
   const prefix = directory ? `${directory}/` : "";
   return files

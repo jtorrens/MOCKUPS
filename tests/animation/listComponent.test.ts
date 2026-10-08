@@ -88,7 +88,8 @@ test("List forwards one shared Runtime size and the exact List Item Runtime", ()
     items: Array<{
       id: string;
       listItemInputs: {
-        activeSet: number;
+        activeSet: string;
+        contentSets: Array<{ id: string }>;
         state: string;
         labelContent: Array<{
           runtimeInputs: { sampleText: string };
@@ -114,7 +115,7 @@ test("List forwards one shared Runtime size and the exact List Item Runtime", ()
           keyframes: [{
             id: "active-content-12",
             frame: 12,
-            value: 2,
+            value: first.listItemInputs.contentSets[1]!.id,
             interpolation: "hold",
           }],
         },
@@ -134,7 +135,7 @@ test("List forwards one shared Runtime size and the exact List Item Runtime", ()
   });
 
   const resolved = resolveListComponent(source);
-  assert.equal(resolved.stack.items[0]?.inputs.activeSet, 2);
+  assert.equal(resolved.stack.items[0]?.inputs.activeSet, first.listItemInputs.contentSets[1]!.id);
   assert.equal(resolved.stack.items[0]?.inputs.state, "pressed");
   assert.equal(resolved.stack.items[0]?.inputs.width, 344);
   assert.equal(resolved.stack.items[0]?.inputs.height, 76);

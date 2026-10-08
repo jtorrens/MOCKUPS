@@ -40,7 +40,7 @@ const requiredDocuments = [
 ] as const;
 
 test("renderable payload accepts complete object documents", () => {
-  assert.deepEqual(resolveRenderablePayload(payload), payload);
+  assert.deepEqual(resolveRenderablePayload(payload), { ...payload, runtimeValuesPrepared: true });
 });
 
 for (const key of requiredDocuments) {

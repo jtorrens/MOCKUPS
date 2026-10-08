@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Nodes;
 using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -9,7 +10,8 @@ internal static class RuntimeInputFieldDefinitionFactory
         IRuntimeInputOptionsDataSource optionsDataSource,
         ProjectTreeNode node,
         ComponentInputDefinition input,
-        bool? allowEmpty = null)
+        bool? allowEmpty = null,
+        JsonObject? values = null)
     {
         var projectId = ProjectAncestor(node).Id;
         var permitsEmpty = allowEmpty ?? input.AllowEmpty;
@@ -37,7 +39,10 @@ internal static class RuntimeInputFieldDefinitionFactory
                 when !string.IsNullOrWhiteSpace(input.ComponentType) =>
                 optionsDataSource.ComponentVariantOptions(projectId, input.ComponentType, permitsEmpty),
             ValueKind.PaletteColorToken => optionsDataSource.PaletteColorOptions(projectId),
-            _ => input.Options,
+            _ => string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)
+                ? input.Options
+                : RuntimeInputDynamicOptions.Resolve(optionsDataSource, input,
+                    values ?? throw new InvalidOperationException($"Runtime field '{input.Id}' requires its exact option-source owner.")),
         };
         return new FieldDefinition(
             input.Id,

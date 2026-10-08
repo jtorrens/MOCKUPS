@@ -14,6 +14,7 @@ export function embeddedComponentPayload(
 ): DesignPreviewPayload {
   return {
     ...payload,
+    runtimeValuesPrepared: true,
     componentType: type,
     configJson: JSON.stringify(config),
     designPreviewJson: JSON.stringify(inputs),

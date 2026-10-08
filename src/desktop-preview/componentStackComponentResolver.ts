@@ -26,6 +26,9 @@ import type {
   ComponentStackSlotContract,
 } from "./componentStackComponentContract.js";
 import { optionalComponentBoundaryMotion } from "./componentBoundaryMotion.js";
+import { requiredComponentVariantSlot, requiredPossiblyEmptyString } from "./previewValueHelpers.js";
+
+export type StackBoundaryLocation = { kind: "inline" } | { kind: "slot"; jsonKey: string };
 
 export function resolveInternalComponentStackLayout(
   payload: DesignPreviewPayload,
@@ -43,6 +46,7 @@ export function resolveInternalComponentStackLayout(
     sizingMode,
     requiredString(runtime, "startGapToken", `${id}.startGapToken`),
     requiredString(runtime, "endGapToken", `${id}.endGapToken`),
+    { kind: "inline" },
   );
 }
 
@@ -53,6 +57,7 @@ export function resolveComponentStackLayout(
   sizingMode: ComponentStackSizingMode,
   startGapToken: string,
   endGapToken: string,
+  boundaryLocation: StackBoundaryLocation,
 ): ComponentStackLayoutContract {
   return {
     id,
@@ -60,7 +65,7 @@ export function resolveComponentStackLayout(
     startGapToken,
     endGapToken,
     slots: resolvedRuntimeCollectionItems(runtime, "items", id)
-      .map((slot, index) => resolveSlot(payload, slot, index)),
+      .map((slot, index) => resolveSlot(payload, slot, index, boundaryLocation)),
   };
 }
 
@@ -68,6 +73,7 @@ function resolveSlot(
   payload: DesignPreviewPayload,
   slot: Record<string, unknown>,
   index: number,
+  boundaryLocation: StackBoundaryLocation,
 ): ComponentStackSlotContract {
   const path = `componentStack.items[${index}]`;
   const slotId = requiredString(slot, "id", `${path}.id`);
@@ -89,6 +95,7 @@ function resolveSlot(
     gapBeforeMode as ComponentStackGapMode,
     requiredString(slot, "gapBeforeToken", `${path}.gapBeforeToken`),
     Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),
+    boundaryLocation,
   ));
   const instance = parseObject(payload.instanceJson);
   const frame = rootScreenFrame(payload);
@@ -190,6 +197,7 @@ function resolveAlternative(
   gapBeforeMode: ComponentStackGapMode,
   gapBeforeToken: string,
   gapBeforeWeight: number,
+  boundaryLocation: StackBoundaryLocation,
 ): ComponentStackAlternativeContract {
   const path = `${slotPath}.alternatives[${index}]`;
   const behavior = index === 0 ? "replace" : requiredString(alternative, "behavior", `${path}.behavior`);
@@ -203,15 +211,18 @@ function resolveAlternative(
   const resolvedActive = index === 0
     ? { value: true, sourceKeyframeFrame: undefined }
     : resolveParameterAnimation(animation, "active", id, frame, alternative.active === true);
-  const variantReference = optionalString(alternative, "variantReference");
-  const component = variantReference
+  const boundary = boundaryLocation.kind === "inline"
+    ? (requiredPossiblyEmptyString(alternative, "variantReference", path) ? alternative : null)
+    : (alternative[boundaryLocation.jsonKey] === null ? null
+      : requiredComponentVariantSlot(alternative, boundaryLocation.jsonKey, path));
+  const component = boundary
     ? resolveComponentCollectionItem(payload, {
         ...alternative,
         alignment: "center",
         gapBeforeMode,
         gapBeforeToken,
         gapBeforeWeight,
-      }, path, undefined, false)
+      }, path, undefined, false, boundary)
     : undefined;
   const boundaryMotion = component
     ? optionalComponentBoundaryMotion(component.config, `${path}.component`)

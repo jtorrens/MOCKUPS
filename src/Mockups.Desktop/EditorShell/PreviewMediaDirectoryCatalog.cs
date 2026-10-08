@@ -35,8 +35,8 @@ internal static class PreviewMediaDirectoryCatalog
             {
                 if (string.IsNullOrWhiteSpace(systemPreviewFixtureRoot))
                 {
-                    throw new InvalidOperationException(
-                        $"System Preview media directory '{directory}' is not allowed outside Design Preview.");
+                    Console.Error.WriteLine($"[MOCKUPS resource] Media ausente: Design directory '{directory}' is unavailable in Production.");
+                    continue;
                 }
                 AddSystemFixtureFiles(
                     files,
@@ -47,8 +47,8 @@ internal static class PreviewMediaDirectoryCatalog
             }
             if (string.IsNullOrWhiteSpace(projectMediaRoot))
             {
-                throw new InvalidOperationException(
-                    $"Media directory '{directory}' requires a Project media root.");
+                Console.Error.WriteLine($"[MOCKUPS resource] Media ausente: directory '{directory}' requires a Project media root.");
+                continue;
             }
             var mediaRoot = Path.GetFullPath(projectMediaRoot);
             var fullDirectory = Path.GetFullPath(
@@ -62,8 +62,8 @@ internal static class PreviewMediaDirectoryCatalog
             }
             if (!Directory.Exists(fullDirectory))
             {
-                throw new InvalidOperationException(
-                    $"Media directory '{directory}' does not exist in the Project media root.");
+                Console.Error.WriteLine($"[MOCKUPS resource] Media ausente: directory '{directory}' does not exist in the Project media root.");
+                continue;
             }
             foreach (var file in Directory.EnumerateFiles(
                          fullDirectory,
@@ -86,10 +86,15 @@ internal static class PreviewMediaDirectoryCatalog
         var root = Path.GetFullPath(fixtureRoot);
         var relativeDirectory = reference[SystemPreviewFixtureCatalog.MediaScheme.Length..];
         var directory = Path.GetFullPath(Path.Combine(root, relativeDirectory));
-        if (!IsInsideRoot(directory, root) || !Directory.Exists(directory))
+        if (!IsInsideRoot(directory, root))
         {
             throw new InvalidOperationException(
-                $"System Preview media directory '{reference}' is missing or escapes its fixture root.");
+                $"System Preview media directory '{reference}' escapes its fixture root.");
+        }
+        if (!Directory.Exists(directory))
+        {
+            Console.Error.WriteLine($"[MOCKUPS resource] Media ausente: directory '{reference}' does not exist.");
+            return;
         }
         foreach (var file in Directory.EnumerateFiles(
                      directory,

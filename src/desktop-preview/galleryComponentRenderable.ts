@@ -5,6 +5,7 @@ import type { GalleryDesignContract } from "./galleryComponentContract.js";
 import { mediaComponentToRenderableAt } from "./mediaComponentRenderable.js";
 import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import { resourceNoticeRenderable } from "./resourceNoticeRenderable.js";
 
 export function galleryComponentToRenderable(
   payload: DesignPreviewPayload,
@@ -42,6 +43,7 @@ export function galleryComponentToRenderableAt(
   );
   const surface = insetBox(root, containerPaddingX, containerPaddingY);
   const content = insetBox(surface, paddingX, paddingY);
+  if (gallery.items.length === 0) console.warn("[MOCKUPS resource] Media ausente: Gallery directory has no media");
   const gap = numberToken(payload, gallery.gapToken) * scale;
   const itemWidth = gallery.itemWidth * scale;
   const itemHeight = gallery.itemHeight * scale;
@@ -73,6 +75,7 @@ export function galleryComponentToRenderableAt(
         gallery.fadeExtent * scale,
         items,
       ),
+      ...(gallery.items.length ? [] : [resourceNoticeRenderable(`${gallery.id}.unavailable`, content, "Media ausente")]),
     ],
   };
 }

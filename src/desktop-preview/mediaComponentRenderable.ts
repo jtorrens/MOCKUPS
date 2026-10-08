@@ -12,6 +12,7 @@ import { iconBarComponentToRenderableAt } from "./iconBarComponentRenderable.js"
 import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 import type { MediaDesignContract, MediaRenderBoxes } from "./mediaComponentContract.js";
 import { mediaFrameUriForPath } from "./previewAssetResolver.js";
+import { resourceNoticeRenderable } from "./resourceNoticeRenderable.js";
 import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
@@ -284,36 +285,12 @@ function mediaContent(
     };
   }
 
-  return mediaPlaceholder(
-    media,
+  if (!frame.error) throw new Error("Media resolution requires an image or an explicit resource error");
+  return resourceNoticeRenderable(
+    `${media.id}.placeholder`,
     box,
-    frame.error ?? "Media frame pending",
+    frame.error,
   );
-}
-
-function mediaPlaceholder(
-  media: MediaDesignContract,
-  box: RenderableBox,
-  label: string,
-): RenderableNode {
-  return {
-    id: `${media.id}.placeholder`,
-    type: "surface",
-    frame: 0,
-    box,
-    text: label,
-    style: {
-      alignItems: "center",
-      background: "rgba(0, 0, 0, 0.42)",
-      color: "#ffffff",
-      display: "flex",
-      fontSize: Math.max(11, box.height * 0.055),
-      fontWeight: 700,
-      justifyContent: "center",
-      lineHeight: box.height,
-      textAlign: "center",
-    },
-  };
 }
 
 function mediaControlNodes(

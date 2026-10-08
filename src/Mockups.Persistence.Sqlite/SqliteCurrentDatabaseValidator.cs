@@ -235,8 +235,8 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                 var directory = _resourceOwner.ResolveIconThemeAssetDirectory(id);
                 if (!Directory.Exists(directory))
                 {
-                    throw new InvalidOperationException(
-                        $"missing System asset directory '{reader.GetString(1)}'.");
+                    Console.Error.WriteLine(
+                        $"[MOCKUPS resource] Icon Theme '{id}': missing asset directory '{reader.GetString(1)}'. Missing icons render as red squares.");
                 }
 
                 foreach (var token in _resourceOwner.GetIconThemeTokens(id))
@@ -246,8 +246,8 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                         token.File);
                     if (!File.Exists(path))
                     {
-                        throw new InvalidOperationException(
-                            $"token '{token.Token}' references missing SVG '{token.File}'.");
+                        Console.Error.WriteLine(
+                            $"[MOCKUPS resource] Icon Theme '{id}' token '{token.Token}': missing SVG '{token.File}'. The icon renders as a red square.");
                     }
                 }
             }

@@ -59,12 +59,17 @@ path resolver; absolute references retain their authored workstation location.
 Missing targets remain listed and are marked explicitly so stale authored
 references can be found without repairing or deleting them.
 
-Missing Runtime media remains authored and visible in this inventory, but it
-does not block Production Preview or render preparation. The one effective
-Runtime-document boundary projects an empty or unavailable declared media
-value to that field's Design `defaultValue`. This fallback does not apply to
-Project-owned Actors, fonts, icons, wallpaper, Shot reference video or any
-other resource class, and it never changes the stored media reference.
+Missing Runtime media remains authored and visible in this inventory. The
+effective Runtime document preserves the exact selected value, including media
+keyframes: it never substitutes Design defaults. The shared asset boundary
+resolves relative paths only against the exact Project root and absolute paths
+at their authored location. It never searches the working directory or removes
+a duplicated root prefix. Missing media paints `Media ausente`; an extraction or
+read failure paints `Error al leer media`, with a nonblocking diagnostic. A video
+frame cache is keyed by asset identity and exact requested time; extraction
+failure cannot reuse a frame from another time. Media and image wallpaper use
+the same notice primitive. Empty or unavailable Gallery directories produce a
+notice, not another directory's contents. These notices remain in exports.
 
 Each result retains its exact owner, authoring surface, field, nested slot path
 and stable structured-item id. The UI can therefore navigate to the owning
@@ -215,6 +220,13 @@ Design exposes the one System Icon Themes editor. Theme remains
 Production-owned and selects a System Icon Theme by its stable global id.
 Preview receives the resolved System directory explicitly and never probes a
 Project media root or a hardcoded Production directory for icon assets.
+Every Preview icon resolves only through that selected Theme's exact mapping,
+including tokens beginning with `system_`; that prefix is not a routing rule.
+A missing token or unavailable mapped SVG becomes a red square at the authored
+icon box, prepared by the shared icon helper before generic painting. Explicit
+absence (`null` or empty, where declared) creates no icon. Startup reports
+missing SVG assets without blocking the Project. Invalid mapping documents
+remain contract errors. The placeholder remains in exports and logs a warning.
 
 The shared SVG transformation workflow emits a filled icon as direct filled
 geometry. It does not encode that geometry through a background mask.

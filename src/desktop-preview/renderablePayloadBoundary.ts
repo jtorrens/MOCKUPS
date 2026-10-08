@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { parseObject } from "./previewJsonHelpers.js";
-import { applyRuntimeInputForwarding } from "./runtimePreviewDocumentContract.js";
+import { prepareRuntimePreviewPayload } from "./runtimePreviewDocumentContract.js";
 import { requiredDeviceModuleTransparency } from "./deviceModuleTransparency.js";
 
 const requiredObjectDocuments = [
@@ -23,5 +23,5 @@ export function resolveRenderablePayload(
     parseObject(payload.iconMappingJson, "icon mapping");
   }
   requiredDeviceModuleTransparency(payload.previewFrame.moduleTransparency);
-  return applyRuntimeInputForwarding(payload);
+  return prepareRuntimePreviewPayload(payload);
 }

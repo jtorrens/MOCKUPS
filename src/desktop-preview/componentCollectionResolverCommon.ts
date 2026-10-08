@@ -39,6 +39,7 @@ export function resolveComponentCollectionItem(
   itemPath: string,
   variantTypesOverride?: Record<string, unknown>,
   ownsPresence = true,
+  boundary: Record<string, unknown> = item,
 ): ComponentCollectionItemContract {
     const bases = parseObject(payload.componentBaseConfigsJson);
     const variantTypes = variantTypesOverride
@@ -57,12 +58,12 @@ export function resolveComponentCollectionItem(
       0,
       payload.frameRate,
     );
-    const variantReference = requiredString(item, "variantReference", `${itemPath}.variantReference`);
+    const variantReference = requiredString(boundary, "variantReference", `${itemPath}.variantReference`);
     const componentType = variantTypes[variantReference];
     if (typeof componentType !== "string" || !componentType) {
       throw new Error(`Missing component type for ${itemPath} Variant ${variantReference}`);
     }
-    const config = prepareComponentConfiguration(bases, componentType, variantReference, requiredRecord(item, "overrides", `${itemPath}.overrides`));
+    const config = prepareComponentConfiguration(bases, componentType, variantReference, requiredRecord(boundary, "overrides", `${itemPath}.overrides`));
     const presenceMotion = optionalComponentBoundaryMotion(config, `${itemPath}.component`)
       ?? requiredMotionContract(
         item,

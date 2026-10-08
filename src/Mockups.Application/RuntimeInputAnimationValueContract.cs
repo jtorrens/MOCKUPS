@@ -148,7 +148,7 @@ public static class RuntimeInputAnimationValueContract
                     declarations,
                     fieldId,
                     targetId,
-                    input,
+                    RuntimeInputOptionSourceContract.Close(input, values),
                     DesignPreviewTestValues.CollectionValue(values, input));
             }
             if (input.StructuredCollection is null

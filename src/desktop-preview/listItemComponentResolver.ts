@@ -9,8 +9,7 @@ import {
   requiredString,
   requiredStringPair,
 } from "./componentResolverCommon.js";
-import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
-import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
+import { requiredObjectArray } from "./previewJsonHelpers.js";
 import type {
   ListItemDesignContract,
   ListItemElement,
@@ -70,50 +69,16 @@ export function resolveListItemComponent(
     );
   }
 
-  const animation = optionalObject(
-    parseObject(payload.instanceJson),
-    "animation",
-    "Preview instance envelope",
-  );
-  const baseActiveSet = positiveInteger(
-    requiredNumber(preview, "activeSet", "component.listItem.runtime.activeSet"),
-    "component.listItem.runtime.activeSet",
-  );
-  const activeSetValue = resolveParameterAnimation(
-    animation,
-    "activeSet",
-    "",
-    payload.localFrame,
-    baseActiveSet,
-  ).value;
-  if (typeof activeSetValue !== "number") {
-    throw new Error("component.listItem activeSet animation must resolve a number");
-  }
-  const activeSet = positiveInteger(activeSetValue, "component.listItem.runtime.activeSet");
-  if (activeSet > contentSetCount) {
-    throw new Error(
-      `component.listItem activeSet ${activeSet} exceeds contentSetCount ${contentSetCount}`,
-    );
-  }
-  const selectedSet = contentSets[activeSet - 1]!;
-  const contentSetId = requiredString(
-    selectedSet,
-    "id",
-    `component.listItem.contentSets[${activeSet - 1}]`,
-  );
+  const activeSet = requiredString(preview, "activeSet", "component.listItem.runtime.activeSet");
+  const selectedSets = contentSets.filter((set) => set.id === activeSet);
+  if (selectedSets.length !== 1) throw new Error(`List Item requires one exact Content Set '${activeSet}'`);
+  const contentSetId = activeSet;
 
-  const baseState = listItemState(requiredString(
+  const state = listItemState(requiredString(
     preview,
     "state",
     "component.listItem.runtime.state",
   ));
-  const state = listItemState(resolveParameterAnimation(
-    animation,
-    "state",
-    "",
-    payload.localFrame,
-    baseState,
-  ).value);
   const states = requiredRecord(listItem, "states", "component.listItem.states");
   const stateStyle = requiredRecord(
     states,
@@ -157,9 +122,10 @@ export function resolveListItemComponent(
         requiredNumber(slot, "order", `component.listItem.components.${componentType}.order`),
         `component.listItem.components.${componentType}.order`,
       );
-      if (!orders.add(order)) {
+      if (orders.has(order)) {
         throw new Error(`component.listItem component order ${order} is duplicated`);
       }
+      orders.add(order);
       return { componentType, slot, order };
     })
     .filter(({ slot }) =>

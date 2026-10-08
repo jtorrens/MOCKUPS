@@ -151,9 +151,19 @@ function resolvePasswordInput(
       ),
     };
   }
+  const keypadConfig = embeddedComponentConfig(bases, slots.keypad, "keypad", "component.password.keypadSlot");
+  const keys = requiredObjectArray(requiredRecord(keypadConfig, "keypad", "component.password.keypad"), "keys", "Password Keypad");
+  const selectedKeys = progress.pushedKey
+    ? keys.filter((key) => key.kind !== "spacer" && key.value === progress.pushedKey)
+    : [];
+  if (progress.pushedKey && selectedKeys.length !== 1) {
+    throw new Error(`Password digit '${progress.pushedKey}' requires one exact Keypad key`);
+  }
+  const pushedKeyId = progress.pushedKey
+    ? requiredString(selectedKeys[0], "id", "component.password Keypad key") : "";
   const keypad = resolveKeypadComponentFromRecords(
-    embeddedComponentConfig(bases, slots.keypad, "keypad", "component.password.keypadSlot"),
-    { availableWidth, activeKey: "", pushedKey: progress.pushedKey, enabled },
+    keypadConfig,
+    { availableWidth, activeKey: "", pushedKey: pushedKeyId, enabled },
     bases,
     "component.password.keypad",
   );

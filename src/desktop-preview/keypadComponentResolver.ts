@@ -65,12 +65,14 @@ export function resolveKeypadComponentFromRecords(
   const values = new Set<string>();
   const keys = keyDocuments.map((key, index) => {
     const id = requiredString(key, "id", `component.keypad.keys[${index}].id`);
-    if (!ids.add(id)) throw new Error(`Duplicate keypad key id ${id}`);
+    if (ids.has(id)) throw new Error(`Duplicate keypad key id ${id}`);
+    ids.add(id);
     const kind = keypadKeyKind(requiredString(key, "kind", `component.keypad.keys[${index}].kind`));
     const value = requiredPossiblyEmptyString(key, "value", `component.keypad.keys[${index}].value`);
-    if (kind !== "spacer" && value && !values.add(value)) {
+    if (kind !== "spacer" && value && values.has(value)) {
       throw new Error(`Duplicate keypad key value ${value}`);
     }
+    if (kind !== "spacer" && value) values.add(value);
     const text = requiredPossiblyEmptyString(key, "text", `component.keypad.keys[${index}].text`);
     const subtext = requiredPossiblyEmptyString(key, "subtext", `component.keypad.keys[${index}].subtext`);
     const iconToken = requiredPossiblyEmptyString(key, "iconToken", `component.keypad.keys[${index}].iconToken`);
@@ -80,9 +82,9 @@ export function resolveKeypadComponentFromRecords(
     const disabled = requiredBoolean(key, "disabled", `component.keypad.keys[${index}].disabled`);
     const state: KeypadKeyState = !enabled || disabled
       ? "disabled"
-      : pushedKey && (pushedKey === id || pushedKey === value)
+      : pushedKey === id
         ? "pushed"
-        : activeKey && (activeKey === id || activeKey === value)
+        : activeKey === id
           ? "active"
           : "normal";
     const stateStyle = kind === "spacer"
@@ -112,6 +114,11 @@ export function resolveKeypadComponentFromRecords(
     };
   });
 
+  for (const selected of [activeKey, pushedKey]) {
+    if (selected && !keys.some((key) => key.id === selected && key.kind !== "spacer")) {
+      throw new Error(`Unknown Keypad key id '${selected}'`);
+    }
+  }
   return {
     id,
     sizingMode: sizingMode as KeypadSizingMode,

@@ -171,11 +171,6 @@ function svgStrokeLinejoin(value: unknown): "miter" | "round" | "bevel" | "inher
     : undefined;
 }
 
-function iconFallbackLabel(sourceText: string) {
-  const parts = sourceText.split("_").filter(Boolean);
-  return parts.at(-1)?.slice(0, 2).toUpperCase() ?? "IC";
-}
-
 function nodeTransform(node: RenderableNode): string | undefined {
   const transform = node.transform;
   if (!transform) return undefined;
@@ -359,7 +354,7 @@ function iconContent(node: RenderableNode): ReactNode {
   if (optionalStringValue(node.style?.maskImage) || optionalStringValue(node.style?.WebkitMaskImage)) {
     return <span title={label} />;
   }
-  return <span title={label}>{iconFallbackLabel(label)}</span>;
+  throw new Error(`Unresolved icon primitive '${node.id}'`);
 }
 
 function textContent(node: RenderableNode): ReactNode {

@@ -10,6 +10,7 @@ import {
 import { optionalObject } from "./previewJsonHelpers.js";
 import { selectedPaletteColor } from "./componentRenderableCommon.js";
 import { mediaFrameUriForPath } from "./previewAssetResolver.js";
+import { resourceNoticeRenderable } from "./resourceNoticeRenderable.js";
 
 export function wallpaperRenderable(
   payload: DesignPreviewPayload,
@@ -32,7 +33,6 @@ export function wallpaperRenderable(
     const images = requiredRecord(wallpaper, "images", "wallpaper.images");
     const modeImage = requiredRecord(images, modeId, `wallpaper.images.${modeId}`);
     const filePath = requiredPossiblyEmptyString(modeImage, "filePath", `wallpaper.images.${modeId}.filePath`);
-    if (filePath) {
       const frame = mediaFrameUriForPath(payload, filePath, 0);
       if (frame.uri) {
         return {
@@ -45,7 +45,9 @@ export function wallpaperRenderable(
           metadata: { paintRole: "moduleBackground" },
         };
       }
-    }
+    if (!frame.error) throw new Error("Wallpaper resolution requires an image or an explicit resource error");
+    const notice = resourceNoticeRenderable("wallpaper.unavailable", box, frame.error);
+    return { ...notice, style: { ...notice.style, opacity }, metadata: { paintRole: "moduleBackground" } };
   }
 
   if (kind !== "solid" && kind !== "image") return undefined;

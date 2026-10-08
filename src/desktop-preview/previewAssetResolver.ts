@@ -26,7 +26,6 @@ interface ResolvedImageAsset {
 }
 
 const videoFrameCache = new Map<string, ResolvedImageAsset>();
-const lastVideoFrameByAsset = new Map<string, ResolvedImageAsset>();
 const videoDurationCache = new Map<string, number>();
 const videoIdentityByPath = new Map<string, string>();
 const maxVideoFrameCacheEntries = 240;
@@ -61,9 +60,6 @@ function escapeXml(value: string) {
 }
 
 export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
-  const systemIcon = systemIconUri(token);
-  if (systemIcon) return systemIcon;
-
   if (payload.iconMappingJson === undefined) return "";
   const mapping = parseObject(payload.iconMappingJson, "icon mapping");
   const tokens = requiredRecord(mapping, "tokens", "icon mapping.tokens");
@@ -80,23 +76,17 @@ export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
   const fullPath = path.resolve(assetRoot, file);
   if (!existsSync(fullPath)) return "";
 
-  const svg = readFileSync(fullPath);
-  return `data:image/svg+xml;base64,${svg.toString("base64")}`;
+  return iconFileUri(fullPath);
 }
 
-function systemIconUri(token: string) {
-  if (!/^system_[a-z0-9_]+$/i.test(token)) return "";
-
-  const file = `${token}.svg`;
-  const candidates = [
-    path.resolve("assets/system/system_icons", file),
-    path.resolve("assets", "system", "system_icons", file),
-  ];
-  const fullPath = candidates.find((candidate) => existsSync(candidate));
-  if (!fullPath) return "";
-
-  const svg = readFileSync(fullPath);
-  return `data:image/svg+xml;base64,${svg.toString("base64")}`;
+function iconFileUri(fullPath: string) {
+  try {
+    const svg = readFileSync(fullPath, "utf8");
+    if (!/<svg\b/i.test(svg)) return "";
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+  } catch {
+    return "";
+  }
 }
 
 export function mediaFrameUriForPath(
@@ -104,15 +94,33 @@ export function mediaFrameUriForPath(
   source: string,
   timeSeconds: number,
 ): ResolvedImageAsset {
+  try {
+    return resolveMediaFrame(payload, source, timeSeconds);
+  } catch (error) {
+    return unavailableMedia(source, error instanceof Error ? error.message : String(error));
+  }
+}
+
+function unavailableMedia(source: string, detail: string, missing = false): ResolvedImageAsset {
+  const error = missing ? "Media ausente" : "Error al leer media";
+  console.warn(`[MOCKUPS resource] ${error}: ${source || "(empty)"}. ${detail}`);
+  return { uri: "", error };
+}
+
+function resolveMediaFrame(
+  payload: DesignPreviewPayload,
+  source: string,
+  timeSeconds: number,
+): ResolvedImageAsset {
   const trimmed = source.trim();
-  if (!trimmed) return { uri: "", error: "No media source" };
+  if (!trimmed) return unavailableMedia(source, "No media source", true);
   if (/^data:image\//i.test(trimmed)) return { uri: trimmed };
   if (/^data:/i.test(trimmed)) {
-    return { uri: "", error: "Unsupported data URI media source" };
+    return unavailableMedia(source, "Unsupported data URI media source");
   }
   if (/^https?:/i.test(trimmed)) {
     return videoMimeType(trimmed)
-      ? { uri: "", error: "Remote video frame extraction is not supported" }
+      ? unavailableMedia(source, "Remote video frame extraction is not supported")
       : { uri: trimmed };
   }
 
@@ -123,64 +131,31 @@ export function mediaFrameUriForPath(
   if (/^system-preview:\/\//i.test(trimmed)) {
     const fixtureRoot = payload.systemPreviewFixtureRoot?.trim() ?? "";
     if (!fixtureRoot) {
-      return { uri: "", error: "System Preview fixtures are unavailable outside Design" };
+      return unavailableMedia(source, "System Preview fixtures are unavailable outside Design", true);
     }
     const relative = trimmed.slice("system-preview://".length);
     if (!relative || path.isAbsolute(relative)) {
-      return { uri: "", error: `Invalid System Preview media reference: ${trimmed}` };
+      return unavailableMedia(source, "Invalid System Preview media reference");
     }
     const fullPath = path.resolve(fixtureRoot, relative);
     const relativeToRoot = path.relative(path.resolve(fixtureRoot), fullPath);
     if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
-      return { uri: "", error: `System Preview media reference escapes its root: ${trimmed}` };
+      return unavailableMedia(source, "System Preview media reference escapes its root");
     }
-    return existsSync(fullPath)
-      ? localMediaFrameUri(fullPath, timeSeconds)
-      : { uri: "", error: `System Preview media fixture not found: ${trimmed}` };
+    return localMediaFrameUri(fullPath, timeSeconds);
   }
 
-  const candidates = mediaSourceCandidates(payload.projectMediaRoot ?? "", trimmed);
-  const fullPath = candidates.find((candidate) => existsSync(candidate));
-  return fullPath
-    ? localMediaFrameUri(fullPath, timeSeconds)
-    : { uri: "", error: `Media source not found: ${trimmed}` };
-}
-
-function mediaSourceCandidates(projectMediaRoot: string, source: string) {
-  if (path.isAbsolute(source)) return [source];
-
-  const candidates = [
-    path.resolve(projectMediaRoot, source),
-    path.resolve(source),
-  ];
-  const stripped = stripDuplicatedMediaRootPrefix(projectMediaRoot, source);
-  if (stripped && stripped !== source) {
-    candidates.unshift(path.resolve(projectMediaRoot, stripped));
+  if (path.isAbsolute(trimmed)) return localMediaFrameUri(trimmed, timeSeconds);
+  const root = payload.projectMediaRoot;
+  if (!root || !path.isAbsolute(root)) {
+    return unavailableMedia(source, "Project media root is unavailable", true);
   }
-
-  return [...new Set(candidates)];
-}
-
-function stripDuplicatedMediaRootPrefix(projectMediaRoot: string, source: string) {
-  const rootParts = normalizePathParts(projectMediaRoot);
-  const sourceParts = normalizePathParts(source);
-  const max = Math.min(rootParts.length, sourceParts.length);
-  for (let length = max; length > 0; length -= 1) {
-    const rootSuffix = rootParts.slice(rootParts.length - length);
-    const sourcePrefix = sourceParts.slice(0, length);
-    if (rootSuffix.every((part, index) => part === sourcePrefix[index])) {
-      return sourceParts.slice(length).join("/");
-    }
+  const fullPath = path.resolve(root, trimmed);
+  const relative = path.relative(root, fullPath);
+  if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+    return unavailableMedia(source, "Media reference escapes its Project root");
   }
-
-  return source;
-}
-
-function normalizePathParts(value: string) {
-  return value
-    .replace(/\\/g, "/")
-    .split("/")
-    .filter(Boolean);
+  return localMediaFrameUri(fullPath, timeSeconds);
 }
 
 function imageDataUri(fullPath: string) {
@@ -195,11 +170,12 @@ function imageDataUri(fullPath: string) {
 }
 
 function localMediaFrameUri(fullPath: string, timeSeconds: number): ResolvedImageAsset {
+  if (!existsSync(fullPath)) return unavailableMedia(fullPath, "File not found", true);
   const imageUri = imageDataUri(fullPath);
   if (imageUri) return imageUri;
 
   if (!videoMimeType(fullPath)) {
-    return { uri: "", error: `Unsupported media file type: ${path.extname(fullPath)}` };
+    return unavailableMedia(fullPath, `Unsupported media file type: ${path.extname(fullPath)}`);
   }
 
   return videoFrameFileUri(fullPath, timeSeconds);
@@ -260,8 +236,8 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImage
         duration,
         framePath,
       });
-      return lastVideoFrameOrError(
-        assetIdentity,
+      return unavailableMedia(
+        fullPath,
         `No video frame at ${effectiveTime.toFixed(3)}s`,
       );
     }
@@ -276,14 +252,13 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImage
         framePath,
         bytes: fileSize(framePath),
       });
-      return lastVideoFrameOrError(
-        assetIdentity,
+      return unavailableMedia(
+        fullPath,
         `Unsupported extracted video frame: ${framePath}`,
       );
     }
 
     cacheVideoFrame(cacheKey, frame);
-    lastVideoFrameByAsset.set(assetIdentity, frame);
     debugVideoFrame(hadFrame ? "disk-hit" : "extract", {
       source: fullPath,
       requested: normalizedTime,
@@ -303,22 +278,13 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImage
       duration,
       error: message,
     });
-    return lastVideoFrameOrError(
-      assetIdentity,
+    return unavailableMedia(
+      fullPath,
       `Video frame extraction failed: ${message}`,
     );
   }
 }
 
-function lastVideoFrameOrError(assetIdentity: string, error: string): ResolvedImageAsset {
-  const lastFrame = lastVideoFrameByAsset.get(assetIdentity);
-  debugVideoFrame(lastFrame ? "last-frame" : "missing", {
-    source: assetIdentity,
-    error,
-    uriChars: lastFrame?.uri.length ?? 0,
-  });
-  return lastFrame ? { ...lastFrame, error } : { uri: "", error };
-}
 
 function videoDurationSeconds(fullPath: string, assetIdentity: string) {
   const cached = videoDurationCache.get(assetIdentity);
@@ -365,7 +331,6 @@ function currentVideoAssetIdentity(fullPath: string) {
   const previousIdentity = videoIdentityByPath.get(normalizedPath);
   if (previousIdentity && previousIdentity !== identity) {
     videoDurationCache.delete(previousIdentity);
-    lastVideoFrameByAsset.delete(previousIdentity);
     for (const key of videoFrameCache.keys()) {
       if (key.startsWith(`${previousIdentity}#`)) videoFrameCache.delete(key);
     }

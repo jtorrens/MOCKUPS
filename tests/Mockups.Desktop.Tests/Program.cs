@@ -8291,7 +8291,8 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                                 .Any();
                     },
                     TimeSpan.FromSeconds(10)),
-                    $"Component '{componentId}' Test Values did not become visible.");
+                    $"Component '{componentId}' Test Values did not become visible. "
+                    + window.FindControl<TextBox>("ShellMessagesTextBox")?.Text);
                 return Required(authoringHost.Content as Control);
             }
 
@@ -8324,7 +8325,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             AssertNoVariantSelector(contextHost);
             Equal("360", RequiredField(listItemSurface, "width").Value);
             Equal("84", RequiredField(listItemSurface, "height").Value);
-            Equal("1", RequiredField(listItemSurface, "activeSet").Value);
+            Equal("set_a", RequiredField(listItemSurface, "activeSet").Value);
             Equal("normal", RequiredField(listItemSurface, "state").Value);
             var runtimeSectionLabels = listItemSurface.GetVisualDescendants()
                 .OfType<TextBlock>()
@@ -8402,8 +8403,9 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                     ?? throw new InvalidOperationException("List Runtime item must be an object.");
                 True(item["name"] is null);
                 var runtime = JsonPath.RequiredObject(item, "listItemInputs", "List Runtime item");
-                var activeSet = JsonPath.RequiredNumber(runtime, "activeSet", "List Item Runtime");
-                True(activeSet >= 1 && activeSet <= 3);
+                var activeSet = JsonPath.RequiredString(runtime, "activeSet", "List Item Runtime");
+                True(JsonPath.RequiredArray(runtime, "contentSets", "List Item Runtime")
+                    .OfType<JsonObject>().Any((set) => set["id"]?.GetValue<string>() == activeSet));
                 True(new[] { "normal", "pressed", "inactive" }.Contains(
                     JsonPath.RequiredString(runtime, "state", "List Item Runtime"),
                     StringComparer.Ordinal));
@@ -8463,10 +8465,10 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                     "listItemInputs",
                     $"List Runtime Item {itemIndex + 1}");
                 Equal(
-                    JsonPath.RequiredNumber(
+                    JsonPath.RequiredString(
                         sourceItem,
                         "activeSet",
-                        $"List Runtime Item {itemIndex + 1}").ToString(CultureInfo.InvariantCulture),
+                        $"List Runtime Item {itemIndex + 1}"),
                     RequiredField(listSurface, "activeSet").Value);
             }
 
@@ -8476,7 +8478,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             Equal("true", RequiredField(listSurface, "present").Value);
             Equal(1, ActionButtons(listSurface, "Play Presence").Count);
             Equal(1, ActionButtons(listSurface, "Restore Presence").Count);
-            Equal("1", RequiredField(listSurface, "activeSet").Value);
+            Equal("list_item_diana_set_a", RequiredField(listSurface, "activeSet").Value);
             Equal("normal", RequiredField(listSurface, "state").Value);
             Equal(0, listSurface.GetVisualDescendants()
                 .OfType<DictionaryFieldControl>()
@@ -8492,7 +8494,8 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 listRuntimeLabels.Where((label) => label.StartsWith("Set ", StringComparison.Ordinal)));
             True(!listRuntimeLabels.Contains("Content Sets"));
 
-            RequiredField(listSurface, "activeSet").SetValue("2", commit: true);
+            var secondSetId = listItems[0]!["listItemInputs"]!["contentSets"]![1]!["id"]!.GetValue<string>();
+            RequiredField(listSurface, "activeSet").SetValue(secondSetId, commit: true);
             Dispatcher.UIThread.RunJobs();
             var nestedSetTwoButton = listSurface.GetVisualDescendants()
                 .OfType<Button>()
@@ -8593,8 +8596,8 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 "listItemInputs",
                 "Effective List Runtime Item 1");
             Equal(
-                2d,
-                JsonPath.RequiredNumber(
+                secondSetId,
+                JsonPath.RequiredString(
                     effectiveItemOneRuntime,
                     "activeSet",
                     "Effective List Runtime Item 1"));
@@ -8689,7 +8692,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             SequenceEqual(
                 Enumerable.Range(1, listItems.Count + 1).Select((index) => $"Item {index}"),
                 addedItemLabels);
-            Equal("1", RequiredField(listSurface, "activeSet").Value);
+            Equal("set_a", RequiredField(listSurface, "activeSet").Value);
             Equal("normal", RequiredField(listSurface, "state").Value);
             SequenceEqual(
                 ["Set 1", "Set 2", "Set 3"],
@@ -8709,7 +8712,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                     .Count((text) =>
                         text.Text?.StartsWith("Item ", StringComparison.Ordinal) == true
                         && int.TryParse(text.Text.AsSpan(5), out _)));
-            Equal("1", RequiredField(listSurface, "activeSet").Value);
+            Equal("set_a", RequiredField(listSurface, "activeSet").Value);
             Equal("normal", RequiredField(listSurface, "state").Value);
             Equal(1, ActionButtons(listSurface, "Delete").Count);
             True(ActionButtons(listSurface, "Move up").Last().IsEnabled);

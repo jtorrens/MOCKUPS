@@ -80,7 +80,9 @@ export function requiredFontFamilyId(
 
 export function optionalString(value: Record<string, unknown>, key: string) {
   const raw = value[key];
-  return typeof raw === "string" ? raw : "";
+  if (raw === undefined) return "";
+  if (typeof raw === "string") return raw;
+  throw new Error(`Invalid optional string value ${key}`);
 }
 
 export function requiredNullableString(
@@ -116,7 +118,9 @@ export function requiredBoolean(
 
 export function optionalBoolean(value: Record<string, unknown>, key: string) {
   const raw = value[key];
-  return typeof raw === "boolean" ? raw : false;
+  if (raw === undefined) return false;
+  if (typeof raw === "boolean") return raw;
+  throw new Error(`Invalid optional boolean value ${key}`);
 }
 
 export function requiredNumber(
@@ -126,10 +130,6 @@ export function requiredNumber(
 ) {
   const raw = value[key];
   if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  if (typeof raw === "string") {
-    const parsed = Number(raw.replace(",", "."));
-    if (Number.isFinite(parsed)) return parsed;
-  }
   throw new Error(`Missing numeric value ${path}`);
 }
 
@@ -139,9 +139,12 @@ export function requiredNumberPair(
   path: string,
 ) {
   const raw = requiredString(value, key, path);
-  const [firstRaw, secondRaw] = raw.split("|", 2);
-  const first = Number((firstRaw ?? "").replace(",", "."));
-  const second = Number((secondRaw ?? "").replace(",", "."));
+  const parts = raw.split("|");
+  if (parts.length !== 2 || parts.some((part) => !part.trim())) {
+    throw new Error(`Missing numeric pair value ${path}`);
+  }
+  const first = Number(parts[0]);
+  const second = Number(parts[1]);
   if (Number.isFinite(first) && Number.isFinite(second)) {
     return { first, second };
   }
@@ -155,7 +158,9 @@ export function requiredStringPair(
   path: string,
 ) {
   const raw = requiredString(value, key, path);
-  const [firstRaw, secondRaw] = raw.split("|", 2);
+  const parts = raw.split("|");
+  if (parts.length !== 2) throw new Error(`Missing string pair value ${path}`);
+  const [firstRaw, secondRaw] = parts;
   const first = firstRaw?.trim() ?? "";
   const second = secondRaw?.trim() ?? "";
   if (first.length > 0 && second.length > 0) {
@@ -171,12 +176,9 @@ export function optionalNumber(
   defaultValue: number,
 ) {
   const raw = value[key];
+  if (raw === undefined) return defaultValue;
   if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  if (typeof raw === "string") {
-    const parsed = Number(raw.replace(",", "."));
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return defaultValue;
+  throw new Error(`Invalid optional numeric value ${key}`);
 }
 
 export function requiredAlpha(

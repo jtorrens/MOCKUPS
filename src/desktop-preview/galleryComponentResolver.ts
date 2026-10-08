@@ -4,6 +4,7 @@ import {
   parseObject,
   requiredNumber,
   requiredNumberPair,
+  requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
   requiredStringPair,
@@ -47,7 +48,7 @@ export function resolveGalleryComponent(payload: DesignPreviewPayload): GalleryD
   const scrollRow = Math.max(0, requiredNumber(inputs, "scrollRow", "component.gallery.scrollRow"));
   const sources = projectMediaDirectorySources(
     payload.projectMediaFiles ?? [],
-    requiredString(inputs, "mediaDirectory", "component.gallery.mediaDirectory"),
+    requiredPossiblyEmptyString(inputs, "mediaDirectory", "component.gallery.mediaDirectory"),
     payload.projectMediaRoot ?? "",
   );
   const surfaceConfig = embeddedComponentConfig(

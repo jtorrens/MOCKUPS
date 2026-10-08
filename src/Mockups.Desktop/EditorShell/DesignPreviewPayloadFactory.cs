@@ -273,17 +273,9 @@ internal static class DesignPreviewPayloadFactory
             respectAuthoredAppearance);
         var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(
             instance.RuntimePreviewJson));
-        var config = JsonPath.ParseRequiredObject(
-            instance.ConfigJson,
-            $"Module Instance '{moduleInstanceId}' config_json");
         var animation = JsonPath.ParseRequiredObject(
             instance.AnimationJson,
             $"Module Instance '{moduleInstanceId}' animation_json");
-        dataSource.ApplyProductionMediaFallback(
-            runtimePreview,
-            config,
-            animation,
-            theme.ProjectMediaRoot);
         if (screenFrame is not null
             && runtimePreview["timelineFrameJsonKey"]?.GetValue<string>() is { Length: > 0 } timelineFrameJsonKey)
         {
@@ -323,8 +315,7 @@ internal static class DesignPreviewPayloadFactory
             theme.ProjectMediaRoot,
             PreviewMediaDirectoryCatalog.Resolve(
                 theme.ProjectMediaRoot,
-                runtimePreviewJson,
-                SystemPreviewFixtureCatalog.Root),
+                runtimePreviewJson),
             theme.IconAssetRoot,
             theme.IconMappingJson,
             theme.FontFaces,
@@ -338,8 +329,7 @@ internal static class DesignPreviewPayloadFactory
             deviceId,
             instance.FrameRate,
             LocalFrame: Math.Max(0, screenFrame ?? 0),
-            ProjectId: instance.ProjectId,
-            SystemPreviewFixtureRoot: SystemPreviewFixtureCatalog.Root);
+            ProjectId: instance.ProjectId);
     }
 
     private static DesignPreviewPayload

@@ -484,15 +484,14 @@ current.
 Design preparation may resolve only the synthetic Actor and media identities
 declared by the System Preview fixture catalog. The payload carries the exact
 App Support fixture root. Production continues to reject System Preview Actor
-identities. Media is different: the single Runtime preparation boundary checks
-each declared image, media-file and media-directory value against its Project
-context. An empty or unavailable value is replaced in the effective document
-by that field's exact Design `defaultValue`, including structured items, nested
-Runtime contracts and media-valued animation keyframes. When that default uses
-`system-preview://`, the Production payload carries the bounded App Support
-fixture root required to resolve it. Persisted Production content remains
-unchanged; repositories, concrete resolvers, the bridge and the renderer never
-select or repair the fallback independently.
+identities and does not carry a Design fixture media root. Runtime preparation
+preserves exact image, media-file and media-directory values, including nested
+contracts and animation keyframes. Missing media is resolved to a visible
+`Media ausente` notice; read/extraction failure produces `Error al leer media`.
+Missing icons resolve to a red square of the declared icon size. Shared resource
+helpers prepare these visuals and log nonblocking diagnostics; the generic
+renderer only paints them, identically in Preview and export. No resource is
+substituted by Design data, another root, a semantic name or an older frame.
 
 The current-database validator applies Actor fixture isolation to the single
 effective Production Runtime document before Preview resolution. Conditional
