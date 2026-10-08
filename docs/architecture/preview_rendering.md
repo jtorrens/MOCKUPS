@@ -557,24 +557,42 @@ before a first Preview is prepared and while another owner is pinned.
 when no temporary values have been published yet. It clears and publishes on
 the UI thread before releasing the gate: earlier pending edits are discarded,
 later edits start from the persisted baseline, and unrelated owners retain their
-temporary values. The button and successful Save-as-defaults cleanup await this
-operation; neither invokes a synchronous bypass or disables editing to enforce
-ordering.
+temporary values. The button awaits this operation without a synchronous bypass
+or disabling editing to enforce ordering. Save-as-defaults acknowledgement is
+not Reset: it must preserve changes outside the confirmed snapshot.
 
 Design `Save as defaults` and its dirty-state indicator capture that same
 owner-keyed transient state, including structured item edits, rather than the
 document originally captured by the mounted controls. Their document reads and
 preparation run through the session operation coordinator; obsolete dirty-state
-results cannot re-enable the action. Confirmation saves the prepared snapshot,
-and only successful persistence clears that owner's temporary values. Cancel or
-failure retains them. The next dirty-state preparation reads the newly persisted
-baseline. Design collection mutations also consume the current captured state,
+results cannot re-enable the action. Confirmation saves the prepared snapshot.
+The owning document store holds the operation gate through persistence and
+awaited UI acknowledgement. Only captured scalar values and complete collection
+storage roots that still equal their confirmed values are cleared. Changed or
+new values remain temporary, including later structural collection mutations;
+other scopes and unsaved playback state are untouched. Successful acknowledgement
+invalidates prepared default metadata (also used by dependent Variants) so
+refreshing the new baseline does not treat retained drafts as an obsolete contract. No per-item merge or
+second persistence path is introduced. Cancel or persistence failure acknowledges
+nothing. After a successful write acknowledgement is completed even if shutdown
+has requested cancellation. The next dirty-state preparation reads the newly
+persisted baseline. Design collection mutations also consume the current captured state,
 so duplicating or reordering an item cannot discard earlier temporary edits.
 Transient collection documents are complete storage-root snapshots, not sparse
 item overlays. The shared transient preparation applies them before Runtime
 structure preparation, preserving added/deleted ids and ordering as well as
 field values. The existing authoring-document projection removes resolved
 presentation and playback fields before a structured mutation.
+
+Design action membership is not a Runtime declaration change. The shared input
+preparer compares complete action definitions independently by their stable ids;
+the session retains those immutable signatures per exact owner across navigation.
+Adding or reordering collection items does not reset scalar drafts or surviving
+action state. A removed action retires only its session keys, restore snapshot
+and playback position; a changed action contract resets only that action. The
+prepared result publishes this retirement and the replacement values together
+inside the same operation gate. Action-key construction is shared by preparation
+and session publication; neither infers item ownership from names or positions.
 
 Design preparation may resolve only the synthetic Actor and media identities
 declared by the System Preview fixture catalog. The payload carries the exact

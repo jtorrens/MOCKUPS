@@ -2,6 +2,7 @@ using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
+using System.Collections.Frozen;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -25,6 +26,7 @@ internal sealed class ComponentPreviewInputSession
     private string _projectId = "";
     private string _inputSignature = "";
     private IReadOnlyList<ComponentPreviewActionDefinition> _actions = [];
+    private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _actionSignaturesByScope = new(StringComparer.Ordinal);
     private string _activeActionId = "";
     private JsonObject _config = [];
     private JsonObject _themeTokens = [];
@@ -89,7 +91,7 @@ internal sealed class ComponentPreviewInputSession
     public DesignPreviewInputCapture CapturePreparation(ProjectTreeNode node)
     {
         var transient = CaptureTransientState(node, node.Kind == ProjectTreeNodeKind.ModuleInstance);
-        return new(transient, transient.ScopeKey == _scopeKey ? _inputSignature : "");
+        return CapturePreparation(transient);
     }
 
     public bool IsPreparedFor(ProjectTreeNode node) =>
@@ -99,8 +101,12 @@ internal sealed class ComponentPreviewInputSession
     public DesignPreviewInputCapture CapturePreparation(DesignPreviewPayload payload)
     {
         var transient = CaptureTransientState(payload);
-        return new(transient, transient.ScopeKey == _scopeKey ? _inputSignature : "");
+        return CapturePreparation(transient);
     }
+
+    private DesignPreviewInputCapture CapturePreparation(ComponentPreviewTransientState transient) =>
+        new(transient, transient.ScopeKey == _scopeKey ? _inputSignature : "",
+            _actionSignaturesByScope.GetValueOrDefault(transient.ScopeKey, FrozenDictionary<string, string>.Empty));
 
     public void ClearPreparedContext()
     {
@@ -123,6 +129,11 @@ internal sealed class ComponentPreviewInputSession
             StopPlayback();
             ClearTransientContractValues(prepared.ScopeKey);
         }
+        if (_scopeKey == prepared.ScopeKey && prepared.ResetActionIds.Contains(_activeActionId))
+        {
+            StopPlayback();
+            _activeActionId = "";
+        }
         var owner = DesignPreviewPayloadLayers.PrimaryOwner(prepared.Payload);
         _scopeKey = prepared.ScopeKey;
         _projectId = owner.ProjectId;
@@ -131,18 +142,18 @@ internal sealed class ComponentPreviewInputSession
         _themeTokens = ParseJsonObject(owner.ThemeTokensJson);
         _runtimePreview = ParseJsonObject(prepared.RuntimeJson);
         _actions = prepared.Actions;
+        _actionSignaturesByScope[_scopeKey] = prepared.ActionSignatures;
         ApplyProjectFrameRate(owner.FrameRate);
+        foreach (var actionId in prepared.ResetActionIds)
+        {
+            foreach (var key in ComponentPreviewTransientValues.ActionKeys(_scopeKey, actionId)) _values.Remove(key);
+            _actionSnapshots.Remove(ActionSnapshotKey(actionId));
+            _playbackSecondsByActionId.Remove(actionId);
+            if (_heldFinalActionId == actionId) _heldFinalActionId = "";
+        }
         foreach (var (key, value) in prepared.Values) _values[key] = value;
         foreach (var input in RuntimeInputDefinitionReader.ReadInputs(_runtimePreview, _config))
             _inputDefaults[StorageKey(input)] = input.DefaultValue;
-        foreach (var actionId in prepared.ResetActionIds)
-        {
-            StopPlayback();
-            _actionSnapshots.Remove(ActionSnapshotKey(actionId));
-            _playbackSecondsByActionId.Remove(actionId);
-            if (_activeActionId == actionId) _activeActionId = "";
-            if (_heldFinalActionId == actionId) _heldFinalActionId = "";
-        }
         SyncPlaybackTimer();
     }
 
@@ -416,6 +427,35 @@ internal sealed class ComponentPreviewInputSession
 
     public bool ResetTestValues(ProjectTreeNode node) =>
         ResetTestValues(ComponentPreviewTransientValues.ScopeKey(node, node.Kind == ProjectTreeNodeKind.ModuleInstance));
+
+    public void AcknowledgeSavedTestValues(ComponentPreviewTransientState saved)
+    {
+        if (string.IsNullOrWhiteSpace(saved.ScopeKey))
+            throw new InvalidOperationException("Saved Test Values require an exact owner.");
+        var prefix = $"{saved.ScopeKey}:";
+        if (saved.Values.Keys.Any(key => !key.StartsWith(prefix, StringComparison.Ordinal)))
+            throw new InvalidOperationException("Saved Test Values contain a different owner.");
+        var savedCollections = JsonPath.ParseRequiredObject(saved.CollectionTestValuesJson, "Saved Test Values collections");
+        foreach (var (key, value) in saved.Values)
+        {
+            if (_values.TryGetValue(key, out var current) && current == value)
+                _values.Remove(key);
+        }
+        if (_transientCollectionTestValuesByScope.TryGetValue(saved.ScopeKey, out var currentCollections))
+        {
+            foreach (var (key, value) in savedCollections)
+            {
+                if (currentCollections.TryGetPropertyValue(key, out var current) && JsonNode.DeepEquals(current, value))
+                    currentCollections.Remove(key);
+            }
+            if (currentCollections.Count == 0) _transientCollectionTestValuesByScope.Remove(saved.ScopeKey);
+        }
+        // Defaults can also feed another Variant or an embedded dependency.
+        // Invalidate prepared metadata, never those owners' temporary authoring.
+        _inputSignature = "";
+        _inputDefaults.Clear();
+        _refreshPreview();
+    }
 
     public void SetExternalCollectionItems(ProjectTreeNode node, string collectionJsonKey, IReadOnlyList<JsonObject> items)
     {
@@ -899,12 +939,12 @@ internal sealed class ComponentPreviewInputSession
 
     private string ActionStateKey(ComponentPreviewActionDefinition action)
     {
-        return $"{_scopeKey}:action:{action.Id}:state";
+        return ComponentPreviewTransientValues.ActionStateKey(_scopeKey, action.Id);
     }
 
     private string ActionTimeKey(ComponentPreviewActionDefinition action)
     {
-        return $"{_scopeKey}:action:{action.Id}:time";
+        return ComponentPreviewTransientValues.ActionTimeKey(_scopeKey, action.Id);
     }
 
     private IEnumerable<string> ActivatedPlaybackInputKeys(ComponentPreviewActionDefinition action)
@@ -1008,11 +1048,11 @@ internal sealed class ComponentPreviewInputSession
     }
 
     private string ActionTargetFromKey(ComponentPreviewActionDefinition action) =>
-        $"{_scopeKey}:action:{action.Id}:target-from";
+        ComponentPreviewTransientValues.ActionTargetFromKey(_scopeKey, action.Id);
 
     private string ActionTargetStorageKey(ComponentPreviewActionDefinition action) =>
         action.IsCollectionItemAction
-            ? $"{_scopeKey}:action:{action.Id}:target-value"
+            ? ComponentPreviewTransientValues.ActionTargetValueKey(_scopeKey, action.Id)
             : $"{_scopeKey}:{action.TargetInputId}";
 
     private void SyncDeactivatedPlaybackInputs(ComponentPreviewActionDefinition action)

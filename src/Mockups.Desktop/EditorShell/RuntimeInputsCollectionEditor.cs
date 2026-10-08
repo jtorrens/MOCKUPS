@@ -70,6 +70,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _mutatePreviewCollection;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeCollection;
     private readonly Func<ProjectTreeNode, Task<bool>> _resetTestValues;
+    private readonly Action<ComponentPreviewTransientState> _acknowledgeSavedTestValues;
     private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
     private readonly Func<string, Task<bool>> _confirmCollectionItemDelete;
     private readonly Func<string, Task<bool>> _confirmAnimationDisable;
@@ -124,6 +125,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>> mutatePreviewCollection,
         Action<ProjectTreeNode, string> discardCommittedProductionRuntimeCollection,
         Func<ProjectTreeNode, Task<bool>> resetTestValues,
+        Action<ComponentPreviewTransientState> acknowledgeSavedTestValues,
         Func<string, IReadOnlyList<string>, Task<bool>> confirmSaveDefaults,
         Func<string, Task<bool>> confirmCollectionItemDelete,
         Func<string, Task<bool>> confirmAnimationDisable,
@@ -174,6 +176,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _discardCommittedProductionRuntimeCollection =
             discardCommittedProductionRuntimeCollection;
         _resetTestValues = resetTestValues;
+        _acknowledgeSavedTestValues = acknowledgeSavedTestValues;
         _confirmSaveDefaults = confirmSaveDefaults;
         _confirmCollectionItemDelete = confirmCollectionItemDelete;
         _confirmAnimationDisable = confirmAnimationDisable;
@@ -441,6 +444,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private sealed record PreparedDesignTestValues(
         RuntimeInputOwner Owner,
         JsonObject Preview,
+        ComponentPreviewTransientState SavedTransient,
         IReadOnlyList<ComponentInputDefinition> Inputs,
         IReadOnlyList<RuntimeInputCollectionDefinition> Collections,
         IReadOnlyList<DesignPreviewTestValues.Difference> Differences);
@@ -470,7 +474,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var inputs = RuntimeInputDefinitionReader.ReadInputs(current, config);
             var collections = RuntimeInputDefinitionReader.ReadCollections(current, config);
             cancellationToken.ThrowIfCancellationRequested();
-            return new PreparedDesignTestValues(owner, current, inputs, collections,
+            return new PreparedDesignTestValues(owner, current, transient.SavedValues(inputs, collections), inputs, collections,
                 DesignPreviewTestValues.Differences(current, baseline, inputs, collections));
         }, cancellationToken);
     }
@@ -565,8 +569,9 @@ internal sealed class RuntimeInputsCollectionEditor
                     var current = await PrepareCurrentDesignTestValuesAsync(owner.Node);
                     if (current.Differences.Count == 0 || !await _confirmSaveDefaults(
                             owner.Node.Name, current.Differences.Select(difference => difference.Label).ToList())) return;
-                    await _ownerDocuments.PromoteDefaultsAsync(current.Owner.Source, current.Preview);
-                    await _resetTestValues(owner.Node);
+                    await _ownerDocuments.PromoteDefaultsAsync(current.Owner.Source, current.Preview,
+                        async () => await Dispatcher.UIThread.InvokeAsync(
+                            () => _acknowledgeSavedTestValues(current.SavedTransient), DispatcherPriority.Normal));
                     _onChanged();
                 }
                 catch (OperationCanceledException) { }

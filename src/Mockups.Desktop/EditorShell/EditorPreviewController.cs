@@ -2212,6 +2212,9 @@ internal sealed class EditorPreviewController : IDisposable
     public ComponentPreviewTransientState CaptureDesignPreviewTransientState(ProjectTreeNode node) =>
         _designInputsPanel.CaptureTransientState(node, node.Kind == ProjectTreeNodeKind.ModuleInstance);
 
+    public void AcknowledgeSavedDesignTestValues(ComponentPreviewTransientState saved) =>
+        _designInputsPanel.AcknowledgeSavedTestValues(saved);
+
     public Task<bool> ResetDesignPreviewTestValues(ProjectTreeNode node) =>
         _operations.ExecuteAsync(async cancellationToken =>
             await Dispatcher.UIThread.InvokeAsync(

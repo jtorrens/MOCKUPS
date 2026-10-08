@@ -13,6 +13,23 @@ internal sealed record ComponentPreviewTransientState(
     bool HasCollectionTestValues,
     string CollectionTestValuesJson)
 {
+    public ComponentPreviewTransientState SavedValues(
+        IReadOnlyList<ComponentInputDefinition> inputs,
+        IReadOnlyList<RuntimeInputCollectionDefinition> collections)
+    {
+        var keys = inputs.Select(input => $"{ScopeKey}:{input.JsonKey}").ToHashSet(StringComparer.Ordinal);
+        var roots = collections.Select(collection => collection.StorageJsonKey).ToHashSet(StringComparer.Ordinal);
+        var capturedRoots = JsonPath.ParseRequiredObject(CollectionTestValuesJson, "Captured Test Values collections");
+        var savedRoots = new JsonObject(capturedRoots.Where(pair => roots.Contains(pair.Key))
+            .Select(pair => KeyValuePair.Create(pair.Key, pair.Value?.DeepClone())));
+        return this with
+        {
+            Values = Values.Where(pair => keys.Contains(pair.Key)).ToFrozenDictionary(StringComparer.Ordinal),
+            HasCollectionTestValues = savedRoots.Count > 0,
+            CollectionTestValuesJson = savedRoots.ToJsonString(),
+        };
+    }
+
     public static ComponentPreviewTransientState Capture(
         string scopeKey,
         IReadOnlyDictionary<string, string> values,
@@ -46,6 +63,13 @@ internal sealed record ComponentPreviewTransientState(
 
 internal static class ComponentPreviewTransientValues
 {
+    public static string ActionStateKey(string scope, string id) => $"{scope}:action:{id}:state";
+    public static string ActionTimeKey(string scope, string id) => $"{scope}:action:{id}:time";
+    public static string ActionTargetFromKey(string scope, string id) => $"{scope}:action:{id}:target-from";
+    public static string ActionTargetValueKey(string scope, string id) => $"{scope}:action:{id}:target-value";
+    public static IEnumerable<string> ActionKeys(string scope, string id) =>
+        [ActionStateKey(scope, id), ActionTimeKey(scope, id), ActionTargetFromKey(scope, id), ActionTargetValueKey(scope, id)];
+
     public static string ScopeKey(DesignPreviewPayload payload)
     {
         var instanceId = ParseJsonObject(payload.InstanceJson)["context"]?

@@ -5,13 +5,15 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record DesignPreviewInputCapture(
     ComponentPreviewTransientState Transient,
-    string InputSignature);
+    string InputSignature,
+    IReadOnlyDictionary<string, string> ActionSignatures);
 
 internal sealed record PreparedRuntimeValueEdit(
     string JsonKey, string Value, IReadOnlyDictionary<string, string> Collections);
@@ -23,6 +25,7 @@ internal sealed record PreparedDesignPreviewInputs(
     string RuntimeJson,
     IReadOnlyDictionary<string, string> Values,
     IReadOnlyList<ComponentPreviewActionDefinition> Actions,
+    IReadOnlyDictionary<string, string> ActionSignatures,
     bool ResetSession,
     IReadOnlyList<string> ResetActionIds);
 
@@ -138,13 +141,14 @@ internal sealed class DesignPreviewInputPreparer(
         private JsonObject _config = [];
         private JsonObject _runtimePreview = [];
         public string InputSignature { get; private set; } = "";
+        public IReadOnlyDictionary<string, string> ActionSignatures { get; private set; } = FrozenDictionary<string, string>.Empty;
         public bool ResetSession { get; private set; }
         public List<string> ResetActionIds { get; } = [];
 
         public PreparedDesignPreviewInputs Result(DesignPreviewPayload payload) => new(
             payload, _scopeKey, InputSignature, _runtimePreview.ToJsonString(),
             _values.ToFrozenDictionary(StringComparer.Ordinal), Array.AsReadOnly(_actions.ToArray()),
-            ResetSession, Array.AsReadOnly(ResetActionIds.ToArray()));
+            ActionSignatures, ResetSession, Array.AsReadOnly(ResetActionIds.ToArray()));
 
         public DesignPreviewPayload ApplyOwnerInputs(
             DesignPreviewPayload payload,
@@ -171,17 +175,12 @@ internal sealed class DesignPreviewInputPreparer(
             _actions = ComponentPreviewActions.ReadWithEmbedded(
                 preview,
                 _previewInputData.ComponentVariantRuntimeContract);
-            if (inputs.Count == 0 && collections.Count == 0)
-            {
-                return payload;
-            }
-
             if (string.IsNullOrWhiteSpace(_scopeKey))
             {
                 _scopeKey = ComponentPreviewTransientValues.ScopeKey(payload);
             }
 
-            var signature = Signature(inputs, collections, _actions);
+            var signature = Signature(inputs, collections);
             if (_capture.InputSignature.Length > 0 && _capture.InputSignature != signature)
             {
                 _values.Clear();
@@ -193,6 +192,16 @@ internal sealed class DesignPreviewInputPreparer(
                 _runtimePreview = preview;
             }
             InputSignature = signature;
+            // Item membership and order are authoring values, not the Runtime
+            // contract. Compare each complete action contract by its stable id.
+            ActionSignatures = _actions.ToFrozenDictionary(action => action.Id,
+                action => JsonSerializer.Serialize(action), StringComparer.Ordinal);
+            foreach (var (id, previous) in _capture.ActionSignatures)
+            {
+                if (ActionSignatures.TryGetValue(id, out var current) && current == previous) continue;
+                ResetActionIds.Add(id);
+                foreach (var key in ComponentPreviewTransientValues.ActionKeys(_scopeKey, id)) _values.Remove(key);
+            }
             foreach (var input in inputs)
             {
                 EnsureValue(input, preview);
@@ -572,18 +581,17 @@ internal sealed class DesignPreviewInputPreparer(
             BooleanText.ParseRequired(_values[ActionStateKey(action)], "Design action state");
         private double PlaybackTimeValue(ComponentPreviewActionDefinition action) =>
             ComponentPreviewActionRuntimeValue.RequireTime(_values[ActionTimeKey(action)], action);
-        private string ActionStateKey(ComponentPreviewActionDefinition action) => $"{_scopeKey}:action:{action.Id}:state";
-        private string ActionTimeKey(ComponentPreviewActionDefinition action) => $"{_scopeKey}:action:{action.Id}:time";
-        private string ActionTargetFromKey(ComponentPreviewActionDefinition action) => $"{_scopeKey}:action:{action.Id}:target-from";
+        private string ActionStateKey(ComponentPreviewActionDefinition action) => ComponentPreviewTransientValues.ActionStateKey(_scopeKey, action.Id);
+        private string ActionTimeKey(ComponentPreviewActionDefinition action) => ComponentPreviewTransientValues.ActionTimeKey(_scopeKey, action.Id);
+        private string ActionTargetFromKey(ComponentPreviewActionDefinition action) => ComponentPreviewTransientValues.ActionTargetFromKey(_scopeKey, action.Id);
         private string ActionTargetStorageKey(ComponentPreviewActionDefinition action) =>
-            action.IsCollectionItemAction ? $"{_scopeKey}:action:{action.Id}:target-value" : $"{_scopeKey}:{action.TargetInputId}";
+            action.IsCollectionItemAction ? ComponentPreviewTransientValues.ActionTargetValueKey(_scopeKey, action.Id) : $"{_scopeKey}:{action.TargetInputId}";
 
         private static string Signature(
             IReadOnlyList<ComponentInputDefinition> inputs,
-            IReadOnlyList<RuntimeInputCollectionDefinition> collections,
-            IReadOnlyList<ComponentPreviewActionDefinition> actions) =>
+            IReadOnlyList<RuntimeInputCollectionDefinition> collections) =>
             string.Join("|", inputs.Select(ScalarSignature)
-                .Concat(collections.Select(CollectionSignature)).Concat(actions.Select(ActionSignature)));
+                .Concat(collections.Select(CollectionSignature)));
         private static string ScalarSignature(ComponentInputDefinition input)
         {
             return string.Join(
@@ -620,37 +628,6 @@ internal sealed class DesignPreviewInputPreparer(
                     : string.Join("/", collection.ComponentItems.VariantReferenceJsonKey,
                         collection.ComponentItems.OverridesJsonKey,
                         collection.ComponentItems.InputsJsonKey));
-
-        private static string ActionSignature(ComponentPreviewActionDefinition action)
-        {
-            return string.Join(
-                ":",
-                "action",
-                action.Id,
-                action.Label,
-                action.PlayInputId,
-                action.DurationInputId,
-                action.DurationJsonKey,
-                action.DurationBehaviorTimingInputId,
-                action.DurationSeconds.ToString(CultureInfo.InvariantCulture),
-                action.DurationCollectionJsonKey,
-                action.DurationThemeToken,
-                string.Join(",", action.DurationItemNumberKeys),
-                string.Join(",", action.DurationCollectionMultiplierNumberKeys),
-                action.DurationBaseFrames.ToString(CultureInfo.InvariantCulture),
-                action.DefinesModuleDuration.ToString(CultureInfo.InvariantCulture),
-                action.TimeJsonKey,
-                action.TimeUnit,
-                action.CompletionBehavior,
-                action.PrewarmFrames.ToString(CultureInfo.InvariantCulture),
-                action.PrewarmWhenJsonKey,
-                action.PrewarmWhenConfigPath,
-                action.PrewarmWhenValue,
-                string.Join(",", action.ActivateInputIds),
-                string.Join(",", action.DeactivateInputIds),
-                action.CollectionJsonKey,
-                action.CollectionItemId);
-        }
 
     }
 }

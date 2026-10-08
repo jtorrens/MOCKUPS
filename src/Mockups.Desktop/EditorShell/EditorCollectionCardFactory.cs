@@ -55,6 +55,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _mutatePreviewCollection;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeCollection;
     private readonly Func<ProjectTreeNode, Task<bool>> _resetPreviewTestValues;
+    private readonly Action<ComponentPreviewTransientState> _acknowledgeSavedTestValues;
     private readonly Func<ProjectTreeNode, ComponentPreviewTransientState> _captureTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
@@ -105,6 +106,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>> mutatePreviewCollection,
         Action<ProjectTreeNode, string> discardCommittedProductionRuntimeCollection,
         Func<ProjectTreeNode, Task<bool>> resetPreviewTestValues,
+        Action<ComponentPreviewTransientState> acknowledgeSavedTestValues,
         Func<ProjectTreeNode, ComponentPreviewTransientState> captureTestValues,
         PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode,
@@ -152,6 +154,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _discardCommittedProductionRuntimeCollection =
             discardCommittedProductionRuntimeCollection;
         _resetPreviewTestValues = resetPreviewTestValues;
+        _acknowledgeSavedTestValues = acknowledgeSavedTestValues;
         _captureTestValues = captureTestValues;
         _previewPlaybackState = previewPlaybackState;
         _navigateToNode = navigateToNode;
@@ -394,6 +397,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _mutatePreviewCollection,
             _discardCommittedProductionRuntimeCollection,
             _resetPreviewTestValues,
+            _acknowledgeSavedTestValues,
             _domainDialogs.ConfirmTestValueDefaults,
             _domainDialogs.ConfirmRuntimeCollectionItemDelete,
             _domainDialogs.ConfirmAnimationDisable,

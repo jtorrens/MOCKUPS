@@ -151,10 +151,16 @@ internal sealed class RuntimeInputOwnerDocumentStore
 
     public Task ReplaceDesignPreviewAsync(
         RuntimeInputOwnerDocumentSource source,
-        string designPreviewJson)
+        string designPreviewJson) =>
+        ReplaceDesignPreviewAsync(source, designPreviewJson, () => Task.CompletedTask);
+
+    private Task ReplaceDesignPreviewAsync(
+        RuntimeInputOwnerDocumentSource source,
+        string designPreviewJson,
+        Func<Task> publish)
     {
         var replacement = new DesignPreviewDocumentReplacement(source.RuntimePreviewJson, designPreviewJson);
-        return _operations.ExecuteAsync(() =>
+        return _operations.ExecuteAsync(async _ =>
         {
             switch (source.DesignPreviewOwnerKind)
             {
@@ -167,17 +173,22 @@ internal sealed class RuntimeInputOwnerDocumentStore
                 default:
                     throw new InvalidOperationException("A Production Screen cannot replace Design defaults.");
             }
+            // Once committed, acknowledgement must finish before another queued
+            // operation or shutdown observes the new persisted baseline.
+            await publish();
+            return true;
         });
     }
 
-    public Task PromoteDefaultsAsync(RuntimeInputOwnerDocumentSource source, JsonObject values)
+    public Task PromoteDefaultsAsync(RuntimeInputOwnerDocumentSource source, JsonObject values, Func<Task> acknowledge)
     {
+        ArgumentNullException.ThrowIfNull(acknowledge);
         var candidate = values.DeepClone().AsObject();
         var config = DesignPreviewTestValues.Parse(source.ConfigJson);
         DesignPreviewTestValues.PromoteToDefaults(candidate,
             RuntimeInputDefinitionReader.ReadInputs(candidate, config),
             RuntimeInputDefinitionReader.ReadCollections(candidate, config));
-        return ReplaceDesignPreviewAsync(source, candidate.ToJsonString());
+        return ReplaceDesignPreviewAsync(source, candidate.ToJsonString(), acknowledge);
     }
 
 }

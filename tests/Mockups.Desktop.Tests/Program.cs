@@ -255,6 +255,10 @@ var tests = new (string Name, Action Run)[]
     ("Conversation Module exposes its Test Values Runtime in the real editor", ConversationModuleEditorVisualTreeExposesTestValues),
     ("Design collection defaults save the current scoped Test Values", () => DesignCollectionDefaultsUseCurrentState("module_core_chat", "messages", "text", "Saved transient message")),
     ("Design fixed collection defaults save the current scoped Test Values", () => DesignCollectionDefaultsUseCurrentState("module_project_foqn_s2_chat_list", "items", "present", "false")),
+    ("Design defaults preserve later scalar and editable collection changes", () => DesignCollectionDefaultsUseCurrentState("module_core_chat", "messages", "text", "Confirmed message", ("headerSubtitle", "Confirmed subtitle", "Later subtitle"))),
+    ("Design defaults preserve later scalar and fixed collection changes", () => DesignCollectionDefaultsUseCurrentState("module_project_foqn_s2_chat_list", "items", "present", "false", ("itemWidth", "318", "421"))),
+    ("Design defaults acknowledge committed state before releasing the operation gate", DesignDefaultsAcknowledgeWithinGate),
+    ("Design action membership preserves unrelated session values", DesignActionMembershipPreservesSessionValues),
     ("pinned Module Variant Preview survives changing editor selection", PinnedModuleVariantPreviewSurvivesEditorSelection),
     ("pinned Production Preview keeps its active Screen while editing Design", PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign),
     ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
@@ -9900,7 +9904,8 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
 }
 
 static void DesignCollectionDefaultsUseCurrentState(
-    string moduleId, string collectionId, string fieldId, string nextValue)
+    string moduleId, string collectionId, string fieldId, string nextValue,
+    (string Key, string Confirmed, string Later)? laterValues = null)
 {
     var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data",
         $".mockups-headless-design-defaults-{Guid.NewGuid():N}.sqlite");
@@ -9966,6 +9971,14 @@ static void DesignCollectionDefaultsUseCurrentState(
                 control.SetValue(nextValue, commit: true);
                 var controller = Required(typeof(MainWindow).GetField("_previewController",
                     BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
+                if (laterValues is { } scalar)
+                {
+                    var scalarEdit = controller.SetDesignPreviewTestValue(surface.Owner.Node, scalar.Key, scalar.Confirmed);
+                    Wait(() => scalarEdit.IsCompleted, "Initial scalar edit did not complete.");
+                    scalarEdit.GetAwaiter().GetResult();
+                    var scalarState = controller.CaptureDesignPreviewTransientState(surface.Owner.Node);
+                    Equal(scalar.Confirmed, scalarState.Values[$"{scalarState.ScopeKey}:{scalar.Key}"]);
+                }
                 Wait(() => saveButton.IsEnabled
                     && controller.CaptureDesignPreviewTransientState(surface.Owner.Node).HasCollectionTestValues,
                     "A collection-only change must enable Save as defaults after publication.");
@@ -10008,12 +10021,52 @@ static void DesignCollectionDefaultsUseCurrentState(
                 saveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Wait(() => window.GetLogicalDescendants().OfType<Button>()
                     .Any(button => button.Content as string == "Save default values"), "Missing second defaults confirmation.");
+                ComponentPreviewTransientState? laterState = null;
+                if (laterValues is { } later)
+                {
+                    var confirmedState = controller.CaptureDesignPreviewTransientState(surface.Owner.Node);
+                    Equal(later.Confirmed, confirmedState.Values[$"{confirmedState.ScopeKey}:{later.Key}"]);
+                    var effective = ComponentPreviewTransientValues.Apply(Object(before),
+                        Object(surface.Owner.ConfigJson), confirmedState,
+                        database.GetComponentVariantConfig, database.GetComponentVariantRuntimeContract);
+                    Equal(later.Confirmed, DesignPreviewTestValues.Value(effective,
+                        surface.Inputs.Single(input => input.JsonKey == later.Key)));
+                    // Simulate edits arriving after the confirmation captured its
+                    // snapshot. They must remain temporary, not become saved defaults.
+                    var address = StructuredCollectionAddress.Root(collection.StorageJsonKey);
+                    var scalarEdit = controller.SetDesignPreviewTestValue(surface.Owner.Node, later.Key, later.Later);
+                    var itemEdit = controller.SetDesignPreviewCollectionItemValues(surface.Owner.Node, address, firstId,
+                        new Dictionary<string, JsonNode?> { [input.JsonKey] = DesignPreviewTestValues.ValueNode(input, originalValue) });
+                    var pending = Task.WhenAll(scalarEdit, itemEdit);
+                    Wait(() => pending.IsCompleted, "Later edits did not complete.");
+                    pending.GetAwaiter().GetResult();
+                    if (duplicatedId is not null)
+                    {
+                        var duplicate = controller.MutateDesignPreviewCollectionAsync(surface.Owner.Node,
+                            new DuplicateStructuredCollectionItem(address, firstId));
+                        Wait(() => duplicate.IsCompleted, "Later duplicate did not complete.");
+                        var newId = Required(duplicate.GetAwaiter().GetResult().SelectedItemId);
+                        var move = controller.MutateDesignPreviewCollectionAsync(surface.Owner.Node,
+                            new MoveStructuredCollectionItem(address, newId, firstId));
+                        var delete = controller.MutateDesignPreviewCollectionAsync(surface.Owner.Node,
+                            new DeleteStructuredCollectionItem(address, duplicatedId));
+                        pending = Task.WhenAll(move, delete);
+                        Wait(() => pending.IsCompleted, "Later structural edits did not complete.");
+                        pending.GetAwaiter().GetResult();
+                    }
+                    laterState = controller.CaptureDesignPreviewTransientState(surface.Owner.Node);
+                }
                 window.GetLogicalDescendants().OfType<Button>()
                     .Single(button => button.Content as string == "Save default values")
                     .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => ToolTip.GetTip(saveButton) as string
-                    == "There are no differences from the default values." && !saveButton.IsEnabled,
-                    "Saved defaults must become the new baseline.");
+                if (laterValues is null)
+                    Wait(() => ToolTip.GetTip(saveButton) as string
+                        == "There are no differences from the default values." && !saveButton.IsEnabled,
+                        "Saved defaults must become the new baseline.");
+                else
+                    Wait(() => saveButton.IsEnabled
+                        && database.GetModuleSettings(moduleId).DesignPreviewJson != before,
+                        "Later changes must remain dirty after saving the confirmed defaults.");
                 var saved = Object(database.GetModuleSettings(moduleId).DesignPreviewJson);
                 var savedItems = DesignPreviewTestValues.CollectionItems(saved, collection);
                 var expectedIds = originalIds.ToList();
@@ -10025,7 +10078,25 @@ static void DesignCollectionDefaultsUseCurrentState(
                     Equal(nextValue, DesignPreviewTestValues.CollectionValue(
                         savedItems.Single(item => item["id"]!.GetValue<string>() == duplicatedId), input));
                 Equal(otherBefore, database.GetModuleSettings(otherId).DesignPreviewJson);
-                True(!controller.CaptureDesignPreviewTransientState(surface.Owner.Node).HasCollectionTestValues);
+                var afterSave = controller.CaptureDesignPreviewTransientState(surface.Owner.Node);
+                if (laterValues is { } remaining)
+                {
+                    var rootInput = surface.Inputs.Single(input => input.JsonKey == remaining.Key);
+                    Equal(remaining.Confirmed, DesignPreviewTestValues.Value(saved, rootInput));
+                    Equal(remaining.Later, afterSave.Values[$"{afterSave.ScopeKey}:{remaining.Key}"]);
+                    True(JsonNode.DeepEquals(Object(Required(laterState).CollectionTestValuesJson),
+                        Object(afterSave.CollectionTestValuesJson)));
+                    // Force another complete preparation: a changed default-value
+                    // signature must not discard the retained scalar draft.
+                    var refresh = Required(typeof(EditorPreviewController).GetMethod("PrepareDesignPreviewAsync",
+                        BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(CancellationToken)], null)
+                        ?.Invoke(controller, [CancellationToken.None]) as Task);
+                    Wait(() => refresh.IsCompleted, "Post-save preparation did not complete.");
+                    refresh.GetAwaiter().GetResult();
+                    Equal(remaining.Later, controller.CaptureDesignPreviewTransientState(surface.Owner.Node)
+                        .Values[$"{afterSave.ScopeKey}:{remaining.Key}"]);
+                }
+                else True(!afterSave.HasCollectionTestValues);
             }
             finally
             {
@@ -14109,6 +14180,186 @@ static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
     {
         File.Delete(temporary);
     }
+}
+
+static void DesignActionMembershipPreservesSessionValues()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = CanonicalProjectNodes(database);
+    var owner = nodes.Single(node => node.Id == "module_core_chat::variant::default");
+    var payload = Required(CreatePreviewPayload(database, owner, nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme).Id));
+    var contract = Object("""
+        {"caption":"Initial","inputs":[{"id":"caption","label":"Caption","jsonKey":"caption",
+          "kind":"text","valueKind":"StringSingleLine","defaultValue":"Initial"}],"collections":[]}
+        """);
+    foreach (var key in new[] { "cards", "participants" })
+    {
+        var collection = Object("""
+            {"id":"","label":"Items","jsonKey":"","itemLabel":"Item","fields":[
+              {"id":"present","label":"Present","jsonKey":"present","kind":"boolean","valueKind":"Boolean","defaultValue":"true"}],
+             "itemActions":[{"id":"","label":"Presence","playInputId":"playing","timeJsonKey":"elapsed",
+               "timeUnit":"seconds","durationSeconds":1,"completionBehavior":"holdFinal",
+               "targetInputId":"present","targetMode":"toggle","targetFromJsonKey":"from","prewarmFrames":false}]}
+            """);
+        collection["id"] = key;
+        collection["jsonKey"] = key;
+        collection["itemActions"]![0]!["id"] = key + "-presence";
+        contract["collections"]!.AsArray().Add(collection);
+        contract[key] = new JsonArray(new JsonObject { ["id"] = key + "-a", ["present"] = true });
+    }
+    payload = payload with { ConfigJson = "{}", RuntimeContractJson = contract.ToJsonString(), DesignPreviewJson = contract.ToJsonString() };
+    var session = new ComponentPreviewInputSession(() => { }, () => { });
+    var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
+    PreparedDesignPreviewInputs Prepare()
+    {
+        var prepared = preparer.Prepare(payload, session.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId);
+        True(!prepared.ResetSession, "Collection membership or one action contract must not reset the session.");
+        session.ApplyPrepared(prepared);
+        return prepared;
+    }
+    StructuredCollectionMutationResult Mutate(StructuredCollectionMutation mutation)
+    {
+        var result = preparer.MutateCollection(payload, session.CaptureTransientState(payload), mutation);
+        session.SetExternalCollectionItems(payload, mutation.Address.RootStorageJsonKey,
+            result.Content[mutation.Address.RootStorageJsonKey]!.AsArray().Select(item => item!.AsObject()).ToArray());
+        return result;
+    }
+    Prepare();
+    session.SetOwnerOverrideValue(owner, "caption", "Keep draft", isCollection: false);
+    const string keptAction = "participants-presence:participants-a";
+    const string removedAction = "cards-presence:cards-a";
+    True(session.SetActionFrame(keptAction, 2));
+    True(session.SetActionFrame(removedAction, 1));
+    var before = session.CaptureTransientState(payload);
+    var preservedKeys = ComponentPreviewTransientValues.ActionKeys(before.ScopeKey, keptAction)
+        .Where(before.Values.ContainsKey).ToArray();
+    var address = StructuredCollectionAddress.Root("cards");
+    var addedId = Required(Mutate(new DuplicateStructuredCollectionItem(address, "cards-a")).SelectedItemId);
+    var added = Prepare();
+    Equal(0, added.ResetActionIds.Count);
+    Mutate(new MoveStructuredCollectionItem(address, addedId, "cards-a"));
+    Equal(0, Prepare().ResetActionIds.Count);
+    Mutate(new DeleteStructuredCollectionItem(address, "cards-a"));
+    // Returning to an owner must retain the identities needed to retire its
+    // removed actions; the capture must not depend on the currently visible one.
+    session.ClearPreparedContext();
+    var removed = Prepare();
+    SequenceEqual([removedAction], removed.ResetActionIds);
+    var after = session.CaptureTransientState(payload);
+    Equal("Keep draft", after.Values[$"{after.ScopeKey}:caption"]);
+    foreach (var key in preservedKeys) Equal(before.Values[key], after.Values[key]);
+    foreach (var key in ComponentPreviewTransientValues.ActionKeys(after.ScopeKey, removedAction))
+        True(!after.Values.ContainsKey(key));
+    True(!session.CanRestoreAction(removedAction));
+    True(session.CanRestoreAction(keptAction));
+    var snapshots = Required(typeof(ComponentPreviewInputSession).GetField("_actionSnapshots",
+        BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(session) as System.Collections.IDictionary);
+    True(!snapshots.Contains($"{after.ScopeKey}:action-snapshot:{removedAction}"));
+    True(snapshots.Contains($"{after.ScopeKey}:action-snapshot:{keptAction}"));
+
+    var addedAction = "cards-presence:" + addedId;
+    True(session.SetActionFrame(addedAction, 3));
+    contract["collections"]![0]!["itemActions"]![0]!["durationSeconds"] = 2;
+    payload = payload with { RuntimeContractJson = contract.ToJsonString(), DesignPreviewJson = contract.ToJsonString() };
+    var changedContract = Prepare();
+    SequenceEqual([addedAction], changedContract.ResetActionIds);
+    var changed = session.CaptureTransientState(payload);
+    Equal("0", changed.Values[ComponentPreviewTransientValues.ActionTimeKey(changed.ScopeKey, addedAction)]);
+    Equal("Keep draft", changed.Values[$"{changed.ScopeKey}:caption"]);
+    foreach (var key in preservedKeys) Equal(before.Values[key], changed.Values[key]);
+    True(!snapshots.Contains($"{changed.ScopeKey}:action-snapshot:{addedAction}"));
+    True(session.SetActionFrame(addedAction, 3));
+    Mutate(new DeleteStructuredCollectionItem(address, addedId));
+    SequenceEqual([addedAction], Prepare().ResetActionIds);
+    var finalState = session.CaptureTransientState(payload);
+    Equal("Keep draft", finalState.Values[$"{changed.ScopeKey}:caption"]);
+    foreach (var key in ComponentPreviewTransientValues.ActionKeys(finalState.ScopeKey, addedAction))
+        True(!finalState.Values.ContainsKey(key));
+}
+
+static void DesignDefaultsAcknowledgeWithinGate()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-defaults-acknowledgement-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = CanonicalProjectNodes(database);
+        using var operations = new EditorOperationCoordinator();
+        var store = new RuntimeInputOwnerDocumentStore(database.Design, database.Production, operations);
+        foreach (var (ownerId, key, confirmed, later, table) in new[]
+        {
+            ("module_core_chat::variant::default", "headerSubtitle", "Confirmed", "Later", "modules"),
+            ("component_project_foqn_s2_audio::variant::default", "durationSeconds", "7", "9", "component_classes"),
+        })
+        {
+            var owner = nodes.Single(node => node.Id == ownerId);
+            var other = nodes.Single(node => node.Id == "component_project_foqn_s2_list::variant::default");
+            var source = store.Load(owner);
+            var preview = Object(source.RuntimePreviewJson);
+            var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, Object(source.ConfigJson));
+            var input = inputs.Single(input => input.JsonKey == key);
+            DesignPreviewTestValues.SetValue(preview, input, confirmed);
+            var inputSession = new ComponentPreviewInputSession(() => { }, () => { });
+            inputSession.SetOwnerOverrideValue(owner, key, confirmed, isCollection: false);
+            inputSession.SetOwnerOverrideValue(other, "itemWidth", "413", isCollection: false);
+            var captured = inputSession.CaptureTransientState(owner, false).SavedValues(inputs, []);
+            inputSession.SetOwnerOverrideValue(owner, key, later, isCollection: false);
+            var latest = inputSession.CaptureTransientState(owner, false);
+            var acknowledged = false;
+            using var connection = database.Context.OpenConnection();
+            using var fault = connection.CreateCommand();
+            fault.CommandText = $"CREATE TRIGGER fail_saved_defaults BEFORE UPDATE OF design_preview_json ON {table} BEGIN SELECT RAISE(ABORT, 'defaults fault'); END";
+            fault.ExecuteNonQuery();
+            Throws<SqliteException>(() => store.PromoteDefaultsAsync(source, preview, () =>
+            {
+                acknowledged = true;
+                inputSession.AcknowledgeSavedTestValues(captured);
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult());
+            True(!acknowledged);
+            Equal(source.RuntimePreviewJson, store.Load(owner).RuntimePreviewJson);
+            SequenceEqual(latest.Values, inputSession.CaptureTransientState(owner, false).Values);
+            fault.CommandText = "DROP TRIGGER fail_saved_defaults";
+            fault.ExecuteNonQuery();
+
+            var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var save = store.PromoteDefaultsAsync(source, preview, async () =>
+            {
+                entered.SetResult(true);
+                await release.Task;
+                inputSession.AcknowledgeSavedTestValues(captured);
+                acknowledged = true;
+            });
+            Task<bool>? following = null;
+            try
+            {
+                True(entered.Task.Wait(TimeSpan.FromSeconds(15)), "Save did not reach acknowledgement.");
+                Equal(confirmed, DesignPreviewTestValues.Value(Object(store.Load(owner).RuntimePreviewJson), input));
+                following = operations.ExecuteAsync(() => acknowledged);
+                True(!following.IsCompleted, "The operation gate was released before acknowledgement.");
+            }
+            finally { release.TrySetResult(true); }
+            save.GetAwaiter().GetResult();
+            True(Required(following).GetAwaiter().GetResult());
+            Equal(later, inputSession.CaptureTransientState(owner, false).Values[$"{captured.ScopeKey}:{key}"]);
+            var untouched = inputSession.CaptureTransientState(other, false);
+            Equal("413", untouched.Values[$"{untouched.ScopeKey}:itemWidth"]);
+            // The same route removes only an unchanged saved value on a later save.
+            var finalCapture = inputSession.CaptureTransientState(owner, false).SavedValues(inputs, []);
+            var currentSource = store.Load(owner);
+            var current = Object(currentSource.RuntimePreviewJson);
+            DesignPreviewTestValues.SetValue(current, input, later);
+            store.PromoteDefaultsAsync(currentSource, current, () =>
+            {
+                inputSession.AcknowledgeSavedTestValues(finalCapture);
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult();
+            True(!inputSession.CaptureTransientState(owner, false).Values.ContainsKey($"{captured.ScopeKey}:{key}"));
+        }
+    }
+    finally { File.Delete(temporary); }
 }
 
 static void RuntimeInputOwnerStorePreservesCurrentDocuments()
@@ -21341,6 +21592,8 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "Design defaults preserve later scalar and editable collection changes",
+    "Design defaults preserve later scalar and fixed collection changes",
     "Media Design actions consume queued edits and retain exact ownership",
     "Notification Design actions consume queued edits and retain exact ownership",
     "Conversation Test Values serialize lifecycle and field edits",

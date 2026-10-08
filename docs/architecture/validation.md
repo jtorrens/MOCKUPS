@@ -512,6 +512,19 @@ identities and the edited values, leaves unrelated owners untouched, clears the
 saved owner's transient collection and recognizes the new persisted baseline.
 The editable-collection fixture also duplicates an item after editing it and
 requires the new stable item to retain the current temporary values when saved.
+Further Conversation and Chat List cases change scalar and collection values
+after the confirmation snapshot, then require persistence to save only that
+snapshot while later drafts remain dirty through another full Preview preparation.
+The editable fixture also duplicates, moves and deletes items after capture.
+Module and Component store tests inject SQLite failure and require no
+acknowledgement or draft loss, then retry successfully and hold acknowledgement
+open to prove the next operation cannot pass the gate. Unchanged confirmed values
+are cleared while changed values and another owner's drafts remain intact.
+Action-membership regressions prepare two independent collection contracts,
+duplicate/reorder/delete items, return to an owner, remove its final item and
+change one action contract. They require stable scalar drafts and surviving
+action values, precise retirement of deleted action keys and restore snapshots,
+and no whole-session reset for membership or isolated action-contract changes.
 Queued Test Values lifecycle regressions exercise real Conversation and Video
 Call collection actions: a field edit followed immediately by two duplications,
 then move/delete, an immutable Add prototype, a rejected mutation without publication and a subsequent

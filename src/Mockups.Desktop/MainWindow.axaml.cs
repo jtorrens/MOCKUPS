@@ -469,6 +469,7 @@ public partial class MainWindow : SukiWindow
             _previewController.MutateDesignPreviewCollectionAsync,
             _previewController.DiscardCommittedProductionRuntimeCollection,
             _previewController.ResetDesignPreviewTestValues,
+            _previewController.AcknowledgeSavedDesignTestValues,
             _previewController.CaptureDesignPreviewTransientState,
             _previewController.PlaybackState,
             (nodeId) => NavigateToNodeById(
