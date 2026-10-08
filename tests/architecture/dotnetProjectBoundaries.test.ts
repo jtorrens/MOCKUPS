@@ -750,7 +750,7 @@ test("Runtime collection controls consume confirmed writes without replaying mut
   assert.deepEqual(files.filter(file => file.endsWith(".cs")
     && readFileSync(file, "utf8").includes("StructuredCollectionMutationEngine.UpdateValues("))
     .map(repositoryPath).sort(), [
-    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewInputPreparer.cs",
     "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.RuntimeDocuments.cs",
   ]);
   const editor = readFileSync(path.join(repositoryRoot,

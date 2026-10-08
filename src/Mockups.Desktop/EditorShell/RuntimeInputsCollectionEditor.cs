@@ -62,9 +62,9 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action<string, int, string?> _setActionFrame;
     private readonly Func<string, int> _currentActionFrame;
     private readonly Func<string, int> _maximumActionFrame;
-    private readonly Action<string, string> _setPreviewTestValue;
+    private readonly Action<ProjectTreeNode, string, string> _setPreviewTestValue;
     private readonly Action<string> _discardCommittedProductionRuntimeValue;
-    private readonly Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
+    private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
         _setPreviewCollectionItemValues;
     private readonly Action<string> _discardCommittedProductionRuntimeCollection;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
@@ -116,9 +116,9 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<string, int, string?> setActionFrame,
         Func<string, int> currentActionFrame,
         Func<string, int> maximumActionFrame,
-        Action<string, string> setPreviewTestValue,
+        Action<ProjectTreeNode, string, string> setPreviewTestValue,
         Action<string> discardCommittedProductionRuntimeValue,
-        Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
+        Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
             setPreviewCollectionItemValues,
         Action<string> discardCommittedProductionRuntimeCollection,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
@@ -448,11 +448,13 @@ internal sealed class RuntimeInputsCollectionEditor
         ProjectTreeNode node,
         CancellationToken cancellationToken = default)
     {
-        // Capture on the visual thread by exact owner, before any asynchronous
-        // work. The same transient contract prepares Preview and saved defaults.
-        var transient = _captureTestValues(node);
-        return _operations.ExecuteAsync(() =>
+        // Capture once this operation reaches the gate: earlier queued item
+        // edits must have published before defaults inspect the temporary state.
+        return _operations.ExecuteAsync(async token =>
         {
+            var transient = await Dispatcher.UIThread.InvokeAsync(
+                () => _captureTestValues(node), DispatcherPriority.Normal, token);
+            token.ThrowIfCancellationRequested();
             var owner = ResolveOwner(node);
             if (owner.IsInstance)
                 throw new InvalidOperationException("Production payloads cannot become Design defaults.");
@@ -812,7 +814,7 @@ internal sealed class RuntimeInputsCollectionEditor
             if (ShouldPublishTransientValue(owner.IsInstance, definition)
                 && !(owner.IsInstance && isPositioningMode))
             {
-                _setPreviewTestValue(input.JsonKey, next);
+                _setPreviewTestValue(owner.Node, input.JsonKey, next);
             }
             _testValuesChanged();
         };
@@ -1188,7 +1190,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 return;
             }
 
-            _setPreviewCollectionItemValues(
+            await _setPreviewCollectionItemValues(
+                owner.Node,
                 StructuredCollectionAddress.Root(collection.StorageJsonKey),
                 itemId,
                 new Dictionary<string, JsonNode?>
@@ -1378,10 +1381,13 @@ internal sealed class RuntimeInputsCollectionEditor
                     childCollection,
                     childItem,
                     temporalOwnerId,
-                    overrideAddress with { Path = [.. overrideAddress.Path,
+                    overrideAddress with
+                    {
+                        Path = [.. overrideAddress.Path,
                         ComponentOverridePathSegment.Field(childCollection.JsonKey),
                         ComponentOverridePathSegment.Item(childItemId),
-                        ComponentOverridePathSegment.Field(RuntimeContractJsonKey(childCollection))] },
+                        ComponentOverridePathSegment.Field(RuntimeContractJsonKey(childCollection))]
+                    },
                     PersistChildRuntimeContract);
                 var button = new Button
                 {
@@ -2246,7 +2252,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 openComponentOverrides();
                 return Task.CompletedTask;
             }
-            : null,
+        : null,
         openRuntimeComponentOverrides: _openEmbeddedContext) with
         {
             RestoreEmbeddedComponentOverrides = selectsComponent
@@ -2290,7 +2296,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 }
                 else
                 {
-                    _setPreviewCollectionItemValues(
+                    await _setPreviewCollectionItemValues(
+                        owner.Node,
                         resolvedAddress,
                         nestedItemId,
                         values);
@@ -2322,7 +2329,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     _testValuesChanged();
                     return result;
                 }
-                : null,
+            : null,
             PrepareStructuredCollectionItemCreation = owner.IsInstance
                 ? (nestedCollection, prototype) => PrepareCollectionItemCreation(
                     owner,
@@ -2366,7 +2373,8 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             else
             {
-                _setPreviewCollectionItemValues(
+                await _setPreviewCollectionItemValues(
+                    owner.Node,
                     address,
                     itemId,
                     updates);
@@ -2429,7 +2437,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     [.. RuntimeOverridePath(address, ItemId(item, itemIndex)),
                         ComponentOverridePathSegment.Field(RuntimeContractJsonKey(collection)),
                         ComponentOverridePathSegment.Field(input.JsonKey)]));
-        void ApplyTransientValue(string next)
+        async Task ApplyTransientValue(string next)
         {
             componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
             var inputsJsonKey = RuntimeContractJsonKey(collection);
@@ -2438,7 +2446,8 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 return;
             }
-            _setPreviewCollectionItemValues(
+            await _setPreviewCollectionItemValues(
+                owner.Node,
                 address,
                 ItemId(item, itemIndex),
                 new Dictionary<string, JsonNode?>
@@ -2447,7 +2456,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 });
             _testValuesChanged();
         }
-        control.ValueChanged += (_, next) => ApplyTransientValue(next);
+        control.ValueChanged += async (_, next) => await ApplyTransientValue(next);
         control.ValueCommitted += async (_, next) =>
         {
             componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);

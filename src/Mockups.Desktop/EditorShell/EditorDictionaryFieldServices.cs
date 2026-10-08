@@ -18,7 +18,7 @@ internal sealed class EditorDictionaryFieldServices
     private readonly EditorOperationCoordinator _operations;
     private readonly ComponentClassFieldValueService _componentFields;
     private readonly Func<string?> _selectedThemeId;
-    private readonly Action<string, string> _setRuntimeTestValue;
+    private readonly Action<ProjectTreeNode, string, string> _setRuntimeTestValue;
     private readonly Action<ProjectTreeNode, string, string, bool> _setOwnerOverrideValue;
     private readonly EditorSessionUiState _structuredCollectionUiState = new();
 
@@ -34,7 +34,7 @@ internal sealed class EditorDictionaryFieldServices
         EditorOperationCoordinator operations,
         ComponentClassFieldValueService componentFields,
         Func<string?> selectedThemeId,
-        Action<string, string> setRuntimeTestValue,
+        Action<ProjectTreeNode, string, string> setRuntimeTestValue,
         Action<ProjectTreeNode, string, string, bool> setOwnerOverrideValue)
     {
         _contextData = new DictionaryFieldContextDataSource(
@@ -236,7 +236,7 @@ internal sealed class EditorDictionaryFieldServices
                     ? () => _domainDialogs
                         .ConfirmUsedRuntimeContractReplacement(node.Name)
                     : null,
-            SetRuntimeTestValue: _setRuntimeTestValue,
+            SetRuntimeTestValue: (key, value) => _setRuntimeTestValue(node, key, value),
             StructuredCollectionUiState:
                 _structuredCollectionUiState);
     }

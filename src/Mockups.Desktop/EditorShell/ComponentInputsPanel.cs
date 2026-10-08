@@ -1,6 +1,5 @@
 using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
-using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,11 +15,8 @@ internal sealed class ComponentPreviewInputSession
     public event Action<PlaybackRunInfo>? PlaybackStarted;
     public event Action<PlaybackRunInfo>? PlaybackStopped;
     public event Action<bool>? PlaybackBusyChanged;
-    private readonly ComponentPreviewInputDataSource _previewInputData;
-    private readonly RuntimeInputOptionsDataSource _inputOptionsData;
-    private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
-    private readonly NestedRuntimeRecordReferenceResolver _nestedRecordInputResolver;
     private readonly Action _refreshPreview;
+    private readonly Action _refreshPlaybackFrame;
     private readonly Func<ComponentPreviewActionDefinition, Task<bool>>? _preparePlaybackFrames;
     private readonly DispatcherTimer _playbackTimer;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
@@ -28,7 +24,6 @@ internal sealed class ComponentPreviewInputSession
     private string _scopeKey = "";
     private string _projectId = "";
     private string _inputSignature = "";
-    private string _testValuesSignature = "";
     private IReadOnlyList<ComponentPreviewActionDefinition> _actions = [];
     private string _activeActionId = "";
     private JsonObject _config = [];
@@ -46,7 +41,6 @@ internal sealed class ComponentPreviewInputSession
     private bool _awaitingPlaybackPresentation;
     private bool _stopAfterPlaybackPresentation;
     private string _heldFinalActionId = "";
-    private bool _allowSystemPreviewFixtures;
 
     public bool PresentEveryPlaybackFrame
     {
@@ -71,34 +65,19 @@ internal sealed class ComponentPreviewInputSession
             {
                 CompletePlayback(activeAction);
             }
-            _refreshPreview();
+            RefreshCompletedPlayback(activeAction);
             return;
         }
         SyncPlaybackTimer();
     }
 
     public ComponentPreviewInputSession(
-        IComponentPreviewInputRepository componentPreview,
-        IDictionaryFieldContextRepository dictionary,
-        IActorPreviewRepository actors,
-        IProjectPathResolver projectPaths,
         Action refreshPreview,
+        Action refreshPlaybackFrame,
         Func<ComponentPreviewActionDefinition, Task<bool>>? preparePlaybackFrames = null)
     {
-        _previewInputData =
-            new ComponentPreviewInputDataSource(
-                componentPreview,
-                actors);
-        _inputOptionsData =
-            new RuntimeInputOptionsDataSource(dictionary, actors);
-        var actorDataSource = new ActorPreviewDataSource(actors);
-        _recordInputResolver = new ComponentPreviewRecordInputResolver(
-            actorDataSource,
-            projectPaths);
-        _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(
-            actorDataSource,
-            projectPaths);
         _refreshPreview = refreshPreview;
+        _refreshPlaybackFrame = refreshPlaybackFrame;
         _preparePlaybackFrames = preparePlaybackFrames;
         _playbackTimer = new DispatcherTimer
         {
@@ -107,79 +86,63 @@ internal sealed class ComponentPreviewInputSession
         _playbackTimer.Tick += (_, _) => AdvancePlaybackFrame();
     }
 
-    public void UpdateForPayload(DesignPreviewPayload? payload, string? projectId)
+    public DesignPreviewInputCapture CapturePreparation(ProjectTreeNode node)
     {
-        if (payload is null || !SupportsInputs(payload) || string.IsNullOrWhiteSpace(projectId))
-        {
-            _scopeKey = "";
-            _projectId = "";
-            _inputSignature = "";
-            _testValuesSignature = "";
-            _actions = [];
-            _activeActionId = "";
-            _heldFinalActionId = "";
-            _config = [];
-            _themeTokens = [];
-            _runtimePreview = [];
-            _allowSystemPreviewFixtures = false;
-            StopPlayback();
-            return;
-        }
-        payload = DesignPreviewPayloadLayers.PrimaryOwner(payload);
-        _allowSystemPreviewFixtures = payload.Kind is "componentClass" or "module";
+        var transient = CaptureTransientState(node, node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        return new(transient, transient.ScopeKey == _scopeKey ? _inputSignature : "");
+    }
 
-        ApplyProjectFrameRate(projectId);
-        var config = ParseJsonObject(payload.ConfigJson);
-        _config = config;
-        _themeTokens = ParseJsonObject(payload.ThemeTokensJson);
-        var preview = ComponentPreviewTransientValues.Apply(
-            ParseJsonObject(payload.RuntimeContractJson),
-            config,
-            CaptureTransientState(payload),
-            _previewInputData.ComponentVariantConfig,
-            _previewInputData.ComponentVariantRuntimeContract);
-        _runtimePreview = preview;
-        var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
-        var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
-        _actions = ComponentPreviewActions.ReadWithEmbedded(
-            preview,
-            _previewInputData.ComponentVariantRuntimeContract);
-        if (inputs.Count == 0 && collections.Count == 0)
-        {
-            _scopeKey = "";
-            _projectId = "";
-            _inputSignature = "";
-            _actions = [];
-            _activeActionId = "";
-            _heldFinalActionId = "";
-            _config = [];
-            _runtimePreview = [];
-            StopPlayback();
-            return;
-        }
+    public bool IsPreparedFor(ProjectTreeNode node) =>
+        _scopeKey.Length > 0 && _scopeKey == ComponentPreviewTransientValues.ScopeKey(
+            node, node.Kind == ProjectTreeNodeKind.ModuleInstance);
 
-        var scopeKey = ScopeKey(payload);
-        var inputSignature = string.Join("|", inputs.Select(InputSignature)
-            .Concat(collections.Select(CollectionSignature))
-            .Concat(_actions.Select(ActionSignature)));
-        var testValuesSignature = preview["testValues"]?.ToJsonString() ?? "";
-        if (_scopeKey.Equals(scopeKey, StringComparison.Ordinal)
-            && _inputSignature.Length > 0
-            && !_inputSignature.Equals(inputSignature, StringComparison.Ordinal))
+    public DesignPreviewInputCapture CapturePreparation(DesignPreviewPayload payload)
+    {
+        var transient = CaptureTransientState(payload);
+        return new(transient, transient.ScopeKey == _scopeKey ? _inputSignature : "");
+    }
+
+    public void ClearPreparedContext()
+    {
+        StopPlayback();
+        _scopeKey = "";
+        _projectId = "";
+        _inputSignature = "";
+        _actions = [];
+        _activeActionId = "";
+        _heldFinalActionId = "";
+        _config = [];
+        _themeTokens = [];
+        _runtimePreview = [];
+    }
+
+    public void ApplyPrepared(PreparedDesignPreviewInputs prepared)
+    {
+        if (prepared.ResetSession)
         {
-            ClearTransientContractValues(scopeKey);
             StopPlayback();
+            ClearTransientContractValues(prepared.ScopeKey);
         }
-        _scopeKey = scopeKey;
-        _projectId = projectId;
-        _inputSignature = inputSignature;
-        _testValuesSignature = testValuesSignature;
-        foreach (var input in inputs)
+        var owner = DesignPreviewPayloadLayers.PrimaryOwner(prepared.Payload);
+        _scopeKey = prepared.ScopeKey;
+        _projectId = owner.ProjectId;
+        _inputSignature = prepared.InputSignature;
+        _config = ParseJsonObject(owner.ConfigJson);
+        _themeTokens = ParseJsonObject(owner.ThemeTokensJson);
+        _runtimePreview = ParseJsonObject(prepared.RuntimeJson);
+        _actions = prepared.Actions;
+        ApplyProjectFrameRate(owner.FrameRate);
+        foreach (var (key, value) in prepared.Values) _values[key] = value;
+        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(_runtimePreview, _config))
+            _inputDefaults[StorageKey(input)] = input.DefaultValue;
+        foreach (var actionId in prepared.ResetActionIds)
         {
-            EnsureValue(input, preview);
+            StopPlayback();
+            _actionSnapshots.Remove(ActionSnapshotKey(actionId));
+            _playbackSecondsByActionId.Remove(actionId);
+            if (_activeActionId == actionId) _activeActionId = "";
+            if (_heldFinalActionId == actionId) _heldFinalActionId = "";
         }
-        EnsureActionValues(preview);
-        ValidateRecordReferenceValues(inputs);
         SyncPlaybackTimer();
     }
 
@@ -356,7 +319,8 @@ internal sealed class ComponentPreviewInputSession
 
     public void SetOwnerOverrideValue(ProjectTreeNode node, string jsonKey, string value, bool isCollection)
     {
-        var scope = ComponentPreviewTransientValues.ScopeKey(node, isInstance: false);
+        var scope = ComponentPreviewTransientValues.ScopeKey(node, isInstance: node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        if (scope.Length == 0) throw new InvalidOperationException("Test Values require an exact Runtime owner.");
         if (isCollection)
         {
             var current = _transientCollectionTestValuesByScope.GetValueOrDefault(scope) ?? new JsonObject();
@@ -400,137 +364,27 @@ internal sealed class ComponentPreviewInputSession
         }
     }
 
-    public void SetExternalCollectionItemValues(
-        StructuredCollectionAddress address,
-        string itemId,
-        IReadOnlyDictionary<string, JsonNode?> values)
-    {
-        if (string.IsNullOrWhiteSpace(_scopeKey)
-            || string.IsNullOrWhiteSpace(address.RootStorageJsonKey)
-            || string.IsNullOrWhiteSpace(itemId)
-            || values.Count == 0)
-        {
-            return;
-        }
-
-        var testValues = _transientCollectionTestValuesByScope.GetValueOrDefault(_scopeKey);
-        if (testValues is null)
-        {
-            testValues = new JsonObject();
-            _transientCollectionTestValuesByScope[_scopeKey] = testValues;
-        }
-        var definitions = RuntimeInputDefinitionReader.ReadCollections(
-                _runtimePreview,
-                _config,
-                includeHidden: true)
-            .Where((candidate) => candidate.StorageJsonKey.Equals(
-                address.RootStorageJsonKey,
-                StringComparison.Ordinal))
-            .ToList();
-        if (definitions.Count != 1)
-        {
-            throw new InvalidOperationException(
-                $"Transient Runtime values have no unique structured collection '{address.RootStorageJsonKey}'.");
-        }
-        if (!testValues.TryGetPropertyValue(address.RootStorageJsonKey, out var collectionNode))
-        {
-            collectionNode = StructuredCollectionDocumentContract.StoredClone(
-                new JsonArray(
-                    DesignPreviewTestValues.CollectionItems(_runtimePreview, definitions[0])
-                        .Select((item) => (JsonNode?)item.DeepClone())
-                        .ToArray()),
-                definitions[0],
-                $"Transient Runtime collection '{address.RootStorageJsonKey}'");
-        }
-        var content = new JsonObject
-        {
-            [address.RootStorageJsonKey] = collectionNode?.DeepClone(),
-        };
-        var updated = StructuredCollectionMutationEngine.UpdateValues(
-            content,
-            definitions[0],
-            address,
-            itemId,
-            values,
-            _previewInputData.ComponentVariantConfig,
-            _previewInputData.ComponentVariantRuntimeContract);
-        testValues[address.RootStorageJsonKey] =
-            updated[address.RootStorageJsonKey]?.DeepClone();
-        _refreshPreview();
-    }
-
-    private JsonObject ExternalCollectionItem(
-        string collectionJsonKey,
-        string itemId)
-    {
-        var testValues = _transientCollectionTestValuesByScope.GetValueOrDefault(_scopeKey);
-        if (testValues is null)
-        {
-            testValues = new JsonObject();
-            _transientCollectionTestValuesByScope[_scopeKey] = testValues;
-        }
-        if (!testValues.TryGetPropertyValue(collectionJsonKey, out var collectionNode))
-        {
-            var definition = RuntimeInputDefinitionReader.ReadCollections(_runtimePreview, _config)
-                .FirstOrDefault((candidate) => candidate.JsonKey == collectionJsonKey);
-            collectionNode = definition is null
-                ? new JsonArray()
-                : new JsonArray(DesignPreviewTestValues.CollectionItems(_runtimePreview, definition)
-                    .Select((item) => (JsonNode?)item.DeepClone()).ToArray());
-            testValues[collectionJsonKey] = collectionNode;
-        }
-        var items = collectionNode as JsonArray
-            ?? throw new InvalidOperationException(
-                $"Transient collection Test Values '{collectionJsonKey}' must be an array.");
-        RuntimeCollectionDocumentContract.Validate(
-            items,
-            $"Transient collection Test Values '{collectionJsonKey}'");
-        var item = items.Select((node) => node!.AsObject()).FirstOrDefault((candidate) =>
-            candidate["id"] is JsonValue idValue
-            && idValue.TryGetValue<string>(out var candidateId)
-            && candidateId == itemId);
-        return item
-            ?? throw new InvalidOperationException(
-                $"Transient collection Test Values '{collectionJsonKey}' has no declared item '{itemId}'.");
-    }
-
     public void SetExternalCollectionItems(
         DesignPreviewPayload payload,
         string collectionJsonKey,
         IReadOnlyList<JsonObject> items)
     {
         if (!SupportsInputs(payload) || string.IsNullOrWhiteSpace(collectionJsonKey)) return;
-        var scopeKey = ScopeKey(payload);
+        SetCollectionItems(ScopeKey(payload), collectionJsonKey, items);
+    }
+
+    private void SetCollectionItems(string scopeKey, string collectionJsonKey, IReadOnlyList<JsonObject> items)
+    {
         var testValues = _transientCollectionTestValuesByScope.GetValueOrDefault(scopeKey) ?? new JsonObject();
         _transientCollectionTestValuesByScope[scopeKey] = testValues;
         testValues[collectionJsonKey] = new JsonArray(items.Select((item) => (JsonNode?)item.DeepClone()).ToArray());
         _refreshPreview();
     }
 
-    public JsonObject ApplyTransientTestValues(JsonObject preview)
-    {
-        return ComponentPreviewTransientValues.Apply(
-            preview,
-            _config,
-            CaptureTransientState(_scopeKey),
-            _previewInputData.ComponentVariantConfig,
-            _previewInputData.ComponentVariantRuntimeContract);
-    }
-
-    public JsonObject ApplyTransientTestValues(JsonObject preview, DesignPreviewPayload payload)
-    {
-        return ComponentPreviewTransientValues.Apply(
-            preview,
-            ParseJsonObject(payload.ConfigJson),
-            CaptureTransientState(payload),
-            _previewInputData.ComponentVariantConfig,
-            _previewInputData.ComponentVariantRuntimeContract);
-    }
-
     public ComponentPreviewTransientState CaptureTransientState(
         DesignPreviewPayload payload) =>
         CaptureTransientState(
-            ComponentPreviewTransientValues.ScopeKey(payload));
+            ScopeKey(payload));
 
     public ComponentPreviewTransientState CaptureTransientState(
         ProjectTreeNode node,
@@ -545,9 +399,16 @@ internal sealed class ComponentPreviewInputSession
         return ResetTestValues(_scopeKey);
     }
 
-    public bool ResetTestValues(DesignPreviewPayload payload)
+    public bool ResetTestValues(DesignPreviewPayload payload) => ResetTestValues(ScopeKey(payload));
+
+    public bool ResetTestValues(ProjectTreeNode node) =>
+        ResetTestValues(ComponentPreviewTransientValues.ScopeKey(node, node.Kind == ProjectTreeNodeKind.ModuleInstance));
+
+    public void SetExternalCollectionItems(ProjectTreeNode node, string collectionJsonKey, IReadOnlyList<JsonObject> items)
     {
-        return ResetTestValues(ScopeKey(payload));
+        var scope = ComponentPreviewTransientValues.ScopeKey(node, node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        if (scope.Length == 0) throw new InvalidOperationException("Test Values require an exact Runtime owner.");
+        SetCollectionItems(scope, collectionJsonKey, items);
     }
 
     private bool ResetTestValues(string scopeKey)
@@ -574,204 +435,6 @@ internal sealed class ComponentPreviewInputSession
         return removed;
     }
 
-    public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload, string themeMode, string? projectId)
-    {
-        if (!SupportsInputs(payload))
-        {
-            return payload;
-        }
-
-        return DesignPreviewPayloadLayers.MapPrimaryOwner(
-            payload,
-            (owner) => ApplyOwnerInputs(owner, themeMode, projectId));
-    }
-
-    private DesignPreviewPayload ApplyOwnerInputs(
-        DesignPreviewPayload payload,
-        string themeMode,
-        string? projectId)
-    {
-
-        var config = ParseJsonObject(payload.ConfigJson);
-        var preview = ComponentPreviewTransientValues.Apply(
-            ParseJsonObject(payload.RuntimeContractJson),
-            config,
-            CaptureTransientState(payload),
-            _previewInputData.ComponentVariantConfig,
-            _previewInputData.ComponentVariantRuntimeContract);
-        _nestedRecordInputResolver.Resolve(
-            config,
-            themeMode,
-            payload.PaletteColors,
-            _allowSystemPreviewFixtures);
-        _runtimePreview = preview;
-        var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
-        var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
-        _actions = ComponentPreviewActions.ReadWithEmbedded(
-            preview,
-            _previewInputData.ComponentVariantRuntimeContract);
-        if (inputs.Count == 0 && collections.Count == 0)
-        {
-            return payload;
-        }
-
-        if (string.IsNullOrWhiteSpace(_scopeKey))
-        {
-            _scopeKey = ScopeKey(payload);
-        }
-
-        foreach (var input in inputs)
-        {
-            EnsureValue(input, preview);
-        }
-        EnsureActionValues(preview);
-
-        ValidateRecordReferenceValues(inputs);
-        var effectiveProjectId = string.IsNullOrWhiteSpace(projectId) ? _projectId : projectId;
-        if (!string.IsNullOrWhiteSpace(effectiveProjectId))
-        {
-            EnsureComponentVariantReferenceValues(inputs, effectiveProjectId);
-        }
-
-        foreach (var input in inputs)
-        {
-            var value = Value(input);
-            if (input.Kind == ComponentInputKind.RecordReference)
-            {
-                ApplyRecordReferenceInput(preview, input, value, themeMode, payload.PaletteColors);
-                continue;
-            }
-            preview[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, value);
-        }
-        foreach (var action in _actions.Where((action) => ComponentPreviewActions.IsApplicable(preview, action)))
-        {
-            if (action.IsCollectionItemAction
-                && !string.IsNullOrWhiteSpace(action.TargetInputId)
-                && _values.TryGetValue(ActionTargetStorageKey(action), out var targetValue))
-            {
-                ComponentPreviewActions.SetStoredValue(preview, action, action.TargetInputId, targetValue);
-            }
-            ComponentPreviewActions.SetValue(preview, action, action.PlayInputId, IsPlaying(action));
-            ComponentPreviewActions.SetValue(preview, action, action.TimeJsonKey, PlaybackTimeValue(action));
-            if (!string.IsNullOrWhiteSpace(action.TargetFromJsonKey)
-                && _values.TryGetValue(ActionTargetFromKey(action), out var fromValue))
-            {
-                ComponentPreviewActions.SetValue(preview, action, action.TargetFromJsonKey, fromValue);
-            }
-        }
-
-        ReconcileRuntimeStructure(preview, config);
-        var runtimeContractJson = preview.ToJsonString();
-        if (!string.IsNullOrWhiteSpace(effectiveProjectId))
-        {
-            ResolveCollectionRecordReferences(
-                preview,
-                config,
-                themeMode,
-                payload.PaletteColors);
-        }
-        _nestedRecordInputResolver.Resolve(
-            preview,
-            themeMode,
-            payload.PaletteColors,
-            _allowSystemPreviewFixtures);
-
-        var preparedPreviewJson = preview.ToJsonString();
-        var result = payload with
-        {
-            ConfigJson = config.ToJsonString(),
-            DesignPreviewJson = preparedPreviewJson,
-            RuntimeContractJson = runtimeContractJson,
-            ProjectMediaFiles = PreviewMediaDirectoryCatalog.Resolve(
-                payload.ProjectMediaRoot,
-                preparedPreviewJson,
-                payload.SystemPreviewFixtureRoot),
-        };
-        var moduleFrameActions = _actions
-            .Where((action) =>
-                action.DefinesModuleDuration
-                && ComponentPreviewActions.IsApplicable(preview, action))
-            .ToList();
-        if (moduleFrameActions.Count > 1)
-        {
-            throw new InvalidOperationException(
-                "Design Preview Runtime declares multiple actions that define the Module frame.");
-        }
-        return moduleFrameActions.Count == 0
-            ? result
-            : DesignPreviewPlaybackFrameProjection.Apply(
-                result,
-                moduleFrameActions[0],
-                PlaybackTimeValue(moduleFrameActions[0]));
-    }
-
-    private void ResolveCollectionRecordReferences(
-        JsonObject preview,
-        JsonObject config,
-        string themeMode,
-        IReadOnlyDictionary<string, string> paletteColors)
-    {
-        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(preview, config))
-        {
-            foreach (var item in DesignPreviewTestValues.CurrentCollectionItems(preview, collection))
-            {
-                ResolveRecordReferenceInputs(
-                    item,
-                    collection.Fields,
-                    themeMode,
-                    paletteColors,
-                    _allowSystemPreviewFixtures);
-                if (collection.ComponentItems is not { } componentItems)
-                {
-                    continue;
-                }
-                var variantReference = RuntimeComponentCollectionItemDocumentContract.RequireVariantReference(
-                    item,
-                    componentItems.DocumentKeys,
-                    $"Design Preview collection '{collection.JsonKey}' item");
-                var componentInputs = RuntimeComponentCollectionItemDocumentContract.RequireInputs(
-                    item,
-                    componentItems.DocumentKeys,
-                    $"Design Preview collection '{collection.JsonKey}' item");
-                if (variantReference.Length == 0) continue;
-
-                var componentConfig = _previewInputData.ComponentVariantConfig(variantReference);
-                ResolveRecordReferenceInputs(
-                    componentInputs,
-                    RuntimeInputDefinitionReader.ReadInputs(componentInputs, componentConfig),
-                themeMode,
-                paletteColors,
-                _allowSystemPreviewFixtures);
-            }
-        }
-    }
-
-    private void ResolveRecordReferenceInputs(
-        JsonObject values,
-        IReadOnlyList<ComponentInputDefinition> inputs,
-        string themeMode,
-        IReadOnlyDictionary<string, string> paletteColors,
-        bool allowSystemPreviewFixtures)
-    {
-        _nestedRecordInputResolver.ResolveDeclaredValues(
-            values,
-            inputs,
-            themeMode,
-            paletteColors,
-            allowSystemPreviewFixtures);
-    }
-
-    private void ReconcileRuntimeStructure(
-        JsonObject preview,
-        JsonObject config)
-    {
-        ComponentPreviewTransientValues.ReconcileRuntimeStructure(
-            preview,
-            config,
-            _previewInputData.ComponentVariantConfig,
-            _previewInputData.ComponentVariantRuntimeContract);
-    }
-
     private ComponentPreviewTransientState CaptureTransientState(
         string scopeKey) =>
         ComponentPreviewTransientState.Capture(
@@ -789,222 +452,7 @@ internal sealed class ComponentPreviewInputSession
         ComponentPreviewTransientValues.ScopeKey(
             DesignPreviewPayloadLayers.PrimaryOwner(payload));
 
-    private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
-    {
-        var key = StorageKey(input);
-        _inputDefaults[key] = input.DefaultValue;
-        if (_values.ContainsKey(key)) return;
-
-        if (!preview.TryGetPropertyValue(input.JsonKey, out var stored))
-        {
-            _values[key] = input.DefaultValue;
-            return;
-        }
-        if (stored is null)
-        {
-            if (input.AllowEmpty)
-            {
-                _values[key] = "";
-                return;
-            }
-            throw new InvalidOperationException(
-                $"Design Preview Runtime value '{input.JsonKey}' cannot be null.");
-        }
-        _values[key] = RuntimeInputValueKindContract.CurrentStorageText(
-            input.ValueKind,
-            stored,
-            $"Design Preview Runtime value '{input.JsonKey}'");
-    }
-
-    private void EnsureActionValues(JsonObject preview)
-    {
-        foreach (var action in _actions)
-        {
-            var stateKey = ActionStateKey(action);
-            if (!_values.ContainsKey(stateKey))
-            {
-                _values[stateKey] = ComponentPreviewActionRuntimeValue.BooleanOrDefault(
-                    preview,
-                    action,
-                    action.PlayInputId,
-                    absentValue: false)
-                    ? "true"
-                    : "false";
-            }
-
-            var timeKey = ActionTimeKey(action);
-            if (!_values.ContainsKey(timeKey))
-            {
-                _values[timeKey] = ComponentPreviewActionRuntimeValue.TimeOrDefault(
-                        preview,
-                        action,
-                        absentValue: 0)
-                    .ToString(CultureInfo.InvariantCulture);
-            }
-            if (action.IsCollectionItemAction
-                && !string.IsNullOrWhiteSpace(action.TargetInputId)
-                && !_values.ContainsKey(ActionTargetStorageKey(action)))
-            {
-                _values[ActionTargetStorageKey(action)] = ComponentPreviewActions.Value(preview, action, action.TargetInputId) switch
-                {
-                    JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
-                    JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
-                    JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
-                    _ => "",
-                };
-            }
-        }
-        NormalizeCollectionOptionActionTargets(preview);
-    }
-
-    private void NormalizeCollectionOptionActionTargets(JsonObject preview)
-    {
-        var collections = RuntimeInputDefinitionReader.ReadCollections(preview, _config)
-            .ToDictionary((collection) => collection.JsonKey, StringComparer.Ordinal);
-        foreach (var action in _actions.Where((candidate) =>
-                     candidate.IsCollectionItemAction
-                     && candidate.TargetMode == ComponentPreviewActionTargetMode.Option
-                     && !string.IsNullOrWhiteSpace(candidate.TargetInputId)))
-        {
-            if (!collections.TryGetValue(action.CollectionJsonKey, out var collection)) continue;
-            var input = collection.Fields.FirstOrDefault((field) =>
-                field.JsonKey.Equals(action.TargetInputId, StringComparison.Ordinal));
-            if (input is null || string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)) continue;
-            var item = DesignPreviewTestValues.CurrentCollectionItems(preview, collection)
-                .FirstOrDefault((candidate) =>
-                    candidate["id"] is JsonValue value
-                    && value.TryGetValue<string>(out var id)
-                    && id.Equals(action.CollectionItemId, StringComparison.Ordinal));
-            if (item is null)
-            {
-                throw new InvalidOperationException(
-                    $"Runtime action '{action.Id}' target item '{action.CollectionItemId}' does not exist.");
-            }
-            var validValues = (RuntimeInputDynamicOptions.ResolveForCollectionItem(
-                    _inputOptionsData,
-                    input,
-                    preview,
-                    collections,
-                    collection,
-                    item)
-                    ?? throw new InvalidOperationException(
-                        $"Runtime action '{action.Id}' has no declared option source."))
-                .Select((option) => option.Value)
-                .ToList();
-            var targetKey = ActionTargetStorageKey(action);
-            var current = _values.GetValueOrDefault(targetKey, "");
-            if (validValues.Contains(current)) continue;
-
-            StopPlayback();
-            var replacement = validValues.FirstOrDefault() ?? "";
-            _values[targetKey] = replacement;
-            _values[ActionTargetFromKey(action)] = replacement;
-            _values[ActionStateKey(action)] = "false";
-            _values[ActionTimeKey(action)] = "0";
-            _actionSnapshots.Remove(ActionSnapshotKey(action.Id));
-            _playbackSecondsByActionId.Remove(action.Id);
-            if (_activeActionId == action.Id) _activeActionId = "";
-            if (_heldFinalActionId == action.Id) _heldFinalActionId = "";
-        }
-    }
-
-    private void ValidateRecordReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs)
-    {
-        foreach (var input in inputs.Where(input => input.Kind == ComponentInputKind.RecordReference))
-        {
-            if (!input.AllowEmpty && string.IsNullOrWhiteSpace(_values.GetValueOrDefault(StorageKey(input))))
-            {
-                throw new InvalidOperationException(
-                    $"Design Preview Runtime input '{input.Id}' requires an explicit record reference.");
-            }
-        }
-    }
-
-    private void EnsureComponentVariantReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
-    {
-        var variantInputs = inputs
-            .Where((input) => input.Kind is ComponentInputKind.ComponentVariant or ComponentInputKind.ComponentVariantSlot)
-            .ToList();
-        if (variantInputs.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var input in variantInputs)
-        {
-            var key = StorageKey(input);
-            var storedValue = _values.GetValueOrDefault(key, input.DefaultValue);
-            if (input.Kind == ComponentInputKind.ComponentVariantSlot)
-            {
-                var owner = $"Design Preview Runtime value '{input.JsonKey}'";
-                var slot = ComponentVariantSlotDocumentContract.Parse(storedValue, owner);
-                var slotReference = ComponentVariantSlotDocumentContract.VariantReference(slot, owner);
-                slot["variantReference"] = _previewInputData.ValidateComponentVariantReference(
-                    projectId,
-                    input.ComponentType,
-                    slotReference);
-                _values[key] = slot.ToJsonString();
-                continue;
-            }
-
-            var reference = storedValue;
-            if (!string.IsNullOrWhiteSpace(reference))
-            {
-                _values[key] = _previewInputData.ValidateComponentVariantReference(
-                    projectId,
-                    input.ComponentType,
-                    reference);
-                continue;
-            }
-
-            if (!ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType))
-            {
-                _values[key] = ComponentVariantOptionContract.RequireFixedBoundary(
-                    ComponentVariantOptions(input, projectId),
-                    $"Design Preview Runtime Input '{input.Id}'").DefaultVariantReference;
-            }
-        }
-    }
-
-    private void ApplyRecordReferenceInput(
-        JsonObject preview,
-        ComponentInputDefinition input,
-        string value,
-        string themeMode,
-        IReadOnlyDictionary<string, string> paletteColors)
-    {
-        preview[input.JsonKey] = value;
-        if (string.IsNullOrWhiteSpace(input.ResolvedJsonKey))
-        {
-            return;
-        }
-
-        preview[input.ResolvedJsonKey] = _recordInputResolver.ResolvedPreviewValue(
-            input.TableId,
-            value,
-            themeMode,
-            paletteColors,
-            input.Id,
-            input.AllowEmpty,
-            _allowSystemPreviewFixtures);
-    }
-
-    private IReadOnlyList<FieldOption> ComponentVariantOptions(ComponentInputDefinition input, string projectId)
-    {
-        return string.IsNullOrWhiteSpace(input.ComponentType)
-            ? []
-            : _inputOptionsData.ComponentVariantOptions(projectId, input.ComponentType, includeNone: false);
-    }
-
-    private string Value(ComponentInputDefinition input)
-    {
-        return _values.TryGetValue(StorageKey(input), out var value) ? value : input.DefaultValue;
-    }
-
-    private string StorageKey(ComponentInputDefinition input)
-    {
-        return $"{_scopeKey}:{input.JsonKey}";
-    }
+    private string StorageKey(ComponentInputDefinition input) => $"{_scopeKey}:{input.JsonKey}";
 
     private void SyncPlaybackTimer()
     {
@@ -1037,9 +485,8 @@ internal sealed class ComponentPreviewInputSession
         StopPlayback();
     }
 
-    private void ApplyProjectFrameRate(string projectId)
+    private void ApplyProjectFrameRate(int projectFps)
     {
-        var projectFps = _previewInputData.ProjectDefaultFrameRate(projectId);
         var previousFps = _playbackFrameRate;
         var previousInterval = _playbackTimer.Interval;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
@@ -1049,7 +496,7 @@ internal sealed class ComponentPreviewInputSession
         {
             PreviewDebugLog.Write(
                 "preview.playback.fps",
-                ("projectId", projectId),
+                ("projectId", _projectId),
                 ("projectFps", projectFps),
                 ("previewFps", previewFps),
                 ("multiplier", PreviewPlaybackTiming.FrameRateMultiplier),
@@ -1174,7 +621,7 @@ internal sealed class ComponentPreviewInputSession
             ("timeUnit", action.TimeUnit));
         PlaybackStarted?.Invoke(new PlaybackRunInfo(DurationFrames(action) + 1, _playbackFrameRate));
         SyncPlaybackTimer();
-        _refreshPreview();
+        _refreshPlaybackFrame();
     }
 
     public bool StopActivePlayback()
@@ -1282,7 +729,7 @@ internal sealed class ComponentPreviewInputSession
                 _awaitingPlaybackPresentation = true;
                 _playbackTimer.Stop();
             }
-            _refreshPreview();
+            _refreshPlaybackFrame();
         }
 
         if (completesPlayback)
@@ -1292,8 +739,16 @@ internal sealed class ComponentPreviewInputSession
                 return;
             }
             CompletePlayback(activeAction);
-            _refreshPreview();
+            RefreshCompletedPlayback(activeAction);
         }
+    }
+
+    private void RefreshCompletedPlayback(ComponentPreviewActionDefinition? action)
+    {
+        if (action?.CompletionBehavior == ComponentPreviewActionCompletionBehavior.HoldFinal)
+            _refreshPlaybackFrame();
+        else
+            _refreshPreview();
     }
 
     private void CompletePlayback(ComponentPreviewActionDefinition action)
@@ -1336,98 +791,11 @@ internal sealed class ComponentPreviewInputSession
         return NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action) + 1.0 / Math.Max(1, _playbackFrameRate));
     }
 
-    private double DurationSeconds(ComponentPreviewActionDefinition action)
-    {
-        if (!string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey))
-        {
-            return ComponentPreviewActions.MotionStateTransitionDurationMilliseconds(
-                _runtimePreview,
-                action,
-                _themeTokens.ToJsonString()) / 1000.0;
-        }
-        if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
-        {
-            var value = ThemeNumericTokenValue.RequirePositive(
-                _themeTokens,
-                action.DurationThemeToken,
-                $"Design Preview action '{action.Id}' duration");
-            return action.TimeUnit switch
-            {
-                ComponentPreviewActionTimeUnit.Milliseconds => value / 1000.0,
-                ComponentPreviewActionTimeUnit.Frames => value / Math.Max(1, _playbackFrameRate),
-                _ => value,
-            };
-        }
-        if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
-        {
-            return DurationFrames(action) / (double)Math.Max(1, _playbackFrameRate);
-        }
+    private double DurationSeconds(ComponentPreviewActionDefinition action) =>
+        ComponentPreviewActionRuntimeValue.DurationSeconds(action, _runtimePreview, _playbackFrameRate, _themeTokens.ToJsonString());
 
-        if (action.DurationSeconds > 0)
-        {
-            return action.DurationSeconds;
-        }
-
-        return ActionDurationInputValue(action);
-    }
-
-    private int DurationFrames(ComponentPreviewActionDefinition action)
-    {
-        if (action.TimeUnit != ComponentPreviewActionTimeUnit.Frames)
-        {
-            return Math.Max(1, (int)Math.Ceiling(DurationSeconds(action) * Math.Max(1, _playbackFrameRate)));
-        }
-
-        if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
-        {
-            return Math.Max(1, (int)Math.Round(
-                ThemeNumericTokenValue.RequirePositive(
-                    _themeTokens,
-                    action.DurationThemeToken,
-                    $"Design Preview action '{action.Id}' duration"),
-                MidpointRounding.AwayFromZero));
-        }
-
-        if (!string.IsNullOrWhiteSpace(action.DurationBehaviorTimingInputId))
-        {
-            var owner = ComponentPreviewActions.RequiredOwner(_runtimePreview, action);
-            var fields = ComponentPreviewActionRuntimeValue.RequireInputDefinitions(
-                _runtimePreview,
-                action);
-            var definition = fields.FirstOrDefault((field) =>
-                field["id"]?.GetValue<string>() == action.DurationBehaviorTimingInputId)
-                ?? throw new InvalidOperationException(
-                    $"Missing BehaviorTiming action input '{action.DurationBehaviorTimingInputId}'.");
-            return BehaviorTimingResolver.ResolveFrames(owner, definition, fields, _themeTokens);
-        }
-
-        if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
-        {
-            return ComponentPreviewActionRuntimeValue.CollectionDurationFrames(_runtimePreview, action);
-        }
-
-        if (action.DurationOwnerTimeline)
-        {
-            return RuntimeTimeline.DurationFrames(
-                _runtimePreview.ToJsonString(),
-                _runtimePreview.ToJsonString(),
-                "{}",
-                1,
-                _themeTokens.ToJsonString(),
-                _playbackFrameRate);
-        }
-
-        return Math.Max(1, (int)Math.Round(ActionDurationInputValue(action), MidpointRounding.AwayFromZero));
-    }
-
-    private double PlaybackTimeValue(ComponentPreviewActionDefinition action)
-    {
-        return action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
-            ? CurrentPlaybackFrame(action)
-            : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
-                ? NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action)) * 1000
-            : NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action));
-    }
+    private int DurationFrames(ComponentPreviewActionDefinition action) =>
+        ComponentPreviewActionRuntimeValue.DurationFrames(action, _runtimePreview, _playbackFrameRate, _themeTokens.ToJsonString());
 
     private int CurrentPlaybackFrame(ComponentPreviewActionDefinition action)
     {
@@ -1439,21 +807,7 @@ internal sealed class ComponentPreviewInputSession
         return Math.Max(0, Math.Min(DurationFrames(action), frame));
     }
 
-    private double ActionDurationInputValue(ComponentPreviewActionDefinition action)
-    {
-        if (action.IsCollectionItemAction)
-        {
-            return ComponentPreviewActionRuntimeValue.RequireDurationInput(_runtimePreview, action);
-        }
 
-        var durationJsonKey = ComponentPreviewActions.DurationJsonKey(_runtimePreview, action);
-        var inputKey = $"{_scopeKey}:{durationJsonKey}";
-        if (_values.TryGetValue(inputKey, out var value))
-        {
-            return ComponentPreviewActionRuntimeValue.RequireDurationInput(value, action);
-        }
-        return ComponentPreviewActionRuntimeValue.RequireDurationInput(_runtimePreview, action);
-    }
 
     private bool IsPlaying(ComponentPreviewActionDefinition action)
     {
@@ -1675,72 +1029,5 @@ internal sealed class ComponentPreviewInputSession
         return JsonPath.ParseRequiredObject(json, "Component input JSON");
     }
 
-    private static string InputSignature(ComponentInputDefinition input)
-    {
-        return string.Join(
-            ":",
-            input.Id,
-            input.Label,
-            input.JsonKey,
-            input.Kind,
-            input.ValueKind,
-            input.DefaultValue,
-            input.PairLabels?.First ?? "",
-            input.PairLabels?.Second ?? "",
-            input.Minimum.ToString(CultureInfo.InvariantCulture),
-            input.Maximum.ToString(CultureInfo.InvariantCulture),
-            input.Increment.ToString(CultureInfo.InvariantCulture),
-            input.UseSlider,
-            input.TableId,
-            input.ResolvedJsonKey,
-            input.ComponentType,
-            input.Source,
-            input.UiOrigin,
-            input.UiGroupId,
-            input.UiGroupLabel,
-            input.UiParentGroupId,
-            string.Join(",", input.Options?.Select((option) => $"{option.Value}={option.Label}") ?? []));
-    }
-
-    private static string CollectionSignature(RuntimeInputCollectionDefinition collection) =>
-        string.Join(":", "collection", collection.Id, collection.JsonKey, collection.ItemLabel,
-            string.Join("|", collection.Fields.Select(InputSignature)),
-            collection.AnimationPresentation,
-            collection.ComponentItems is null
-                ? ""
-                : string.Join("/", collection.ComponentItems.VariantReferenceJsonKey,
-                    collection.ComponentItems.OverridesJsonKey,
-                    collection.ComponentItems.InputsJsonKey));
-
-    private static string ActionSignature(ComponentPreviewActionDefinition action)
-    {
-        return string.Join(
-            ":",
-            "action",
-            action.Id,
-            action.Label,
-            action.PlayInputId,
-            action.DurationInputId,
-            action.DurationJsonKey,
-            action.DurationBehaviorTimingInputId,
-            action.DurationSeconds.ToString(CultureInfo.InvariantCulture),
-            action.DurationCollectionJsonKey,
-            action.DurationThemeToken,
-            string.Join(",", action.DurationItemNumberKeys),
-            string.Join(",", action.DurationCollectionMultiplierNumberKeys),
-            action.DurationBaseFrames.ToString(CultureInfo.InvariantCulture),
-            action.DefinesModuleDuration.ToString(CultureInfo.InvariantCulture),
-            action.TimeJsonKey,
-            action.TimeUnit,
-            action.CompletionBehavior,
-            action.PrewarmFrames.ToString(CultureInfo.InvariantCulture),
-            action.PrewarmWhenJsonKey,
-            action.PrewarmWhenConfigPath,
-            action.PrewarmWhenValue,
-            string.Join(",", action.ActivateInputIds),
-            string.Join(",", action.DeactivateInputIds),
-            action.CollectionJsonKey,
-            action.CollectionItemId);
-    }
 
 }

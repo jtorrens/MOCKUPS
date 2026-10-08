@@ -259,6 +259,7 @@ var tests = new (string Name, Action Run)[]
     ("pinned Production Preview keeps its active Screen while editing Design", PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign),
     ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
     ("Design Preview transient snapshots remain immutable across later edits", DesignPreviewTransientSnapshotsRemainImmutable),
+    ("Design Preview session accepts prepared values without persistence capabilities", DesignPreviewSessionConsumesPreparedValues),
     ("Design Preview requires explicit record references across Component fixtures", DesignPreviewRequiresExplicitRecordReferences),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
     ("List Presence replays the same initial-to-final action and restores its origin", ListPresenceReplaysAndRestoresItsOrigin),
@@ -580,7 +581,7 @@ static void DesignPreviewRequiresExplicitRecordReferences()
         var input = RuntimeInputDefinitionReader.ReadInputs(contract,
                 JsonPath.ParseRequiredObject(payload.ConfigJson, "Fixture config"))
             .Single(input => input.Kind == ComponentInputKind.RecordReference && !input.AllowEmpty);
-        ComponentPreviewInputSession CreateSession() => new(
+        ComponentPreviewInputSession CreateSession() => PreviewInputTestFixture.Create(
             database.Design, database.DictionaryContext, database.Resources,
             database.ProjectPaths, () => { });
 
@@ -594,6 +595,53 @@ static void DesignPreviewRequiresExplicitRecordReferences()
         Throws<InvalidOperationException>(() => missing.UpdateForPayload(payload, projectId));
         var snapshot = missing.CaptureTransientState(payload);
         Equal("", snapshot.Values[$"{snapshot.ScopeKey}:{input.JsonKey}"]);
+    }
+}
+
+static void DesignPreviewSessionConsumesPreparedValues()
+{
+    var sessionType = typeof(ComponentPreviewInputSession);
+    True(sessionType.GetConstructors().SelectMany(constructor => constructor.GetParameters())
+        .All(parameter => typeof(Delegate).IsAssignableFrom(parameter.ParameterType)));
+    var visited = new HashSet<Type>();
+    void RequireNoPersistenceCapability(Type type)
+    {
+        if (!visited.Add(type)) return;
+        True(type.Assembly != typeof(IComponentPreviewInputRepository).Assembly);
+        foreach (var argument in type.GenericTypeArguments) RequireNoPersistenceCapability(argument);
+        if (type.Assembly != sessionType.Assembly) return;
+        foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+            RequireNoPersistenceCapability(field.FieldType);
+    }
+    RequireNoPersistenceCapability(sessionType);
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = CanonicalProjectNodes(database);
+    var theme = nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme);
+    var visualThread = Environment.CurrentManagedThreadId;
+    using var operations = new EditorOperationCoordinator();
+    var session = new ComponentPreviewInputSession(() => { }, () => { });
+    var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext,
+        database.Resources, database.ProjectPaths);
+    foreach (var id in new[] { "component_project_foqn_s2_list", "component_project_foqn_s2_list_item" })
+    {
+        var owner = nodes.Single(node => node.Kind == ProjectTreeNodeKind.ComponentVariant
+            && node.Id == $"{id}::variant::default");
+        // An editor can publish before its first Preview preparation has completed.
+        session.SetOwnerOverrideValue(owner, "width", "419", isCollection: false);
+        var captured = session.CapturePreparation(owner);
+        var prepared = operations.ExecuteAsync(() =>
+        {
+            True(Environment.CurrentManagedThreadId != visualThread);
+            var payload = Required(CreatePreviewPayload(database, owner, theme.Id));
+            return preparer.Prepare(payload, captured, payload.ThemeMode,
+                ProjectId(database.GetComponentClassSettings(id)));
+        }).GetAwaiter().GetResult();
+        Equal("419", prepared.Values[$"{captured.Transient.ScopeKey}:width"]);
+        session.ApplyPrepared(prepared);
+        True(session.IsPreparedFor(owner));
+        session.SetOwnerOverrideValue(owner, "width", "427", isCollection: false);
+        Equal("419", prepared.Values[$"{captured.Transient.ScopeKey}:width"]);
+        Equal("427", session.CapturePreparation(owner).Transient.Values[$"{captured.Transient.ScopeKey}:width"]);
     }
 }
 
@@ -614,7 +662,7 @@ static void DesignPreviewTransientSnapshotsRemainImmutable()
         ComponentPreviewTransientValues.ScopeKey(payload with { Name = "Renamed owner" }));
     var settings = database.GetComponentClassSettings(
         "component_project_foqn_s2_list");
-    var session = new ComponentPreviewInputSession(
+    var session = PreviewInputTestFixture.Create(
         database.Design,
         database.DictionaryContext,
         database.Resources,
@@ -705,7 +753,7 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
     var payload = Required(CreatePreviewPayload(database, listVariant, theme.Id));
     var settings = database.GetComponentClassSettings(
         "component_project_foqn_s2_list");
-    var session = new ComponentPreviewInputSession(
+    var session = PreviewInputTestFixture.Create(
         database.Design,
         database.DictionaryContext,
         database.Resources,
@@ -802,15 +850,13 @@ static void ListPresenceReplaysAndRestoresItsOrigin()
         .Single((candidate) =>
             candidate.CollectionItemId == firstItemId
             && candidate.Label == "Presence");
-    var session = new ComponentPreviewInputSession(
+    var session = PreviewInputTestFixture.Create(
         database.Design,
         database.DictionaryContext,
         database.Resources,
         database.ProjectPaths,
-        () => { })
-    {
-        PresentEveryPlaybackFrame = true,
-    };
+        () => { });
+    session.PresentEveryPlaybackFrame = true;
     session.UpdateForPayload(payload, ProjectId(settings));
     var durationMethod = typeof(ComponentPreviewInputSession).GetMethod(
         "DurationFrames",
@@ -1260,6 +1306,10 @@ static void ClosingEditorCancelsPreviewLifetime()
                 ?? throw new InvalidOperationException(
                     "Missing Production payload preparation lifetime.");
             var designOperation = designPreparation.Begin();
+            var designPayloadPreparation = (PreviewPreparationCancellation)typeof(EditorPreviewController)
+                .GetField("_designPayloadPreparation", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(controller)!;
+            var designPayloadOperation = designPayloadPreparation.Begin();
             var shotOperation = shotPreparation.Begin();
             var visualContextOperation =
                 visualContextPreparation.Begin();
@@ -1283,6 +1333,7 @@ static void ClosingEditorCancelsPreviewLifetime()
             window.Close();
 
             True(designOperation.IsCancellationRequested);
+            True(designPayloadOperation.IsCancellationRequested);
             True(shotOperation.IsCancellationRequested);
             True(visualContextOperation.IsCancellationRequested);
             True(productionPayloadOperation.IsCancellationRequested);
@@ -2610,7 +2661,7 @@ static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()
     var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
     var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
     var payload = Required(CreatePreviewPayload(database, textBoxVariant, theme.Id));
-    var session = new ComponentPreviewInputSession(
+    var session = PreviewInputTestFixture.Create(
         database.Design,
         database.DictionaryContext,
         database.Resources,
@@ -4129,7 +4180,7 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
         "Incoming Call changed config");
     iconRowSlot["variantReference"] =
         "component_project_foqn_s2_iconRow::variant::default";
-    var session = new ComponentPreviewInputSession(
+    var session = PreviewInputTestFixture.Create(
         database.Design,
         database.DictionaryContext,
         database.Resources,
@@ -6104,6 +6155,13 @@ static void ObsoletePreviewAuthoringPreparationCannotCommit()
                     WindowSession(window).SelectedNode?.Id);
                 True(content.Content is null);
                 True(!tab.IsVisible);
+                var previewController = (EditorPreviewController)typeof(MainWindow)
+                    .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .GetValue(window)!;
+                var inputSession = (ComponentPreviewInputSession)typeof(EditorPreviewController)
+                    .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .GetValue(previewController)!;
+                True(!inputSession.IsPreparedFor(previewOwner));
                 window.Close();
             },
             CancellationToken.None);
@@ -8782,6 +8840,18 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(listPreviewController) as ComponentPreviewInputSession
                 ?? throw new InvalidOperationException("Missing List Preview input session.");
+            PreviewInputTestFixture.Bind(listInputSession, database.Design, database.DictionaryContext,
+                database.Resources, database.ProjectPaths);
+            var listOperations = (EditorOperationCoordinator)typeof(EditorPreviewController)
+                .GetField("_operations", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(listPreviewController)!;
+            var pendingItemEdits = listOperations.ExecuteAsync(() => true);
+            True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                return pendingItemEdits.IsCompleted;
+            }, TimeSpan.FromSeconds(15)));
+            pendingItemEdits.GetAwaiter().GetResult();
             var effectiveListPayload = listInputSession.ApplyInputs(
                 listPayload,
                 "light",
@@ -8857,9 +8927,20 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 ?.GetValue(window) as EditorPreviewController
                 ?? throw new InvalidOperationException("Missing Preview controller.");
             var selectedNode = Required(WindowSession(window).SelectedNode);
-            var effectiveListPreview = previewController.ApplyDesignPreviewTransientTestValues(
-                selectedNode,
-                JsonPath.ParseRequiredObject(listSettings.DesignPreviewJson, "List Design Preview"));
+            True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                var captured = previewController.CaptureDesignPreviewTransientState(selectedNode);
+                return captured.HasCollectionTestValues
+                    && Object(captured.CollectionTestValuesJson)[listCollectionDefinition.StorageJsonKey]
+                        is JsonArray addedItems && addedItems.Count == listItems.Count + 1;
+            }, TimeSpan.FromSeconds(15)), "List creation did not publish its completed collection.");
+            var effectiveListPreview = new DesignPreviewInputPreparer(
+                database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths)
+                .ApplyTransient(
+                    JsonPath.ParseRequiredObject(listSettings.DesignPreviewJson, "List Design Preview"),
+                    JsonPath.ParseRequiredObject(listSettings.ConfigJson, "List config"),
+                    previewController.CaptureDesignPreviewTransientState(selectedNode));
             var effectiveListItemCount = DesignPreviewTestValues.CollectionItems(
                 effectiveListPreview,
                 listCollectionDefinition).Count;
@@ -8905,7 +8986,13 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
 
             ActionButtons(listSurface, "Duplicate item").Last()
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
+            True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                var captured = previewController.CaptureDesignPreviewTransientState(selectedNode);
+                return Object(captured.CollectionTestValuesJson)[listCollectionDefinition.StorageJsonKey]
+                    is JsonArray duplicatedItems && duplicatedItems.Count == listItems.Count + 2;
+            }, TimeSpan.FromSeconds(15)), "List duplication did not publish its completed collection.");
             listSurface = SelectComponent("component_project_foqn_s2_list");
             Equal(
                 listItems.Count + 2,
@@ -8918,11 +9005,16 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             Equal("normal", RequiredField(listSurface, "state").Value);
             Equal(1, ActionButtons(listSurface, "Delete").Count);
             True(ActionButtons(listSurface, "Move up").Last().IsEnabled);
+            var beforeMove = previewController.CaptureDesignPreviewTransientState(selectedNode).CollectionTestValuesJson;
             ActionButtons(listSurface, "Move up").Last()
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
+            True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                return previewController.CaptureDesignPreviewTransientState(selectedNode).CollectionTestValuesJson != beforeMove;
+            }, TimeSpan.FromSeconds(15)), "List reorder did not publish its completed collection.");
 
-            window.Hide();
+            window.Close();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
@@ -9278,11 +9370,8 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(window) as EditorPreviewController
                 ?? throw new InvalidOperationException("Missing Preview controller.");
-            var selectedPayload = typeof(EditorPreviewController)
-                .GetMethod(
-                    "DesignPreviewPayloadForSelection",
-                    BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.Invoke(previewController, null) as DesignPreviewPayload
+            var selectedPayload = CreatePreviewPayload(database, selected,
+                projectNodes.First(node => node.Kind == ProjectTreeNodeKind.Theme).Id)
                 ?? throw new InvalidOperationException(
                     "Chat List Module selection did not produce a Design Preview payload.");
             Equal("module", selectedPayload.Kind);
@@ -9301,6 +9390,8 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(previewController) as ComponentPreviewInputSession
                 ?? throw new InvalidOperationException("Missing Module Preview input session.");
+            PreviewInputTestFixture.Bind(inputSession, database.Design, database.DictionaryContext,
+                database.Resources, database.ProjectPaths);
             var effectivePayload = inputSession.ApplyInputs(
                 selectedPayload,
                 selectedPayload.ThemeMode,
@@ -9314,7 +9405,11 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                     "itemWidth",
                     "Chat List effective Design Preview"));
             Check(
-                PreviewUpdateSequence(previewPane) > initialPreviewSequence,
+                SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return PreviewUpdateSequence(previewPane) > initialPreviewSequence;
+                }, TimeSpan.FromSeconds(15)),
                 "Changing a Chat List Runtime Input did not request a new Preview render.");
 
             // Activate the actual shared action, not a stand-alone callback.
@@ -9334,7 +9429,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             Equal(0, opened.RuntimeSource.Address.Path.Count);
             True(window.OwnedWindows.Count == 0);
 
-            window.Hide();
+            window.Close();
 
             static long PreviewUpdateSequence(DesignWebPreviewPane pane)
             {
@@ -9422,12 +9517,14 @@ static void DesignCollectionDefaultsUseCurrentState(
                     [surface.Owner, collection, StructuredCollectionAddress.Root(collection.StorageJsonKey),
                         0, items[0], input, null, null, null, null]) as DictionaryFieldControl);
                 control.SetValue(nextValue, commit: true);
-                Wait(() => saveButton.IsEnabled, "A collection-only change must enable Save as defaults.");
+                var controller = Required(typeof(MainWindow).GetField("_previewController",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
+                Wait(() => saveButton.IsEnabled
+                    && controller.CaptureDesignPreviewTransientState(surface.Owner.Node).HasCollectionTestValues,
+                    "A collection-only change must enable Save as defaults after publication.");
                 Equal(before, database.GetModuleSettings(moduleId).DesignPreviewJson);
                 Equal(originalValue, DesignPreviewTestValues.CollectionValue(
                     DesignPreviewTestValues.CollectionItems(surface.Preview, collection)[0], input));
-                var controller = Required(typeof(MainWindow).GetField("_previewController",
-                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
                 var transient = controller.CaptureDesignPreviewTransientState(surface.Owner.Node);
                 True(transient.HasCollectionTestValues);
                 var edited = Object(transient.CollectionTestValuesJson)[collection.StorageJsonKey]!.AsArray();
@@ -10657,7 +10754,7 @@ void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
                                 timelineFrame: frame));
                             Equal(frame, payload.LocalFrame);
                             var inputSession =
-                                new ComponentPreviewInputSession(
+                                PreviewInputTestFixture.Create(
                                     database.Design,
                                     database.DictionaryContext,
                                     database.Resources,
@@ -13242,7 +13339,7 @@ static void RuntimeOverrideOwnersPreserveCurrentDocuments()
             new SqliteRuntimeInputInstanceStore(database.Context, database.Production),
             database.Animations, database.Production, database.Resources, operations);
         var previewData = new ComponentPreviewInputDataSource(database.Design, database.Resources);
-        var transient = new ComponentPreviewInputSession(database.Design, database.DictionaryContext,
+        var transient = PreviewInputTestFixture.Create(database.Design, database.DictionaryContext,
             database.Resources, database.ProjectPaths, () => { });
         var store = new EmbeddedComponentDocumentStore(ComponentDocuments(database), operations);
         var nodes = CanonicalProjectNodes(database);
@@ -16988,7 +17085,7 @@ static void ConversationPlayMessagesAdvancesRootOwnerFrame()
             .Single((candidate) => candidate.Id == "playConversation");
         True(action.DefinesModuleDuration);
         var module = database.GetModuleSettings("module_core_chat");
-        var inputSession = new ComponentPreviewInputSession(
+        var inputSession = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,
@@ -19922,7 +20019,7 @@ static void ProductionRuntimeCommitsDiscardTransientPreviewValues()
         var payload = Required(
             CreatePreviewPayload(database, screen, null));
         Equal("screenTransition", payload.Kind);
-        var session = new ComponentPreviewInputSession(
+        var session = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,
@@ -21247,7 +21344,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var theme = CanonicalProjectNodes(database)
             .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var payload = Required(CreatePreviewPayload(database, moduleVariant, theme.Id));
-        var session = new ComponentPreviewInputSession(
+        var session = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,
@@ -25417,7 +25514,7 @@ static void SurfaceStackSeedOpensAndRenders()
         database,
         defaultVariant,
         theme.Id));
-    var inputSession = new ComponentPreviewInputSession(
+    var inputSession = PreviewInputTestFixture.Create(
         database.Design,
         database.DictionaryContext,
         database.Resources,
@@ -25683,7 +25780,7 @@ static void CollectionStackSeedOpensAndRenders()
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, variants[0], theme.Id));
-        var inputSession = new ComponentPreviewInputSession(
+        var inputSession = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,
@@ -25799,7 +25896,7 @@ static void NotificationsSeedOpensAndRenders()
         foreach (var variant in new[] { notificationVariant, notificationsVariant })
         {
             var payload = Required(CreatePreviewPayload(database, variant, theme.Id));
-            var inputSession = new ComponentPreviewInputSession(
+            var inputSession = PreviewInputTestFixture.Create(
                 database.Design,
                 database.DictionaryContext,
                 database.Resources,
@@ -25819,7 +25916,7 @@ static void NotificationsSeedOpensAndRenders()
                 transitionPreview,
                 new ComponentPreviewInputDataSource(database.Design, database.Resources).ComponentVariantRuntimeContract)
             .Single((action) => action.Id == "changeDisplayMode");
-        var transitionSession = new ComponentPreviewInputSession(
+        var transitionSession = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,
@@ -25861,7 +25958,7 @@ static void NotificationsSeedOpensAndRenders()
         wrappingPreview["summaryText"] = "A deliberately long notification title that must wrap";
         database.UpdateComponentClassDesignPreviewJson(notification.Id, wrappingPreview.ToJsonString());
         var wrappingPayload = Required(CreatePreviewPayload(database, notificationVariant, theme.Id));
-        var wrappingSession = new ComponentPreviewInputSession(
+        var wrappingSession = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,
@@ -25910,7 +26007,7 @@ static void NotificationsSeedOpensAndRenders()
         preview["distributionMode"] = "stacked";
         database.UpdateComponentClassDesignPreviewJson(notifications.Id, preview.ToJsonString());
         var populated = Required(CreatePreviewPayload(database, notificationsVariant, theme.Id));
-        var populatedSession = new ComponentPreviewInputSession(
+        var populatedSession = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,
@@ -26006,7 +26103,7 @@ static void KeypadSeedOpensAndRenders()
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
-        var inputSession = new ComponentPreviewInputSession(
+        var inputSession = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,
@@ -26087,7 +26184,7 @@ static void PasswordSeedOpensAndRenders()
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
-        var inputSession = new ComponentPreviewInputSession(
+        var inputSession = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,
@@ -26327,7 +26424,7 @@ static void SocialPostComposesHeaderRows()
     var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
     var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
     var payload = Required(CreatePreviewPayload(database, module, theme.Id));
-    var session = new ComponentPreviewInputSession(
+    var session = PreviewInputTestFixture.Create(
         database.Design,
         database.DictionaryContext,
         database.Resources,
@@ -26967,7 +27064,7 @@ static void LockScreenComposesRuntimeStack()
                 $"incorrect={completedPasswordHtml.Contains("Password incorrect", StringComparison.Ordinal)}).");
 
         var payload = Required(CreatePreviewPayload(database, module, theme.Id));
-        var session = new ComponentPreviewInputSession(
+        var session = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,
@@ -27031,7 +27128,7 @@ static void LockScreenComposesRuntimeStack()
             },
         }.ToJsonString());
         var populatedPayload = Required(CreatePreviewPayload(database, module, theme.Id));
-        var populatedSession = new ComponentPreviewInputSession(
+        var populatedSession = PreviewInputTestFixture.Create(
             database.Design,
             database.DictionaryContext,
             database.Resources,

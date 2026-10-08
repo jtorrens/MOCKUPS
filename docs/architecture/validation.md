@@ -479,6 +479,13 @@ Focused fixtures cover required Actor references in Audio and Avatar without
 automatic selection or synthetic replacements, while preserving declared
 optional empty references. Compiled Desktop checks also reject the unprepared
 dictionary service and direct dictionary option dependencies in animation controls.
+Design Preview checks require a persistence-free input-session constructor and
+field set, prepare List and List Item values on the operation worker and preserve
+immutable captures across later edits. Headless selection and close regressions
+also cover the Design payload preparation lifetime. Collection UI tests await
+the shared operation queue before checking consecutive nested edits and verify
+creation against the declared Runtime owner Variant, even when no current item
+uses it.
 Compiled Desktop tests require every visual persistence writer, including
 Runtime Input and Module Instance animation stores, to receive the session
 operation coordinator and expose task-returning mutation methods.

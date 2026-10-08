@@ -47,9 +47,9 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Action<string, int, string?> _setPreviewActionFrame;
     private readonly Func<string, int> _currentPreviewActionFrame;
     private readonly Func<string, int> _maximumPreviewActionFrame;
-    private readonly Action<string, string> _setPreviewTestValue;
+    private readonly Action<ProjectTreeNode, string, string> _setPreviewTestValue;
     private readonly Action<string> _discardCommittedProductionRuntimeValue;
-    private readonly Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
+    private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
         _setPreviewCollectionItemValues;
     private readonly Action<string> _discardCommittedProductionRuntimeCollection;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
@@ -97,9 +97,9 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Action<string, int, string?> setPreviewActionFrame,
         Func<string, int> currentPreviewActionFrame,
         Func<string, int> maximumPreviewActionFrame,
-        Action<string, string> setPreviewTestValue,
+        Action<ProjectTreeNode, string, string> setPreviewTestValue,
         Action<string> discardCommittedProductionRuntimeValue,
-        Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
+        Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
             setPreviewCollectionItemValues,
         Action<string> discardCommittedProductionRuntimeCollection,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,

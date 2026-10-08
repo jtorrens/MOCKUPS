@@ -191,6 +191,8 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly DesignWebPreviewPane _designPreviewPane;
     private readonly IProjectPathResolver _projectPaths;
     private readonly ComponentPreviewInputSession _designInputsPanel;
+    private readonly DesignPreviewInputPreparer _designInputPreparer;
+    private readonly PreviewPreparationCancellation _designPayloadPreparation = new();
     private readonly ContentControl _previewBusyHost;
     private readonly StackPanel _productionContextHost = new()
     {
@@ -558,13 +560,8 @@ internal sealed class EditorPreviewController : IDisposable
                 _productionRuntimeResolver);
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
-        _designInputsPanel = new ComponentPreviewInputSession(
-            componentPreview,
-            dictionary,
-            actors,
-            projectPaths,
-            Refresh,
-            PreparePlaybackFramesAsync);
+        _designInputPreparer = new DesignPreviewInputPreparer(componentPreview, dictionary, actors, projectPaths);
+        _designInputsPanel = new ComponentPreviewInputSession(Refresh, RefreshDesignPlaybackFrame, PreparePlaybackFramesAsync);
         _designPreviewPane.FrameStatusChanged += OnDesignPreviewFrameStatusChanged;
         _designPreviewPane.ContextActionRequested += targetId =>
         {
@@ -608,6 +605,7 @@ internal sealed class EditorPreviewController : IDisposable
         _shotPlaybackTimer.Stop();
         _visualContextPreparation.Dispose();
         _productionPayloadPreparation.Dispose();
+        _designPayloadPreparation.Dispose();
         _designPlaybackPreparation.Dispose();
         _shotPlaybackPreparation.Dispose();
         _aheadPreloadCancellation?.Cancel();
@@ -631,6 +629,7 @@ internal sealed class EditorPreviewController : IDisposable
         CancelPlaybackPreparation();
         _visualContextPreparation.Cancel();
         _productionPayloadPreparation.Cancel();
+        _designPayloadPreparation.Cancel();
         _aheadPreloadCancellation?.Cancel();
     }
 
@@ -659,20 +658,8 @@ internal sealed class EditorPreviewController : IDisposable
             return;
         }
 
-        var payload = DesignPreviewPayloadFactory.Create(
-            _previewPayloadData,
-            ResolvePreviewContextNode(
-                EditorWorkspace.Design,
-                key),
-            _selectedThemeId,
-            _selectedMode,
-            _shotPreviewFrame);
-        if (payload is null)
-        {
-            return;
-        }
-
-        AddDesignHistory(key, payload.Name);
+        if (string.IsNullOrWhiteSpace(_activePreviewContextName)) return;
+        AddDesignHistory(key, _activePreviewContextName);
         RefreshDesignContextHistoryChrome();
     }
 
@@ -1706,6 +1693,7 @@ internal sealed class EditorPreviewController : IDisposable
     {
         CancelPlaybackPreparation();
         _productionPayloadPreparation.Cancel();
+        _designPayloadPreparation.Cancel();
         if (PreviewWorkspace() != EditorWorkspace.Production
             || ProductionContextNode() is not { } selected)
         {
@@ -1751,41 +1739,91 @@ internal sealed class EditorPreviewController : IDisposable
     {
         if (PreviewWorkspace() == EditorWorkspace.Production)
         {
+            _designPayloadPreparation.Cancel();
             _ = RefreshProductionCoreAsync();
             return;
         }
-
         _productionPayloadPreparation.Cancel();
+        _ = RefreshDesignCoreAsync();
+    }
+
+    private async Task RefreshDesignCoreAsync()
+    {
+        var operation = _designPayloadPreparation.Begin();
         try
         {
             PrepareStaticPreviewRefresh();
-            var invalidProductionContext = InvalidProductionContext();
-            var designPayload = invalidProductionContext is null ? DesignPreviewPayloadForSelection() : null;
-            if (designPayload is not null)
-            {
-                designPayload =
-                    ProcessDesignPreviewPayload(
-                        designPayload);
-            }
-            var contextState =
-                invalidProductionContext
-                ?? (designPayload is null
-                    ? NonRenderableStateForSelection(
-                        _selectedNode(),
-                        _selectedThemeId,
-                        _selectedMode,
-                        _shotPreviewFrame,
-                        CancellationToken.None)
-                    : PreviewContextState.Renderable);
-            RenderStaticPreview(
-                designPayload,
-                contextState,
-                invalidProductionContext);
+            var prepared = await PrepareDesignPreviewAsync(operation.Token);
+            if (!_designPayloadPreparation.IsCurrent(operation)) return;
+            RenderStaticPreview(prepared.Payload, prepared.ContextState, null);
         }
+        catch (OperationCanceledException) { }
         catch (Exception exception)
         {
-            _messages.Error("Preview", exception);
+            if (!_disposed && !operation.Token.IsCancellationRequested && _designPayloadPreparation.IsCurrent(operation))
+                _messages.Error("Preview", exception);
         }
+        finally { _designPayloadPreparation.Complete(operation); }
+    }
+
+    private sealed record PreparedDesignPreview(
+        DesignPreviewPayload? Payload, PreviewContextState ContextState);
+
+    private async Task<PreparedDesignPreview> PrepareDesignPreviewAsync(CancellationToken cancellationToken)
+    {
+        var revision = Volatile.Read(ref _selectionRefreshGeneration);
+        var node = DesignPreviewNodeForSelection();
+        var lockedOwner = LockedNode(EditorWorkspace.Design);
+        var capture = node is null ? null : _designInputsPanel.CapturePreparation(node);
+        var themeId = _selectedThemeId;
+        var mode = _selectedMode;
+        var frame = _shotPreviewFrame;
+        var projectId = _projectId;
+        var prepared = await _operations.ExecuteAsync(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var payload = DesignPreviewPayloadFactory.Create(_previewPayloadData, node, themeId, mode, frame);
+            if (lockedOwner is not null && payload is null)
+                throw new InvalidOperationException($"Locked Design Preview context '{lockedOwner.Id}' is no longer renderable.");
+            PreparedDesignPreviewInputs? inputs = null;
+            if (payload is not null && capture is not null)
+            {
+                inputs = _designInputPreparer.Prepare(payload, capture, mode,
+                    projectId ?? throw new InvalidOperationException("Design Preview requires an exact Project."));
+                payload = inputs.Payload;
+            }
+            var context = payload is null
+                ? NonRenderableStateForSelection(node, themeId, mode, frame, cancellationToken)
+                : PreviewContextState.Renderable;
+            cancellationToken.ThrowIfCancellationRequested();
+            return (Payload: payload, Inputs: inputs, Context: context);
+        }, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (_disposed || revision != Volatile.Read(ref _selectionRefreshGeneration))
+            throw new OperationCanceledException("Design Preview preparation was superseded.");
+        if (prepared.Inputs is not null) _designInputsPanel.ApplyPrepared(prepared.Inputs);
+        else _designInputsPanel.ClearPreparedContext();
+        if (prepared.Payload is not null && node is not null)
+        {
+            _activeDesignPreviewNode = PreviewNodeKey.From(node);
+            _lastDesignPreviewNode = _activeDesignPreviewNode;
+        }
+        else _activeDesignPreviewNode = null;
+        PlaybackState.NotifyFrameChanged();
+        return new(prepared.Payload, prepared.Context);
+    }
+
+    private void RefreshDesignPlaybackFrame()
+    {
+        if (_disposed) return;
+        var prepared = _preparedDesignPlayback
+            ?? throw new InvalidOperationException("Design playback requires prepared frames.");
+        var frame = _designInputsPanel.CurrentPreviewFrame;
+        if (frame < 0 || frame >= prepared.Frames.Count)
+            throw new InvalidOperationException("Design playback frame is outside its prepared range.");
+        PrepareStaticPreviewRefresh();
+        PlaybackState.NotifyFrameChanged();
+        RenderStaticPreview(prepared.Frames[frame], PreviewContextState.Renderable, null);
     }
 
     private async Task RefreshProductionCoreAsync()
@@ -1819,9 +1857,7 @@ internal sealed class EditorPreviewController : IDisposable
                 _shotPreviewFrame;
             var selected =
                 _selectedNode();
-            _designInputsPanel.UpdateForPayload(
-                null,
-                _projectId);
+            _designInputsPanel.ClearPreparedContext();
             var prepared =
                 await _operations.ExecuteAsync(
                     () =>
@@ -1912,9 +1948,7 @@ internal sealed class EditorPreviewController : IDisposable
         }
 
         PrepareStaticPreviewRefresh();
-        _designInputsPanel.UpdateForPayload(
-            null,
-            _projectId);
+        _designInputsPanel.ClearPreparedContext();
         CommitProductionPreviewContext(
             node,
             payload);
@@ -2042,80 +2076,55 @@ internal sealed class EditorPreviewController : IDisposable
         _messages.Clear();
     }
 
-    public void TriggerDesignPreviewAction(string actionId, string? targetValue = null)
+    private bool HasCurrentDesignInputs => DesignPreviewNodeForSelection() is { } node
+        && _designInputsPanel.IsPreparedFor(node);
+
+    private async Task RunDesignActionAsync(Func<bool> command)
     {
-        if (_designInputsPanel.TriggerAction(actionId, targetValue))
+        try
         {
-            return;
+            if (!HasCurrentDesignInputs)
+                await PrepareDesignPreviewAsync(CancellationToken.None);
+            if (HasCurrentDesignInputs && !command())
+                throw new InvalidOperationException("The requested Design action is not declared by the current owner.");
         }
-
-        Refresh();
-        _designInputsPanel.TriggerAction(actionId, targetValue);
-    }
-
-    public bool CanRestoreDesignPreviewAction(string actionId)
-    {
-        return _designInputsPanel.CanRestoreAction(actionId);
-    }
-
-    public bool IsDesignPreviewActionPlaying(string actionId)
-    {
-        return _designInputsPanel.IsActionPlaying(actionId);
-    }
-
-    public bool CanStepDesignPreviewAction(string actionId, int delta)
-    {
-        return _designInputsPanel.CanStepActionFrame(actionId, delta);
-    }
-
-    public int CurrentDesignPreviewActionFrame(string actionId)
-    {
-        return _designInputsPanel.CurrentActionFrame(actionId);
-    }
-
-    public int MaximumDesignPreviewActionFrame(string actionId)
-    {
-        return _designInputsPanel.MaximumActionFrame(actionId);
-    }
-
-    public void StepDesignPreviewAction(
-        string actionId,
-        int delta,
-        string? targetValue = null)
-    {
-        if (_designInputsPanel.StepActionFrame(actionId, delta, targetValue))
+        catch (OperationCanceledException) { }
+        catch (Exception exception)
         {
-            return;
+            if (!_disposed) _messages.Error("Design Preview action", exception);
         }
-
-        Refresh();
-        _designInputsPanel.StepActionFrame(actionId, delta, targetValue);
     }
 
-    public void SetDesignPreviewActionFrame(
-        string actionId,
-        int frame,
-        string? targetValue = null)
-    {
-        if (_designInputsPanel.SetActionFrame(actionId, frame, targetValue))
-        {
-            return;
-        }
+    public void TriggerDesignPreviewAction(string actionId, string? targetValue = null) =>
+        _ = RunDesignActionAsync(() => _designInputsPanel.TriggerAction(actionId, targetValue));
 
-        Refresh();
-        _designInputsPanel.SetActionFrame(actionId, frame, targetValue);
-    }
+    public bool CanRestoreDesignPreviewAction(string actionId) =>
+        HasCurrentDesignInputs && _designInputsPanel.CanRestoreAction(actionId);
 
-    public void RestoreDesignPreviewAction(string actionId)
-    {
-        if (_designInputsPanel.RestoreAction(actionId)) return;
-        Refresh();
-        _designInputsPanel.RestoreAction(actionId);
-    }
+    public bool IsDesignPreviewActionPlaying(string actionId) =>
+        HasCurrentDesignInputs && _designInputsPanel.IsActionPlaying(actionId);
 
-    public void SetDesignPreviewTestValue(string jsonKey, string value)
+    public bool CanStepDesignPreviewAction(string actionId, int delta) =>
+        HasCurrentDesignInputs && _designInputsPanel.CanStepActionFrame(actionId, delta);
+
+    public int CurrentDesignPreviewActionFrame(string actionId) =>
+        HasCurrentDesignInputs ? _designInputsPanel.CurrentActionFrame(actionId) : 0;
+
+    public int MaximumDesignPreviewActionFrame(string actionId) =>
+        HasCurrentDesignInputs ? _designInputsPanel.MaximumActionFrame(actionId) : 0;
+
+    public void StepDesignPreviewAction(string actionId, int delta, string? targetValue = null) =>
+        _ = RunDesignActionAsync(() => _designInputsPanel.StepActionFrame(actionId, delta, targetValue));
+
+    public void SetDesignPreviewActionFrame(string actionId, int frame, string? targetValue = null) =>
+        _ = RunDesignActionAsync(() => _designInputsPanel.SetActionFrame(actionId, frame, targetValue));
+
+    public void RestoreDesignPreviewAction(string actionId) =>
+        _ = RunDesignActionAsync(() => _designInputsPanel.RestoreAction(actionId));
+
+    public void SetDesignPreviewTestValue(ProjectTreeNode node, string jsonKey, string value)
     {
-        _designInputsPanel.SetExternalInputValue(jsonKey, value);
+        _designInputsPanel.SetOwnerOverrideValue(node, jsonKey, value, isCollection: false);
     }
 
     public void SetDesignPreviewOwnerOverrideValue(ProjectTreeNode node, string jsonKey, string value, bool isCollection) =>
@@ -2134,64 +2143,41 @@ internal sealed class EditorPreviewController : IDisposable
             rootStorageJsonKey);
     }
 
-    public void SetDesignPreviewCollectionItemValues(
-        StructuredCollectionAddress address,
-        string itemId,
-        IReadOnlyDictionary<string, JsonNode?> values)
+    public async Task SetDesignPreviewCollectionItemValues(
+        ProjectTreeNode node, StructuredCollectionAddress address, string itemId, IReadOnlyDictionary<string, JsonNode?> values)
     {
-        _designInputsPanel.SetExternalCollectionItemValues(
-            address,
-            itemId,
-            values);
+        var themeId = _selectedThemeId;
+        var mode = _selectedMode;
+        var frame = _shotPreviewFrame;
+        var copied = values.ToDictionary(pair => pair.Key, pair => pair.Value?.DeepClone(), StringComparer.Ordinal);
+        await _operations.ExecuteAsync(async cancellationToken =>
+        {
+            var capture = await Dispatcher.UIThread.InvokeAsync(() =>
+                _designInputsPanel.CaptureTransientState(node, node.Kind == ProjectTreeNodeKind.ModuleInstance),
+                DispatcherPriority.Normal, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            var payload = DesignPreviewPayloadFactory.Create(_previewPayloadData, node, themeId, mode, frame)
+                ?? throw new InvalidOperationException("Collection Test Values owner has no payload.");
+            var updated = _designInputPreparer.UpdateCollection(payload, capture, address, itemId, copied);
+            cancellationToken.ThrowIfCancellationRequested();
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (!_disposed)
+                    _designInputsPanel.SetExternalCollectionItems(node, address.RootStorageJsonKey,
+                        updated.Select(item => item!.AsObject()).ToArray());
+            }, DispatcherPriority.Normal, cancellationToken);
+            return true;
+        });
     }
 
     public void SetDesignPreviewCollectionTestItems(
-        ProjectTreeNode node,
-        string collectionJsonKey,
-        IReadOnlyList<JsonObject> items)
-    {
-        var payload = DesignPreviewPayloadFactory.Create(
-            _previewPayloadData,
-            node,
-            _selectedThemeId,
-            _selectedMode,
-            _shotPreviewFrame);
-        if (payload is not null)
-        {
-            _designInputsPanel.SetExternalCollectionItems(payload, collectionJsonKey, items);
-        }
-    }
+        ProjectTreeNode node, string collectionJsonKey, IReadOnlyList<JsonObject> items) =>
+        _designInputsPanel.SetExternalCollectionItems(node, collectionJsonKey, items);
 
-    public JsonObject ApplyDesignPreviewTransientTestValues(ProjectTreeNode node, JsonObject preview)
-    {
-        var payload = DesignPreviewPayloadFactory.Create(
-            _previewPayloadData,
-            node,
-            _selectedThemeId,
-            _selectedMode,
-            _shotPreviewFrame);
-        return payload is null
-            ? preview.DeepClone() as JsonObject ?? new JsonObject()
-            : _designInputsPanel.ApplyTransientTestValues(preview, payload);
-    }
+    public ComponentPreviewTransientState CaptureDesignPreviewTransientState(ProjectTreeNode node) =>
+        _designInputsPanel.CaptureTransientState(node, node.Kind == ProjectTreeNodeKind.ModuleInstance);
 
-    public ComponentPreviewTransientState
-        CaptureDesignPreviewTransientState(
-            ProjectTreeNode node) =>
-        _designInputsPanel.CaptureTransientState(
-            node,
-            node.Kind == ProjectTreeNodeKind.ModuleInstance);
-
-    public bool ResetDesignPreviewTestValues(ProjectTreeNode node)
-    {
-        var payload = DesignPreviewPayloadFactory.Create(
-            _previewPayloadData,
-            node,
-            _selectedThemeId,
-            _selectedMode,
-            _shotPreviewFrame);
-        return payload is not null && _designInputsPanel.ResetTestValues(payload);
-    }
+    public bool ResetDesignPreviewTestValues(ProjectTreeNode node) => _designInputsPanel.ResetTestValues(node);
 
     private async Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition? requestedAction)
     {
@@ -2242,14 +2228,11 @@ internal sealed class EditorPreviewController : IDisposable
         else
         {
             designPayload =
-                DesignPreviewPayloadForSelection();
+                (await PrepareDesignPreviewAsync(cancellationToken)).Payload;
             if (designPayload is null)
             {
                 return true;
             }
-            designPayload =
-                ProcessDesignPreviewPayload(
-                    designPayload);
         }
 
         var deviceId = PreviewDeviceId(designPayload);
@@ -3085,71 +3068,8 @@ internal sealed class EditorPreviewController : IDisposable
         }
     }
 
-    private static int PlaybackDurationFrames(ComponentPreviewActionDefinition action, JsonObject preview, int fps, string themeTokensJson)
-    {
-        if (action.DurationOwnerTimeline)
-        {
-            return RuntimeTimeline.DurationFrames(
-                preview.ToJsonString(),
-                preview.ToJsonString(),
-                "{}",
-                1,
-                themeTokensJson,
-                fps);
-        }
-        if (!string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey))
-        {
-            var durationMs = ComponentPreviewActions.MotionStateTransitionDurationMilliseconds(
-                preview,
-                action,
-                themeTokensJson);
-            return durationMs <= 0
-                ? 0
-                : Math.Max(1, (int)Math.Ceiling(durationMs / 1000.0 * Math.Max(1, fps)));
-        }
-        if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
-        {
-            var themeTokens = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
-            var value = ThemeNumericTokenValue.RequirePositive(
-                themeTokens,
-                action.DurationThemeToken,
-                $"Design Preview action '{action.Id}' duration");
-            var seconds = action.TimeUnit switch
-            {
-                ComponentPreviewActionTimeUnit.Milliseconds => value / 1000.0,
-                ComponentPreviewActionTimeUnit.Frames => value / Math.Max(1, fps),
-                _ => value,
-            };
-            return seconds <= 0 ? 0 : Math.Max(1, (int)Math.Ceiling(seconds * Math.Max(1, fps)));
-        }
-        if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
-        {
-            return ComponentPreviewActionRuntimeValue.CollectionDurationFrames(preview, action);
-        }
-        if (!string.IsNullOrWhiteSpace(action.DurationBehaviorTimingInputId))
-        {
-            var owner = ComponentPreviewActions.RequiredOwner(preview, action);
-            var fields = ComponentPreviewActionRuntimeValue.RequireInputDefinitions(preview, action);
-            var definition = fields.FirstOrDefault((field) =>
-                JsonString(field, "id") == action.DurationBehaviorTimingInputId)
-                ?? throw new InvalidOperationException(
-                    $"Missing BehaviorTiming action input '{action.DurationBehaviorTimingInputId}'.");
-            var themeTokens = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
-            return BehaviorTimingResolver.ResolveFrames(owner, definition, fields, themeTokens);
-        }
-
-        if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
-        {
-            return Math.Max(1, (int)Math.Round(
-                ComponentPreviewActionRuntimeValue.RequireDurationInput(preview, action),
-                MidpointRounding.AwayFromZero));
-        }
-
-        var duration = action.DurationSeconds > 0
-            ? action.DurationSeconds
-            : ComponentPreviewActionRuntimeValue.RequireDurationInput(preview, action);
-        return Math.Max(1, (int)Math.Ceiling(duration * Math.Max(1, fps)));
-    }
+    private static int PlaybackDurationFrames(ComponentPreviewActionDefinition action, JsonObject preview, int fps, string themeTokensJson) =>
+        ComponentPreviewActionRuntimeValue.DurationFrames(action, preview, fps, themeTokensJson);
 
     private static string PlaybackFrameKey(DesignPreviewPayload payload)
     {
@@ -3229,43 +3149,12 @@ internal sealed class EditorPreviewController : IDisposable
             DeviceModuleTransparencyOverride.Disabled);
     }
 
-    private DesignPreviewPayload? DesignPreviewPayloadForSelection()
+    private ProjectTreeNode? DesignPreviewNodeForSelection()
     {
-        if (PreviewWorkspace() == EditorWorkspace.Production)
-        {
-            return null;
-        }
-        if (LockedNode(EditorWorkspace.Design) is { } lockedNode)
-        {
-            var lockedPayload = DesignPreviewPayloadFactory.Create(
-                _previewPayloadData,
-                ResolvePreviewContextNode(
-                    EditorWorkspace.Design,
-                    lockedNode),
-                _selectedThemeId,
-                _selectedMode,
-                _shotPreviewFrame);
-            if (lockedPayload is not null)
-            {
-                _activeDesignPreviewNode = lockedNode;
-                return lockedPayload;
-            }
-
-            throw new InvalidOperationException(
-                $"Locked Design Preview context '{lockedNode.Id}' is no longer renderable.");
-        }
-
-        var selectedNode = _selectedNode();
-        var selectedPayload = DesignPreviewPayloadFactory.Create(_previewPayloadData, selectedNode, _selectedThemeId, _selectedMode, _shotPreviewFrame);
-        if (selectedPayload is not null && selectedNode is not null)
-        {
-            _lastDesignPreviewNode = PreviewNodeKey.From(selectedNode);
-            _activeDesignPreviewNode = _lastDesignPreviewNode;
-            return selectedPayload;
-        }
-
-        _activeDesignPreviewNode = null;
-        return null;
+        if (PreviewWorkspace() == EditorWorkspace.Production) return null;
+        return LockedNode(EditorWorkspace.Design) is { } locked
+            ? ResolvePreviewContextNode(EditorWorkspace.Design, locked)
+            : _selectedNode();
     }
 
     private const string PreviewRetryTargetId = "__preview_retry__";
@@ -4318,20 +4207,6 @@ internal sealed class EditorPreviewController : IDisposable
         if (payload is null) return "";
         var instance = DesignPreviewTestValues.Parse(payload.InstanceJson);
         return (instance["context"] as JsonObject)?[key]?.GetValue<string>() ?? "";
-    }
-
-    private DesignPreviewPayload ProcessDesignPreviewPayload(
-        DesignPreviewPayload payload)
-    {
-        _designInputsPanel.UpdateForPayload(
-            payload,
-            _projectId);
-        var resolved = _designInputsPanel.ApplyInputs(
-            payload,
-            _selectedMode,
-            _projectId);
-        PlaybackState.NotifyFrameChanged();
-        return resolved;
     }
 
     private void UpdateProductionPreviewSetup()

@@ -70,6 +70,18 @@ internal sealed class EditorDictionaryContextPreparer
         foreach (var collection in surface.Collections)
         {
             requirements.Add(collection);
+            if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeVariantReferencePath))
+            {
+                // Creation can reference a Variant not used by any current item.
+                // Follow the same declared owner path as the shared item factory.
+                var reference = RuntimeCollectionItemContractOwner.ResolveItemVariantReference(
+                    new JsonObject(), collection,
+                    JsonPath.ParseRequiredObject(surface.Owner.ConfigJson, "Runtime owner config"),
+                    ownerReference => JsonPath.ParseRequiredObject(
+                        _contextData.ComponentVariantSelection(ProjectAncestor(node).Id, ownerReference).ConfigJson,
+                        "Runtime collection owner Variant config"));
+                requirements.AddVariantReference(reference);
+            }
         }
         requirements.AddVariantReferences(surface.Preview);
         requirements.AddEmbeddedRuntimeContracts(

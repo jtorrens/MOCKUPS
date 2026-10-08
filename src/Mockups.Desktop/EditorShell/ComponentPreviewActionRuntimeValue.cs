@@ -9,6 +9,112 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class ComponentPreviewActionRuntimeValue
 {
+    public static int DurationFrames(ComponentPreviewActionDefinition action, JsonObject preview, int fps, string themeTokensJson)
+    {
+        if (action.DurationOwnerTimeline)
+        {
+            return RuntimeTimeline.DurationFrames(
+                preview.ToJsonString(),
+                preview.ToJsonString(),
+                "{}",
+                1,
+                themeTokensJson,
+                fps);
+        }
+        if (!string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey))
+        {
+            var durationMs = ComponentPreviewActions.MotionStateTransitionDurationMilliseconds(
+                preview,
+                action,
+                themeTokensJson);
+            return durationMs <= 0
+                ? 0
+                : Math.Max(1, (int)Math.Ceiling(durationMs / 1000.0 * Math.Max(1, fps)));
+        }
+        if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
+        {
+            var themeTokens = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
+            var value = ThemeNumericTokenValue.RequirePositive(
+                themeTokens,
+                action.DurationThemeToken,
+                $"Design Preview action '{action.Id}' duration");
+            var seconds = action.TimeUnit switch
+            {
+                ComponentPreviewActionTimeUnit.Milliseconds => value / 1000.0,
+                ComponentPreviewActionTimeUnit.Frames => value / Math.Max(1, fps),
+                _ => value,
+            };
+            return seconds <= 0 ? 0 : Math.Max(1, (int)Math.Ceiling(seconds * Math.Max(1, fps)));
+        }
+        if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
+        {
+            return ComponentPreviewActionRuntimeValue.CollectionDurationFrames(preview, action);
+        }
+        if (!string.IsNullOrWhiteSpace(action.DurationBehaviorTimingInputId))
+        {
+            var owner = ComponentPreviewActions.RequiredOwner(preview, action);
+            var fields = ComponentPreviewActionRuntimeValue.RequireInputDefinitions(preview, action);
+            var definition = fields.FirstOrDefault((field) =>
+                field["id"]?.GetValue<string>() == action.DurationBehaviorTimingInputId)
+                ?? throw new InvalidOperationException(
+                    $"Missing BehaviorTiming action input '{action.DurationBehaviorTimingInputId}'.");
+            var themeTokens = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
+            return BehaviorTimingResolver.ResolveFrames(owner, definition, fields, themeTokens);
+        }
+
+        if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
+        {
+            return Math.Max(1, (int)Math.Round(
+                ComponentPreviewActionRuntimeValue.RequireDurationInput(preview, action),
+                MidpointRounding.AwayFromZero));
+        }
+
+        var duration = action.DurationSeconds > 0
+            ? action.DurationSeconds
+            : ComponentPreviewActionRuntimeValue.RequireDurationInput(preview, action);
+        return Math.Max(1, (int)Math.Ceiling(duration * Math.Max(1, fps)));
+    }
+
+    public static double DurationSeconds(ComponentPreviewActionDefinition action, JsonObject preview, int fps, string themeTokensJson)
+    {
+        if (!string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey))
+            return ComponentPreviewActions.MotionStateTransitionDurationMilliseconds(preview, action, themeTokensJson) / 1000.0;
+        if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
+        {
+            var value = ThemeNumericTokenValue.RequirePositive(
+                JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens"), action.DurationThemeToken,
+                $"Design Preview action '{action.Id}' duration");
+            return action.TimeUnit switch
+            {
+                ComponentPreviewActionTimeUnit.Milliseconds => value / 1000.0,
+                ComponentPreviewActionTimeUnit.Frames => value / Math.Max(1, fps),
+                _ => value,
+            };
+        }
+        if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
+            return DurationFrames(action, preview, fps, themeTokensJson) / (double)Math.Max(1, fps);
+        return action.DurationSeconds > 0 ? action.DurationSeconds : RequireDurationInput(preview, action);
+    }
+
+    public static double NormalizedTime(
+        double value, ComponentPreviewActionDefinition action, JsonObject preview, int fps, string themeTokensJson)
+    {
+        var seconds = action.TimeUnit switch
+        {
+            ComponentPreviewActionTimeUnit.Frames => value / Math.Max(1, fps),
+            ComponentPreviewActionTimeUnit.Milliseconds => value / 1000.0,
+            _ => value,
+        };
+        var duration = DurationSeconds(action, preview, fps, themeTokensJson);
+        var clamped = Math.Clamp(seconds, 0, duration);
+        var snapped = Math.Clamp(Math.Round(clamped * fps, MidpointRounding.AwayFromZero) / fps, 0, duration);
+        return action.TimeUnit switch
+        {
+            ComponentPreviewActionTimeUnit.Frames => Math.Min(DurationFrames(action, preview, fps, themeTokensJson), Math.Floor(snapped * fps + 0.0001)),
+            ComponentPreviewActionTimeUnit.Milliseconds => snapped * 1000,
+            _ => snapped,
+        };
+    }
     public static double RequireDurationInput(
         JsonObject preview,
         ComponentPreviewActionDefinition action)

@@ -505,6 +505,25 @@ position. The visual shell shows the shared loading state and constructs
 controls only from the prepared result whose selection revision is still
 current.
 
+`ComponentPreviewInputSession` has no repository or resource capability. It
+owns only scoped temporary values, prepared action state and playback. The
+controller captures that state on the visual thread; `DesignPreviewInputPreparer`
+loads and prepares current Runtime inputs, exact Variant dependencies and
+record/media values through `EditorOperationCoordinator`. Only the still-current
+result is applied to the session and Preview. Static refresh and the start of
+each Play execution use this same preparation; playback ticks present its
+prepared frames without rereading persistence. Reset-on-completion actions
+request a new static preparation, while Hold Final retains the prepared final
+frame. Action timing is shared by input preparation, the session and frame
+generation through `ComponentPreviewActionRuntimeValue`.
+
+Scalar Test Value callbacks carry their exact owner, including when Preview is
+pinned elsewhere or the owner's first preparation is pending. Structured item
+edits enter the same operation queue and capture the latest temporary document
+when their turn starts. Publication of the complete updated collection finishes
+before releasing the queue, so two queued edits cannot overwrite each other
+with snapshots captured before either edit was applied.
+
 Design `Save as defaults` and its dirty-state indicator capture that same
 owner-keyed transient state, including structured item edits, rather than the
 document originally captured by the mounted controls. Their document reads and
