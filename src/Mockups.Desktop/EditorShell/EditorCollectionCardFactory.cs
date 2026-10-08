@@ -22,7 +22,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly IEditorNodeCommandStore _nodeCommands;
     private readonly IIconThemeAssetStore _iconThemes;
     private readonly IComponentPreviewInputRepository _componentPreview;
-    private readonly IDictionaryFieldContextRepository _dictionary;
     private readonly IActorPreviewRepository _actors;
     private readonly IRuntimeInputOwnerStore _runtimeInputOwners;
     private readonly IModuleInstanceTimelineStore _timeline;
@@ -73,7 +72,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         IEditorNodeCommandStore nodeCommands,
         IIconThemeAssetStore iconThemes,
         IComponentPreviewInputRepository componentPreview,
-        IDictionaryFieldContextRepository dictionary,
         IActorPreviewRepository actors,
         IRuntimeInputOwnerStore runtimeInputOwners,
         IModuleInstanceTimelineStore timeline,
@@ -120,7 +118,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _nodeCommands = nodeCommands;
         _iconThemes = iconThemes;
         _componentPreview = componentPreview;
-        _dictionary = dictionary;
         _actors = actors;
         _runtimeInputOwners = runtimeInputOwners;
         _timeline = timeline;
@@ -353,8 +350,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _animation,
             _timeline,
             _moduleInstanceThemes,
-            _dictionary,
-            _actors,
             _operations,
             _dictionaryServices,
             _messages,

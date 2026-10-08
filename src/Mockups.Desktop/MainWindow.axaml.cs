@@ -437,7 +437,6 @@ public partial class MainWindow : SukiWindow
             data.NodeCommands,
             data.IconThemes,
             data.ComponentPreview,
-            data.Dictionary,
             data.ActorPreview,
             data.RuntimeInputOwners,
             data.Timeline,

@@ -470,6 +470,10 @@ Behavior is not owned by architecture validation. Strict Preview payloads,
 dictionary and Runtime Input contracts, Variant references, Overrides, timing,
 animation, UI interaction and Render Queue behavior belong to their focused
 tests. The manifest-wide desktop test renders every committed Variant fixture.
+Focused fixtures cover required Actor references in Audio and Avatar without
+automatic selection or synthetic replacements, while preserving declared
+optional empty references. Compiled Desktop checks also reject the unprepared
+dictionary service and direct dictionary option dependencies in animation controls.
 Compiled Desktop tests require every visual persistence writer, including
 Runtime Input and Module Instance animation stores, to receive the session
 operation coordinator and expose task-returning mutation methods.

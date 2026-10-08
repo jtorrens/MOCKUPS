@@ -18,7 +18,6 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ModuleInstanceAnimationEditor
 {
     private readonly ModuleInstanceAnimationDocumentStore _animationDocuments;
-    private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly IEditorShellMessageSink _messages;
     private readonly Action _onChanged;
@@ -32,17 +31,16 @@ internal sealed class ModuleInstanceAnimationEditor
     private ModuleInstanceAnimationSnapshot?
         _preparedAnimationSnapshot;
     private IRuntimeInputOptionsDataSource ActiveInputOptions =>
-        _preparedDictionaryContext is null
-            ? _runtimeInputOptions
-            : new PreparedRuntimeInputOptionsDataSource(
-                _preparedDictionaryContext);
+        new PreparedRuntimeInputOptionsDataSource(PreparedDictionaryContext);
+
+    private EditorDictionaryContextSnapshot PreparedDictionaryContext =>
+        _preparedDictionaryContext ?? throw new InvalidOperationException(
+            "Animation editing requires its prepared dictionary context.");
 
     public ModuleInstanceAnimationEditor(
         IModuleInstanceAnimationStore animation,
         IModuleInstanceTimelineStore timeline,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
-        IDictionaryFieldContextRepository dictionary,
-        IActorPreviewRepository actors,
         EditorOperationCoordinator operations,
         EditorDictionaryFieldServices dictionaryServices,
         IEditorShellMessageSink messages,
@@ -63,8 +61,6 @@ internal sealed class ModuleInstanceAnimationEditor
             moduleInstanceThemes,
             timelineDataSource,
             operations);
-        _runtimeInputOptions =
-            new RuntimeInputOptionsDataSource(dictionary, actors);
         _dictionaryServices = dictionaryServices;
         _messages = messages;
         _onChanged = onChanged;
@@ -82,9 +78,11 @@ internal sealed class ModuleInstanceAnimationEditor
     }
 
     public void UsePreparedContext(
-        EditorDictionaryContextSnapshot? dictionaryContext,
-        ModuleInstanceAnimationSnapshot? animationSnapshot)
+        EditorDictionaryContextSnapshot dictionaryContext,
+        ModuleInstanceAnimationSnapshot animationSnapshot)
     {
+        ArgumentNullException.ThrowIfNull(dictionaryContext);
+        ArgumentNullException.ThrowIfNull(animationSnapshot);
         _preparedDictionaryContext = dictionaryContext;
         _preparedAnimationSnapshot = animationSnapshot;
     }
@@ -1346,14 +1344,10 @@ internal sealed class ModuleInstanceAnimationEditor
     private DictionaryFieldServices DictionaryServices(
         ProjectTreeNode node)
     {
-        return _preparedDictionaryContext is null
-            ? _dictionaryServices.ForNode(
-                node,
-                (_) => "")
-            : _dictionaryServices.ForPreparedNode(
-                node,
-                _preparedDictionaryContext,
-                (_) => "");
+        return _dictionaryServices.ForPreparedNode(
+            node,
+            PreparedDictionaryContext,
+            (_) => "");
     }
 
     private ModuleInstanceAnimationSnapshot PreparedSnapshot(

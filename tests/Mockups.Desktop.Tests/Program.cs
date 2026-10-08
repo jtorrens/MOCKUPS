@@ -257,6 +257,7 @@ var tests = new (string Name, Action Run)[]
     ("pinned Production Preview keeps its active Screen while editing Design", PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign),
     ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
     ("Design Preview transient snapshots remain immutable across later edits", DesignPreviewTransientSnapshotsRemainImmutable),
+    ("Design Preview requires explicit record references across Component fixtures", DesignPreviewRequiresExplicitRecordReferences),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
     ("List Presence replays the same initial-to-final action and restores its origin", ListPresenceReplaysAndRestoresItsOrigin),
     ("manifest owners render their committed fixtures and Modules advance time", ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime),
@@ -550,6 +551,48 @@ static void AssertEmptyComponentVariantBoundary(
         ComponentVariantSlotDocumentContract.VariantReference(slot, owner));
     True(!OverrideDocumentContract.HasAuthoredValues(
         ComponentVariantSlotDocumentContract.Overrides(slot, owner)));
+}
+
+static void DesignPreviewRequiresExplicitRecordReferences()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var resolver = new ComponentPreviewRecordInputResolver(
+        new ActorPreviewDataSource(database.Resources), database.ProjectPaths);
+    Throws<InvalidOperationException>(() => resolver.ResolvedPreviewValue(
+        "actors", "", "light", new Dictionary<string, string>(), "requiredActor",
+        allowSystemPreviewFixtures: true));
+    Equal(0, resolver.ResolvedPreviewValue(
+        "actors", "", "light", new Dictionary<string, string>(), "optionalActor",
+        allowEmpty: true, allowSystemPreviewFixtures: true).AsObject().Count);
+    var nodes = CanonicalProjectNodes(database);
+    var theme = nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme);
+    foreach (var componentType in new[] { "audio", "avatar" })
+    {
+        var component = nodes.Single(node => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == componentType);
+        var variant = component.Children.Single(node =>
+            node.Kind == ProjectTreeNodeKind.ComponentVariant && node.IsProtected);
+        var payload = Required(CreatePreviewPayload(database, variant, theme.Id));
+        var projectId = ProjectId(database.GetComponentClassSettings(component.Id));
+        var contract = JsonPath.ParseRequiredObject(payload.RuntimeContractJson, "Explicit reference fixture");
+        var input = RuntimeInputDefinitionReader.ReadInputs(contract,
+                JsonPath.ParseRequiredObject(payload.ConfigJson, "Fixture config"))
+            .Single(input => input.Kind == ComponentInputKind.RecordReference && !input.AllowEmpty);
+        ComponentPreviewInputSession CreateSession() => new(
+            database.Design, database.DictionaryContext, database.Resources,
+            database.ProjectPaths, () => { });
+
+        // Valid fixtures remain usable. An authored empty reference is not a request
+        // to select the first available System Preview Actor.
+        var valid = CreateSession();
+        valid.UpdateForPayload(payload, projectId);
+        var missing = CreateSession();
+        missing.UpdateForPayload(payload, projectId);
+        missing.SetExternalInputValue(input.JsonKey, "");
+        Throws<InvalidOperationException>(() => missing.UpdateForPayload(payload, projectId));
+        var snapshot = missing.CaptureTransientState(payload);
+        Equal("", snapshot.Values[$"{snapshot.ScopeKey}:{input.JsonKey}"]);
+    }
 }
 
 static void DesignPreviewTransientSnapshotsRemainImmutable()
@@ -4804,6 +4847,15 @@ static void PreviewAuthoringPreparationUsesOperationBoundary()
                 | BindingFlags.NonPublic)
         ?? throw new InvalidOperationException(
             "Missing prepared animation context.");
+    True(typeof(EditorDictionaryFieldServices).GetMethod("ForNode",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) is null);
+    True(typeof(ModuleInstanceAnimationEditor).GetConstructors()
+        .SelectMany(constructor => constructor.GetParameters())
+        .All(parameter => parameter.ParameterType != typeof(IDictionaryFieldContextRepository)
+            && parameter.ParameterType != typeof(IActorPreviewRepository)));
+    True(typeof(ModuleInstanceAnimationEditor).GetFields(
+            BindingFlags.Instance | BindingFlags.NonPublic)
+        .All(field => field.FieldType != typeof(RuntimeInputOptionsDataSource)));
     SequenceEqual(
         new[]
         {

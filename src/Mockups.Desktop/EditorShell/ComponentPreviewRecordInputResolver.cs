@@ -18,22 +18,6 @@ internal sealed class ComponentPreviewRecordInputResolver
         _projectPaths = projectPaths;
     }
 
-    public IReadOnlyList<FieldOption> Options(
-        string projectId,
-        string tableId,
-        string inputId,
-        bool allowSystemPreviewFixtures = false)
-    {
-        return tableId switch
-        {
-            "actors" => allowSystemPreviewFixtures
-                ? SystemPreviewFixtureCatalog.ActorOptions(includeNone: true)
-                : _actorDataSource.Options(projectId),
-            _ => throw new InvalidOperationException(
-                $"Unsupported record reference input table '{tableId}' for '{inputId}'."),
-        };
-    }
-
     public JsonNode ResolvedPreviewValue(
         string tableId,
         string recordId,
@@ -59,7 +43,8 @@ internal sealed class ComponentPreviewRecordInputResolver
                     paletteColors)
                 : allowEmpty
                     ? new JsonObject()
-                    : ActorPreviewInputFactory.CreateSample(),
+                    : throw new InvalidOperationException(
+                        $"Runtime Input '{inputId}' requires an explicit Actor reference."),
             _ => throw new InvalidOperationException(
                 $"Unsupported record reference input table '{tableId}' for '{inputId}'."),
         };

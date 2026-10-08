@@ -395,6 +395,11 @@ current common playback state whenever the surface is attached.
 
 ## Keyframe interaction
 
+Animation controls require both the prepared dictionary context and the exact
+Screen animation snapshot. They expose no live dictionary-options data source
+and cannot build a field through an unprepared dictionary service. Missing
+preparation fails explicitly before an editable track is constructed.
+
 Keyframes are selected and dragged through the shared timeline interaction.
 Drag reads pointer movement in the selected Screen ruler, converts the selected
 track back into its temporal owner's local scale and commits that signed local

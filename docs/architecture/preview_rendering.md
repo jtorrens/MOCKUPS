@@ -2,6 +2,13 @@
 
 Status: normative.
 
+Required Runtime record references remain explicit in Design Test Values as
+well as Production. An empty required Actor reference is a contract error;
+neither input-session preparation nor nested reference resolution selects the
+first available Actor or synthesizes a sample Actor. A declared optional empty
+reference remains empty. System Preview Actors resolve only through their
+explicit fixture identities.
+
 ## Complete route
 
 Preview resolves one exact authored context:

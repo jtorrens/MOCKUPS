@@ -179,7 +179,7 @@ internal sealed class ComponentPreviewInputSession
             EnsureValue(input, preview);
         }
         EnsureActionValues(preview);
-        EnsureRecordReferenceValues(inputs, projectId);
+        ValidateRecordReferenceValues(inputs);
         SyncPlaybackTimer();
     }
 
@@ -613,10 +613,10 @@ internal sealed class ComponentPreviewInputSession
         }
         EnsureActionValues(preview);
 
+        ValidateRecordReferenceValues(inputs);
         var effectiveProjectId = string.IsNullOrWhiteSpace(projectId) ? _projectId : projectId;
         if (!string.IsNullOrWhiteSpace(effectiveProjectId))
         {
-            EnsureRecordReferenceValues(inputs, effectiveProjectId);
             EnsureComponentVariantReferenceValues(inputs, effectiveProjectId);
         }
 
@@ -895,30 +895,14 @@ internal sealed class ComponentPreviewInputSession
         }
     }
 
-    private void EnsureRecordReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
+    private void ValidateRecordReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs)
     {
-        var recordInputs = inputs
-            .Where((input) => input.Kind == ComponentInputKind.RecordReference)
-            .ToList();
-        if (recordInputs.Count == 0)
+        foreach (var input in inputs.Where(input => input.Kind == ComponentInputKind.RecordReference))
         {
-            return;
-        }
-
-        foreach (var input in recordInputs)
-        {
-            if (input.AllowEmpty) continue;
-            var key = StorageKey(input);
-            if (!string.IsNullOrWhiteSpace(_values.GetValueOrDefault(key)))
+            if (!input.AllowEmpty && string.IsNullOrWhiteSpace(_values.GetValueOrDefault(StorageKey(input))))
             {
-                continue;
-            }
-
-            var firstRecord = RecordReferenceOptions(input, projectId)
-                .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value));
-            if (firstRecord is not null)
-            {
-                _values[key] = firstRecord.Value;
+                throw new InvalidOperationException(
+                    $"Design Preview Runtime input '{input.Id}' requires an explicit record reference.");
             }
         }
     }
@@ -989,15 +973,6 @@ internal sealed class ComponentPreviewInputSession
             paletteColors,
             input.Id,
             input.AllowEmpty,
-            _allowSystemPreviewFixtures);
-    }
-
-    private IReadOnlyList<FieldOption> RecordReferenceOptions(ComponentInputDefinition input, string projectId)
-    {
-        return _recordInputResolver.Options(
-            projectId,
-            input.TableId,
-            input.Id,
             _allowSystemPreviewFixtures);
     }
 

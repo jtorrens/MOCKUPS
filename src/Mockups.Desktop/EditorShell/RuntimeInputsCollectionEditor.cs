@@ -431,8 +431,10 @@ internal sealed class RuntimeInputsCollectionEditor
             surface.AnimationSnapshot?.Source.AnimationJson;
         _preparedTimelineMutation = surface.TimelineMutation;
         _animationEditor?.UsePreparedContext(
-            surface.DictionaryContext,
-            surface.AnimationSnapshot);
+            surface.DictionaryContext ?? throw new InvalidOperationException(
+                "Production animation editing requires its prepared dictionary context."),
+            surface.AnimationSnapshot ?? throw new InvalidOperationException(
+                "Production animation editing requires its prepared snapshot."));
     }
 
     private sealed record PreparedDesignTestValues(
