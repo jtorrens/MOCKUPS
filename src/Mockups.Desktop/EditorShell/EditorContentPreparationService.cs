@@ -3,7 +3,6 @@ using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -545,7 +544,7 @@ internal sealed class EditorContentPreparationService : IDisposable
                 var overrides = boundary.ReadOverrides(item, boundaryOwner)
                     .DeepClone()
                     .AsObject();
-                var runtimeSource = new RuntimeComponentOverrideSource(
+                var runtimeSource = _componentFields.RegisterRuntimeOverrides(
                     selection.ProjectId,
                     variantReference,
                     selection.ComponentType,
@@ -770,7 +769,7 @@ internal sealed class EditorContentPreparationService : IDisposable
         if (context.RuntimeSource is { } runtime)
         {
             return $"runtime:{runtime.VariantReference}:"
-                + RuntimeHelpers.GetHashCode(runtime.Overrides)
+                + runtime.DocumentId
                 + (string.IsNullOrWhiteSpace(slots)
                     ? ""
                     : $"/{slots}");

@@ -2,6 +2,19 @@
 
 Status: normative.
 
+## Design authoring replacements
+
+Design default promotion and resource replacement submit a
+`DesignPreviewDocumentReplacement` containing the expected persisted document
+and proposed document. The Design owner compares the expected revision and
+validates declarations, typed values, collection authoring projections, fixed
+counts and actions under its write gate before publishing. A stale proposal
+fails without overwriting newer authoring. Equivalent documents do not write;
+accepted documents preserve their submitted representation. Visual controls
+cannot submit an unversioned JSON replacement through the persistence port.
+Calculated presentation fields are checked through the shared effective
+authoring projection, not treated as additional stored collection fields.
+
 ## Composition identity
 
 Reusable composition references concrete Component Variants. Every boundary

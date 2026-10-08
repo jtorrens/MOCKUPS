@@ -45,6 +45,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime scalar patterns validate defaults and authored values", RuntimeScalarPatternsValidateValues),
     ("Runtime contract transitions retain only current values and animation owners", RuntimeContractTransitionsRetainCurrentOwners),
     ("structured collection mutations update nested content and animation together", StructuredCollectionMutationsAreAtomicDocuments),
+    ("collection field transitions use declared identities in the shared mutation owner", CollectionFieldTransitionsUseDeclaredIdentities),
     ("collection animation preserves fixed boundaries and exact declared paths", StructuredCollectionAnimationTests.FixedBoundariesAndDeclaredPaths),
     ("Runtime contract changes preserve values by declared identity", StructuredCollectionAnimationTests.ContractChangesPreserveDeclaredIdentity),
     ("Production collection creation requires Actors but not media", ProductionCollectionCreationRequiresActorsButNotMedia),
@@ -426,6 +427,34 @@ static void ShotManagerReadonlyDocumentsAreStrict()
                 "\"name\": \"../renders\"",
                 StringComparison.Ordinal),
             "Unsafe folder"));
+}
+
+static void CollectionFieldTransitionsUseDeclaredIdentities()
+{
+    foreach (var (collectionKey, sourceKey, targetKey) in new[]
+             { ("messages", "direction", "caption"), ("entries", "mode", "description") })
+    {
+        var definition = new RuntimeInputCollectionDefinition(
+            "collection-id", "Collection", collectionKey, "Item",
+            [
+                new("source-id", "Source", sourceKey, ComponentInputKind.Text,
+                    ValueKind.StringSingleLine, "", Transition: new("target-id", ["active"], "ready", "^valid:")),
+                new("target-id", "Target", targetKey, ComponentInputKind.Text, ValueKind.StringSingleLine, ""),
+            ]);
+        var item = new JsonObject { ["id"] = "item-id", [sourceKey] = "idle", [targetKey] = "old" };
+        var content = new JsonObject { [collectionKey] = new JsonArray(item) };
+        var original = content.ToJsonString();
+        JsonObject NoVariant(string _) => throw new InvalidOperationException("No Variant read is declared.");
+        var address = new StructuredCollectionAddress(collectionKey, [], collectionKey);
+        var updated = StructuredCollectionMutationEngine.UpdateValues(content, definition, address, "item-id",
+            new Dictionary<string, JsonNode?> { [sourceKey] = JsonValue.Create("active") }, NoVariant, NoVariant);
+        Equal("ready", updated[collectionKey]![0]![targetKey]!.GetValue<string>());
+        Equal(original, content.ToJsonString());
+        item[targetKey] = "valid: keep";
+        updated = StructuredCollectionMutationEngine.UpdateValues(content, definition, address, "item-id",
+            new Dictionary<string, JsonNode?> { [sourceKey] = JsonValue.Create("active") }, NoVariant, NoVariant);
+        Equal("valid: keep", updated[collectionKey]![0]![targetKey]!.GetValue<string>());
+    }
 }
 
 static void StructuredCollectionMutationsAreAtomicDocuments()

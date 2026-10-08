@@ -564,6 +564,9 @@ static void DesignPreviewTransientSnapshotsRemainImmutable()
         node.Kind == ProjectTreeNodeKind.Theme);
     var payload = Required(
         CreatePreviewPayload(database, listVariant, theme.Id));
+    Throws<InvalidOperationException>(() => ComponentPreviewTransientValues.ScopeKey(payload with { OwnerId = "" }));
+    Equal(ComponentPreviewTransientValues.ScopeKey(payload),
+        ComponentPreviewTransientValues.ScopeKey(payload with { Name = "Renamed owner" }));
     var settings = database.GetComponentClassSettings(
         "component_project_foqn_s2_list");
     var session = new ComponentPreviewInputSession(
@@ -4533,7 +4536,7 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  (typeof(RuntimeInputInstanceDocumentStore), "UpdateCollectionValueAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "UpdateCollectionValuesAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "ExecuteAnimationMutationAsync"),
-                 (typeof(RuntimeInputOwnerDocumentStore), "SaveDesignPreviewJsonAsync"),
+                 (typeof(RuntimeInputOwnerDocumentStore), "ReplaceDesignPreviewAsync"),
                  (typeof(ModuleInstanceAnimationDocumentStore), "ExecuteMutationAsync"),
                  (typeof(EditorFieldPostCommitEffects), "ApplyAsync"),
              })
@@ -12980,7 +12983,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
         var runtimeContext = new EditorEmbeddedContext(
             audioVariant,
             [],
-            new RuntimeComponentOverrideSource(
+            store.RegisterRuntimeOverrides(
                 ProjectId(selection),
                 audioVariant.Id,
                 selection.ComponentType,
@@ -12996,6 +12999,12 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
             database.GetRuntimeComponentVariantName(audioVariant.Id, overrides, []),
             store.ActiveVariantName(runtimeContext));
         True(store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
+        var initialSnapshot = store.Snapshot(runtimeContext.RuntimeSource!);
+        overrides["unownedMutation"] = true;
+        Equal(initialSnapshot, store.Snapshot(runtimeContext.RuntimeSource!));
+        True(typeof(RuntimeComponentOverrideSource).GetProperties().All(property =>
+            !typeof(JsonNode).IsAssignableFrom(property.PropertyType)
+            && !typeof(Delegate).IsAssignableFrom(property.PropertyType)));
 
         var beforeRuntimeOverride = SHA256.HashData(File.ReadAllBytes(temporary));
         store.CommitFieldValueAsync(
@@ -13005,6 +13014,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
             .GetAwaiter()
             .GetResult();
         Equal(1, overrideChanges);
+        Equal(initialSnapshot.Revision + 1, store.Snapshot(runtimeContext.RuntimeSource!).Revision);
         True(!store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
         store.CommitFieldValueAsync(
                 runtimeContext,
@@ -13120,7 +13130,7 @@ static void FailedRuntimeOverridePersistenceRestoresConfirmedDocument()
         var context = new EditorEmbeddedContext(
             audioVariant,
             [],
-            new RuntimeComponentOverrideSource(
+            store.RegisterRuntimeOverrides(
                 ProjectId(selection),
                 audioVariant.Id,
                 selection.ComponentType,
@@ -13130,6 +13140,7 @@ static void FailedRuntimeOverridePersistenceRestoresConfirmedDocument()
                 (_) => Task.FromException(
                     new InvalidOperationException(
                         "persistence failed"))));
+        var confirmedSnapshot = store.Snapshot(context.RuntimeSource!);
 
         Throws<InvalidOperationException>(
             () => store.CommitFieldValueAsync(
@@ -13142,6 +13153,7 @@ static void FailedRuntimeOverridePersistenceRestoresConfirmedDocument()
         Equal(
             0,
             confirmedOverrides.Count);
+        Equal(confirmedSnapshot, store.Snapshot(context.RuntimeSource!));
         True(store.CreateFieldValue(
                 context,
                 "component.audio.padding")
@@ -13351,18 +13363,6 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
         True(instanceSource.IsInstance);
         Equal(RuntimeInputDesignPreviewOwnerKind.None, instanceSource.DesignPreviewOwnerKind);
 
-        var selection = database.GetComponentVariantSelectionSettings(componentVariant.Id);
-        var selectionSource = store.ComponentVariantSelection(
-            "project_foqn_s2",
-            componentVariant.Id);
-        Equal(ProjectId(selection), selectionSource.ProjectId);
-        Equal(selection.ComponentType, selectionSource.ComponentType);
-        Equal(selection.RecordClassId, selectionSource.RecordClassId);
-        Equal(selection.ConfigJson, selectionSource.ConfigJson);
-        Equal(
-            database.GetComponentVariantRuntimeInputs(componentVariant.Id).ToJsonString(),
-            store.ComponentVariantRuntimeInputs(componentVariant.Id).ToJsonString());
-
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
@@ -13378,11 +13378,11 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
         True(JsonNode.DeepEquals(
             JsonNode.Parse(reorderedModulePreviewJson),
             JsonNode.Parse(moduleSource.RuntimePreviewJson)));
-        store.SaveDesignPreviewJsonAsync(
+        store.ReplaceDesignPreviewAsync(
             moduleSource,
             reorderedModulePreviewJson).GetAwaiter().GetResult();
         Equal(moduleSource.RuntimePreviewJson, database.GetModuleSettings(module.Id).DesignPreviewJson);
-        store.SaveDesignPreviewJsonAsync(
+        store.ReplaceDesignPreviewAsync(
             componentSource,
             componentSource.RuntimePreviewJson).GetAwaiter().GetResult();
         Equal(componentSource.RuntimePreviewJson, database.GetComponentClassSettings(componentClass.Id).DesignPreviewJson);
@@ -13393,7 +13393,7 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
             moduleSource.RuntimePreviewJson,
             "Changed Module Design Preview");
         changedModulePreview["headerSubtitle"] = "away";
-        store.SaveDesignPreviewJsonAsync(
+        store.ReplaceDesignPreviewAsync(
             moduleSource,
             changedModulePreview.ToJsonString()).GetAwaiter().GetResult();
         Equal(
@@ -13404,12 +13404,15 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
                     "Persisted changed Module Design Preview"),
                 "headerSubtitle",
                 "Persisted changed Module Design Preview"));
-        store.SaveDesignPreviewJsonAsync(
-            moduleSource,
-            moduleSource.RuntimePreviewJson).GetAwaiter().GetResult();
+        Throws<InvalidOperationException>(() => store.ReplaceDesignPreviewAsync(
+            moduleSource, moduleSource.RuntimePreviewJson).GetAwaiter().GetResult());
+        Throws<InvalidOperationException>(() => store.ReplaceDesignPreviewAsync(
+            store.Load(module), "{}").GetAwaiter().GetResult());
+        store.ReplaceDesignPreviewAsync(
+            store.Load(module), moduleSource.RuntimePreviewJson).GetAwaiter().GetResult();
         Equal(moduleSource.RuntimePreviewJson, database.GetModuleSettings(module.Id).DesignPreviewJson);
         Throws<InvalidOperationException>(() =>
-            store.SaveDesignPreviewJsonAsync(
+            store.ReplaceDesignPreviewAsync(
                 instanceSource,
                 instanceSource.RuntimePreviewJson).GetAwaiter().GetResult());
     }
@@ -13491,10 +13494,14 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
                 suppliedId)).GetAwaiter().GetResult());
         SequenceEqual(beforeRejectedWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
 
-        store.UpdateRuntimeValueAsync(
+        var committed = store.UpdateRuntimeValueAsync(
             screen.Id,
             "headerSubtitle",
             JsonValue.Create("value")).GetAwaiter().GetResult();
+        Equal(screen.Id, committed.OwnerId);
+        Equal(database.GetModuleInstanceRuntimePreviewJson(screen.Id), committed.RuntimeJson);
+        committed.Document()["headerSubtitle"] = "unownedMutation";
+        Equal("value", committed.Document()["headerSubtitle"]!.GetValue<string>());
         using var queuedWriteStarted = new ManualResetEventSlim();
         using var releaseQueuedWrite = new ManualResetEventSlim();
         var blockingWrite = operations.ExecuteAsync(
@@ -20649,8 +20656,7 @@ if (args.Contains("--list", StringComparer.Ordinal))
 }
 
 if (group == "ui"
-    && exactNames.Count == 0
-    && filters.Count == 0)
+    && exactNames.Count == 0)
 {
     var executablePath = Environment.ProcessPath
         ?? throw new InvalidOperationException(
@@ -20709,6 +20715,7 @@ foreach (var (name, run) in selectedTests)
         failures.Add(name);
         Console.Error.WriteLine(
             $"FAIL {name}: {exception.GetBaseException().Message}");
+        Console.Error.WriteLine(exception.GetBaseException().StackTrace);
     }
     finally
     {
@@ -22417,7 +22424,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             node,
             "{}",
             preview.ToJsonString(),
-            (_) => Task.CompletedTask,
+            new RuntimeInputOwnerDocumentSource("{}", preview.ToJsonString(), true, RuntimeInputDesignPreviewOwnerKind.None, ""),
             IsInstance: true),
         preview,
         [],
@@ -22514,7 +22521,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
                 parityDatabase.GetModuleInstanceVariantSettings(
                     conversationInstanceId).ConfigJson,
                 conversationSource.RuntimePreviewJson,
-                (_) => Task.CompletedTask,
+                new RuntimeInputOwnerDocumentSource("{}", conversationSource.RuntimePreviewJson, true, RuntimeInputDesignPreviewOwnerKind.None, ""),
                 IsInstance: true),
             conversationRuntime,
             [],
@@ -22686,7 +22693,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             node,
             "{}",
             parallelRuntime.ToJsonString(),
-            (_) => Task.CompletedTask,
+            new RuntimeInputOwnerDocumentSource("{}", parallelRuntime.ToJsonString(), true, RuntimeInputDesignPreviewOwnerKind.None, ""),
             IsInstance: true),
         parallelRuntime,
         [],
@@ -22795,7 +22802,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             stateNode,
             "{}",
             stateRuntime.ToJsonString(),
-            (_) => Task.CompletedTask,
+            new RuntimeInputOwnerDocumentSource("{}", stateRuntime.ToJsonString(), true, RuntimeInputDesignPreviewOwnerKind.None, ""),
             IsInstance: true),
         stateRuntime,
         [],

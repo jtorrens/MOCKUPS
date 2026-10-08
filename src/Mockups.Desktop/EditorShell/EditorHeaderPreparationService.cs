@@ -16,19 +16,18 @@ internal sealed record EditorPreparedHeader(
 
 internal sealed class EditorHeaderPreparationService
 {
-    private readonly EmbeddedComponentDocumentStore
+    private readonly ComponentClassFieldValueService
         _embeddedDocuments;
     private readonly ProductionScreenPresentationDataSource
         _screenPresentation;
 
     public EditorHeaderPreparationService(
-        IComponentDocumentStore components,
+        ComponentClassFieldValueService components,
         IPreviewInputRepository preview,
         IModuleInstanceTimelineStore timeline,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes)
     {
-        _embeddedDocuments =
-            new EmbeddedComponentDocumentStore(components);
+        _embeddedDocuments = components;
         _screenPresentation =
             new ProductionScreenPresentationDataSource(
                 preview,

@@ -1,6 +1,7 @@
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -26,6 +27,22 @@ internal sealed class ComponentClassFieldValueService
         return nodeKind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentVariant
             && fieldId.StartsWith("component.", StringComparison.Ordinal);
     }
+
+    public RuntimeComponentOverrideSource RegisterRuntimeOverrides(
+        string projectId, string reference, string type, string recordClassId, string configJson,
+        JsonObject overrides, Func<JsonObject, Task> write,
+        Func<string, Task<ProjectTreeNode>>? promote = null) =>
+        _embeddedDocuments.RegisterRuntimeOverrides(projectId, reference, type, recordClassId, configJson, overrides, write, promote);
+
+    public string ActiveVariantName(EditorEmbeddedContext context) => _embeddedDocuments.ActiveVariantName(context);
+    public bool HasAuthoredOverrides(EditorEmbeddedContext context) => _embeddedDocuments.HasAuthoredOverrides(context);
+    public Task<ProjectTreeNode> PromoteContextOverridesAsync(
+        EditorEmbeddedContext context, string name, EditorOperationCoordinator operations) =>
+        context.RuntimeSource is { } runtime
+            ? _embeddedDocuments.PromoteRuntimeOverridesAsync(runtime, name)
+            : operations.ExecuteAsync(() => _documents.PromoteOverridesToVariant(
+                new ComponentOverridePromotionRequest(context.OwnerNode,
+                    new ComponentOverrideSlotPathPromotionTarget(context.Slots), name)));
 
     public FieldValue CreateFieldValue(ProjectTreeNode node, string fieldId)
     {

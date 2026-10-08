@@ -20,12 +20,6 @@ internal sealed record RuntimeInputOwnerDocumentSource(
     RuntimeInputDesignPreviewOwnerKind DesignPreviewOwnerKind,
     string DesignPreviewOwnerId);
 
-internal sealed record RuntimeComponentVariantSelectionSource(
-    string ProjectId,
-    string ComponentType,
-    string RecordClassId,
-    string ConfigJson);
-
 internal sealed class RuntimeInputOwnerDocumentStore
 {
     private readonly IRuntimeInputOwnerStore _database;
@@ -108,68 +102,35 @@ internal sealed class RuntimeInputOwnerDocumentStore
         throw new InvalidOperationException($"Runtime inputs are not supported by '{node.Kind}'.");
     }
 
-    public Task SaveDesignPreviewJsonAsync(
+    public Task ReplaceDesignPreviewAsync(
         RuntimeInputOwnerDocumentSource source,
-        string designPreviewJson) =>
-        _operations.ExecuteAsync(
-            () =>
+        string designPreviewJson)
+    {
+        var replacement = new DesignPreviewDocumentReplacement(source.RuntimePreviewJson, designPreviewJson);
+        return _operations.ExecuteAsync(() =>
+        {
+            switch (source.DesignPreviewOwnerKind)
             {
-                if (source.DesignPreviewOwnerKind == RuntimeInputDesignPreviewOwnerKind.None)
-                {
-                    throw new InvalidOperationException(
-                        "A Module Instance has no isolated Design Preview document.");
-                }
-                var confirmedJson = source.DesignPreviewOwnerKind switch
-                {
-                    RuntimeInputDesignPreviewOwnerKind.Module =>
-                        _database.GetModuleSettings(source.DesignPreviewOwnerId).DesignPreviewJson,
-                    RuntimeInputDesignPreviewOwnerKind.ComponentClass =>
-                        _database.GetComponentClassDesignPreviewJson(source.DesignPreviewOwnerId),
-                    _ => throw new InvalidOperationException(
-                        "A Module Instance has no isolated Design Preview document."),
-                };
-                var confirmed = JsonPath.ParseRequiredObject(
-                    confirmedJson,
-                    "Persisted Design Preview document");
-                var proposed = JsonPath.ParseRequiredObject(
-                    designPreviewJson,
-                    "Proposed Design Preview document");
-                if (JsonNode.DeepEquals(confirmed, proposed))
-                {
-                    return;
-                }
-                switch (source.DesignPreviewOwnerKind)
-                {
-                    case RuntimeInputDesignPreviewOwnerKind.Module:
-                        _database.UpdateModuleDesignPreviewJson(
-                            source.DesignPreviewOwnerId,
-                            designPreviewJson);
-                        break;
-                    case RuntimeInputDesignPreviewOwnerKind.ComponentClass:
-                        _database.UpdateComponentClassDesignPreviewJson(
-                            source.DesignPreviewOwnerId,
-                            designPreviewJson);
-                        break;
-                    default:
-                        throw new InvalidOperationException(
-                            "A Module Instance has no isolated Design Preview document.");
-                }
-            });
-
-    public JsonObject ComponentVariantRuntimeInputs(string variantReference)
-    {
-        return _database.GetComponentVariantRuntimeInputs(variantReference);
+                case RuntimeInputDesignPreviewOwnerKind.Module:
+                    _database.UpdateModuleDesignPreviewJson(source.DesignPreviewOwnerId, replacement);
+                    break;
+                case RuntimeInputDesignPreviewOwnerKind.ComponentClass:
+                    _database.UpdateComponentClassDesignPreviewJson(source.DesignPreviewOwnerId, replacement);
+                    break;
+                default:
+                    throw new InvalidOperationException("A Production Screen cannot replace Design defaults.");
+            }
+        });
     }
 
-    public RuntimeComponentVariantSelectionSource ComponentVariantSelection(
-        string projectId,
-        string variantReference)
+    public Task PromoteDefaultsAsync(RuntimeInputOwnerDocumentSource source, JsonObject values)
     {
-        var selected = _database.GetComponentVariantSelectionSettings(variantReference);
-        return new RuntimeComponentVariantSelectionSource(
-            projectId,
-            selected.ComponentType,
-            selected.RecordClassId,
-            selected.ConfigJson);
+        var candidate = values.DeepClone().AsObject();
+        var config = DesignPreviewTestValues.Parse(source.ConfigJson);
+        DesignPreviewTestValues.PromoteToDefaults(candidate,
+            RuntimeInputDefinitionReader.ReadInputs(candidate, config),
+            RuntimeInputDefinitionReader.ReadCollections(candidate, config));
+        return ReplaceDesignPreviewAsync(source, candidate.ToJsonString());
     }
+
 }

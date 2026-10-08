@@ -11,6 +11,7 @@ internal sealed class RuntimeInputInstanceDocumentStore
     private readonly IRuntimeInputInstanceStore _database;
     private readonly ModuleInstanceAnimationDocumentStore _animationDocuments;
     private readonly EditorOperationCoordinator _operations;
+    private readonly IModuleInstanceTimelineStore _timeline;
 
     public RuntimeInputInstanceDocumentStore(
         IRuntimeInputInstanceStore database,
@@ -20,6 +21,7 @@ internal sealed class RuntimeInputInstanceDocumentStore
         EditorOperationCoordinator operations)
     {
         _database = database;
+        _timeline = timeline;
         _operations = operations;
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
             animation,
@@ -31,17 +33,21 @@ internal sealed class RuntimeInputInstanceDocumentStore
             operations);
     }
 
-    public Task UpdateRuntimeValueAsync(
+    public Task<RuntimeInputCommittedDocument> UpdateRuntimeValueAsync(
         string moduleInstanceId,
         string jsonKey,
         JsonNode? value)
     {
         var valueSnapshot = value?.DeepClone();
         return _operations.ExecuteAsync(
-            () => _database.UpdateModuleInstanceRuntimeValue(
-                moduleInstanceId,
-                jsonKey,
-                valueSnapshot));
+            () =>
+            {
+                _database.UpdateModuleInstanceRuntimeValue(
+                    moduleInstanceId,
+                    jsonKey,
+                    valueSnapshot);
+                return ReadConfirmed(moduleInstanceId);
+            });
     }
 
     public Task<StructuredCollectionMutationResult> MutateStructuredCollectionAsync(
@@ -55,24 +61,18 @@ internal sealed class RuntimeInputInstanceDocumentStore
                 mutationSnapshot));
     }
 
-    public Task UpdateCollectionValueAsync(
+    public Task<RuntimeInputCommittedDocument> UpdateCollectionValueAsync(
         string moduleInstanceId,
         StructuredCollectionAddress address,
         string itemId,
         string fieldJsonKey,
         JsonNode? value)
     {
-        var valueSnapshot = value?.DeepClone();
-        return _operations.ExecuteAsync(
-            () => _database.UpdateModuleInstanceRuntimeCollectionValue(
-                moduleInstanceId,
-                address,
-                itemId,
-                fieldJsonKey,
-                valueSnapshot));
+        return UpdateCollectionValuesAsync(moduleInstanceId, address, itemId,
+            new Dictionary<string, JsonNode?> { [fieldJsonKey] = value });
     }
 
-    public Task UpdateCollectionValuesAsync(
+    public Task<RuntimeInputCommittedDocument> UpdateCollectionValuesAsync(
         string moduleInstanceId,
         StructuredCollectionAddress address,
         string itemId,
@@ -85,12 +85,19 @@ internal sealed class RuntimeInputInstanceDocumentStore
         }
 
         return _operations.ExecuteAsync(
-            () => _database.UpdateModuleInstanceRuntimeCollectionValues(
-                moduleInstanceId,
-                address,
-                itemId,
-                valuesSnapshot));
+            () =>
+            {
+                _database.UpdateModuleInstanceRuntimeCollectionValues(
+                    moduleInstanceId,
+                    address,
+                    itemId,
+                    valuesSnapshot);
+                return ReadConfirmed(moduleInstanceId);
+            });
     }
+
+    private RuntimeInputCommittedDocument ReadConfirmed(string id) => new(
+        id, _timeline.GetModuleInstanceRuntimePreviewJson(id));
 
     public Task<ModuleInstanceAnimationSnapshot>
         ExecuteAnimationMutationAsync(

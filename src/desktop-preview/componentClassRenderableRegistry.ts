@@ -4,6 +4,7 @@ import {
   type DesktopPreviewComponentClass,
 } from "./desktopPreviewComponents.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import type { PreparedRuntimePreviewPayload } from "./runtimePreviewDocumentContract.js";
 import { generatedComponentScaffoldFactories } from "./generatedComponentScaffoldRegistry.js";
 
 export type ComponentRenderableBoundary = (
@@ -12,7 +13,7 @@ export type ComponentRenderableBoundary = (
 ) => RenderableNode;
 
 export type ComponentRenderableFactory = (
-  payload: DesignPreviewPayload,
+  payload: PreparedRuntimePreviewPayload,
   assignedBox: RenderableBox | undefined,
   renderChild: ComponentRenderableBoundary,
 ) => RenderableNode;
@@ -23,7 +24,7 @@ export const componentRenderableFactories: Record<
 > = generatedComponentScaffoldFactories;
 
 export function routeComponentClassToRenderable(
-  payload: DesignPreviewPayload,
+  payload: PreparedRuntimePreviewPayload,
   renderChild: ComponentRenderableBoundary,
   assignedBox?: RenderableBox,
 ): RenderableNode {

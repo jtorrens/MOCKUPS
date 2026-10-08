@@ -57,6 +57,11 @@ internal sealed class EditorDictionaryFieldServices
 
     public string? CaptureSelectedThemeId() => _selectedThemeId();
 
+    public RuntimeComponentOverrideSource RegisterRuntimeOverrides(
+        string projectId, string reference, string type, string recordClassId, string configJson,
+        JsonObject overrides, Func<JsonObject, Task> write) =>
+        _componentFields.RegisterRuntimeOverrides(projectId, reference, type, recordClassId, configJson, overrides, write);
+
     public EditorDictionaryContextSnapshot PrepareContext(
         ProjectTreeNode node,
         string? selectedThemeId,
@@ -146,7 +151,7 @@ internal sealed class EditorDictionaryFieldServices
             openRuntimeComponentOverrides(new EditorEmbeddedContext(
                 node,
                 [],
-                new RuntimeComponentOverrideSource(
+                _componentFields.RegisterRuntimeOverrides(
                     selected.ProjectId,
                     variantReference,
                     selected.ComponentType,
@@ -282,7 +287,7 @@ internal sealed class EditorDictionaryFieldServices
             openRuntimeComponentOverrides(new EditorEmbeddedContext(
                 node,
                 [],
-                new RuntimeComponentOverrideSource(
+                _componentFields.RegisterRuntimeOverrides(
                     selected.ProjectId,
                     variantReference,
                     selected.ComponentType,

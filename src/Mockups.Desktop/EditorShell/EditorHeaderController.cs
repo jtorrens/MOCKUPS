@@ -422,8 +422,9 @@ internal sealed class EditorHeaderController
     {
         Func<string, Task<ProjectTreeNode>>? promote =
             context.IsRuntimeRoot
-                ? context.RuntimeSource
-                    ?.PromoteOverridesToVariant
+                ? context.RuntimeSource!.CanPromoteOverridesToVariant
+                    ? name => _promoteEmbeddedOverridesToVariant(context, name)
+                    : null
                 : context.RuntimeSource is null
                     && context.Slots.Count > 0
                     && (context.OwnerNode.Kind is

@@ -135,7 +135,9 @@ internal sealed partial class SqliteProductionOwner
                 rootDefinition,
                 address,
                 itemId,
-                values);
+                values,
+                reference => _componentVariantConfigCatalog.GetComponentVariantConfig(connection, reference),
+                reference => _componentVariantConfigCatalog.GetComponentVariantRuntimeContract(connection, reference));
 
             _moduleInstanceRepository.UpdateContentAndAnimation(
                 connection, moduleInstanceId, nextContent.ToJsonString(), instance.AnimationJson, transaction);

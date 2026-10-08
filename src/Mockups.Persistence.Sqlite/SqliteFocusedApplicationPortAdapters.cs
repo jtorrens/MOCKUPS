@@ -224,15 +224,15 @@ internal sealed class SqliteRuntimeInputOwnerPort(
 
     public void UpdateComponentClassDesignPreviewJson(
         string componentClassId,
-        string designPreviewJson) =>
+        DesignPreviewDocumentReplacement replacement) =>
         target.UpdateComponentClassDesignPreviewJson(
             componentClassId,
-            designPreviewJson);
+            replacement);
 
     public void UpdateModuleDesignPreviewJson(
         string moduleId,
-        string designPreviewJson) =>
-        target.UpdateModuleDesignPreviewJson(moduleId, designPreviewJson);
+        DesignPreviewDocumentReplacement replacement) =>
+        target.UpdateModuleDesignPreviewJson(moduleId, replacement);
 }
 
 internal class SqliteModuleInstanceAnimationPort(

@@ -151,7 +151,7 @@ internal static class SqliteProjectTestContextExtensions
         string designPreviewJson) =>
         engine.Design.UpdateModuleDesignPreviewJson(
             moduleId,
-            designPreviewJson);
+            new DesignPreviewDocumentReplacement(engine.Design.GetModuleSettings(moduleId).DesignPreviewJson, designPreviewJson));
 
     internal static AppSettings GetModuleAppSettings(
         this SqliteProjectTestContext engine,

@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { parseObject } from "./previewJsonHelpers.js";
-import { prepareRuntimePreviewPayload } from "./runtimePreviewDocumentContract.js";
+import { prepareRuntimePreviewPayload, type PreparedRuntimePreviewPayload } from "./runtimePreviewDocumentContract.js";
 import { requiredDeviceModuleTransparency } from "./deviceModuleTransparency.js";
 
 const requiredObjectDocuments = [
@@ -15,7 +15,7 @@ const requiredObjectDocuments = [
 
 export function resolveRenderablePayload(
   payload: DesignPreviewPayload,
-): DesignPreviewPayload {
+): PreparedRuntimePreviewPayload {
   for (const [key, label] of requiredObjectDocuments) {
     parseObject(payload[key] as string | undefined, label);
   }

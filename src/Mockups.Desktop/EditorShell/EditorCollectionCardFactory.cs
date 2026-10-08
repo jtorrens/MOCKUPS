@@ -371,7 +371,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     {
         return new RuntimeInputsCollectionEditor(
             _componentPreview,
-            _dictionary,
             _actors,
             _runtimeInputOwners,
             _timeline,

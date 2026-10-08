@@ -50,9 +50,9 @@ internal static class ComponentPreviewTransientValues
     {
         var instanceId = ParseJsonObject(payload.InstanceJson)["context"]?
             ["moduleInstanceId"]?.GetValue<string>() ?? "";
-        var ownerIdentity = string.IsNullOrWhiteSpace(payload.OwnerId)
-            ? $"{payload.ComponentType}:{payload.Name}"
-            : payload.OwnerId;
+        var ownerIdentity = !string.IsNullOrWhiteSpace(payload.OwnerId)
+            ? payload.OwnerId
+            : throw new InvalidOperationException("Preview transient state requires an exact owner id.");
         return $"{payload.Kind}:{ownerIdentity}:{instanceId}";
     }
 

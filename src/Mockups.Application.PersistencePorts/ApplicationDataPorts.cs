@@ -384,10 +384,10 @@ public interface IRuntimeInputOwnerStore
         EditorShell.ProjectTreeNode variantNode);
     void UpdateComponentClassDesignPreviewJson(
         string componentClassId,
-        string designPreviewJson);
+        EditorShell.DesignPreviewDocumentReplacement replacement);
     void UpdateModuleDesignPreviewJson(
         string moduleId,
-        string designPreviewJson);
+        EditorShell.DesignPreviewDocumentReplacement replacement);
 }
 
 public interface IRuntimeInputInstanceStore

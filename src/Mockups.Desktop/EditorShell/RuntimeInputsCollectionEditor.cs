@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,7 +20,7 @@ internal sealed record RuntimeInputOwner(
     ProjectTreeNode Node,
     string ConfigJson,
     string DesignPreviewJson,
-    Func<string, Task> Save,
+    RuntimeInputOwnerDocumentSource Source,
     bool IsInstance);
 
 internal sealed record RuntimeInputSurface(
@@ -49,7 +48,6 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly RuntimeInputOwnerDocumentStore _ownerDocuments;
     private readonly RuntimeInputInstanceDocumentStore _instanceDocuments;
     private readonly IProductionRecordFieldStore _productionRecordFields;
-    private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly EditorOperationCoordinator _operations;
     private readonly IEditorShellMessageSink _messages;
@@ -89,14 +87,14 @@ internal sealed class RuntimeInputsCollectionEditor
     private RuntimeInputTimelineMutation? _preparedTimelineMutation;
     private RuntimeInputSurface? _mountedSurface;
     private IRuntimeInputOptionsDataSource ActiveInputOptions =>
-        _preparedDictionaryContext is null
-            ? _runtimeInputOptions
-            : new PreparedRuntimeInputOptionsDataSource(
-                _preparedDictionaryContext);
+        new PreparedRuntimeInputOptionsDataSource(PreparedDictionaryContext);
+
+    private EditorDictionaryContextSnapshot PreparedDictionaryContext =>
+        _preparedDictionaryContext ?? throw new InvalidOperationException(
+            "Runtime controls require their prepared dictionary context.");
 
     public RuntimeInputsCollectionEditor(
         IComponentPreviewInputRepository componentPreview,
-        IDictionaryFieldContextRepository dictionary,
         IActorPreviewRepository actors,
         IRuntimeInputOwnerStore ownerStore,
         IModuleInstanceTimelineStore timeline,
@@ -153,8 +151,6 @@ internal sealed class RuntimeInputsCollectionEditor
                 moduleInstanceThemes,
                 operations);
         _productionRecordFields = productionRecordFields;
-        _runtimeInputOptions =
-            new RuntimeInputOptionsDataSource(dictionary, actors);
         _dictionaryServices = dictionaryServices;
         _operations = operations;
         _messages = messages;
@@ -398,12 +394,7 @@ internal sealed class RuntimeInputsCollectionEditor
         string jsonKey,
         JsonNode? value)
     {
-        var snapshot = value?.DeepClone();
-        await _instanceDocuments.UpdateRuntimeValueAsync(screenId, jsonKey, snapshot);
-        if (_mountedSurface is { } surface && surface.Owner.Node.Id == screenId)
-        {
-            surface.Preview[jsonKey] = snapshot?.DeepClone();
-        }
+        AcceptConfirmedDocument(await _instanceDocuments.UpdateRuntimeValueAsync(screenId, jsonKey, value));
     }
 
     private Task CommitSurfaceCollectionValueAsync(
@@ -420,17 +411,15 @@ internal sealed class RuntimeInputsCollectionEditor
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values)
     {
-        var snapshot = values.ToDictionary(entry => entry.Key, entry => entry.Value?.DeepClone());
-        await _instanceDocuments.UpdateCollectionValuesAsync(screenId, address, itemId, snapshot);
-        if (_mountedSurface is not { } surface || surface.Owner.Node.Id != screenId) return;
-        var root = RuntimeInputDefinitionReader.ReadCollections(
-                surface.Preview,
-                DesignPreviewTestValues.Parse(surface.Owner.ConfigJson),
-                includeHidden: true)
-            .Single(collection => collection.StorageJsonKey == address.RootStorageJsonKey);
-        var updated = StructuredCollectionMutationEngine.UpdateValues(
-            surface.Preview, root, address, itemId, snapshot);
-        surface.Preview[address.RootStorageJsonKey] = updated[address.RootStorageJsonKey]?.DeepClone();
+        AcceptConfirmedDocument(await _instanceDocuments.UpdateCollectionValuesAsync(screenId, address, itemId, values));
+    }
+
+    private void AcceptConfirmedDocument(RuntimeInputCommittedDocument result)
+    {
+        if (_mountedSurface is not { } surface || surface.Owner.Node.Id != result.OwnerId) return;
+        var confirmed = result.Document();
+        surface.Preview.Clear();
+        foreach (var (key, value) in confirmed) surface.Preview[key] = value?.DeepClone();
     }
 
     private void UsePreparedContext(
@@ -563,8 +552,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     var current = await PrepareCurrentDesignTestValuesAsync(owner.Node);
                     if (current.Differences.Count == 0 || !await _confirmSaveDefaults(
                             owner.Node.Name, current.Differences.Select(difference => difference.Label).ToList())) return;
-                    DesignPreviewTestValues.PromoteToDefaults(current.Preview, current.Inputs, current.Collections);
-                    await current.Owner.Save(current.Preview.ToJsonString());
+                    await _ownerDocuments.PromoteDefaultsAsync(current.Owner.Source, current.Preview);
                     _resetTestValues(owner.Node);
                     _onChanged();
                 }
@@ -2076,7 +2064,7 @@ internal sealed class RuntimeInputsCollectionEditor
                         options,
                         $"Runtime collection field '{field.Id}'").DefaultVariantReference;
             },
-            _ownerDocuments.ComponentVariantRuntimeInputs,
+            PreparedDictionaryContext.RuntimeValues,
             (item, definition) => RuntimeCollectionItemContractOwner.ResolveItemVariantReference(
                 item,
                 definition,
@@ -2138,13 +2126,13 @@ internal sealed class RuntimeInputsCollectionEditor
             item,
             componentItems.DocumentKeys,
             $"Runtime collection '{collection.Id}' item '{ItemId(item, itemIndex)}'");
-        var selected = _ownerDocuments.ComponentVariantSelection(
-            ProjectAncestor(owner.Node).Id,
-            variantReference);
+        var selected = PreparedDictionaryContext.TryVariantSelection(variantReference, out var selection)
+            ? selection
+            : throw new InvalidOperationException($"Variant '{variantReference}' is not prepared.");
         _openEmbeddedContext(new EditorEmbeddedContext(
             owner.Node,
             [],
-            new RuntimeComponentOverrideSource(
+            _dictionaryServices.RegisterRuntimeOverrides(
                 selected.ProjectId,
                 variantReference,
                 selected.ComponentType,
@@ -2359,54 +2347,10 @@ internal sealed class RuntimeInputsCollectionEditor
                 ? id
                 : "";
             var nextNode = DesignPreviewTestValues.ValueNode(input, next);
-            item[input.JsonKey] = nextNode?.DeepClone();
             var updates = new Dictionary<string, JsonNode?>
             {
                 [input.JsonKey] = nextNode,
             };
-            var transitioned = ApplyCollectionTransition(collection, item, input, next, updates);
-            if (selectsComponent && componentItems is not null)
-            {
-                item[componentItems.OverridesJsonKey] = new JsonObject();
-                item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(next)
-                    ? new JsonObject()
-                    : _ownerDocuments.ComponentVariantRuntimeInputs(next);
-                updates[componentItems.OverridesJsonKey] = item[componentItems.OverridesJsonKey];
-                updates[componentItems.InputsJsonKey] = item[componentItems.InputsJsonKey];
-            }
-            if (selectsItemRuntimeVariant)
-            {
-                var slot = nextNode as JsonObject
-                    ?? throw new InvalidOperationException(
-                        $"Runtime collection '{collection.Id}' item Variant slot "
-                        + $"'{input.JsonKey}' must be an object.");
-                var slotOwner = $"Runtime collection '{collection.Id}' item Variant slot '{input.JsonKey}'";
-                var reference = ComponentVariantSlotDocumentContract.VariantReference(
-                    slot,
-                    slotOwner);
-                var effectiveConfig = ComponentVariantConfig(reference)
-                    .DeepClone()
-                    .AsObject();
-                ComponentConfigOverrideMerger.MergeInto(
-                    effectiveConfig,
-                    ComponentVariantSlotDocumentContract.Overrides(slot, slotOwner));
-                var runtimeKey = collection.ItemRuntimeContractJsonKey;
-                var currentRuntime = !string.IsNullOrWhiteSpace(runtimeKey)
-                    ? item[runtimeKey] as JsonObject
-                    : null;
-                if (currentRuntime is null)
-                {
-                    throw new InvalidOperationException(
-                        $"Runtime collection '{collection.Id}' item Variant slot "
-                        + "requires itemRuntimeContractJsonKey with an object Runtime value.");
-                }
-                item[runtimeKey] = RuntimePreviewDocumentContract.PrepareFixture(
-                    currentRuntime,
-                    effectiveConfig,
-                    ComponentVariantConfig,
-                    _previewInputData.ComponentVariantRuntimeContract);
-                updates[runtimeKey] = item[runtimeKey];
-            }
             if (owner.IsInstance)
             {
                 await CommitSurfaceCollectionValuesAsync(
@@ -2423,6 +2367,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     itemId,
                     updates);
             }
+            item[input.JsonKey] = nextNode?.DeepClone();
             _testValuesChanged();
             afterCommit?.Invoke();
             refreshPresentation?.Invoke();
@@ -2435,6 +2380,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             if (selectsComponent
                 || selectsItemRuntimeVariant
+                || input.Transition is not null
                 || collection.Fields.Any((candidate) =>
                     candidate.EnabledWhenItemJsonKey.Equals(
                         input.JsonKey,
@@ -2446,36 +2392,6 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         var targetId = item["id"]?.GetValue<string>() ?? "";
         return DecorateAnimationToggle(owner, input, targetId, control, collection.Fields);
-    }
-
-    private static bool ApplyCollectionTransition(
-        RuntimeInputCollectionDefinition collection,
-        JsonObject item,
-        ComponentInputDefinition input,
-        string next,
-        IDictionary<string, JsonNode?> updates)
-    {
-        var transition = input.Transition;
-        if (transition is null
-            || transition.ForwardedTargetOnly
-            || !transition.TriggerValues.Contains(next, StringComparer.Ordinal))
-        {
-            return false;
-        }
-        var target = collection.Fields.FirstOrDefault((candidate) =>
-            candidate.Id.Equals(transition.TargetInputId, StringComparison.Ordinal))
-            ?? throw new InvalidOperationException(
-                $"Collection input transition target '{transition.TargetInputId}' was not declared.");
-        var current = DesignPreviewTestValues.CollectionValue(item, target);
-        if (!string.IsNullOrWhiteSpace(transition.TargetValuePattern)
-            && Regex.IsMatch(current, transition.TargetValuePattern, RegexOptions.CultureInvariant))
-        {
-            return false;
-        }
-        var replacement = DesignPreviewTestValues.ValueNode(target, transition.ReplacementValue);
-        item[target.JsonKey] = replacement?.DeepClone();
-        updates[target.JsonKey] = replacement;
-        return true;
     }
 
     private Control CreateNestedComponentInputControl(
@@ -2848,25 +2764,21 @@ internal sealed class RuntimeInputsCollectionEditor
             node,
             source.ConfigJson,
             source.RuntimePreviewJson,
-            source.IsInstance
-                ? (_) => Task.CompletedTask
-                : (json) => _ownerDocuments.SaveDesignPreviewJsonAsync(source, json),
+            source,
             source.IsInstance);
     }
 
     private JsonObject ComponentVariantConfig(
         string variantReference)
     {
-        if (_preparedDictionaryContext is not null
-            && _preparedDictionaryContext.TryVariantSelection(
+        if (PreparedDictionaryContext.TryVariantSelection(
                 variantReference,
                 out var selection))
         {
             return DesignPreviewTestValues.Parse(
                 selection.ConfigJson);
         }
-        return _previewInputData.ComponentVariantConfig(
-            variantReference);
+        throw new InvalidOperationException($"Variant '{variantReference}' is not prepared.");
     }
 
     private DictionaryFieldServices DictionaryServices(
@@ -2879,17 +2791,9 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<EditorEmbeddedContext>?
             openRuntimeComponentOverrides = null)
     {
-        return _preparedDictionaryContext is null
-            ? _dictionaryServices.ForNode(
+        return _dictionaryServices.ForPreparedNode(
                 owner.Node,
-                getFieldValue,
-                openComponentVariantReference,
-                openEmbeddedComponent,
-                openComponentInputBinding,
-                openRuntimeComponentOverrides)
-            : _dictionaryServices.ForPreparedNode(
-                owner.Node,
-                _preparedDictionaryContext,
+                PreparedDictionaryContext,
                 getFieldValue,
                 openComponentVariantReference,
                 openEmbeddedComponent,

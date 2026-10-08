@@ -90,10 +90,17 @@ internal sealed partial class SqliteDesignOwner
 
     public void UpdateComponentClassDesignPreviewJson(
         string componentClassId,
-        string designPreviewJson) =>
-        _componentClassRepository.UpdateDesignPreview(
-            componentClassId,
-            designPreviewJson);
+        DesignPreviewDocumentReplacement replacement)
+    {
+        lock (WriteGate)
+        {
+            var current = GetComponentClassSettings(componentClassId);
+            var proposed = replacement.Validate(current.DesignPreviewJson,
+                ParseJsonObject(current.ConfigJson), $"Component '{componentClassId}' Design Preview");
+            if (JsonNode.DeepEquals(ParseJsonObject(current.DesignPreviewJson), proposed)) return;
+            _componentClassRepository.UpdateDesignPreview(componentClassId, replacement.ProposedJson);
+        }
+    }
 
     internal static IReadOnlyList<ComponentClassVariant>
         ComponentClassVariants(

@@ -13,6 +13,47 @@ internal sealed class EmbeddedComponentDocumentStore
     private readonly IComponentDocumentStore _database;
     private readonly SemaphoreSlim _runtimeCommitGate =
         new(1, 1);
+    private readonly Dictionary<Guid, RuntimeDocument> _runtimeDocuments = new();
+
+    private sealed class RuntimeDocument(string json, Func<JsonObject, Task> write,
+        Func<string, Task<ProjectTreeNode>>? promote)
+    {
+        public string Json { get; set; } = json;
+        public long Revision { get; set; }
+        public Func<JsonObject, Task> Write { get; } = write;
+        public Func<string, Task<ProjectTreeNode>>? Promote { get; } = promote;
+    }
+
+    public RuntimeComponentOverrideSource RegisterRuntimeOverrides(
+        string projectId, string reference, string type, string recordClassId, string configJson,
+        JsonObject overrides, Func<JsonObject, Task> write,
+        Func<string, Task<ProjectTreeNode>>? promote = null)
+    {
+        var id = Guid.NewGuid();
+        lock (_runtimeDocuments) _runtimeDocuments.Add(id, new(overrides.ToJsonString(), write, promote));
+        return new(projectId, reference, type, recordClassId, configJson, id, promote is not null);
+    }
+
+    private RuntimeDocument Document(RuntimeComponentOverrideSource source)
+    {
+        lock (_runtimeDocuments) return _runtimeDocuments.TryGetValue(source.DocumentId, out var document)
+            ? document : throw new InvalidOperationException("The Runtime Override document belongs to another editor session.");
+    }
+
+    internal (long Revision, string Json) Snapshot(RuntimeComponentOverrideSource source)
+    {
+        lock (_runtimeDocuments)
+        {
+            var document = Document(source);
+            return (document.Revision, document.Json);
+        }
+    }
+
+    private JsonObject Overrides(RuntimeComponentOverrideSource source) =>
+        JsonPath.ParseRequiredObject(Snapshot(source).Json, "Runtime Overrides");
+
+    public Task<ProjectTreeNode> PromoteRuntimeOverridesAsync(RuntimeComponentOverrideSource source, string name) =>
+        (Document(source).Promote ?? throw new InvalidOperationException("This boundary cannot promote Overrides."))(name);
 
     public EmbeddedComponentDocumentStore(IComponentDocumentStore database)
     {
@@ -25,7 +66,7 @@ internal sealed class EmbeddedComponentDocumentStore
             ? _database.GetEmbeddedComponentVariantName(context.OwnerNode, context.Slots)
             : _database.GetRuntimeComponentVariantName(
                 context.RuntimeSource.VariantReference,
-                context.RuntimeSource.Overrides,
+                Overrides(context.RuntimeSource),
                 context.Slots);
     }
 
@@ -38,9 +79,9 @@ internal sealed class EmbeddedComponentDocumentStore
                 context.Slots);
         }
         var overrides = context.Slots.Count == 0
-            ? context.RuntimeSource.Overrides
+            ? Overrides(context.RuntimeSource)
             : RuntimeOverridesAt(
-                context.RuntimeSource.Overrides,
+                Overrides(context.RuntimeSource),
                 context.Slots);
         return overrides is not null
             && OverrideDocumentContract.HasAuthoredValues(
@@ -57,7 +98,7 @@ internal sealed class EmbeddedComponentDocumentStore
             : _database.CreateRuntimeComponentOverrideFieldValue(
                 context.RuntimeSource.ProjectId,
                 context.RuntimeSource.BaseConfigJson,
-                context.RuntimeSource.Overrides,
+                Overrides(context.RuntimeSource),
                 context.Slots,
                 fieldId);
     }
@@ -80,19 +121,13 @@ internal sealed class EmbeddedComponentDocumentStore
         await _runtimeCommitGate.WaitAsync();
         try
         {
-            var candidate = context.RuntimeSource.Overrides
-                .DeepClone()
-                .AsObject();
+            var candidate = Overrides(context.RuntimeSource);
             _database.UpdateRuntimeComponentOverride(
                 candidate,
                 context.Slots,
                 fieldId,
                 value);
-            await context.RuntimeSource.OverridesChanged(
-                candidate);
-            ReplaceObject(
-                context.RuntimeSource.Overrides,
-                candidate);
+            await PublishAsync(context.RuntimeSource, candidate);
         }
         finally
         {
@@ -131,17 +166,12 @@ internal sealed class EmbeddedComponentDocumentStore
         await _runtimeCommitGate.WaitAsync();
         try
         {
-            var candidate = context.RuntimeSource.Overrides
-                .DeepClone()
-                .AsObject();
+            var candidate = Overrides(context.RuntimeSource);
             var target = RuntimeOverridesAt(
                 candidate,
                 context.Slots);
             target?.Clear();
-            await context.RuntimeSource.OverridesChanged(candidate);
-            ReplaceObject(
-                context.RuntimeSource.Overrides,
-                candidate);
+            await PublishAsync(context.RuntimeSource, candidate);
         }
         finally
         {
@@ -174,14 +204,15 @@ internal sealed class EmbeddedComponentDocumentStore
         return current;
     }
 
-    private static void ReplaceObject(
-        JsonObject target,
-        JsonObject source)
+    private async Task PublishAsync(RuntimeComponentOverrideSource source, JsonObject candidate)
     {
-        target.Clear();
-        foreach (var (key, value) in source)
+        var document = Document(source);
+        var confirmedJson = candidate.ToJsonString();
+        await document.Write(candidate.DeepClone().AsObject());
+        lock (_runtimeDocuments)
         {
-            target[key] = value?.DeepClone();
+            document.Json = confirmedJson;
+            document.Revision++;
         }
     }
 }

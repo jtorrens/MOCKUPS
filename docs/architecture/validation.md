@@ -8,6 +8,13 @@ Architecture rules are executable wherever a stable check is possible.
 Documentation describes ownership; validation prevents a future change from
 silently restoring a second owner, implicit route or invalid persisted shape.
 
+Runtime boundary regression checks include compiler-negative consumers for
+unversioned Design writes and raw Preview registry dispatch, exact mutation
+engine callers, immutable Override contexts, publication only after successful
+persistence, stale Design rejection, and identity-based transient snapshots.
+Behavioral tests cover declared field transitions with different collection
+schemas and real Design default promotion and Production panel retention.
+
 ## Standard checks
 
 The normal final gate for one coherent local revision is:

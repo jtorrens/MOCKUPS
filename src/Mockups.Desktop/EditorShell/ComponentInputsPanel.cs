@@ -438,7 +438,9 @@ internal sealed class ComponentPreviewInputSession
             definitions[0],
             address,
             itemId,
-            values);
+            values,
+            _previewInputData.ComponentVariantConfig,
+            _previewInputData.ComponentVariantRuntimeContract);
         testValues[address.RootStorageJsonKey] =
             updated[address.RootStorageJsonKey]?.DeepClone();
         _refreshPreview();

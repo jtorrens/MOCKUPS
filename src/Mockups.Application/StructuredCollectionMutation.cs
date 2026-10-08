@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -56,7 +58,9 @@ public static class StructuredCollectionMutationEngine
         RuntimeInputCollectionDefinition rootDefinition,
         StructuredCollectionAddress address,
         string itemId,
-        IReadOnlyDictionary<string, JsonNode?> values)
+        IReadOnlyDictionary<string, JsonNode?> values,
+        Func<string, JsonObject> variantConfig,
+        Func<string, JsonObject> variantRuntimeContract)
     {
         if (values.Count == 0)
         {
@@ -96,6 +100,44 @@ public static class StructuredCollectionMutationEngine
                     $"Structured collection '{definition.Id}' has no unique declared runtime field '{fieldJsonKey}'.");
             }
             item[fieldJsonKey] = value?.DeepClone();
+            if (matches.Count == 1)
+            {
+                var input = matches[0];
+                var next = DesignPreviewTestValues.CollectionValue(item, input);
+                if (input.Transition is { ForwardedTargetOnly: false } transition
+                    && transition.TriggerValues.Contains(next, StringComparer.Ordinal))
+                {
+                    var target = definition.Fields.Single(field => field.Id == transition.TargetInputId);
+                    var current = DesignPreviewTestValues.CollectionValue(item, target);
+                    if (string.IsNullOrWhiteSpace(transition.TargetValuePattern)
+                        || !Regex.IsMatch(current, transition.TargetValuePattern, RegexOptions.CultureInvariant))
+                        item[target.JsonKey] = DesignPreviewTestValues.ValueNode(target, transition.ReplacementValue);
+                }
+                if (definition.ComponentItems is { } boundary
+                    && fieldJsonKey == boundary.VariantReferenceJsonKey)
+                {
+                    item[boundary.OverridesJsonKey] = new JsonObject();
+                    item[boundary.InputsJsonKey] = string.IsNullOrWhiteSpace(next)
+                        ? new JsonObject()
+                        : DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(
+                            variantRuntimeContract(next).ToJsonString()));
+                }
+                if (input.ValueKind == ValueKind.ComponentVariantSlot
+                    && fieldJsonKey == definition.ItemRuntimeVariantSlotJsonKey)
+                {
+                    var slot = item[fieldJsonKey]!.AsObject();
+                    var owner = $"Runtime collection '{definition.Id}' Variant slot '{fieldJsonKey}'";
+                    var config = variantConfig(ComponentVariantSlotDocumentContract.VariantReference(slot, owner))
+                        .DeepClone().AsObject();
+                    ComponentConfigOverrideMerger.MergeInto(config,
+                        ComponentVariantSlotDocumentContract.Overrides(slot, owner));
+                    var runtimeKey = definition.ItemRuntimeContractJsonKey;
+                    var runtime = item[runtimeKey] as JsonObject
+                        ?? throw new InvalidOperationException($"{owner} requires Runtime document '{runtimeKey}'.");
+                    item[runtimeKey] = RuntimePreviewDocumentContract.PrepareFixture(
+                        runtime, config, variantConfig, variantRuntimeContract);
+                }
+            }
         }
 
         var rootCollection = nextContent[address.RootStorageJsonKey] as JsonArray

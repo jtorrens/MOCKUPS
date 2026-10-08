@@ -11,9 +11,35 @@ const storageKey = "$forwardedInputs";
 const runtimeFieldIdsKey = "__runtimeFieldIds";
 const runtimeCollectionSourcesKey = "__runtimeCollectionSources";
 
-export function prepareRuntimePreviewPayload(payload: DesignPreviewPayload): DesignPreviewPayload {
+// In-process proof owned by this boundary. Serialized requests cannot supply it.
+const preparedRuntimePayload: unique symbol = Symbol("prepared Runtime payload");
+export type PreparedRuntimePreviewPayload = DesignPreviewPayload & {
+  readonly [preparedRuntimePayload]: true;
+};
+
+function prepared(payload: DesignPreviewPayload): PreparedRuntimePreviewPayload {
+  return { ...payload, [preparedRuntimePayload]: true };
+}
+
+export function requirePreparedRuntimePayload(payload: DesignPreviewPayload): asserts payload is PreparedRuntimePreviewPayload {
+  if (!(preparedRuntimePayload in payload) || payload[preparedRuntimePayload] !== true) {
+    throw new Error("Embedded Runtime values require a prepared parent payload.");
+  }
+}
+
+export function prepareEmbeddedRuntimePayload(
+  payload: PreparedRuntimePreviewPayload, type: string,
+  config: Record<string, unknown>, inputs: Record<string, unknown>,
+): PreparedRuntimePreviewPayload {
+  requirePreparedRuntimePayload(payload);
+  return prepared({ ...payload, componentType: type,
+    configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(inputs) });
+}
+
+export function prepareRuntimePreviewPayload(payload: DesignPreviewPayload): PreparedRuntimePreviewPayload {
+  if ("runtimeValuesPrepared" in payload) throw new Error("A serialized Runtime preparation flag is not a current payload contract.");
   const forwarded = applyRuntimeInputForwarding(payload);
-  if (payload.runtimeValuesPrepared || payload.kind !== "componentClass") return forwarded;
+  if (preparedRuntimePayload in payload || payload.kind !== "componentClass") return prepared(forwarded);
   const document = parseObject(payload.designPreviewJson, "Component Runtime values");
   const animation = optionalObject(parseObject(payload.instanceJson), "animation", "Preview instance");
   const contract = parseObject(payload.runtimeContractJson, "Runtime temporal envelope");
@@ -21,7 +47,7 @@ export function prepareRuntimePreviewPayload(payload: DesignPreviewPayload): Des
     parseObject(payload.themeTokensJson), 0, payload.frameRate);
   const resolved = resolveRuntimeAnimationValues({ fields: optionalObjectArray(document, "inputs", "Component Runtime") }, document, animation, "",
     (fieldId) => timeline.temporalLocalFrame(fieldId, "", rootScreenFrame(payload)));
-  return { ...forwarded, runtimeValuesPrepared: true, designPreviewJson: JSON.stringify(resolved.values) };
+  return prepared({ ...forwarded, designPreviewJson: JSON.stringify(resolved.values) });
 }
 
 export function applyRuntimeInputForwarding(

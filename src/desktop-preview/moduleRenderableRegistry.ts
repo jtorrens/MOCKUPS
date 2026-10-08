@@ -1,19 +1,19 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
-import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import type { PreparedRuntimePreviewPayload } from "./runtimePreviewDocumentContract.js";
 import {
   isDesktopPreviewModuleClass,
   type DesktopPreviewModuleClass,
 } from "./desktopPreviewModules.js";
 import { generatedModuleScaffoldFactories } from "./generatedModuleScaffoldRegistry.js";
 
-export type ModuleRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
+export type ModuleRenderableFactory = (payload: PreparedRuntimePreviewPayload) => RenderableNode;
 
 export const moduleRenderableFactories: Record<
   DesktopPreviewModuleClass,
   ModuleRenderableFactory
 > = generatedModuleScaffoldFactories;
 
-export function routeModuleToRenderable(payload: DesignPreviewPayload): RenderableNode {
+export function routeModuleToRenderable(payload: PreparedRuntimePreviewPayload): RenderableNode {
   const moduleClass = payload.componentType ?? "";
   const factory = isRoutedModuleClass(moduleClass)
     ? moduleRenderableFactories[moduleClass]

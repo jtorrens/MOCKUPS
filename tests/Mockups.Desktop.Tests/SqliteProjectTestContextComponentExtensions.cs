@@ -23,7 +23,7 @@ internal static class SqliteProjectTestContextComponentExtensions
         string designPreviewJson) =>
         engine.Design.UpdateComponentClassDesignPreviewJson(
             componentClassId,
-            designPreviewJson);
+            new DesignPreviewDocumentReplacement(engine.Design.GetComponentClassDesignPreviewJson(componentClassId), designPreviewJson));
 
     internal static FieldValue CreateComponentClassFieldValue(
         this SqliteProjectTestContext engine,

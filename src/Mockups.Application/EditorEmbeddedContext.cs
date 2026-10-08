@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -82,6 +80,5 @@ public sealed record RuntimeComponentOverrideSource(
     string ComponentType,
     string RecordClassId,
     string BaseConfigJson,
-    JsonObject Overrides,
-    Func<JsonObject, Task> OverridesChanged,
-    Func<string, Task<ProjectTreeNode>>? PromoteOverridesToVariant = null);
+    Guid DocumentId,
+    bool CanPromoteOverridesToVariant);

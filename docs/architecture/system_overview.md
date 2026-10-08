@@ -174,6 +174,16 @@ mutations, Runtime Input scalar and collection mutations, Module Instance
 animation writes, Design Preview default promotion and Icon Theme refresh,
 generation, replacement and deletion. Mutable Runtime documents are copied
 before submission so queued work observes the exact authored snapshot.
+Runtime scalar and collection-field writes return a serialized confirmed owner
+document from that same operation. Mounted controls consume that result; they
+never replay the mutation against a second local authoring document. Declared
+field transitions and Variant-boundary changes belong to the shared structured
+collection mutation engine for both Production and transient Design values.
+Runtime Override navigation carries an opaque session document identity and
+immutable metadata, not mutable JSON or persistence callbacks.
+`EmbeddedComponentDocumentStore` owns the confirmed document and revision,
+serializes candidate writes, and publishes a new revision only after success.
+Header, field and nested editor preparation share that same store.
 Theme navigation notes and Production Font file counts needed after a field
 commit are also read on that worker; only the prepared text and visual refresh
 effects return to the UI context.

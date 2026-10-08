@@ -322,7 +322,7 @@ internal sealed class ExternalMediaReplacementCoordinator
         if (usage.IsRuntimeDefault)
         {
             ReplaceRuntimeDefault(preview, usage, replacement);
-            await _ownerDocuments.SaveDesignPreviewJsonAsync(
+            await _ownerDocuments.ReplaceDesignPreviewAsync(
                 source,
                 preview.ToJsonString());
             return;
@@ -367,7 +367,7 @@ internal sealed class ExternalMediaReplacementCoordinator
                     $"Runtime item '{usage.ItemId}' has {matches} exact media-field matches.");
             }
         }
-        await _ownerDocuments.SaveDesignPreviewJsonAsync(
+        await _ownerDocuments.ReplaceDesignPreviewAsync(
             source,
             preview.ToJsonString());
     }

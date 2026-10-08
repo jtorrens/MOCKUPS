@@ -5,20 +5,16 @@ import {
 } from "./desktopPreviewComponents.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { authoringVariantPayload } from "./previewAuthoringTarget.js";
+import { prepareEmbeddedRuntimePayload, requirePreparedRuntimePayload, type PreparedRuntimePreviewPayload } from "./runtimePreviewDocumentContract.js";
 
 export function embeddedComponentPayload(
   payload: DesignPreviewPayload,
   type: string,
   config: Record<string, unknown>,
   inputs: Record<string, unknown>,
-): DesignPreviewPayload {
-  return {
-    ...payload,
-    runtimeValuesPrepared: true,
-    componentType: type,
-    configJson: JSON.stringify(config),
-    designPreviewJson: JSON.stringify(inputs),
-  };
+): PreparedRuntimePreviewPayload {
+  requirePreparedRuntimePayload(payload);
+  return prepareEmbeddedRuntimePayload(payload, type, config, inputs);
 }
 
 export function embeddedVariantComponentPayload(

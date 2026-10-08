@@ -50,10 +50,17 @@ internal sealed partial class SqliteDesignOwner
 
     public void UpdateModuleDesignPreviewJson(
         string moduleId,
-        string designPreviewJson) =>
-        _appModuleRepository.UpdateModuleDesignPreview(
-            moduleId,
-            designPreviewJson);
+        DesignPreviewDocumentReplacement replacement)
+    {
+        lock (WriteGate)
+        {
+            var current = GetModuleSettings(moduleId);
+            var proposed = replacement.Validate(current.DesignPreviewJson,
+                ParseJsonObject(current.ConfigJson), $"Module '{moduleId}' Design Preview");
+            if (JsonNode.DeepEquals(ParseJsonObject(current.DesignPreviewJson), proposed)) return;
+            _appModuleRepository.UpdateModuleDesignPreview(moduleId, replacement.ProposedJson);
+        }
+    }
 
     public AppSettings GetModuleAppSettings(string moduleId)
     {

@@ -79,6 +79,14 @@ resolvers validate and interpret the resulting values; they do not select
 alternative sources themselves. Missing declared Runtime values are errors;
 `false`, zero, empty text and `null` are present values, not missing values.
 
+Registry dispatch requires `PreparedRuntimePreviewPayload`, branded by a private
+in-process symbol owned by the shared boundary. Serialized payloads cannot claim
+preparation through a public boolean. Embedded preparation requires a prepared
+parent and retains its complete temporal envelope. Raw requests enter through
+the preparation boundary on every deserialization.
+Transient Design state requires the exact owner id; display names and Component
+types cannot manufacture a scope identity.
+
 Forwarded scalar values are evaluated at the common temporal owner's frame
 before registry dispatch. This does not replace the authored Runtime envelope:
 presence, previous-value transitions and action clocks still receive their

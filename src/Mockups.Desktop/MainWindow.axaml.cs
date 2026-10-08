@@ -402,7 +402,7 @@ public partial class MainWindow : SukiWindow
             externalMediaSurface.CreateCards);
         var headerPreparation =
             new EditorHeaderPreparationService(
-                data.Components,
+                componentClassFieldValues,
                 data.Preview,
                 data.Timeline,
                 data.ModuleInstanceThemes);
@@ -421,14 +421,8 @@ public partial class MainWindow : SukiWindow
                     "editor-header"),
             ReloadAndSelectAsync,
             (context, name) =>
-                application.Operations.ExecuteAsync(() =>
-                    data.Components
-                        .PromoteOverridesToVariant(
-                            new ComponentOverridePromotionRequest(
-                                context.OwnerNode,
-                                new ComponentOverrideSlotPathPromotionTarget(
-                                    context.Slots),
-                                name))),
+                componentClassFieldValues.PromoteContextOverridesAsync(
+                    context, name, application.Operations),
             ReturnToEmbeddedOwner,
             ShowEmbeddedContext,
             _variantHistory.Snapshots,

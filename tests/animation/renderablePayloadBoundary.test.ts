@@ -3,7 +3,8 @@ import test from "node:test";
 
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { resolveRenderablePayload } from "../../src/desktop-preview/renderablePayloadBoundary.js";
-import { forwardedRuntimeInputPatch } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
+import { forwardedRuntimeInputPatch, prepareEmbeddedRuntimePayload, requirePreparedRuntimePayload } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
+import { routeComponentClassToRenderable } from "../../src/desktop-preview/componentClassRenderableRegistry.js";
 
 const payload: DesignPreviewPayload = {
   kind: "componentClass",
@@ -40,8 +41,29 @@ const requiredDocuments = [
 ] as const;
 
 test("renderable payload accepts complete object documents", () => {
-  assert.deepEqual(resolveRenderablePayload(payload), { ...payload, runtimeValuesPrepared: true });
+  assert.deepEqual(JSON.parse(JSON.stringify(resolveRenderablePayload(payload))), payload);
 });
+
+test("only the Runtime boundary can prepare a payload for registry dispatch", () => {
+  assert.throws(() => requirePreparedRuntimePayload(payload), /prepared parent/);
+  const forged = { ...payload, runtimeValuesPrepared: true };
+  assert.throws(() => resolveRenderablePayload(forged), /not a current payload/);
+  const prepared = resolveRenderablePayload(payload);
+  assert.doesNotThrow(() => requirePreparedRuntimePayload(prepared));
+  const child = prepareEmbeddedRuntimePayload(prepared, "label", {}, {});
+  assert.doesNotThrow(() => requirePreparedRuntimePayload(child));
+  assert.equal(child.runtimeContractJson, prepared.runtimeContractJson);
+  assert.deepEqual(resolveRenderablePayload(child), child);
+});
+
+// Compiler-backed negative capability assertions; never executed.
+function cannotDispatchAuthoredPayload() {
+  // @ts-expect-error An authored payload is not a prepared registry input.
+  routeComponentClassToRenderable(payload, () => { throw new Error("not executed"); });
+  // @ts-expect-error An authored parent cannot construct a prepared embedded child.
+  prepareEmbeddedRuntimePayload(payload, "label", {}, {});
+}
+void cannotDispatchAuthoredPayload;
 
 for (const key of requiredDocuments) {
   test(`renderable payload rejects missing ${key}`, () => {

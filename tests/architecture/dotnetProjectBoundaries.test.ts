@@ -471,6 +471,7 @@ function assertCannotCompile(
     `${projectPath} unexpectedly compiled`,
   );
   assert.match(output, expectedDiagnostic);
+  return output;
 }
 
 test("the evaluated .NET project graph exposes only declared dependencies", () => {
@@ -732,6 +733,28 @@ test("structured collection lifecycle has one generic source owner", () => {
     [productionMutationOwner],
     "a structured collection persistence mutation must write content and animation together",
   );
+});
+
+test("Design writers require a versioned replacement and Override contexts expose no mutable document", () => {
+  const output = assertCannotCompile(
+    "tests/architecture/fixtures/UnversionedDesignWrite/UnversionedDesignWrite.csproj",
+    /CS1503.*DesignPreviewDocumentReplacement/,
+  );
+  assert.match(output, /CS1061.*Overrides/);
+});
+
+test("Runtime collection controls consume confirmed writes without replaying mutations or live reads", () => {
+  const files = lifecycleSourceFiles(path.join(repositoryRoot, "src"));
+  assert.deepEqual(files.filter(file => file.endsWith(".cs")
+    && readFileSync(file, "utf8").includes("StructuredCollectionMutationEngine.UpdateValues("))
+    .map(repositoryPath).sort(), [
+    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.RuntimeDocuments.cs",
+  ]);
+  const editor = readFileSync(path.join(repositoryRoot,
+    "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs"), "utf8");
+  assert.doesNotMatch(editor, /ApplyCollectionTransition|ComponentVariantSelection\(|\.ForNode\(/);
+  assert.match(editor, /AcceptConfirmedDocument\(await _instanceDocuments\.UpdateCollectionValuesAsync/);
 });
 
 test("Preview values have one effective document preparation boundary", () => {
