@@ -273,6 +273,8 @@ var tests = new (string Name, Action Run)[]
     ("Design Preview requires explicit record references across Component fixtures", DesignPreviewRequiresExplicitRecordReferences),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
     ("List Presence replays the same initial-to-final action and restores its origin", ListPresenceReplaysAndRestoresItsOrigin),
+    ("Design action targets never overwrite authored Test Values", DesignActionTargetsPreserveAuthoring),
+    ("Design target edits retire pending playback origins", DesignTargetEditsRetirePendingPlayback),
     ("manifest owners render their committed fixtures and Modules advance time", ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime),
     ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
@@ -838,6 +840,117 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
                 "Effective moved List Runtime item"),
             "state",
             "Effective moved List Runtime item"));
+}
+
+static void DesignTargetEditsRetirePendingPlayback()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = CanonicalProjectNodes(database);
+    var owner = nodes.Single(node => node.Id == "component_project_foqn_s2_media::variant::default");
+    var payload = Required(CreatePreviewPayload(database, owner, nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme).Id));
+    var completion = new TaskCompletionSource<bool>();
+    var session = new ComponentPreviewInputSession(() => { }, () => { }, _ => completion.Task);
+    var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
+    PreparedDesignPreviewInputs Prepare()
+    {
+        var result = preparer.Prepare(payload, session.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId);
+        session.ApplyPrepared(result);
+        return result;
+    }
+    var prepared = Prepare();
+    var action = prepared.Actions.Single(action => action.Id == "fullScreen");
+    var initial = prepared.ActionTargetValues[action.Id];
+    var edited = initial == "true" ? "false" : "true";
+    True(session.TriggerAction(action.Id));
+    True(session.IsPreparingPlayback);
+    session.ApplyRuntimeValueEdit(owner, preparer.UpdateValue(payload,
+        session.CaptureTransientState(payload), action.TargetInputId, edited));
+    True(Prepare().ResetActionIds.Contains(action.Id));
+    completion.SetResult(true);
+    True(!session.IsPreparingPlayback);
+    True(!session.IsPlaybackActive, "Old prepared frames must not restart a retired origin.");
+    var after = Prepare();
+    Equal(edited, ComponentPreviewActionRuntimeValue.RequireTargetValue(Object(after.Payload.DesignPreviewJson), action));
+    True(!after.Values.ContainsKey(ComponentPreviewTransientValues.ActionTargetValueKey(after.ScopeKey, action.Id)));
+
+    // A different field may change without retiring this action's target.
+    completion = new TaskCompletionSource<bool>();
+    True(session.TriggerAction(action.Id));
+    session.ApplyRuntimeValueEdit(owner, preparer.UpdateValue(payload,
+        session.CaptureTransientState(payload), "mediaScale", "1.2"));
+    True(!Prepare().ResetActionIds.Contains(action.Id));
+    completion.SetResult(true);
+    True(session.IsPlaybackActive);
+    session.StopActivePlayback();
+}
+
+static void DesignActionTargetsPreserveAuthoring()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = CanonicalProjectNodes(database);
+    foreach (var (id, targetKey) in new[]
+    {
+        ("component_project_foqn_s2_media", "isFullScreen"),
+        ("component_project_foqn_s2_list", "present"),
+    })
+    {
+        var owner = nodes.Single(node => node.Id == id + "::variant::default");
+        var payload = Required(CreatePreviewPayload(database, owner, nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme).Id));
+        var session = new ComponentPreviewInputSession(() => { }, () => { });
+        var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
+        PreparedDesignPreviewInputs Prepare()
+        {
+            var result = preparer.Prepare(payload, session.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId);
+            session.ApplyPrepared(result);
+            return result;
+        }
+        var first = Prepare();
+        var action = first.Actions.First(action => action.TargetInputId == targetKey);
+        var overlayKey = ComponentPreviewTransientValues.ActionTargetValueKey(first.ScopeKey, action.Id);
+        string Effective(PreparedDesignPreviewInputs result) =>
+            ComponentPreviewActionRuntimeValue.RequireTargetValue(Object(result.Payload.DesignPreviewJson), action);
+        string Authored() => ComponentPreviewActionRuntimeValue.RequireTargetValue(
+            preparer.ApplyTransient(Object(payload.RuntimeContractJson), Object(payload.ConfigJson), session.CaptureTransientState(payload)), action);
+        void Edit(string value)
+        {
+            if (action.IsCollectionItemAction)
+            {
+                var items = preparer.UpdateCollection(payload, session.CaptureTransientState(payload),
+                    StructuredCollectionAddress.Root(action.CollectionJsonKey), action.CollectionItemId,
+                    new Dictionary<string, JsonNode?> { [targetKey] = JsonValue.Create(value == "true") });
+                session.SetExternalCollectionItems(payload, action.CollectionJsonKey, items.Select(item => item!.AsObject()).ToArray());
+            }
+            else session.ApplyRuntimeValueEdit(owner, preparer.UpdateValue(payload, session.CaptureTransientState(payload), targetKey, value));
+        }
+        var initial = Effective(first);
+        var edited = initial == "true" ? "false" : "true";
+        True(!first.Values.ContainsKey(overlayKey), "Preparation must not manufacture an action target overlay.");
+        Edit(edited);
+        Equal(edited, Effective(Prepare()));
+        True(session.SetActionFrame(action.Id, 1));
+        Equal(initial, Effective(Prepare()));
+        Equal(edited, Authored());
+        True(session.RestoreAction(action.Id));
+        Equal(edited, Effective(Prepare()));
+        Equal(edited, Authored());
+        True(session.TriggerAction(action.Id));
+        Equal(initial, Effective(Prepare()));
+        session.StopActivePlayback();
+        Equal(edited, Authored());
+        // A new authored value retires the old origin even when it happens to
+        // equal the last visible action result. Restore must not undo the edit.
+        Edit(initial);
+        var afterEdit = Prepare();
+        True(afterEdit.ResetActionIds.Contains(action.Id));
+        True(!afterEdit.Values.ContainsKey(overlayKey));
+        Equal(initial, Effective(afterEdit));
+        True(session.RestoreAction(action.Id));
+        Equal(initial, Effective(Prepare()));
+        True(session.TriggerAction(action.Id));
+        Equal(edited, Effective(Prepare()));
+        Equal(initial, Authored());
+        session.StopActivePlayback();
+    }
 }
 
 static void ListPresenceReplaysAndRestoresItsOrigin()
@@ -9832,7 +9945,7 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 inputSession.PlaybackBusyChanged += busy =>
                 {
                     if (busy) targetAtPlay = controller.CaptureDesignPreviewTransientState(owner)
-                        .Values[$"{initial.ScopeKey}:{targetKey}"];
+                        .Values[ComponentPreviewTransientValues.ActionTargetValueKey(initial.ScopeKey, actionId)];
                 };
                 var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -9855,6 +9968,8 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 edit.GetAwaiter().GetResult();
                 blocker.GetAwaiter().GetResult();
                 Equal(initialValue, targetAtPlay); // Toggle the edited value, not the old mounted value.
+                Equal(editedValue, controller.CaptureDesignPreviewTransientState(owner)
+                    .Values[$"{initial.ScopeKey}:{targetKey}"]);
                 Wait(() => !inputSession.IsPreparingPlayback);
                 var restoreButton = Required((host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
                     .Single(button => ToolTip.GetTip(button) as string == $"Restore {label}"));
@@ -9864,7 +9979,7 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 Wait(() => laterEdit.IsCompleted && drained.IsCompleted);
                 laterEdit.GetAwaiter().GetResult();
                 drained.GetAwaiter().GetResult();
-                Equal(editedValue, controller.CaptureDesignPreviewTransientState(owner)
+                Equal(initialValue, controller.CaptureDesignPreviewTransientState(owner)
                     .Values[$"{initial.ScopeKey}:{targetKey}"]);
                 Equal(0, controller.CurrentDesignPreviewActionFrame(owner, actionId));
                 True(controller.MaximumDesignPreviewActionFrame(owner, actionId) >= 3);
@@ -9990,6 +10105,18 @@ static void DesignCollectionDefaultsUseCurrentState(
                 var edited = Object(transient.CollectionTestValuesJson)[collection.StorageJsonKey]!.AsArray();
                 Equal(nextValue, DesignPreviewTestValues.CollectionValue(
                     edited.OfType<JsonObject>().Single(item => item["id"]!.GetValue<string>() == firstId), input));
+                var preparePreview = Required(typeof(EditorPreviewController).GetMethod("PrepareDesignPreviewAsync",
+                    BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(CancellationToken)], null));
+                var preparation = Required(preparePreview.Invoke(controller, [CancellationToken.None]) as Task);
+                Wait(() => preparation.IsCompleted, "Edited collection did not reach Preview preparation.");
+                preparation.GetAwaiter().GetResult();
+                var visualSession = Required(typeof(EditorPreviewController).GetField("_designInputsPanel",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(controller) as ComponentPreviewInputSession);
+                var visualDocument = Required(typeof(ComponentPreviewInputSession).GetField("_runtimePreview",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(visualSession) as JsonObject);
+                Equal(nextValue, DesignPreviewTestValues.CollectionValue(
+                    DesignPreviewTestValues.CollectionItems(visualDocument, collection)
+                        .Single(item => item["id"]!.GetValue<string>() == firstId), input));
 
                 saveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Wait(() => window.GetLogicalDescendants().OfType<Button>()
@@ -26683,31 +26810,15 @@ static void NotificationsSeedOpensAndRenders()
         Equal(90, notificationInputs["maxWidth"]?.GetValue<int>() ?? 0);
         True(notificationInputs["availableWidth"] is null);
         True(notificationInputs["displayMode"] is JsonValue);
-        preview["items"] = new JsonArray
+        var itemDefinition = RuntimeInputDefinitionReader.ReadCollections(preview, Object(settings.ConfigJson))
+            .Single(collection => collection.JsonKey == "items");
+        preview["items"] = new JsonArray(new[] { "notification_1", "notification_2" }.Select(id =>
         {
-            new JsonObject
-            {
-                ["id"] = "notification_1",
-                ["actorId"] = notificationInputs["actorId"]?.DeepClone(),
-                ["displayMode"] = notificationInputs["displayMode"]?.DeepClone(),
-                ["summaryText"] = notificationInputs["summaryText"]?.DeepClone(),
-                ["summarySubtext"] = notificationInputs["summarySubtext"]?.DeepClone(),
-                ["detailText"] = notificationInputs["detailText"]?.DeepClone(),
-                ["detailSubtext"] = notificationInputs["detailSubtext"]?.DeepClone(),
-                ["present"] = true,
-            },
-            new JsonObject
-            {
-                ["id"] = "notification_2",
-                ["actorId"] = notificationInputs["actorId"]?.DeepClone(),
-                ["displayMode"] = notificationInputs["displayMode"]?.DeepClone(),
-                ["summaryText"] = notificationInputs["summaryText"]?.DeepClone(),
-                ["summarySubtext"] = notificationInputs["summarySubtext"]?.DeepClone(),
-                ["detailText"] = notificationInputs["detailText"]?.DeepClone(),
-                ["detailSubtext"] = notificationInputs["detailSubtext"]?.DeepClone(),
-                ["present"] = true,
-            },
-        };
+            var item = StructuredCollectionItemFactory.Create(itemDefinition,
+                field => field.DefaultValue, database.GetComponentVariantRuntimeInputs);
+            item["id"] = id;
+            return (JsonNode)item;
+        }).ToArray());
         preview["distributionMode"] = "stacked";
         database.UpdateComponentClassDesignPreviewJson(notifications.Id, preview.ToJsonString());
         var populated = Required(CreatePreviewPayload(database, notificationsVariant, theme.Id));

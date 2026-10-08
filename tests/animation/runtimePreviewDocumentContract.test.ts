@@ -5,12 +5,15 @@ import {
   prepareComponentConfiguration,
   prepareComponentInputValues,
   prepareRuntimeValues,
+  prepareRuntimePreviewPayload,
   projectRuntimeValues,
 } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
 import { resolveRuntimeDocumentAnimationValues } from "../../src/desktop-preview/runtimeNestedAnimationFields.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 import { resolveButtonComponentFromRecords } from "../../src/desktop-preview/buttonComponentResolver.js";
+import { resolveListComponent } from "../../src/desktop-preview/listComponentResolver.js";
+import { resolveNotificationsComponent } from "../../src/desktop-preview/notificationsComponentResolver.js";
 import { resolveLabelComponentFromRecords, literalLabelPreview, staticLabelFrameContext } from "../../src/desktop-preview/labelComponentResolver.js";
 
 const binding = [{ fieldId: "property-01", runtimeJsonKey: "payloadValue", configPath: ["owner", "visualValue"] }];
@@ -98,6 +101,64 @@ function forward(config: object, runtime: object) {
   } as DesignPreviewPayload);
   return JSON.parse(prepared.configJson);
 }
+
+test("List and Notifications accept declared item fields without a resolver whitelist", () => {
+  for (const type of ["list", "notifications"]) {
+    const fixture = committedComponentFixture(type);
+    const runtime = JSON.parse(fixture.designPreviewJson);
+    const collection = runtime.collections.find((entry: { jsonKey: string }) => entry.jsonKey === "items");
+    collection.fields.push({ id: "extra-field-id", jsonKey: "extraAuthoredValue", valueKind: "StringSingleLine" });
+    for (const item of runtime.items) item.extraAuthoredValue = "authored";
+    const prepare = () => prepareRuntimePreviewPayload({ ...fixture, designPreviewJson: JSON.stringify(runtime) });
+    const resolve = type === "list" ? resolveListComponent : resolveNotificationsComponent;
+    assert.doesNotThrow(() => resolve(prepare()));
+    assert.equal(JSON.parse(prepare().designPreviewJson).items[0].extraAuthoredValue, "authored");
+    runtime.items[0].undeclaredValue = "invalid";
+    assert.throws(prepare, /contains undeclared fields: undeclaredValue/);
+  }
+});
+
+test("collection preparation admits only declared resolved, action and boundary keys", () => {
+  const definition = {
+    id: "collection-01", jsonKey: "rows",
+    fields: [{ id: "owner-id", jsonKey: "ownerRef", resolvedJsonKey: "resolvedOwner" }],
+    itemActions: [{ id: "action-01", playInputId: "playing", timeJsonKey: "elapsed", targetFromJsonKey: "origin" }],
+    fixedComponentBoundary: { variantReferenceJsonKey: "componentRef", overridesJsonKey: "localOverrides" },
+    itemRuntimeContractJsonKey: "childRuntime", uiParentItemIdJsonKey: "parentId",
+  };
+  const item = { id: "item-01", ownerRef: "owner-01", resolvedOwner: {}, playing: true, elapsed: 5,
+    origin: false, componentRef: "class::variant::variant-01", localOverrides: {}, childRuntime: {}, parentId: "parent-01" };
+  assert.doesNotThrow(() => forward({}, { collections: [definition], rows: [item] }));
+  for (const key of ["itemActions", "fixedComponentBoundary"] as const) {
+    const removed = { ...definition, [key]: undefined };
+    assert.throws(() => forward({}, { collections: [removed], rows: [item] }), /undeclared fields/);
+  }
+  assert.throws(() => forward({}, {
+    collections: [{ ...definition, fields: [{ id: "owner-id", jsonKey: "ownerRef" }] }], rows: [item],
+  }), /undeclared fields: resolvedOwner/);
+});
+
+test("collection preparation validates nested structured and embedded owner items", () => {
+  const childDefinition = { id: "children-id", jsonKey: "children", fields: [{ id: "value-id", jsonKey: "value" }] };
+  for (const embedded of [false, true]) {
+    const definition = { id: "rows-id", jsonKey: "rows", fields: embedded ? [] : [
+      { id: "children-field", jsonKey: "children", structuredCollection: childDefinition },
+    ], ...(embedded ? { componentItems: { inputsJsonKey: "childInputs", overridesJsonKey: "overrides", variantReferenceJsonKey: "variant" } } : {}) };
+    const child = { id: "child-01", value: false };
+    const runtime = { collections: [definition], rows: [{ id: "parent-01", ...(embedded
+      ? { childInputs: { collections: [childDefinition], children: [child] }, overrides: {}, variant: "class::variant::v1" }
+      : { children: [child] }) }] };
+    assert.doesNotThrow(() => forward({}, runtime));
+    Object.assign(child, { unknown: true });
+    assert.throws(() => forward({}, runtime), /item 'child-01' contains undeclared fields: unknown/);
+  }
+});
+
+test("current composed collection fixtures cross the shared preparation boundary", () => {
+  for (const type of ["collectionStack", "iconRow", "listItem", "bubble", "incomingCallNotification", "contentRow"]) {
+    assert.doesNotThrow(() => prepareRuntimePreviewPayload(committedComponentFixture(type)), type);
+  }
+});
 
 test("forwarding follows declared field and item identities after reordering", () => {
   const definition = { id: "field-01", jsonKey: "value" };

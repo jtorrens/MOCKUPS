@@ -13,7 +13,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed record DesignPreviewInputCapture(
     ComponentPreviewTransientState Transient,
     string InputSignature,
-    IReadOnlyDictionary<string, string> ActionSignatures);
+    IReadOnlyDictionary<string, string> ActionSignatures,
+    IReadOnlyDictionary<string, string> ActionTargetValues);
 
 internal sealed record PreparedRuntimeValueEdit(
     string JsonKey, string Value, IReadOnlyDictionary<string, string> Collections);
@@ -26,6 +27,7 @@ internal sealed record PreparedDesignPreviewInputs(
     IReadOnlyDictionary<string, string> Values,
     IReadOnlyList<ComponentPreviewActionDefinition> Actions,
     IReadOnlyDictionary<string, string> ActionSignatures,
+    IReadOnlyDictionary<string, string> ActionTargetValues,
     bool ResetSession,
     IReadOnlyList<string> ResetActionIds);
 
@@ -142,13 +144,14 @@ internal sealed class DesignPreviewInputPreparer(
         private JsonObject _runtimePreview = [];
         public string InputSignature { get; private set; } = "";
         public IReadOnlyDictionary<string, string> ActionSignatures { get; private set; } = FrozenDictionary<string, string>.Empty;
+        public IReadOnlyDictionary<string, string> ActionTargetValues { get; private set; } = FrozenDictionary<string, string>.Empty;
         public bool ResetSession { get; private set; }
         public List<string> ResetActionIds { get; } = [];
 
         public PreparedDesignPreviewInputs Result(DesignPreviewPayload payload) => new(
             payload, _scopeKey, InputSignature, _runtimePreview.ToJsonString(),
             _values.ToFrozenDictionary(StringComparer.Ordinal), Array.AsReadOnly(_actions.ToArray()),
-            ActionSignatures, ResetSession, Array.AsReadOnly(ResetActionIds.ToArray()));
+            ActionSignatures, ActionTargetValues, ResetSession, Array.AsReadOnly(ResetActionIds.Distinct(StringComparer.Ordinal).ToArray()));
 
         public DesignPreviewPayload ApplyOwnerInputs(
             DesignPreviewPayload payload,
@@ -199,9 +202,16 @@ internal sealed class DesignPreviewInputPreparer(
             foreach (var (id, previous) in _capture.ActionSignatures)
             {
                 if (ActionSignatures.TryGetValue(id, out var current) && current == previous) continue;
-                ResetActionIds.Add(id);
-                foreach (var key in ComponentPreviewTransientValues.ActionKeys(_scopeKey, id)) _values.Remove(key);
+                RetireAction(id);
             }
+            // Capture authoring before applying any playback overlay. An edited
+            // target invalidates only that action's origin, result and playhead.
+            ActionTargetValues = _actions.Where(action => action.TargetInputId.Length > 0
+                    && ComponentPreviewActions.IsApplicable(preview, action))
+                .ToFrozenDictionary(action => action.Id,
+                    action => ComponentPreviewActionRuntimeValue.RequireTargetValue(preview, action), StringComparer.Ordinal);
+            foreach (var (id, previous) in _capture.ActionTargetValues)
+                if (!ActionTargetValues.TryGetValue(id, out var current) || current != previous) RetireAction(id);
             foreach (var input in inputs)
             {
                 EnsureValue(input, preview);
@@ -227,8 +237,7 @@ internal sealed class DesignPreviewInputPreparer(
             }
             foreach (var action in _actions.Where((action) => ComponentPreviewActions.IsApplicable(preview, action)))
             {
-                if (action.IsCollectionItemAction
-                    && !string.IsNullOrWhiteSpace(action.TargetInputId)
+                if (!string.IsNullOrWhiteSpace(action.TargetInputId)
                     && _values.TryGetValue(ActionTargetStorageKey(action), out var targetValue))
                 {
                     ComponentPreviewActions.SetStoredValue(preview, action, action.TargetInputId, targetValue);
@@ -391,6 +400,7 @@ internal sealed class DesignPreviewInputPreparer(
 
         private void EnsureActionValues(JsonObject preview)
         {
+            RetireInvalidCollectionOptionActions(preview);
             foreach (var action in _actions)
             {
                 var stateKey = ActionStateKey(action);
@@ -414,23 +424,16 @@ internal sealed class DesignPreviewInputPreparer(
                             absentValue: 0)
                         .ToString(CultureInfo.InvariantCulture);
                 }
-                if (action.IsCollectionItemAction
-                    && !string.IsNullOrWhiteSpace(action.TargetInputId)
-                    && !_values.ContainsKey(ActionTargetStorageKey(action)))
-                {
-                    _values[ActionTargetStorageKey(action)] = ComponentPreviewActions.Value(preview, action, action.TargetInputId) switch
-                    {
-                        JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
-                        JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
-                        JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
-                        _ => "",
-                    };
-                }
             }
-            NormalizeCollectionOptionActionTargets(preview);
         }
 
-        private void NormalizeCollectionOptionActionTargets(JsonObject preview)
+        private void RetireAction(string id)
+        {
+            ResetActionIds.Add(id);
+            foreach (var key in ComponentPreviewTransientValues.ActionKeys(_scopeKey, id)) _values.Remove(key);
+        }
+
+        private void RetireInvalidCollectionOptionActions(JsonObject preview)
         {
             var collections = RuntimeInputDefinitionReader.ReadCollections(preview, _config)
                 .ToDictionary((collection) => collection.JsonKey, StringComparer.Ordinal);
@@ -439,6 +442,7 @@ internal sealed class DesignPreviewInputPreparer(
                          && candidate.TargetMode == ComponentPreviewActionTargetMode.Option
                          && !string.IsNullOrWhiteSpace(candidate.TargetInputId)))
             {
+                if (!_values.TryGetValue(ActionTargetStorageKey(action), out var current)) continue;
                 if (!collections.TryGetValue(action.CollectionJsonKey, out var collection)) continue;
                 var input = collection.Fields.FirstOrDefault((field) =>
                     field.JsonKey.Equals(action.TargetInputId, StringComparison.Ordinal));
@@ -464,17 +468,8 @@ internal sealed class DesignPreviewInputPreparer(
                             $"Runtime action '{action.Id}' has no declared option source."))
                     .Select((option) => option.Value)
                     .ToList();
-                var targetKey = ActionTargetStorageKey(action);
-                var current = _values.GetValueOrDefault(targetKey, "");
                 if (validValues.Contains(current)) continue;
-
-                ResetActionIds.Add(action.Id);
-                var replacement = validValues.FirstOrDefault() ?? "";
-                _values[targetKey] = replacement;
-                _values[ActionTargetFromKey(action)] = replacement;
-                _values[ActionStateKey(action)] = "false";
-                _values[ActionTimeKey(action)] = "0";
-
+                RetireAction(action.Id);
             }
         }
 
@@ -585,7 +580,7 @@ internal sealed class DesignPreviewInputPreparer(
         private string ActionTimeKey(ComponentPreviewActionDefinition action) => ComponentPreviewTransientValues.ActionTimeKey(_scopeKey, action.Id);
         private string ActionTargetFromKey(ComponentPreviewActionDefinition action) => ComponentPreviewTransientValues.ActionTargetFromKey(_scopeKey, action.Id);
         private string ActionTargetStorageKey(ComponentPreviewActionDefinition action) =>
-            action.IsCollectionItemAction ? ComponentPreviewTransientValues.ActionTargetValueKey(_scopeKey, action.Id) : $"{_scopeKey}:{action.TargetInputId}";
+            ComponentPreviewTransientValues.ActionTargetValueKey(_scopeKey, action.Id);
 
         private static string Signature(
             IReadOnlyList<ComponentInputDefinition> inputs,

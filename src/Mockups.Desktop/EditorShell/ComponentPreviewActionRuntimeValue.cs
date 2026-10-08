@@ -9,6 +9,15 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class ComponentPreviewActionRuntimeValue
 {
+    public static string RequireTargetValue(JsonObject preview, ComponentPreviewActionDefinition action) =>
+        ComponentPreviewActions.Value(preview, action, action.TargetInputId) switch
+        {
+            JsonValue value when value.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
+            JsonValue value when value.TryGetValue<string>(out var text) => text,
+            JsonValue value when value.GetValueKind() == System.Text.Json.JsonValueKind.Number => value.ToJsonString(),
+            _ => throw new InvalidOperationException($"Design action '{action.Id}' requires its declared scalar target '{action.TargetInputId}'."),
+        };
+
     public static int DurationFrames(ComponentPreviewActionDefinition action, JsonObject preview, int fps, string themeTokensJson)
     {
         if (action.DurationOwnerTimeline)

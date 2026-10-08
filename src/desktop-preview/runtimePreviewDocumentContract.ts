@@ -276,13 +276,38 @@ function runtimeSources(runtime: JsonRecord): RuntimeSource[] {
   }
   function collection(definition: JsonRecord, value: unknown) {
     if (!Array.isArray(value)) throw new Error(`Runtime collection '${definition.id}' must be an array`);
+    const declarations = definitions(definition, "fields");
+    const allowedKeys = new Set(["id"]);
+    function allow(owner: JsonRecord, key: string) {
+      if (owner[key] === undefined || owner[key] === "") return;
+      allowedKeys.add(requiredString(owner, key, `Runtime collection '${definition.id}' declaration`));
+    }
+    for (const field of declarations) {
+      allowedKeys.add(requiredString(field, "jsonKey", "Runtime collection field"));
+      allow(field, "resolvedJsonKey");
+    }
+    for (const action of definitions(definition, "itemActions")) {
+      for (const key of ["playInputId", "timeJsonKey", "targetFromJsonKey"]) allow(action, key);
+    }
+    allow(definition, "itemRuntimeContractJsonKey");
+    allow(definition, "uiParentItemIdJsonKey");
+    for (const boundaryKey of ["componentItems", "fixedComponentBoundary"]) {
+      const boundary = optionalObject(definition, boundaryKey, "Runtime collection");
+      if (boundary) {
+        for (const key of ["variantReferenceJsonKey", "overridesJsonKey", "inputsJsonKey"]) allow(boundary, key);
+      }
+    }
     const ids = new Set<string>();
     for (const item of value) {
       if (!isRecord(item)) throw new Error(`Runtime collection '${definition.id}' must contain objects`);
       const id = requiredString(item, "id", "Runtime collection item");
       if (ids.has(id)) throw new Error(`Duplicate Runtime collection item '${id}'`);
       ids.add(id);
-      fields(definitions(definition, "fields"), item, id);
+      const unknown = Object.keys(item).filter((key) => !allowedKeys.has(key));
+      if (unknown.length) {
+        throw new Error(`Runtime collection '${definition.id}' item '${id}' contains undeclared fields: ${unknown.join(", ")}`);
+      }
+      fields(declarations, item, id);
       const componentItems = definition.componentItems;
       const key = definition.itemRuntimeContractJsonKey
         || (isRecord(componentItems) ? componentItems.inputsJsonKey : undefined);

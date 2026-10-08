@@ -593,6 +593,21 @@ and playback position; a changed action contract resets only that action. The
 prepared result publishes this retirement and the replacement values together
 inside the same operation gate. Action-key construction is shared by preparation
 and session publication; neither infers item ownership from names or positions.
+Authored action-target snapshots are immutable preparation metadata for detecting
+edits and initializing a requested action; they are not another Runtime value
+source. Playback stores its target under the same action-key contract at every
+boundary, including root actions. It never writes a target into the scalar draft
+dictionary. Idle preparation leaves authored values untouched, and target edits
+retire the corresponding playback overlay before preparing the effective document.
+
+The shared Runtime document boundary validates collection item keys from their
+declarations, recursively through structured fields and embedded Runtime owners.
+Allowed keys consist of the stable item identity, declared fields and resolved
+reference keys, explicit boundary documents and parent links, and declared action
+transport keys. Concrete resolvers must not maintain parallel item-field
+whitelists: adding an authored field never requires changing a visual resolver.
+Unknown keys still fail at preparation; the boundary does not discard or repair
+them. Resolvers validate the visual semantics of the prepared values they consume.
 
 Design preparation may resolve only the synthetic Actor and media identities
 declared by the System Preview fixture catalog. The payload carries the exact

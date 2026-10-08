@@ -388,6 +388,19 @@ the transport to idle and enables Play again. Repeated Play first restores that
 same captured origin internally and then executes the same initial-to-final
 action; it does not reinterpret a toggle from the previous final value.
 
+Action targets are presentation overlays, never authored Test Values. Preparing
+an idle action does not create a target overlay. Root, collection-item and
+embedded actions read their current target through the declared action owner;
+only executing or scrubbing the action creates its separate target value.
+The shared preparer captures authored targets before applying overlays and
+compares them by exact owner and action id. A changed target retires only that
+action's overlay, origin and playhead. Restore cannot undo the newer edit, and
+the next Play captures the updated origin. Changes to other fields or actions
+do not retire it. A retired origin cannot resume when an earlier asynchronous
+frame preparation completes. An option overlay whose declared option has been
+removed is retired; Preview uses the current authored target, never the first
+available option as a replacement.
+
 Prepared Design frames are session-only and keyed by an exact cryptographic
 request signature containing the resolved payload, complete action and Preview
 setup. An unchanged replay retains and reuses that preparation. A changed

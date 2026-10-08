@@ -5,12 +5,13 @@ import type { RenderableBox } from "../../src/visual/renderable/types.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { listComponentToRenderable } from "../../src/desktop-preview/listComponentRenderable.js";
 import { resolveListComponent } from "../../src/desktop-preview/listComponentResolver.js";
+import { prepareRuntimePreviewPayload } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
 import { resolveComponentCollectionItem } from "../../src/desktop-preview/componentCollectionResolverCommon.js";
 import { routeComponentClassToRenderable } from "../../src/desktop-preview/componentClassRenderableRegistry.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
 const fixture = (variantId = "calls") =>
-  committedComponentFixture("list", variantId);
+  prepareRuntimePreviewPayload(committedComponentFixture("list", variantId));
 
 function renderChild(payload: DesignPreviewPayload, assignedBox?: RenderableBox) {
   return routeComponentClassToRenderable(payload, renderChild, assignedBox);
@@ -204,7 +205,7 @@ test("List rejects undeclared per-item fields", () => {
   source.designPreviewJson = JSON.stringify(preview);
 
   assert.throws(
-    () => resolveListComponent(source),
+    () => resolveListComponent(prepareRuntimePreviewPayload(source)),
     /contains undeclared fields: implicitVariant/,
   );
 });

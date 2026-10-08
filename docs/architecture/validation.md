@@ -525,6 +525,21 @@ duplicate/reorder/delete items, return to an owner, remove its final item and
 change one action contract. They require stable scalar drafts and surviving
 action values, precise retirement of deleted action keys and restore snapshots,
 and no whole-session reset for membership or isolated action-contract changes.
+Target-overlay regressions use Media and List to require direct Test Values
+edits in the effective Preview before Play, unchanged authoring during playback,
+repeatable origin/Restore behavior and exact retirement after a target edit.
+The real collection Dictionary tests inspect the prepared visual document as
+well as the saved defaults. Real Media and Notification controls require queued
+target edits to remain authored while Play uses a separate overlay, and Restore
+to preserve a subsequent edit. Pending-frame tests release an old preparation
+after a target edit and require that it cannot restart the retired origin;
+an unrelated field edit must not prevent that action from starting.
+Runtime document regressions add a declared field to both List and Notifications
+and require their real resolvers to accept the prepared document unchanged.
+Undeclared keys must fail at the shared preparation boundary, including nested
+structured and embedded collections. Resolved reference, action transport and
+boundary keys are accepted only through their metadata declarations. Current
+composed collection fixtures cross that same boundary without local allowlists.
 Queued Test Values lifecycle regressions exercise real Conversation and Video
 Call collection actions: a field edit followed immediately by two duplications,
 then move/delete, an immutable Add prototype, a rejected mutation without publication and a subsequent

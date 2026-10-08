@@ -12,14 +12,6 @@ import { requiredObjectArray } from "./previewJsonHelpers.js";
 import type { ListDesignContract } from "./listComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
-const listItemKeys = new Set([
-  "id",
-  "present",
-  "listItemInputs",
-  "presenceTransition",
-  "presenceElapsedMs",
-]);
-
 export function resolveListComponent(
   payload: DesignPreviewPayload,
 ): ListDesignContract {
@@ -171,10 +163,6 @@ function listStackItem(
   itemSize: { width: number; height: number },
 ) {
   const path = `component.list.items[${index}]`;
-  const unknown = Object.keys(item).filter((key) => !listItemKeys.has(key));
-  if (unknown.length) {
-    throw new Error(`${path} contains undeclared fields: ${unknown.join(", ")}`);
-  }
   const id = requiredString(item, "id", `${path}.id`);
   const listItemInputs = requiredRecord(item, "listItemInputs", `${path}.listItemInputs`);
   return {

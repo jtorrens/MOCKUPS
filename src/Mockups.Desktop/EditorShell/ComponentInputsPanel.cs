@@ -27,6 +27,7 @@ internal sealed class ComponentPreviewInputSession
     private string _inputSignature = "";
     private IReadOnlyList<ComponentPreviewActionDefinition> _actions = [];
     private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _actionSignaturesByScope = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _actionTargetValuesByScope = new(StringComparer.Ordinal);
     private string _activeActionId = "";
     private JsonObject _config = [];
     private JsonObject _themeTokens = [];
@@ -106,7 +107,8 @@ internal sealed class ComponentPreviewInputSession
 
     private DesignPreviewInputCapture CapturePreparation(ComponentPreviewTransientState transient) =>
         new(transient, transient.ScopeKey == _scopeKey ? _inputSignature : "",
-            _actionSignaturesByScope.GetValueOrDefault(transient.ScopeKey, FrozenDictionary<string, string>.Empty));
+            _actionSignaturesByScope.GetValueOrDefault(transient.ScopeKey, FrozenDictionary<string, string>.Empty),
+            _actionTargetValuesByScope.GetValueOrDefault(transient.ScopeKey, FrozenDictionary<string, string>.Empty));
 
     public void ClearPreparedContext()
     {
@@ -143,6 +145,7 @@ internal sealed class ComponentPreviewInputSession
         _runtimePreview = ParseJsonObject(prepared.RuntimeJson);
         _actions = prepared.Actions;
         _actionSignaturesByScope[_scopeKey] = prepared.ActionSignatures;
+        _actionTargetValuesByScope[_scopeKey] = prepared.ActionTargetValues;
         ApplyProjectFrameRate(owner.FrameRate);
         foreach (var actionId in prepared.ResetActionIds)
         {
@@ -600,6 +603,9 @@ internal sealed class ComponentPreviewInputSession
     private async Task StartPlaybackAsync(ComponentPreviewActionDefinition action)
     {
         StopPlayback();
+        var scope = _scopeKey;
+        var snapshotKey = ActionSnapshotKey(action.Id);
+        var origin = _actionSnapshots[snapshotKey];
         PlaybackBusyChanged?.Invoke(true);
         _activeActionId = action.Id;
         var prepared = true;
@@ -633,6 +639,14 @@ internal sealed class ComponentPreviewInputSession
                     ("ms", stopwatch.Elapsed.TotalMilliseconds));
             }
 
+            if (_scopeKey != scope || !_actionSnapshots.TryGetValue(snapshotKey, out var currentOrigin)
+                || !ReferenceEquals(origin, currentOrigin))
+            {
+                // Preparation cannot resurrect an origin retired by an edit,
+                // contract change, removal or Reset while frames were loading.
+                PlaybackBusyChanged?.Invoke(false);
+                return;
+            }
             if (!prepared)
             {
                 SetPlaybackState(action, false);
@@ -1028,7 +1042,8 @@ internal sealed class ComponentPreviewInputSession
     {
         if (string.IsNullOrWhiteSpace(action.TargetInputId)) return;
         var key = ActionTargetStorageKey(action);
-        var current = _values.GetValueOrDefault(key, InputDefault(key, "false"));
+        var current = _values.TryGetValue(key, out var overlay)
+            ? overlay : _actionTargetValuesByScope[_scopeKey][action.Id];
         if (!string.IsNullOrWhiteSpace(action.TargetFromJsonKey))
         {
             _values[ActionTargetFromKey(action)] = current;
@@ -1051,9 +1066,7 @@ internal sealed class ComponentPreviewInputSession
         ComponentPreviewTransientValues.ActionTargetFromKey(_scopeKey, action.Id);
 
     private string ActionTargetStorageKey(ComponentPreviewActionDefinition action) =>
-        action.IsCollectionItemAction
-            ? ComponentPreviewTransientValues.ActionTargetValueKey(_scopeKey, action.Id)
-            : $"{_scopeKey}:{action.TargetInputId}";
+        ComponentPreviewTransientValues.ActionTargetValueKey(_scopeKey, action.Id);
 
     private void SyncDeactivatedPlaybackInputs(ComponentPreviewActionDefinition action)
     {

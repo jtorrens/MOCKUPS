@@ -108,23 +108,6 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
   };
 }
 
-const notificationItemKeys = new Set([
-  "id",
-  "actorId",
-  "actor",
-  "displayMode",
-  "summaryText",
-  "summarySubtext",
-  "detailText",
-  "detailSubtext",
-  "present",
-  "presenceTransition",
-  "presenceElapsedMs",
-  "displayModeTransition",
-  "displayModeElapsedMs",
-  "displayModeFrom",
-]);
-
 function notificationStackItem(
   item: Record<string, unknown>,
   index: number,
@@ -134,10 +117,6 @@ function notificationStackItem(
   notificationsConfig: Record<string, unknown>,
 ) {
   const path = `component.notifications.items[${index}]`;
-  const unknown = Object.keys(item).filter((key) => !notificationItemKeys.has(key));
-  if (unknown.length > 0) {
-    throw new Error(`${path} contains undeclared fields: ${unknown.join(", ")}`);
-  }
   return {
     id: requiredString(item, "id", `${path}.id`),
     variantReference: variantReference,
