@@ -2,6 +2,13 @@
 
 Status: normative.
 
+Settings exposes **Review resource cleanup…** as a bounded maintenance action.
+It reads the persisted pending list without executing it. Each explicit Retry
+confirmation shows the resource label, exact original path and last error.
+No pending task is retried by opening Settings or starting the application.
+Successful record deletion with retained resource files reports that cleanup
+is pending rather than presenting the record deletion as a failure.
+
 ## Two workspaces
 
 The top-level navigation separates two user intentions:

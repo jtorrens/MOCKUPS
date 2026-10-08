@@ -56,6 +56,7 @@ internal sealed partial class SqliteResourceOwner
         var relativeDirectory = Path.Combine("fonts", familySlug);
         var mediaRoot = ResolveProjectPath(projectSettings.MediaRoot);
         var targetDirectory = Path.Combine(mediaRoot, relativeDirectory);
+        AssetCleanup.RequireAvailable(targetDirectory);
         Directory.CreateDirectory(targetDirectory);
 
         var copiedFiles = new JsonArray();
@@ -106,6 +107,7 @@ internal sealed partial class SqliteResourceOwner
         var absoluteDirectory = Path.GetFullPath(
             Path.Combine(mediaRoot, normalizedDirectory));
         var relativeToRoot = Path.GetRelativePath(mediaRoot, absoluteDirectory);
+        AssetCleanup.RequireAvailable(absoluteDirectory);
         if (relativeToRoot.StartsWith("..", StringComparison.Ordinal)
             || Path.IsPathFullyQualified(relativeToRoot)
             || !Directory.Exists(absoluteDirectory))
@@ -296,23 +298,6 @@ internal sealed partial class SqliteResourceOwner
     private static bool IsEmojiFontFamily(string familyName)
     {
         return familyName.Contains("emoji", StringComparison.OrdinalIgnoreCase);
-    }
-
-    internal void DeleteProductionFontFiles(SqliteConnection connection, string fontId)
-    {
-        var font = _productionFontRepository.Get(connection, fontId);
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, font.ProjectId).MediaRoot);
-        var sourceDirectory = font.SourceDirectory;
-        if (string.IsNullOrWhiteSpace(mediaRoot) || string.IsNullOrWhiteSpace(sourceDirectory)) return;
-
-        var targetDirectory = Path.GetFullPath(Path.Combine(mediaRoot, sourceDirectory));
-        var fullMediaRoot = Path.GetFullPath(mediaRoot);
-        var relative = Path.GetRelativePath(fullMediaRoot, targetDirectory);
-        if (relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathFullyQualified(relative)) return;
-        if (Directory.Exists(targetDirectory))
-        {
-            Directory.Delete(targetDirectory, recursive: true);
-        }
     }
 
     [GeneratedRegex("(Regular|Bold|Italic|Light|Medium|SemiBold|Semibold|Black|Thin|ExtraLight|UltraLight|ExtraBold|UltraBold|Condensed|Oblique|Variable|VF|Roman)$", RegexOptions.IgnoreCase)]

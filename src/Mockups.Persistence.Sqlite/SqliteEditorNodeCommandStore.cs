@@ -80,15 +80,12 @@ internal sealed class SqliteEditorNodeCommandStore
                 _resources.PaletteRepository.Delete(connection, node.Id);
                 return;
             case ProjectTreeNodeKind.ProductionFont:
-                _resources.DeleteProductionFontFiles(
-                    connection,
-                    node.Id);
-                _resources.ProductionFontRepository.Delete(
+                _resources.DeleteProductionFont(
                     connection,
                     node.Id);
                 return;
             case ProjectTreeNodeKind.IconTheme:
-                DeleteIconTheme(connection, node.Id);
+                _resources.DeleteIconTheme(connection, node.Id);
                 return;
             case ProjectTreeNodeKind.Episode:
                 _production.ProjectEpisodeRepository.DeleteEpisode(
@@ -452,20 +449,6 @@ internal sealed class SqliteEditorNodeCommandStore
             node.Notes,
             node.RecordClassId,
             node.Parent);
-    }
-
-    private void DeleteIconTheme(
-        Microsoft.Data.Sqlite.SqliteConnection connection,
-        string iconThemeId)
-    {
-        var iconTheme = _resources.IconThemeRepository.Get(
-            connection,
-            iconThemeId);
-        _resources.DeleteIconThemeAssetDirectory(
-            iconTheme.AssetRoot);
-        _resources.IconThemeRepository.Delete(
-            connection,
-            iconThemeId);
     }
 
     private IReadOnlyList<string> GetReferenceUsages(

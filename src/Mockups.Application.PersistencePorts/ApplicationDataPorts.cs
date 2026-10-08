@@ -447,7 +447,7 @@ public interface IIconThemeAssetStore
 {
     IReadOnlyList<IconThemeToken> GetIconThemeTokens(string iconThemeId);
     IconThemeRefreshResult RefreshIconThemeSetsForTheme(string iconThemeId);
-    void DeleteIconThemeToken(string iconThemeId, string token);
+    ResourceAssetDeletionResult DeleteIconThemeToken(string iconThemeId, string token);
     IconThemeTokenSvg ReadIconThemeTokenSvg(
         string iconThemeId,
         string token);

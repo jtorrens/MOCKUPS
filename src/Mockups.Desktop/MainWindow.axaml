@@ -64,7 +64,6 @@
                             Padding="10,4"
                             BorderThickness="0" />
                     <Button x:Name="ShellSettingsButton"
-                            Click="OnShellSettingsClick"
                             Width="38"
                             Height="36"
                             Padding="0"

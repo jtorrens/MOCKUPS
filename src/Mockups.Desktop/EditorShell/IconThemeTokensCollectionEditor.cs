@@ -299,11 +299,14 @@ internal sealed class IconThemeTokensCollectionEditor
 
             try
             {
-                await _operations.ExecuteAsync(
+                var result = await _operations.ExecuteAsync(
                     () => _database.DeleteIconThemeToken(
                         node.Id,
                         token.Token));
                 _reloadAndSelect(node);
+                if (result.PendingCleanupCount > 0)
+                    await _showInfo("Resource cleanup pending",
+                        "The token mappings were deleted. Some files remain pending cleanup; review them in Settings → Review resource cleanup.");
             }
             catch (Exception exception)
             {

@@ -133,9 +133,9 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
             ("$filesJson", filesJson));
     }
 
-    public void Delete(SqliteConnection connection, string fontId)
+    public void Delete(SqliteConnection connection, string fontId, SqliteTransaction? transaction = null)
     {
-        _context.Execute(connection, "DELETE FROM production_fonts WHERE id = $id", ("$id", fontId));
+        _context.Execute(connection, transaction, "DELETE FROM production_fonts WHERE id = $id", ("$id", fontId));
     }
 
     public void Rename(SqliteConnection connection, string fontId, string name)

@@ -32,7 +32,8 @@ internal sealed class SqliteProjectTestContext
         Resources = new SqliteResourceOwner(
             context,
             Production.ProjectEpisodeRepository,
-            Production.ModuleInstanceThemeContextService);
+            Production.ModuleInstanceThemeContextService,
+            SystemAssetPathResolver.Discover());
         Animations = new SqliteModuleInstanceAnimationStore(context, Production);
         var componentFieldOptions =
             new ComponentFieldOptionResolver(

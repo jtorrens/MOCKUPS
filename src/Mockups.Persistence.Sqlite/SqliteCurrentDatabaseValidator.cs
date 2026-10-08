@@ -85,6 +85,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ("devices", "metrics_json", "object"),
         ("actors", "metadata_json", "object"),
         ("production_fonts", "files_json", "array"),
+        ("resource_asset_cleanup", "entries_json", "array"),
         ("production_fonts", "metadata_json", "object"),
         ("icon_themes", "mapping_json", "object"),
         ("icon_themes", "metadata_json", "object"),
@@ -101,6 +102,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateSqliteRuntime(connection);
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
+        _ = new ResourceAssetCleanupRepository(_context).Read(connection);
         ValidateCurrentSystemPreviewFixtures(connection);
         ValidateCurrentProductionPalette(connection);
         ValidateCurrentDeviceMetrics(connection);

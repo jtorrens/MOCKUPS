@@ -35,7 +35,8 @@ public sealed class SqliteProjectSession
         IExternalMediaUsageQuery externalMediaUsage,
         IExternalMediaAssetReplacementStore externalMediaAssetReplacement,
         IEditorLayoutStore layouts,
-        IActorPreviewRepository actorPreview)
+        IActorPreviewRepository actorPreview,
+        IResourceAssetCleanupStore resourceAssetCleanup)
     {
         ProjectPaths = projectPaths;
         Navigation = navigation;
@@ -67,6 +68,7 @@ public sealed class SqliteProjectSession
         ExternalMediaAssetReplacement = externalMediaAssetReplacement;
         Layouts = layouts;
         ActorPreview = actorPreview;
+        ResourceAssetCleanup = resourceAssetCleanup;
     }
 
     public IProjectPathResolver ProjectPaths { get; }
@@ -144,4 +146,6 @@ public sealed class SqliteProjectSession
     public IEditorLayoutStore Layouts { get; }
 
     public IActorPreviewRepository ActorPreview { get; }
+
+    public IResourceAssetCleanupStore ResourceAssetCleanup { get; }
 }

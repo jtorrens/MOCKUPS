@@ -35,7 +35,8 @@ internal sealed record DesktopApplicationDataPorts(
     IExternalMediaUsageQuery ExternalMediaUsage,
     IExternalMediaAssetReplacementStore ExternalMediaAssetReplacement,
     IEditorLayoutStore Layouts,
-    IActorPreviewRepository ActorPreview);
+    IActorPreviewRepository ActorPreview,
+    IResourceAssetCleanupStore ResourceAssetCleanup);
 
 internal sealed record DesktopApplicationServices(
     DesktopApplicationDataPorts Data,

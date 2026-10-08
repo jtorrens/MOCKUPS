@@ -130,7 +130,7 @@ internal sealed class SqliteIconThemeAssetPort(IIconThemeAssetStore target)
         string iconThemeId) =>
         target.RefreshIconThemeSetsForTheme(iconThemeId);
 
-    public void DeleteIconThemeToken(string iconThemeId, string token) =>
+    public ResourceAssetDeletionResult DeleteIconThemeToken(string iconThemeId, string token) =>
         target.DeleteIconThemeToken(iconThemeId, token);
 
     public IconThemeTokenSvg ReadIconThemeTokenSvg(

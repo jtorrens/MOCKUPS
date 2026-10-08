@@ -224,7 +224,16 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 24;
+        CREATE TABLE IF NOT EXISTS resource_asset_cleanup (
+          id TEXT PRIMARY KEY,
+          label TEXT NOT NULL,
+          root_path TEXT NOT NULL,
+          target_path TEXT NOT NULL,
+          entries_json TEXT NOT NULL,
+          last_error TEXT NOT NULL
+        );
+
+        PRAGMA user_version = 25;
         """;
 
 }

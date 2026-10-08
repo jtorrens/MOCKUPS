@@ -522,6 +522,12 @@ Database validation is read-only and confirms:
 
 Lifecycle and migration tests operate on disposable database copies.
 
+Resource-deletion regressions use isolated font and Icon Theme files. They
+force record and token-mapping rollback, preserve pending cleanup across a
+read-only reopen, retry interrupted file work, protect changed/new/referenced
+files, reject root and symlink escapes and retain unavailable or foreign-platform
+targets without touching another location.
+
 Focused resource-consumer regressions cover root Actor and nested Palette
 keyframe references (including disabled keys) blocking deletion, Theme timing
 changes updating only dependent Shot durations with late-failure rollback, and

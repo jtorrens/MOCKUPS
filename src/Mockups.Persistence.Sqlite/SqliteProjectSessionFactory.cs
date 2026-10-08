@@ -20,7 +20,8 @@ internal static class SqliteProjectSessionFactory
         resources = new SqliteResourceOwner(
             context,
             production.ProjectEpisodeRepository,
-            production.ModuleInstanceThemeContextService);
+            production.ModuleInstanceThemeContextService,
+            SystemAssetPathResolver.Discover());
         var componentFieldOptions =
             new ComponentFieldOptionResolver(
                 design,
@@ -147,6 +148,7 @@ internal static class SqliteProjectSessionFactory
             new SqliteExternalMediaAssetReplacementPort(resources),
             new SqliteEditorLayoutPort(
                 new SqliteEditorLayoutStore(context)),
-            new SqliteActorPreviewPort(resources));
+            new SqliteActorPreviewPort(resources),
+            resources.AssetCleanup);
     }
 }

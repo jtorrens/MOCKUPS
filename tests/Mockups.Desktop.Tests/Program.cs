@@ -121,6 +121,8 @@ var tests = new (string Name, Action Run)[]
     ("independent animation surfaces rebase mutations on persisted state", IndependentAnimationSurfacesRebaseOnPersistedState),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFocusedContract),
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFocusedContract),
+    ("Resource deletion commits records before files for fonts and icon themes", ResourceDeletionCommitsBeforeFiles),
+    ("Resource cleanup retries preserve changed new and referenced files", ResourceCleanupRetriesAreSafe),
     ("Production Font file documents reject filtered or inferred values", ProductionFontFileDocumentsAreStrict),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFocusedContract),
     ("generated fill SVG previews preserve their filled geometry", GeneratedFillSvgPreviewsPreserveGeometry),
@@ -4356,6 +4358,7 @@ static void SqliteSessionExposesDistinctFocusedPorts()
         (project.ExternalMediaUsage, typeof(IExternalMediaUsageQuery)),
         (project.Layouts, typeof(IEditorLayoutStore)),
         (project.ActorPreview, typeof(IActorPreviewRepository)),
+        (project.ResourceAssetCleanup, typeof(IResourceAssetCleanupStore)),
     ];
     var ports = capabilities
         .Select((capability) => capability.Port)
@@ -13952,6 +13955,183 @@ static void ThemeRepositoryPreservesFocusedContract()
     {
         File.Delete(temporary);
     }
+}
+
+static void ResourceDeletionCommitsBeforeFiles()
+{
+    var root = Path.Combine(OperatingSystem.IsMacOS() ? "/private/tmp" : Path.GetTempPath(), $"mockups-resource-delete-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var path = Path.Combine(root, "project.sqlite");
+        File.Copy(ParityDatabasePath(), path);
+        var database = new SqliteProjectTestContext(path);
+        var context = database.Context;
+        var media = Path.Combine(root, "media");
+        var system = Path.Combine(root, "system");
+        Directory.CreateDirectory(media);
+        Directory.CreateDirectory(Path.Combine(system, "icon-themes"));
+        var resources = new SqliteResourceOwner(context, database.Production.ProjectEpisodeRepository,
+            database.Production.ModuleInstanceThemeContextService, new SystemAssetPathResolver(system));
+        using var connection = context.OpenConnection();
+        var project = CanonicalProject(database);
+        context.Execute(connection, "UPDATE projects SET media_root=$root WHERE id=$id", ("$root", media), ("$id", project.Id));
+        var sourceIcon = resources.IconThemeRepository.QueryAll(connection).First();
+        foreach (var kind in new[] { "font", "icons" })
+        {
+            var directory = kind == "font" ? Path.Combine(media, "cleanup-font") : Path.Combine(system, "icon-themes", "cleanup-icons");
+            Directory.CreateDirectory(directory);
+            var file = Path.Combine(directory, kind == "font" ? "probe.ttf" : "probe.svg");
+            File.WriteAllText(file, "original");
+            var id = kind == "font"
+                ? resources.ProductionFontRepository.UpsertImported(connection, project.Id, "Cleanup Probe", "text", "cleanup-font", "[]").Id
+                : resources.IconThemeRepository.CreateDuplicate(connection, sourceIcon.Id, "cleanup_icons", "Cleanup Icons", "icon-themes/cleanup-icons", sourceIcon.MetadataJson).Id;
+            var table = kind == "font" ? "production_fonts" : "icon_themes";
+            void Delete()
+            {
+                if (kind == "font") resources.DeleteProductionFont(connection, id);
+                else resources.DeleteIconTheme(connection, id);
+            }
+            context.ExecuteScript(connection, $"CREATE TRIGGER reject_cleanup BEFORE DELETE ON {table} BEGIN SELECT RAISE(ABORT,'test rollback'); END;");
+            Throws<Microsoft.Data.Sqlite.SqliteException>(Delete);
+            Equal("original", File.ReadAllText(file));
+            Equal(0, resources.AssetCleanup.GetPending().Count);
+            context.ExecuteScript(connection, "DROP TRIGGER reject_cleanup;");
+            Delete();
+            True(!Directory.Exists(directory));
+            Equal(0, resources.AssetCleanup.GetPending().Count);
+            using var count = connection.CreateCommand();
+            count.CommandText = $"SELECT COUNT(*) FROM {table} WHERE id=$id";
+            count.Parameters.AddWithValue("$id", id);
+            Equal(0L, (long)count.ExecuteScalar()!);
+        }
+
+        var tokenFiles = new List<string>();
+        foreach (var id in new[] { "cleanup_token_a", "cleanup_token_b" })
+        {
+            var directory = Path.Combine(system, "icon-themes", id);
+            Directory.CreateDirectory(directory);
+            var file = Path.Combine(directory, "probe.svg");
+            File.WriteAllText(file, "original");
+            tokenFiles.Add(file);
+            resources.IconThemeRepository.CreateDuplicate(connection, sourceIcon.Id, id, id, $"icon-themes/{id}", sourceIcon.MetadataJson);
+            resources.IconThemeRepository.UpdateMapping(connection, id,
+                "{\"schemaVersion\":1,\"categories\":{\"test\":[\"cleanup_probe\"]},\"tokens\":{\"cleanup_probe\":{\"file\":\"probe.svg\",\"category\":\"test\",\"description\":\"Probe\"}}}");
+        }
+        context.ExecuteScript(connection, "CREATE TRIGGER reject_token_cleanup BEFORE UPDATE OF mapping_json ON icon_themes WHEN OLD.id='cleanup_token_b' BEGIN SELECT RAISE(ABORT,'test token rollback'); END;");
+        Throws<Microsoft.Data.Sqlite.SqliteException>(() => resources.DeleteIconThemeToken("cleanup_token_a", "cleanup_probe"));
+        True(tokenFiles.All(File.Exists));
+        Equal(1, resources.GetIconThemeTokens("cleanup_token_a").Count);
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+        context.ExecuteScript(connection, "DROP TRIGGER reject_token_cleanup;");
+        Equal(0, resources.DeleteIconThemeToken("cleanup_token_a", "cleanup_probe").PendingCleanupCount);
+        True(tokenFiles.All(file => !File.Exists(file)));
+        Equal(0, resources.GetIconThemeTokens("cleanup_token_a").Count);
+        Equal(0, resources.GetIconThemeTokens("cleanup_token_b").Count);
+        Equal(0, JsonPath.RequiredObject(JsonPath.ParseRequiredObject(
+            resources.GetIconThemeSettings("cleanup_token_a").MappingJson, "test"), "categories", "test").Count);
+
+        var sharedDirectory = Path.Combine(media, "shared-family");
+        Directory.CreateDirectory(sharedDirectory);
+        var sharedFile = Path.Combine(sharedDirectory, "shared.ttf");
+        File.WriteAllText(sharedFile, "shared");
+        var firstFont = resources.ProductionFontRepository.UpsertImported(connection, project.Id, "First Shared", "text", "shared-family", "[]");
+        var secondFont = resources.ProductionFontRepository.UpsertImported(connection, project.Id, "Second Shared", "text", "shared-family", "[]");
+        resources.DeleteProductionFont(connection, firstFont.Id);
+        var pendingId = resources.AssetCleanup.GetPending().Single().Id;
+        resources.AssetCleanup.Retry(pendingId);
+        Equal("shared", File.ReadAllText(sharedFile));
+        resources.ProductionFontRepository.Delete(connection, secondFont.Id);
+        resources.AssetCleanup.Retry(pendingId);
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+        True(!Directory.Exists(sharedDirectory));
+    }
+    finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); Directory.Delete(root, true); }
+}
+
+static void ResourceCleanupRetriesAreSafe()
+{
+    var root = Path.Combine(OperatingSystem.IsMacOS() ? "/private/tmp" : Path.GetTempPath(), $"mockups-resource-retry-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var databasePath = Path.Combine(root, "project.sqlite");
+        File.Copy(ParityDatabasePath(), databasePath);
+        var context = new SqliteProjectContext(databasePath);
+        using var connection = context.OpenConnection();
+        var directory = Path.Combine(root, "family");
+        Directory.CreateDirectory(directory);
+        var file = Path.Combine(directory, "a.ttf");
+        File.WriteAllText(file, "original");
+        var plan = ResourceAssetCleanupPlan.Capture("Probe", root, "family");
+        var referenced = false;
+        var service = new ResourceAssetCleanupService(context, (_, _) => referenced);
+        service.Commit(connection, [plan], _ => File.WriteAllText(file, "changed"));
+        Equal(1, service.GetPending().Count);
+        Equal("changed", File.ReadAllText(file));
+        True(service.GetPending()[0].Error.Contains("changed", StringComparison.Ordinal));
+        Throws<InvalidOperationException>(() => service.RequireAvailable(directory));
+        var beforeRead = File.ReadAllBytes(databasePath);
+        service = new ResourceAssetCleanupService(context, (_, _) => referenced);
+        Equal(1, service.GetPending().Count);
+        var reopened = SqlitePersistence.OpenCurrent(databasePath);
+        Equal(1, reopened.ResourceAssetCleanup.GetPending().Count);
+        SequenceEqual(beforeRead, File.ReadAllBytes(databasePath));
+        File.WriteAllText(file, "original");
+        referenced = true;
+        service.Retry(plan.Id);
+        True(File.Exists(file));
+        True(service.GetPending()[0].Error.Contains("referenced", StringComparison.Ordinal));
+        referenced = false;
+        var extra = Path.Combine(directory, "new.txt");
+        File.WriteAllText(extra, "new content");
+        service.Retry(plan.Id);
+        True(!File.Exists(file));
+        Equal("new content", File.ReadAllText(extra));
+        Equal(1, service.GetPending().Count);
+        File.Delete(extra);
+        service.Retry(plan.Id);
+        Equal(0, service.GetPending().Count);
+
+        True(!Directory.Exists(directory));
+
+        // Commit interrupted before cleanup: opening/reading never performs work.
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(file, "original");
+        plan = ResourceAssetCleanupPlan.Capture("Interrupted", root, "family");
+        using (var transaction = connection.BeginTransaction())
+        {
+            new ResourceAssetCleanupRepository(context).Add(connection, transaction, plan);
+            transaction.Commit();
+        }
+        Equal(1, new ResourceAssetCleanupService(context, (_, _) => false).GetPending().Count);
+        True(File.Exists(file));
+        service.Retry(plan.Id);
+        Equal(0, service.GetPending().Count);
+
+        // Root and symlink escapes cannot turn a job into a recursive deletion.
+        Throws<InvalidOperationException>(() => ResourceAssetCleanupPlan.Capture("Root", root, "."));
+        Throws<InvalidOperationException>(() => ResourceAssetCleanupPlan.Capture("Escape", root, "../elsewhere"));
+        Directory.CreateDirectory(directory);
+        var link = Path.Combine(root, "link");
+        Directory.CreateSymbolicLink(link, directory);
+        Throws<IOException>(() => ResourceAssetCleanupPlan.Capture("Link", root, "link"));
+        plan = ResourceAssetCleanupPlan.Capture("Offline", directory, "absent");
+        Directory.Delete(directory);
+        service.Commit(connection, [plan], _ => { });
+        Equal(1, service.GetPending().Count);
+        Directory.CreateDirectory(directory);
+        service.Retry(plan.Id);
+        Equal(0, service.GetPending().Count);
+
+        var foreignRoot = OperatingSystem.IsWindows() ? "/volumes/cleanup" : "C:/cleanup";
+        var foreign = ResourceAssetCleanupPlan.Read(Guid.NewGuid().ToString("N"), "Foreign root", foreignRoot, "family",
+            "[{\"path\":\"family\",\"kind\":\"directory\",\"hash\":\"\"}]", "");
+        service.Commit(connection, [foreign], _ => { });
+        True(service.GetPending().Single().Error.Contains("different filesystem platform", StringComparison.Ordinal));
+        Equal(1, SqlitePersistence.OpenCurrent(databasePath).ResourceAssetCleanup.GetPending().Count);
+    }
+    finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); Directory.Delete(root, true); }
 }
 
 static void ProductionFontRepositoryPreservesFocusedContract()

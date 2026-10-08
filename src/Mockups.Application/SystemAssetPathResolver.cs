@@ -5,8 +5,10 @@ namespace Mockups.DesktopEditorShell.Common;
 
 public sealed class SystemAssetPathResolver
 {
-    private SystemAssetPathResolver(string root)
+    public SystemAssetPathResolver(string root)
     {
+        if (!Path.IsPathFullyQualified(root))
+            throw new InvalidOperationException("System assets require an explicit absolute root.");
         Root = Path.GetFullPath(root);
     }
 

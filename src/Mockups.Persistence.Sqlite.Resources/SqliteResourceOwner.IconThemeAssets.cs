@@ -19,6 +19,8 @@ internal sealed partial class SqliteResourceOwner
         var iconThemesRoot = SystemIconThemesRoot();
         Directory.CreateDirectory(iconThemesRoot);
         var targetDirectory = UniqueIconThemeDirectory(iconThemesRoot, IconThemeDirectoryName(targetName));
+        AssetCleanup.RequireAvailable(sourceDirectory);
+        AssetCleanup.RequireAvailable(targetDirectory);
         CopyDirectory(sourceDirectory, targetDirectory);
         RewriteIconThemeManifestName(targetDirectory, Path.GetFileName(targetDirectory));
         return new IconThemeAssetMoveResult(
@@ -37,6 +39,8 @@ internal sealed partial class SqliteResourceOwner
         var iconThemesRoot = SystemIconThemesRoot();
         Directory.CreateDirectory(iconThemesRoot);
         var targetDirectory = Path.Combine(iconThemesRoot, IconThemeDirectoryName(targetName));
+        AssetCleanup.RequireAvailable(sourceDirectory);
+        AssetCleanup.RequireAvailable(targetDirectory);
         if (Path.GetFullPath(sourceDirectory).Equals(Path.GetFullPath(targetDirectory), StringComparison.Ordinal))
         {
             RewriteIconThemeManifestName(sourceDirectory, Path.GetFileName(sourceDirectory));
@@ -130,11 +134,9 @@ internal sealed partial class SqliteResourceOwner
     internal void DeleteIconThemeAssetDirectory(string assetRoot)
     {
         var targetDirectory = IconThemeAssetDirectory(assetRoot);
-        var relative = Path.GetRelativePath(SystemIconThemesRoot(), targetDirectory);
-        if (relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathFullyQualified(relative)) return;
-        if (Directory.Exists(targetDirectory))
-        {
-            Directory.Delete(targetDirectory, recursive: true);
-        }
+        var plan = ResourceAssetCleanupPlan.Capture("Uncommitted Icon Theme assets", SystemIconThemesRoot(),
+            Path.GetRelativePath(SystemIconThemesRoot(), targetDirectory));
+        using var connection = OpenConnection();
+        AssetCleanup.Commit(connection, [plan], _ => { });
     }
 }

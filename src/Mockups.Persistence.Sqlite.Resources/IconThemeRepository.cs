@@ -139,9 +139,9 @@ internal sealed class IconThemeRepository : IIconThemeRepository
             ("$metadataJson", metadataJson));
     }
 
-    public void Delete(SqliteConnection connection, string iconThemeId)
+    public void Delete(SqliteConnection connection, string iconThemeId, SqliteTransaction? transaction = null)
     {
-        _context.Execute(connection, "DELETE FROM icon_themes WHERE id = $id", ("$id", iconThemeId));
+        _context.Execute(connection, transaction, "DELETE FROM icon_themes WHERE id = $id", ("$id", iconThemeId));
     }
 
     private static IconThemeRecord ReadRecord(SqliteDataReader reader)

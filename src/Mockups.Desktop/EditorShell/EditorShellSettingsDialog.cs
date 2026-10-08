@@ -19,18 +19,21 @@ internal sealed class EditorShellSettingsDialog
     private readonly EditorThemeController _themeController;
     private readonly EditorShellStateService _shellState;
     private readonly Action<bool> _applyUiDensity;
+    private readonly Func<Task> _reviewResourceCleanup;
     private bool _isUpdating;
 
     public EditorShellSettingsDialog(
         Window owner,
         EditorThemeController themeController,
         EditorShellStateService shellState,
-        Action<bool> applyUiDensity)
+        Action<bool> applyUiDensity,
+        Func<Task> reviewResourceCleanup)
     {
         _owner = owner;
         _themeController = themeController;
         _shellState = shellState;
         _applyUiDensity = applyUiDensity;
+        _reviewResourceCleanup = reviewResourceCleanup;
     }
 
     public Task Show()
@@ -39,7 +42,7 @@ internal sealed class EditorShellSettingsDialog
         {
             Title = "Editor settings",
             Width = 520,
-            Height = 430,
+            Height = 490,
             MinWidth = 480,
             MinHeight = 380,
             CanResize = false,
@@ -109,6 +112,14 @@ internal sealed class EditorShellSettingsDialog
         };
         closeButton.Click += (_, _) => EditorModalWindowScope.Close(dialog);
 
+        var cleanupButton = new Button { Content = "Review resource cleanup…" };
+        cleanupButton.Click += async (_, _) =>
+        {
+            cleanupButton.IsEnabled = false;
+            EditorModalWindowScope.Close(dialog);
+            await _reviewResourceCleanup();
+        };
+
         dialog.Content = new Border
         {
             Padding = new Thickness(22),
@@ -123,6 +134,7 @@ internal sealed class EditorShellSettingsDialog
                         Spacing = 16,
                         Children =
                         {
+                            cleanupButton,
                             Section(
                                 "Appearance",
                                 new Grid

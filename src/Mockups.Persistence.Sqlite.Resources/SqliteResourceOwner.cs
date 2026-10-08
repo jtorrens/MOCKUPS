@@ -32,7 +32,8 @@ internal sealed partial class SqliteResourceOwner :
     internal SqliteResourceOwner(
         SqliteProjectContext context,
         IProjectEpisodeRepository projectEpisodeRepository,
-        IModuleInstanceThemeContextService moduleInstanceThemeContextService)
+        IModuleInstanceThemeContextService moduleInstanceThemeContextService,
+        SystemAssetPathResolver systemAssets)
     {
         _context = context;
         _projectEpisodeRepository = projectEpisodeRepository;
@@ -43,7 +44,8 @@ internal sealed partial class SqliteResourceOwner :
         _themeRepository = new ThemeRepository(context);
         _productionFontRepository = new ProductionFontRepository(context);
         _iconThemeRepository = new IconThemeRepository(context);
-        _systemAssets = SystemAssetPathResolver.Discover();
+        _systemAssets = systemAssets;
+        AssetCleanup = new ResourceAssetCleanupService(context, CleanupTargetIsReferenced);
     }
 
     internal IPaletteRepository PaletteRepository => _paletteRepository;

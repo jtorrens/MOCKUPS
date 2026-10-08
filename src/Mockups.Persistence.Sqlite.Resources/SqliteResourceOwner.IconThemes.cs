@@ -101,26 +101,37 @@ internal sealed partial class SqliteResourceOwner
         return RefreshIconThemeSets(connection);
     }
 
-    public void DeleteIconThemeToken(string iconThemeId, string token)
+    public ResourceAssetDeletionResult DeleteIconThemeToken(string iconThemeId, string token)
     {
         if (!ValidIconTokenRegex().IsMatch(token))
         {
             throw new InvalidOperationException("Icon token must be lower_snake_case.");
         }
 
-        using var connection = OpenConnection();
-        _ = _iconThemeRepository.Get(connection, iconThemeId);
-        var rows = _iconThemeRepository.QueryAll(connection);
-        foreach (var row in rows)
+        lock (_context.WriteGate)
         {
-            var fullPath = Path.Combine(IconThemeAssetDirectory(row.AssetRoot), $"{token}.svg");
-            if (File.Exists(fullPath))
+            using var connection = OpenConnection();
+            _ = IconThemeTokenFile(connection, iconThemeId, token);
+            var rows = _iconThemeRepository.QueryAll(connection);
+            var plans = new List<ResourceAssetCleanupPlan>();
+            var mappings = new Dictionary<string, string>();
+            foreach (var row in rows)
             {
-                File.Delete(fullPath);
+                var mapping = ParseJsonObject(row.MappingJson);
+                var tokens = JsonPath.RequiredObject(mapping, "tokens", row.Id);
+                if (tokens[token] is null) continue;
+                var file = IconThemeTokenFile(connection, row.Id, token).File;
+                plans.Add(ResourceAssetCleanupPlan.Capture($"{row.Name} · {token}", IconThemeAssetDirectory(row.AssetRoot), file, isDirectory: false));
+                tokens.Remove(token);
+                mapping["categories"] = IconTokenRules.Categories(tokens);
+                mappings.Add(row.Id, mapping.ToJsonString());
             }
+            return AssetCleanup.Commit(connection, plans, transaction =>
+            {
+                foreach (var (id, mapping) in mappings)
+                    _iconThemeRepository.UpdateMapping(connection, transaction, id, mapping);
+            });
         }
-
-        RefreshIconThemeSets(connection);
     }
 
     public IconThemeTokenSvg ReadIconThemeTokenSvg(string iconThemeId, string token)
@@ -142,6 +153,7 @@ internal sealed partial class SqliteResourceOwner
         using var connection = OpenConnection();
         var (row, file) = IconThemeTokenFile(connection, iconThemeId, token);
         var targetDirectory = IconThemeAssetDirectory(row.AssetRoot);
+        AssetCleanup.RequireAvailable(Path.Combine(targetDirectory, file));
         Directory.CreateDirectory(targetDirectory);
         File.WriteAllText(Path.Combine(targetDirectory, file), svgText);
         return new IconThemeReplaceSvgResult(token, file);
@@ -167,6 +179,8 @@ internal sealed partial class SqliteResourceOwner
         {
             throw new InvalidOperationException("Refresh icon sets before saving tokens.");
         }
+
+        AssetCleanup.RequireAvailable(SystemIconThemesRoot());
 
         foreach (var row in rows)
         {
@@ -204,6 +218,7 @@ internal sealed partial class SqliteResourceOwner
     private IconThemeRefreshResult RefreshIconThemeSets(SqliteConnection connection)
     {
         var iconThemesRoot = SystemIconThemesRoot();
+        AssetCleanup.RequireAvailable(iconThemesRoot);
         Directory.CreateDirectory(iconThemesRoot);
 
         var setDirectories = Directory

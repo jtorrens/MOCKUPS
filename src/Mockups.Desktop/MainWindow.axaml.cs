@@ -238,6 +238,7 @@ public partial class MainWindow : SukiWindow
         _nodeCommands = new EditorNodeCommandController(
             this,
             data.NodeCommands,
+            data.ResourceAssetCleanup,
             data.ReferenceUsage,
             data.Children,
             data.ModuleInstances,
@@ -251,6 +252,10 @@ public partial class MainWindow : SukiWindow
             NavigateToReferenceUsage,
             _messages,
             pathBrowser.BrowsePath);
+        var resourceCleanup = new EditorResourceCleanupWorkflow(this, data.ResourceAssetCleanup,
+            application.Operations, () => _themeController.IsDark, _messages);
+        ShellSettingsButton.Click += async (_, _) => await new EditorShellSettingsDialog(
+            this, _themeController, _shellState, ApplyUiDensity, resourceCleanup.Show).Show();
         _productionNavigationActions = new EditorProductionNavigationActions(
             this,
             ProductionActionButton,
@@ -655,15 +660,6 @@ public partial class MainWindow : SukiWindow
         {
             SelectNodeById(selectedId);
         }
-    }
-
-    private async void OnShellSettingsClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-    {
-        await new EditorShellSettingsDialog(
-            this,
-            _themeController,
-            _shellState,
-            ApplyUiDensity).Show();
     }
 
     private void InitializePreviewOptions()

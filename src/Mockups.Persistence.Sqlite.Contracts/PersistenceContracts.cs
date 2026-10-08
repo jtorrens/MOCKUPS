@@ -475,7 +475,7 @@ internal interface IProductionFontRepository
         string sourceDirectory,
         string filesJson);
 
-    void Delete(SqliteConnection connection, string fontId);
+    void Delete(SqliteConnection connection, string fontId, SqliteTransaction? transaction = null);
 
     void Rename(SqliteConnection connection, string fontId, string name);
 }
@@ -520,7 +520,7 @@ internal interface IIconThemeRepository
         string assetRoot,
         string metadataJson);
 
-    void Delete(SqliteConnection connection, string iconThemeId);
+    void Delete(SqliteConnection connection, string iconThemeId, SqliteTransaction? transaction = null);
 }
 
 internal interface IAppModuleRepository

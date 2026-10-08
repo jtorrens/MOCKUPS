@@ -193,7 +193,8 @@ public sealed class ApplicationStartupCoordinator
                 project.ExternalMediaUsage,
                 project.ExternalMediaAssetReplacement,
                 project.Layouts,
-                project.ActorPreview);
+                project.ActorPreview,
+                project.ResourceAssetCleanup);
             var initialTreeRoots =
                 ports.Navigation.LoadProjectTree();
             cancellationToken.ThrowIfCancellationRequested();

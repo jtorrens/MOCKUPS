@@ -267,6 +267,27 @@ composite when they discard alpha.
 
 ## Asset delivery
 
+### Resource deletion
+
+Production Font families, Icon Themes and Icon Theme tokens use one shared
+recoverable file-deletion owner in Resources. The record/mapping deletion and
+its captured file manifest are committed atomically before file cleanup.
+If SQLite rejects the write, both records and files remain unchanged. A file
+cleanup failure does not undo or report failure of the already committed
+record deletion; its exact task remains visible under Settings → Review
+resource cleanup for explicit retry. There is no automatic retry on startup
+and no implicit undo or Trash contract.
+
+Cleanup refuses resource roots themselves, escaped paths, symbolic links,
+changed file fingerprints and targets that current resources reference again.
+It removes only captured files and empty captured directories, never newly
+discovered contents through recursive deletion. Discovery/import cannot reuse
+paths with pending cleanup. A missing captured file counts as already cleaned;
+an unavailable root remains pending rather than being treated as completion.
+The repository owns SQL, the resource service owns file policy, and a narrow
+cleanup port exposes pending jobs and explicit retries to the editor. The shell
+only wires the shared settings action.
+
 A behavior or Preview change that alters icons, fonts, media, wallpaper or
 seeded Theme/Component data commits every required asset and the parity
 database together. Validation checks both stored references and filesystem

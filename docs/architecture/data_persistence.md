@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `24` is the only current schema. Authored Production rows belong
+Schema version `25` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -576,6 +576,7 @@ object
 array
   episodes.shot_manager_episode_path_segments_json
   production_fonts.files_json
+  resource_asset_cleanup.entries_json
 ```
 
 The `projects` row stores the portable manual Production Output contract, its
@@ -761,6 +762,22 @@ fallback backup. Backup Hub owns encryption, retention, history and
 synchronization after package ingestion.
 
 ## References and lifecycle
+
+Resource file deletion uses a durable outbox owned by Resources:
+`resource_asset_cleanup`. A focused repository stores its strict entries array,
+exact absolute root, relative target, file SHA-256 fingerprints and diagnostic.
+The deleted resource rows or token mappings and their cleanup jobs commit in
+one transaction; no file is removed before that commit. Only then does the
+shared cleanup service attempt the exact captured files and empty directories.
+An interrupted or failed cleanup remains pending, even across application
+restart. Startup validates its documents read-only and never retries jobs.
+These paths describe the original cleanup location, not a relocatable resource
+reference; retry never substitutes a new Project root or System asset root.
+The retained outbox also travels with database backups so a committed deletion
+cannot lose its cleanup intent. Restored live resource references block cleanup.
+Stored cleanup paths use platform-independent slash syntax. Opening a backup
+on another OS can inspect them; retry refuses foreign filesystem roots instead
+of reinterpreting them as paths on the new workstation.
 
 Reference discovery, `Used` state, Usage presentation and deletion protection
 consume one typed edge set. Edges come from exact relational declarations and
