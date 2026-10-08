@@ -8,6 +8,7 @@ internal sealed class SqliteProjectTestContext
     private static readonly object ValidationCacheGate = new();
     private static readonly HashSet<string> ValidatedFixtureKeys =
         new(StringComparer.Ordinal);
+    internal IModuleInstanceAnimationStore Animations { get; }
     private readonly ReferenceUsageService _referenceUsages;
     private readonly IPreviewInputRepository _previewInputs;
     private readonly IDictionaryFieldContextRepository
@@ -21,7 +22,8 @@ internal sealed class SqliteProjectTestContext
     internal SqliteProjectTestContext(SqliteProjectContext context)
     {
         Context = context;
-        Design = new SqliteDesignOwner(context);
+        Design = new SqliteDesignOwner(context, (connection, change) =>
+            SqliteModuleVariantDocumentCommit.Commit(context, connection, change, Production!, Resources!));
         Production = new SqliteProductionOwner(
             context,
             Design,
@@ -30,6 +32,7 @@ internal sealed class SqliteProjectTestContext
             context,
             Production.ProjectEpisodeRepository,
             Production.ModuleInstanceThemeContextService);
+        Animations = new SqliteModuleInstanceAnimationStore(context, Production, Resources);
         var componentFieldOptions =
             new ComponentFieldOptionResolver(
                 Design,

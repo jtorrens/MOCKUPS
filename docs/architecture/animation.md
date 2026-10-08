@@ -273,7 +273,7 @@ The common owner timeline derives:
 - finite action duration;
 - non-sequencing fields;
 - absolute Preview frame projection;
-- retime projection.
+- exact owner-local to Screen frame translation without time scaling.
 
 A serial Runtime collection may declare
 `animationTimeline.sequenceCompletionFieldIds`. When present, only completion
@@ -301,7 +301,7 @@ snapshot. Each command creates its candidate only after the previous command
 has succeeded or failed. Success replaces the complete prepared snapshot;
 failure restores the confirmed document and reports the error in the editor.
 The visual timeline never treats an unawaited write as committed and rapid
-keyframe, track or retime commands cannot overwrite one another from a shared
+keyframe or track commands cannot overwrite one another from a shared
 stale JSON copy.
 
 Production Preview navigation separately receives a Project-wide immutable
@@ -369,7 +369,10 @@ duration field is disabled until the track is removed. This conversion changes
 no visible frame and avoids composing two independent text reveals.
 
 Contract-declared finite and base durations use the shared reference-duration
-lane. Retime is disabled when `targetDurationFrames` is absent.
+lane. Animation documents contain only `schemaVersion` and `tracks`.
+Owner clocks are never scaled: there is no Screen or target-duration retime.
+Finite actions, entry/exit Motion, natural timing and explicit Screen duration
+retain their own declared contracts; they do not stretch parameter keyframes.
 
 ## Action transport
 
@@ -441,7 +444,7 @@ higher-contrast diagonal hatch inside its leading effective owner Motion/Fade
 span and, when it owns an explicit outgoing boundary, inside its trailing
 effective owner Motion/Fade span. Its diagonal direction distinguishes the
 phase from the vertical boundary handles. These spans come from the common
-owner timeline after frame-rate and retime resolution; they are informational
+owner timeline after frame-rate resolution; they are informational
 only and never alter presence, sequencing, snapping or keyframes. Collection
 collapse and viewport zoom are session-only. Block edits persist through their
 declared collection fields or animation document and do not rewrite owner-local

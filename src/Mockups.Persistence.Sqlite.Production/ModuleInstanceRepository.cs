@@ -192,12 +192,13 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             ("$id", moduleInstanceId));
     }
 
-    public void UpdateAnimation(SqliteConnection connection, string moduleInstanceId, string animationJson)
+    public void UpdateAnimation(SqliteConnection connection, string moduleInstanceId, string animationJson, SqliteTransaction? transaction = null)
     {
         ValidateObject(animationJson, moduleInstanceId, "animation_json");
         _ = Get(connection, moduleInstanceId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE module_instances SET animation_json = $animationJson WHERE id = $id",
             ("$animationJson", animationJson),
             ("$id", moduleInstanceId));
@@ -289,7 +290,8 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         string moduleInstanceId,
         string metadataJson,
         string contentJson,
-        string animationJson)
+        string animationJson,
+        SqliteTransaction? transaction = null)
     {
         ValidateObject(metadataJson, moduleInstanceId, "metadata_json");
         ValidateObject(contentJson, moduleInstanceId, "content_json");
@@ -297,6 +299,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         _ = Get(connection, moduleInstanceId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE module_instances SET metadata_json = $metadataJson, content_json = $contentJson, animation_json = $animationJson WHERE id = $id",
             ("$metadataJson", metadataJson),
             ("$contentJson", contentJson),

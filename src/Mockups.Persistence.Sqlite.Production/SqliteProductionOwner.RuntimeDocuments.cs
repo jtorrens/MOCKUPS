@@ -7,11 +7,12 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProductionOwner
 {
-    internal void ResetModuleVariantRuntimePayloads(
+    internal void ReconcileModuleVariantRuntimePayloads(
         SqliteConnection connection,
         SqliteTransaction transaction,
         string moduleId,
         string variantReference,
+        JsonObject previousContract,
         IReadOnlyDictionary<string, IReadOnlySet<string>> projectActorIds)
     {
         var affectedShots = new HashSet<string>(StringComparer.Ordinal);
@@ -26,10 +27,12 @@ internal sealed partial class SqliteProductionOwner
                             .Equals(variantReference, StringComparison.Ordinal)))
         {
             var contract = ResolveModuleInstanceContract(
+                connection,
                 instance.ModuleId,
                 instance.MetadataJson);
-            var content = RuntimeInputDocumentContract.CreateContentForContract(
-                new JsonObject(),
+            var content = RuntimeInputDocumentContract.ReconcileContentForContract(
+                ParseJsonObject(instance.ContentJson),
+                previousContract,
                 contract);
             var animation = RuntimeInputDocumentContract
                 .RemoveOrphanedAnimationTracks(
@@ -43,14 +46,8 @@ internal sealed partial class SqliteProductionOwner
             {
                 actorIds = new HashSet<string>(StringComparer.Ordinal);
             }
-            ValidateModuleInstanceRuntimeContent(
-                connection,
-                instance.Id,
-                content,
-                actorIds);
-            ModuleInstanceAnimationDocumentContract.Validate(
-                animation,
-                $"Module Instance '{instance.Id}' animation_json");
+            ValidateModuleInstanceDocuments(
+                connection, instance.Id, content, animation, actorIds);
             _moduleInstanceRepository.UpdateContentAndAnimation(
                 connection,
                 instance.Id,
@@ -72,8 +69,9 @@ internal sealed partial class SqliteProductionOwner
     public string GetModuleInstanceRuntimePreviewJson(
         string moduleInstanceId)
     {
-        var instance = GetModuleInstanceSettings(moduleInstanceId);
-        var module = GetModuleInstanceVariantSettings(moduleInstanceId);
+        using var connection = OpenConnection();
+        var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
+        var module = GetModuleInstanceVariantSettings(connection, moduleInstanceId);
         var config = ParseJsonObject(module.ConfigJson);
         var preview = RuntimePreviewDocumentContract.PrepareRuntime(
             ParseJsonObject(module.DesignPreviewJson),
@@ -103,6 +101,7 @@ internal sealed partial class SqliteProductionOwner
             jsonKey,
             value);
         var contract = ResolveModuleInstanceContract(
+            connection,
             instance.ModuleId,
             instance.MetadataJson);
         var shot = _shotRepository.Get(connection, instance.ShotId);
@@ -138,27 +137,22 @@ internal sealed partial class SqliteProductionOwner
     internal void UpdateModuleInstanceAnimationJson(
         SqliteConnection connection,
         string moduleInstanceId,
-        string animationJson)
+        string animationJson,
+        IReadOnlySet<string> projectActorIds)
     {
-        var animation = ModuleInstanceAnimationDocumentContract.Parse(
-            animationJson,
-            $"Module Instance '{moduleInstanceId}' animation_json");
-        _moduleInstanceRepository.UpdateAnimation(
-            connection,
-            moduleInstanceId,
-            animation.ToJsonString());
-        SynchronizeTimelineDurations(connection);
-    }
-
-    public void UpdateModuleInstanceAnimationJson(
-        string moduleInstanceId,
-        string animationJson)
-    {
-        using var connection = OpenConnection();
-        UpdateModuleInstanceAnimationJson(
-            connection,
-            moduleInstanceId,
-            animationJson);
+        lock (WriteGate)
+        {
+            using var transaction = connection.BeginTransaction();
+            var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
+            var animation = ModuleInstanceAnimationDocumentContract.Parse(
+                animationJson, $"Module Instance '{moduleInstanceId}' animation_json");
+            ValidateModuleInstanceDocuments(
+                connection, moduleInstanceId, ParseJsonObject(instance.ContentJson), animation, projectActorIds);
+            _moduleInstanceRepository.UpdateAnimation(
+                connection, moduleInstanceId, animation.ToJsonString(), transaction);
+            SynchronizeTimelineDurations(connection, instance.ShotId, transaction: transaction);
+            transaction.Commit();
+        }
     }
 
     internal void UpdateModuleInstanceRuntimeCollectionValues(
@@ -217,14 +211,12 @@ internal sealed partial class SqliteProductionOwner
                 rootDefinition,
                 mutation);
 
-            ValidateModuleInstanceRuntimeContent(
+            ValidateModuleInstanceDocuments(
                 connection,
                 moduleInstanceId,
                 result.Content,
-                projectActorIds);
-            ModuleInstanceAnimationDocumentContract.Validate(
                 result.Animation,
-                $"Module Instance '{moduleInstanceId}' animation_json");
+                projectActorIds);
             _moduleInstanceRepository.UpdateContentAndAnimation(
                 connection,
                 moduleInstanceId,
@@ -246,207 +238,29 @@ internal sealed partial class SqliteProductionOwner
         string reference,
         IReadOnlySet<string> projectActorIds)
     {
-        var instance = _moduleInstanceRepository.Get(
-            connection,
-            moduleInstanceId);
-        if (!VariantReferenceId.TryParse(
-                reference,
-                out var moduleId,
-                out var variantId)
-            || !moduleId.Equals(
-                instance.ModuleId,
-                StringComparison.Ordinal)
-            || _moduleVariantCatalog.GetModuleVariants(moduleId)
-                .All((variant) => variant.Id != variantId))
+        lock (WriteGate)
         {
-            throw new InvalidOperationException(
-                $"Invalid module variant reference '{reference}'.");
+            using var transaction = connection.BeginTransaction();
+            var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
+            if (!VariantReferenceId.TryParse(reference, out var moduleId, out var variantId)
+                || moduleId != instance.ModuleId
+                || _moduleVariantCatalog.GetModuleVariants(connection, moduleId).All(variant => variant.Id != variantId))
+                throw new InvalidOperationException($"Invalid module variant reference '{reference}'.");
+
+            var previousContract = ResolveModuleInstanceContract(connection, moduleId, instance.MetadataJson);
+            var metadata = ParseJsonObject(instance.MetadataJson);
+            metadata["moduleVariantReference"] = reference;
+            var contract = ResolveModuleInstanceContract(connection, moduleId, metadata.ToJsonString());
+            var content = RuntimeInputDocumentContract.ReconcileContentForContract(
+                ParseJsonObject(instance.ContentJson), previousContract, contract);
+            var animation = RuntimeInputDocumentContract.RemoveOrphanedAnimationTracks(
+                ParseJsonObject(instance.AnimationJson), contract, content);
+            _moduleInstanceRepository.UpdateVariantDocuments(
+                connection, moduleInstanceId, metadata.ToJsonString(), content.ToJsonString(), animation.ToJsonString(), transaction);
+            ValidateModuleInstanceDocuments(connection, moduleInstanceId, content, animation, projectActorIds);
+            SynchronizeTimelineDurations(connection, instance.ShotId, transaction: transaction);
+            transaction.Commit();
         }
-
-        var metadata = ParseJsonObject(instance.MetadataJson);
-        metadata["moduleVariantReference"] = reference;
-        var contract = ResolveModuleInstanceContract(
-            moduleId,
-            metadata.ToJsonString());
-        var content =
-            RuntimeInputDocumentContract.CreateContentForContract(
-                ParseJsonObject(instance.ContentJson),
-                contract);
-        var animation =
-            RuntimeInputDocumentContract.RemoveOrphanedAnimationTracks(
-                ParseJsonObject(instance.AnimationJson),
-                contract,
-                content);
-        ValidateModuleInstanceRuntimeContent(
-            connection,
-            moduleInstanceId,
-            content,
-            projectActorIds);
-        ModuleInstanceAnimationDocumentContract.Validate(
-            animation,
-            $"Module Instance '{moduleInstanceId}' animation_json");
-        _moduleInstanceRepository.UpdateVariantDocuments(
-            connection,
-            moduleInstanceId,
-            metadata.ToJsonString(),
-            content.ToJsonString(),
-            animation.ToJsonString());
-        ReconcileModuleInstanceRuntimePayload(
-            connection,
-            moduleInstanceId,
-            projectActorIds);
-        SynchronizeTimelineDurations(connection);
-    }
-
-    internal void ReconcileModuleInstanceRuntimePayload(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        IReadOnlySet<string> projectActorIds)
-    {
-        var instance = _moduleInstanceRepository.Get(
-            connection,
-            moduleInstanceId);
-        var original = instance.ContentJson;
-        var content = ParseJsonObject(original);
-        var contract = ResolveModuleInstanceContract(
-            instance.ModuleId,
-            instance.MetadataJson);
-        foreach (var input in
-                 RuntimeInputDocumentContract.DefinitionObjects(
-                     contract,
-                     "inputs",
-                     $"Module Instance '{moduleInstanceId}' effective Runtime contract"))
-        {
-            var inputId = JsonPath.RequiredString(
-                input,
-                "id",
-                "Runtime Input definition");
-            var jsonKey = JsonPath.RequiredString(
-                input,
-                "jsonKey",
-                $"Runtime Input '{inputId}'");
-            if (!RuntimeInputDocumentContract.IsRuntimeDefinition(input))
-            {
-                content.Remove(jsonKey);
-                continue;
-            }
-
-            if (!content.TryGetPropertyValue(
-                    jsonKey,
-                    out var currentValue))
-            {
-                content[jsonKey] =
-                    RuntimeInputValueKindContract.CreateDefaultValue(
-                        input,
-                        $"Runtime Input '{inputId}'");
-                continue;
-            }
-
-            RuntimeInputValueKindContract.ValidateRuntimeValue(
-                input,
-                currentValue,
-                $"Module Instance '{moduleInstanceId}' Runtime Input '{inputId}'");
-        }
-
-        foreach (var collection in
-                 RuntimeInputDocumentContract.DefinitionObjects(
-                     contract,
-                     "collections",
-                     $"Module Instance '{moduleInstanceId}' effective Runtime contract"))
-        {
-            var storageKey =
-                RuntimeInputDocumentContract.CollectionStorageKey(
-                    collection);
-            var projected =
-                collection.ContainsKey("storageCollectionJsonKey");
-            var items = projected
-                ? RuntimeInputDocumentContract
-                    .ReconcileProjectedCollection(
-                        RuntimeInputDocumentContract.OptionalCollection(
-                            content,
-                            storageKey,
-                            $"Module Instance '{moduleInstanceId}' content_json"),
-                        RuntimeInputDocumentContract.OptionalCollection(
-                            contract,
-                            JsonPath.RequiredString(
-                                collection,
-                                "jsonKey",
-                                "Runtime collection definition"),
-                            $"Module Instance '{moduleInstanceId}' effective Runtime contract"),
-                        collection)
-                : RuntimeInputDocumentContract.OptionalCollection(
-                      content,
-                      storageKey,
-                      $"Module Instance '{moduleInstanceId}' content_json")
-                  ?? new JsonArray();
-            content[storageKey] = items;
-            RuntimeCollectionDocumentContract.Validate(
-                items,
-                $"Module Instance '{moduleInstanceId}' runtime collection '{storageKey}'");
-            var fields =
-                RuntimeInputDocumentContract.DefinitionObjects(
-                    collection,
-                    "fields",
-                    $"Runtime collection '{storageKey}'",
-                    required: true);
-            for (var itemIndex = 0;
-                 itemIndex < items.Count;
-                 itemIndex++)
-            {
-                var item = items[itemIndex] as JsonObject
-                    ?? throw new InvalidOperationException(
-                        $"Runtime collection '{storageKey}' item at index {itemIndex} must be an object.");
-                foreach (var field in fields)
-                {
-                    if (!RuntimeInputDocumentContract
-                            .IsRuntimeDefinition(field))
-                    {
-                        continue;
-                    }
-
-                    var fieldId = JsonPath.RequiredString(
-                        field,
-                        "id",
-                        $"Runtime collection '{storageKey}' field");
-                    var jsonKey = JsonPath.RequiredString(
-                        field,
-                        "jsonKey",
-                        $"Runtime collection '{storageKey}' field '{fieldId}'");
-                    if (!item.TryGetPropertyValue(
-                            jsonKey,
-                            out var currentValue))
-                    {
-                        item[jsonKey] =
-                            RuntimeInputValueKindContract
-                                .CreateDefaultValue(
-                                    field,
-                                    $"Runtime collection field '{fieldId}'");
-                        continue;
-                    }
-
-                    RuntimeInputValueKindContract.ValidateRuntimeValue(
-                        field,
-                        currentValue,
-                        $"Runtime collection '{storageKey}' item field '{fieldId}'");
-                }
-            }
-        }
-
-        var next = content.ToJsonString();
-        if (next == original)
-        {
-            return;
-        }
-
-        ValidateModuleInstanceRuntimeContent(
-            connection,
-            moduleInstanceId,
-            content,
-            projectActorIds);
-        _moduleInstanceRepository.UpdateContent(
-            connection,
-            moduleInstanceId,
-            next);
     }
 
     internal void UpdateModuleInstanceField(
@@ -517,6 +331,7 @@ internal sealed partial class SqliteProductionOwner
                     connection,
                     moduleInstanceId);
                 var contract = ResolveModuleInstanceContract(
+                    connection,
                     instance.ModuleId,
                     instance.MetadataJson);
                 var policy = RuntimeDurationContract.RequireAllowedPolicy(
@@ -569,6 +384,7 @@ internal sealed partial class SqliteProductionOwner
         RequireModuleInstanceSelection(shot, draft);
         var metadata = ModuleInstanceMetadata(draft);
         var contract = ResolveModuleInstanceContract(
+            connection,
             draft.Module.Id,
             metadata.ToJsonString());
         var content = RuntimeInputDocumentContract.CreateContentForContract(
@@ -615,6 +431,7 @@ internal sealed partial class SqliteProductionOwner
             shot.Id);
         var metadata = ModuleInstanceMetadata(draft);
         var contract = ResolveModuleInstanceContract(
+            connection,
             module.Id,
             metadata.ToJsonString());
         var initialContent =
@@ -777,7 +594,7 @@ internal sealed partial class SqliteProductionOwner
         SynchronizeTimelineDurations(connection);
     }
 
-    internal void ValidateModuleInstanceRuntimeContent(
+    internal JsonObject ValidateModuleInstanceRuntimeContent(
         SqliteConnection connection,
         string moduleInstanceId,
         JsonObject content,
@@ -786,9 +603,9 @@ internal sealed partial class SqliteProductionOwner
         var instance = _moduleInstanceRepository.Get(
             connection,
             moduleInstanceId);
-        var module =
-            _moduleVariantCatalog.GetModuleSettings(instance.ModuleId);
+        var module = GetModuleInstanceVariantSettings(connection, moduleInstanceId);
         var contract = ResolveModuleInstanceContract(
+            connection,
             instance.ModuleId,
             instance.MetadataJson);
         RuntimeInputDocumentContract.ValidateCurrentCollections(
@@ -815,6 +632,26 @@ internal sealed partial class SqliteProductionOwner
             effectiveRuntime,
             config,
             $"Module Instance '{moduleInstanceId}'");
+        return effectiveRuntime;
+    }
+
+    internal void ValidateModuleInstanceDocuments(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        JsonObject content,
+        JsonObject animation,
+        IReadOnlySet<string> projectActorIds)
+    {
+        var runtime = ValidateModuleInstanceRuntimeContent(
+            connection, moduleInstanceId, content, projectActorIds);
+        RuntimeInputAnimationValueContract.Validate(
+            runtime,
+            animation,
+            new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
+            {
+                ["actors"] = projectActorIds,
+            },
+            $"Module Instance '{moduleInstanceId}' animation_json");
     }
 
     private JsonArray RequireDeclaredRuntimeCollection(
@@ -939,6 +776,7 @@ internal sealed partial class SqliteProductionOwner
             connection,
             moduleInstanceId);
         return ResolveModuleInstanceContract(
+            connection,
             instance.ModuleId,
             instance.MetadataJson);
     }

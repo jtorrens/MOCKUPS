@@ -266,6 +266,103 @@ public static class RuntimeInputDocumentContract
         return next;
     }
 
+    // Authoring mutation only. Readers never reconcile an obsolete contract.
+    public static JsonObject ReconcileContentForContract(
+        JsonObject current,
+        JsonObject previousContract,
+        JsonObject nextContract)
+    {
+        var mapped = ReconcileFields(
+            current,
+            DefinitionObjects(previousContract, "inputs", "Previous Runtime contract"),
+            DefinitionObjects(nextContract, "inputs", "Next Runtime contract"),
+            nextContract);
+        if (current["schemaVersion"] is { } version) mapped["schemaVersion"] = version.DeepClone();
+        var previousCollections = DefinitionObjects(previousContract, "collections", "Previous Runtime contract")
+            .ToDictionary(definition => JsonPath.RequiredString(definition, "id", "Runtime collection"), StringComparer.Ordinal);
+        foreach (var next in DefinitionObjects(nextContract, "collections", "Next Runtime contract"))
+        {
+            var id = JsonPath.RequiredString(next, "id", "Runtime collection");
+            var nextKey = CollectionStorageKey(next);
+            if (!previousCollections.TryGetValue(id, out var previous)) continue;
+            var previousKey = CollectionStorageKey(previous);
+            mapped[nextKey] = ReconcileCollectionValues(
+                RequiredCollection(current, previousKey, "Current Runtime content"),
+                previous,
+                next,
+                nextContract[JsonPath.RequiredString(next, "jsonKey", "Runtime collection")] as JsonArray);
+        }
+        return CreateContentForContract(mapped, nextContract);
+    }
+
+    private static JsonObject ReconcileFields(
+        JsonObject current,
+        IReadOnlyList<JsonObject> previousFields,
+        IReadOnlyList<JsonObject> nextFields,
+        JsonObject nextDefaults)
+    {
+        var previousById = previousFields.Where(IsRuntimeDefinition)
+            .ToDictionary(field => JsonPath.RequiredString(field, "id", "Runtime field"), StringComparer.Ordinal);
+        var result = new JsonObject();
+        foreach (var next in nextFields.Where(IsRuntimeDefinition))
+        {
+            var id = JsonPath.RequiredString(next, "id", "Runtime field");
+            var nextKey = JsonPath.RequiredString(next, "jsonKey", "Runtime field");
+            if (!previousById.TryGetValue(id, out var previous)) continue;
+            var previousKey = JsonPath.RequiredString(previous, "jsonKey", "Runtime field");
+            if (!current.TryGetPropertyValue(previousKey, out var value))
+                throw new InvalidOperationException($"Current Runtime field '{id}' is missing '{previousKey}'.");
+            result[nextKey] = value?.DeepClone();
+            if (previous["structuredCollection"] is JsonObject previousCollection
+                && next["structuredCollection"] is JsonObject nextCollection)
+            {
+                result[nextKey] = ReconcileCollectionValues(
+                    value as JsonArray ?? throw new InvalidOperationException($"Runtime field '{id}' must be an array."),
+                    previousCollection, nextCollection, nextDefaults[nextKey] as JsonArray);
+            }
+        }
+        return result;
+    }
+
+    private static JsonArray ReconcileCollectionValues(
+        JsonArray current,
+        JsonObject previous,
+        JsonObject next,
+        JsonArray? nextDefaults)
+    {
+        RuntimeCollectionDocumentContract.Validate(current, "Current Runtime collection");
+        var previousFields = DefinitionObjects(previous, "fields", "Previous Runtime collection");
+        var nextFields = DefinitionObjects(next, "fields", "Next Runtime collection");
+        var defaultsById = (nextDefaults ?? new JsonArray()).OfType<JsonObject>()
+            .ToDictionary(item => JsonPath.RequiredString(item, "id", "Runtime collection default"), StringComparer.Ordinal);
+        var result = new JsonArray();
+        foreach (var item in current.OfType<JsonObject>())
+        {
+            var id = JsonPath.RequiredString(item, "id", "Runtime collection item");
+            if ((next.ContainsKey("storageCollectionJsonKey") || next.ContainsKey("structureProjection"))
+                && !defaultsById.ContainsKey(id)) continue;
+            var mapped = ReconcileFields(item, previousFields, nextFields,
+                defaultsById.TryGetValue(id, out var defaults) ? defaults : new JsonObject());
+            var fieldContract = new JsonObject
+            {
+                ["inputs"] = new JsonArray(nextFields.Select(field => field.DeepClone()).ToArray()),
+            };
+            if (defaults is not null)
+                foreach (var field in nextFields)
+                {
+                    var key = JsonPath.RequiredString(field, "jsonKey", "Runtime collection field");
+                    if (defaults[key] is { } value) fieldContract[key] = value.DeepClone();
+                }
+            var values = CreateInputValuesForContract(mapped, fieldContract);
+            var nextItem = item.DeepClone().AsObject();
+            foreach (var field in previousFields)
+                nextItem.Remove(JsonPath.RequiredString(field, "jsonKey", "Previous Runtime field"));
+            foreach (var (key, value) in values) nextItem[key] = value?.DeepClone();
+            result.Add(nextItem);
+        }
+        return result;
+    }
+
     public static JsonObject CreateInputValuesForContract(
         JsonObject current,
         JsonObject contract,
@@ -449,41 +546,16 @@ public static class RuntimeInputDocumentContract
         JsonObject contract,
         JsonObject content)
     {
-        var topLevelFields = DefinitionObjects(
-                contract,
-                "inputs",
-                "Effective Module Runtime contract")
-            .Where(IsRuntimeDefinition)
-            .Select((input) => JsonPath.RequiredString(
-                input,
-                "id",
-                "Runtime Input definition"))
-            .ToHashSet(StringComparer.Ordinal);
-        var targetIds = new HashSet<string>(StringComparer.Ordinal);
-        CollectObjectIds(content, targetIds);
-        if (animation["tracks"] is JsonArray tracks)
+        ModuleInstanceAnimationDocumentContract.Validate(animation, "Runtime contract animation");
+        var declaredTargets = RuntimeInputAnimationValueContract.ReadTargets(contract, new JsonObject(), content)
+            .Select(target => (target.FieldId, target.TargetId))
+            .ToHashSet();
+        var tracks = animation["tracks"]!.AsArray();
+        foreach (var track in tracks.OfType<JsonObject>().ToArray())
         {
-            for (var index = tracks.Count - 1; index >= 0; index--)
-            {
-                if (tracks[index] is not JsonObject track)
-                {
-                    continue;
-                }
-
-                var targetId =
-                    track["targetId"]?.GetValue<string>() ?? "";
-                var fieldId =
-                    track["fieldId"]?.GetValue<string>() ?? "";
-                if ((!string.IsNullOrWhiteSpace(targetId)
-                        && !targetIds.Contains(targetId))
-                    || (string.IsNullOrWhiteSpace(targetId)
-                        && !topLevelFields.Contains(fieldId)))
-                {
-                    tracks.RemoveAt(index);
-                }
-            }
+            var key = (track["fieldId"]!.GetValue<string>(), track["targetId"]?.GetValue<string>() ?? "");
+            if (!declaredTargets.Contains(key)) tracks.Remove(track);
         }
-
         return animation;
     }
 
@@ -695,28 +767,4 @@ public static class RuntimeInputDocumentContract
                 $"{context} {key} must be an array when present.");
     }
 
-    private static void CollectObjectIds(
-        JsonNode? node,
-        ISet<string> ids)
-    {
-        if (node is JsonObject value)
-        {
-            if (value["id"]?.GetValue<string>() is { Length: > 0 } id)
-            {
-                ids.Add(id);
-            }
-
-            foreach (var child in value.Select((entry) => entry.Value))
-            {
-                CollectObjectIds(child, ids);
-            }
-        }
-        else if (node is JsonArray array)
-        {
-            foreach (var child in array)
-            {
-                CollectObjectIds(child, ids);
-            }
-        }
-    }
 }

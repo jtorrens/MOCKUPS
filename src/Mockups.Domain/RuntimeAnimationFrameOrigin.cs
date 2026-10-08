@@ -327,7 +327,6 @@ public static class RuntimeAnimationFrameOrigin
         private readonly Dictionary<string, ItemTiming> _items = new(StringComparer.Ordinal);
         private readonly Dictionary<string, FieldTiming> _topFields = new(StringComparer.Ordinal);
         private readonly double _naturalDuration;
-        private readonly double _effectiveDuration;
 
         public TimelineModel(JsonObject contract, JsonObject runtime, JsonObject animation, int storedFallback, JsonObject themeTokens, int frameRate)
         {
@@ -385,8 +384,6 @@ public static class RuntimeAnimationFrameOrigin
                         item,
                         targetId,
                         phase);
-                    var effectiveSpan = TargetDuration(targetId, durations.Span);
-                    var effectiveSequence = Scale(durations.Sequence, durations.Span, effectiveSpan);
                     if (!_items.TryAdd(targetId, new ItemTiming(
                         collection,
                         item,
@@ -394,16 +391,14 @@ public static class RuntimeAnimationFrameOrigin
                         start,
                         phase,
                         durations.Span,
-                        effectiveSpan,
-                        durations.Sequence,
-                        effectiveSequence)))
+                        durations.Sequence)))
                     {
                         throw new InvalidOperationException(
                             $"Runtime owner collections contain duplicate target id '{targetId}'.");
                     }
                     if (sequenceItems && !usesAbsoluteStart)
-                        cursor = start + effectiveSequence;
-                    naturalEnd = Math.Max(naturalEnd, start + effectiveSpan);
+                        cursor = start + durations.Sequence;
+                    naturalEnd = Math.Max(naturalEnd, start + durations.Span);
                 }
                 if (sequenceItems) naturalEnd = Math.Max(naturalEnd, cursor);
             }
@@ -429,17 +424,16 @@ public static class RuntimeAnimationFrameOrigin
             }
             if (naturalEnd <= 1 && storedFallback > 0) naturalEnd = storedFallback;
             _naturalDuration = Math.Max(1, naturalEnd);
-            _effectiveDuration = RootTargetDuration(_naturalDuration);
         }
 
-        public int DurationFrames => Math.Max(1, Round(_effectiveDuration));
+        public int DurationFrames => Math.Max(1, Round(_naturalDuration));
 
         public double OwnerNaturalStart(string targetId) =>
             _items.TryGetValue(targetId, out var item) ? item.RootStart : 0;
 
         public double OwnerNaturalSequenceEnd(string targetId) =>
             _items.TryGetValue(targetId, out var item)
-                ? item.RootStart + item.EffectiveSequence
+                ? item.RootStart + item.NaturalSequence
                 : 0;
 
         public double OwnerNaturalDuration(string targetId) =>
@@ -456,10 +450,7 @@ public static class RuntimeAnimationFrameOrigin
         {
             if (string.IsNullOrWhiteSpace(targetId)) return DurationFrames;
             return _items.TryGetValue(targetId, out var item)
-                ? Round(Scale(
-                    item.RootStart + item.EffectiveSequence,
-                    _naturalDuration,
-                    _effectiveDuration))
+                ? Round(item.RootStart + item.NaturalSequence)
                 : 0;
         }
 
@@ -501,13 +492,10 @@ public static class RuntimeAnimationFrameOrigin
 
         public double OwnerLocalFrame(string targetId, int screenFrame)
         {
-            var rootNatural = Unscale(
-                screenFrame,
-                _naturalDuration,
-                _effectiveDuration);
+            var rootNatural = (double)screenFrame;
             if (string.IsNullOrWhiteSpace(targetId)) return rootNatural;
             if (!_items.TryGetValue(targetId, out var item)) return 0;
-            return Unscale(rootNatural - item.RootStart, item.NaturalSpan, item.EffectiveSpan);
+            return rootNatural - item.RootStart;
         }
 
         public int ScreenFrameForOwnerFrame(string targetId, double ownerFrame)
@@ -515,16 +503,16 @@ public static class RuntimeAnimationFrameOrigin
             var rootNatural = ownerFrame;
             if (!string.IsNullOrWhiteSpace(targetId) && _items.TryGetValue(targetId, out var item))
             {
-                rootNatural = item.RootStart + Scale(ownerFrame, item.NaturalSpan, item.EffectiveSpan);
+                rootNatural = item.RootStart + ownerFrame;
             }
-            return Round(Scale(rootNatural, _naturalDuration, _effectiveDuration));
+            return Round(rootNatural);
         }
 
         public int OwnerAppearanceScreenFrame(string targetId)
         {
             if (string.IsNullOrWhiteSpace(targetId)) return 0;
             return _items.TryGetValue(targetId, out var item)
-                ? Round(Scale(item.RootAppearance, _naturalDuration, _effectiveDuration))
+                ? Round(item.RootAppearance)
                 : 0;
         }
 
@@ -558,25 +546,21 @@ public static class RuntimeAnimationFrameOrigin
                     targetId,
                     TrackOwnerFrameOrigin(targetId) + localFrame);
             var rootNaturalFrame = RootNaturalFrame(fieldId, targetId, localFrame);
-            return Round(Scale(rootNaturalFrame, _naturalDuration, _effectiveDuration));
+            return Round(rootNaturalFrame);
         }
 
         public double LocalFrame(string fieldId, string targetId, int screenFrame)
         {
             if (HasEnabledTrack(fieldId, targetId))
                 return OwnerLocalFrame(targetId, screenFrame) - TrackOwnerFrameOrigin(targetId);
-            var rootNaturalFrame = Unscale(
-                screenFrame,
-                _naturalDuration,
-                _effectiveDuration);
+            var rootNaturalFrame = (double)screenFrame;
             if (string.IsNullOrWhiteSpace(targetId))
             {
                 var origin = TopField(fieldId).Origin;
                 return rootNaturalFrame - origin;
             }
             if (!_items.TryGetValue(targetId, out var item)) return 0;
-            var ownerEffectiveFrame = rootNaturalFrame - item.RootStart;
-            var ownerNaturalFrame = Unscale(ownerEffectiveFrame, item.NaturalSpan, item.EffectiveSpan);
+            var ownerNaturalFrame = rootNaturalFrame - item.RootStart;
             var field = ItemField(item, fieldId);
             return ownerNaturalFrame - field.Origin;
         }
@@ -587,7 +571,7 @@ public static class RuntimeAnimationFrameOrigin
             if (!_items.TryGetValue(targetId, out var item)) return localFrame;
             var field = ItemField(item, fieldId);
             var ownerNaturalFrame = field.Origin + localFrame;
-            return item.RootStart + Scale(ownerNaturalFrame, item.NaturalSpan, item.EffectiveSpan);
+            return item.RootStart + ownerNaturalFrame;
         }
 
         private FieldTiming TopField(string fieldId)
@@ -990,20 +974,6 @@ public static class RuntimeAnimationFrameOrigin
                 .ToList();
         }
 
-        private double TargetDuration(string targetId, double natural) =>
-            PositiveDuration((((_animation["retime"] as JsonObject)?["targets"] as JsonObject)?[targetId] as JsonObject)?["targetDurationFrames"])
-            ?? natural;
-
-        private double RootTargetDuration(double natural) =>
-            PositiveDuration((_animation["retime"] as JsonObject)?["targetDurationFrames"])
-            ?? natural;
-
-        private static double? PositiveDuration(JsonNode? node)
-        {
-            var value = Number(node);
-            return value > 0 ? value : null;
-        }
-
         private sealed record FieldTiming(double Origin, double Completion, double EndExclusive);
 
         private sealed record ItemDurations(double Sequence, double Span);
@@ -1015,9 +985,7 @@ public static class RuntimeAnimationFrameOrigin
             double RootStart,
             int OwnerPhaseFrames,
             double NaturalSpan,
-            double EffectiveSpan,
-            double NaturalSequence,
-            double EffectiveSequence)
+            double NaturalSequence)
         {
             public Dictionary<string, FieldTiming> Fields { get; } = new(StringComparer.Ordinal);
         }
@@ -1025,6 +993,7 @@ public static class RuntimeAnimationFrameOrigin
 
     private static void ValidateAnimationEnvelope(JsonObject animation)
     {
+        ModuleInstanceAnimationDocumentContract.ValidateRootProperties(animation, "Runtime owner animation");
         var tracks = JsonPath.OptionalObjectArray(animation, "tracks", "Runtime owner animation");
         var trackTargets = new HashSet<(string FieldId, string TargetId)>();
         foreach (var track in tracks)
@@ -1075,32 +1044,6 @@ public static class RuntimeAnimationFrameOrigin
             }
         }
 
-        var retime = JsonPath.OptionalObject(animation, "retime", "Runtime owner animation");
-        if (retime is null) return;
-        ValidateOptionalPositiveFrameCount(retime, "targetDurationFrames", "Runtime animation retime");
-        var targets = JsonPath.OptionalObject(retime, "targets", "Runtime animation retime");
-        if (targets is null) return;
-        foreach (var (targetId, targetNode) in targets)
-        {
-            if (string.IsNullOrWhiteSpace(targetId) || targetNode is not JsonObject target)
-            {
-                throw new InvalidOperationException("Runtime animation retime target must be a named JSON object.");
-            }
-            ValidateOptionalPositiveFrameCount(
-                target,
-                "targetDurationFrames",
-                $"Runtime animation retime target '{targetId}'");
-        }
-    }
-
-    private static void ValidateOptionalPositiveFrameCount(JsonObject owner, string key, string context)
-    {
-        if (!owner.TryGetPropertyValue(key, out _)) return;
-        var value = JsonPath.RequiredInteger(owner, key, context);
-        if (value <= 0)
-        {
-            throw new InvalidOperationException($"{context} '{key}' must be positive.");
-        }
     }
 
     private static IReadOnlyList<JsonObject> Collections(JsonObject contract)
@@ -1501,12 +1444,6 @@ public static class RuntimeAnimationFrameOrigin
                 $"Runtime action '{Text(action["id"])}' durationBaseFrames"))
             .DefaultIfEmpty(0)
             .Max();
-
-    private static double Scale(double value, double natural, double effective) =>
-        natural <= 0 ? value : value * effective / natural;
-
-    private static double Unscale(double value, double natural, double effective) =>
-        effective <= 0 ? value : value * natural / effective;
 
     private static int Round(double value) => (int)Math.Round(value, MidpointRounding.AwayFromZero);
 

@@ -45,6 +45,8 @@ var tests = new (string Name, Action Run)[]
     ("Runtime scalar patterns validate defaults and authored values", RuntimeScalarPatternsValidateValues),
     ("Runtime contract transitions retain only current values and animation owners", RuntimeContractTransitionsRetainCurrentOwners),
     ("structured collection mutations update nested content and animation together", StructuredCollectionMutationsAreAtomicDocuments),
+    ("collection animation preserves fixed boundaries and exact declared paths", StructuredCollectionAnimationTests.FixedBoundariesAndDeclaredPaths),
+    ("Runtime contract changes preserve values by declared identity", StructuredCollectionAnimationTests.ContractChangesPreserveDeclaredIdentity),
     ("Production collection creation requires Actors but not media", ProductionCollectionCreationRequiresActorsButNotMedia),
     ("Production media preserves absent authored resources", ProductionMediaPreservesAuthoredResources),
     ("Dynamic Runtime selectors close exact local IDs for animation", DynamicRuntimeSelectorsCloseExactLocalIds),
@@ -424,18 +426,22 @@ static void ShotManagerReadonlyDocumentsAreStrict()
 
 static void StructuredCollectionMutationsAreAtomicDocuments()
 {
+    var valueField = new ComponentInputDefinition(
+        "value", "Value", "value", ComponentInputKind.Boolean, ValueKind.Boolean, "false",
+        Animation: new AnimationFieldDefinition(["hold"]));
     var leaf = new RuntimeInputCollectionDefinition(
         "leaf",
         "Leaf",
         "children",
         "Child",
-        []);
+        [valueField]);
     var nested = new RuntimeInputCollectionDefinition(
         "state",
         "States",
         "states",
         "State",
         [
+            valueField,
             new ComponentInputDefinition(
                 "note",
                 "Note",
@@ -458,6 +464,7 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
         "messages",
         "Message",
         [
+            valueField,
             new ComponentInputDefinition(
                 "states",
                 "States",
@@ -474,15 +481,17 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
             new JsonObject
             {
                 ["id"] = "message-a",
+                ["value"] = false,
                 ["states"] = new JsonArray
                 {
                     new JsonObject
                     {
                         ["id"] = "state-a",
+                        ["value"] = false,
                         ["note"] = "child-a",
                         ["children"] = new JsonArray
                         {
-                            new JsonObject { ["id"] = "child-a" },
+                            new JsonObject { ["id"] = "child-a", ["value"] = false },
                         },
                     },
                 },
@@ -495,8 +504,8 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
         ["tracks"] = new JsonArray
         {
             TestTrack("track-message", "message-a"),
-            TestTrack("track-state", "state-a"),
-            TestTrack("track-child", "child-a"),
+            TestTrack("track-state", "message-a", "states.state-a.value"),
+            TestTrack("track-child", "message-a", "states.state-a.children.child-a.value"),
             TestTrack("track-untyped", "untyped-a"),
         },
     };
@@ -513,9 +522,10 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
             new JsonObject
             {
                 ["note"] = "prototype-child",
+                ["value"] = false,
                 ["children"] = new JsonArray
                 {
-                    new JsonObject { ["id"] = "prototype-child" },
+                    new JsonObject { ["id"] = "prototype-child", ["value"] = false },
                 },
             },
             "state-a"));
@@ -600,10 +610,10 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
     Equal(2, content["messages"]![0]!["states"]!.AsArray().Count);
     Equal(6, animation["tracks"]!.AsArray().Count);
     Equal(true, animation["tracks"]!.AsArray().OfType<JsonObject>().Any((track) =>
-        track["targetId"]?.GetValue<string>() == duplicatedStateId));
+        track["fieldId"]?.GetValue<string>() == $"states.{duplicatedStateId}.value"));
     Equal(true, animation["tracks"]!.AsArray().OfType<JsonObject>().Any((track) =>
-        track["targetId"]?.GetValue<string>() == duplicatedChildId));
-    Equal(1, animation["tracks"]!.AsArray().OfType<JsonObject>().Count((track) =>
+        track["fieldId"]?.GetValue<string>() == $"states.{duplicatedStateId}.children.{duplicatedChildId}.value"));
+    Equal(5, animation["tracks"]!.AsArray().OfType<JsonObject>().Count((track) =>
         track["targetId"]?.GetValue<string>() == "message-a"));
 
     var deletedDuplicate = StructuredCollectionMutationEngine.Apply(
@@ -621,8 +631,8 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
     Equal(1, content["messages"]![0]!["states"]!.AsArray().Count);
     Equal(4, animation["tracks"]!.AsArray().Count);
     Equal(false, animation["tracks"]!.AsArray().OfType<JsonObject>().Any((track) =>
-        track["targetId"]?.GetValue<string>() == duplicatedStateId
-        || track["targetId"]?.GetValue<string>() == duplicatedChildId));
+        track["fieldId"]?.GetValue<string>() == $"states.{duplicatedStateId}.value"
+        || track["fieldId"]?.GetValue<string>() == $"states.{duplicatedStateId}.children.{duplicatedChildId}.value"));
 
     var deletedOriginal = StructuredCollectionMutationEngine.Apply(
         content,
@@ -756,10 +766,10 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
         ["uiParentItemIdJsonKey"] = collection.UiParentItemIdJsonKey,
     };
 
-    static JsonObject TestTrack(string id, string targetId) => new()
+    static JsonObject TestTrack(string id, string targetId, string fieldId = "value") => new()
     {
         ["id"] = id,
-        ["fieldId"] = "value",
+        ["fieldId"] = fieldId,
         ["targetId"] = targetId,
         ["keyframes"] = new JsonArray
         {
@@ -1605,7 +1615,8 @@ static void RuntimeContractTransitionsRetainCurrentOwners()
         {
             new JsonObject
             {
-                ["id"] = "runtimeText",
+                ["id"] = "runtimeText", ["label"] = "Runtime text",
+                ["animatable"] = true, ["animationInterpolations"] = new JsonArray("hold"),
                 ["jsonKey"] = "runtimeText",
                 ["source"] = "runtime",
                 ["kind"] = "text",
@@ -1614,7 +1625,7 @@ static void RuntimeContractTransitionsRetainCurrentOwners()
             },
             new JsonObject
             {
-                ["id"] = "variantText",
+                ["id"] = "variantText", ["label"] = "Variant text",
                 ["jsonKey"] = "variantText",
                 ["source"] = "variant",
                 ["kind"] = "text",
@@ -1644,17 +1655,16 @@ static void RuntimeContractTransitionsRetainCurrentOwners()
     };
     var animation = new JsonObject
     {
+        ["schemaVersion"] = 2,
         ["tracks"] = new JsonArray
         {
             new JsonObject
             {
                 ["fieldId"] = "runtimeText",
-                ["targetId"] = "",
             },
             new JsonObject
             {
                 ["fieldId"] = "retired",
-                ["targetId"] = "",
             },
             new JsonObject
             {
@@ -1669,6 +1679,16 @@ static void RuntimeContractTransitionsRetainCurrentOwners()
         },
     };
 
+    var trackIndex = 0;
+    foreach (var track in animation["tracks"]!.AsArray().OfType<JsonObject>())
+    {
+        track["id"] = $"track-{trackIndex}";
+        track["keyframes"] = new JsonArray(new JsonObject
+        {
+            ["id"] = $"key-{trackIndex++}", ["frame"] = 0, ["value"] = "authored",
+            ["interpolation"] = "hold", ["enabled"] = true,
+        });
+    }
     var reconciled =
         RuntimeInputDocumentContract.RemoveOrphanedAnimationTracks(
             animation,
@@ -1677,13 +1697,11 @@ static void RuntimeContractTransitionsRetainCurrentOwners()
     var tracks = reconciled["tracks"]?.AsArray()
         ?? throw new InvalidOperationException(
             "Expected reconciled animation tracks.");
-    Equal(2, tracks.Count);
+    Equal(1, tracks.Count);
     Equal(
         "runtimeText",
         tracks[0]?["fieldId"]?.GetValue<string>());
-    Equal(
-        "kept-target",
-        tracks[1]?["targetId"]?.GetValue<string>());
+
 }
 
 static void InitialTreeLoadSelectsDesignContext()

@@ -1,6 +1,4 @@
 import {
-  isRecord,
-  optionalObject,
   optionalObjectArray,
   type JsonRecord,
 } from "./previewJsonHelpers.js";
@@ -11,6 +9,11 @@ const interpolations = new Set(["hold", "linear", "easeInOut", "writeOn"]);
 
 export function validateTransientAnimationDocument(animation: JsonRecord) {
   if (validatedDocuments.has(animation)) return;
+  for (const key of Object.keys(animation)) {
+    if (key !== "schemaVersion" && key !== "tracks") {
+      throw new Error(`runtime owner animation contains undeclared property '${key}'`);
+    }
+  }
   const trackTargets = new Set<string>();
   for (const track of optionalObjectArray(animation, "tracks", "runtime owner animation")) {
     const fieldId = requiredString(track, "fieldId", "runtime animation track field id");
@@ -60,26 +63,5 @@ export function validateTransientAnimationDocument(animation: JsonRecord) {
     }
   }
 
-  const retime = optionalObject(animation, "retime", "runtime owner animation");
-  validateOptionalPositiveFrameCount(retime, "targetDurationFrames", "runtime animation retime");
-  const targets = optionalObject(retime, "targets", "runtime animation retime");
-  for (const [targetId, value] of Object.entries(targets)) {
-    if (!targetId.trim() || !isRecord(value)) {
-      throw new Error("runtime animation retime target must be a named object");
-    }
-    validateOptionalPositiveFrameCount(
-      value,
-      "targetDurationFrames",
-      `runtime animation retime target '${targetId}'`,
-    );
-  }
   validatedDocuments.add(animation);
-}
-
-function validateOptionalPositiveFrameCount(owner: JsonRecord, key: string, path: string) {
-  if (!Object.hasOwn(owner, key)) return;
-  const value = requiredNumberValue(owner[key], `${path} '${key}'`);
-  if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(`${path} '${key}' must be a positive integer`);
-  }
 }

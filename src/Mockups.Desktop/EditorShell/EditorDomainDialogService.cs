@@ -111,10 +111,10 @@ internal sealed class EditorDomainDialogService
         string variantName)
     {
         return new EditorDialogService(_owner, _isDark()).ConfirmAction(
-            "Replace Screen Runtime payloads",
+            "Update Screen Runtime contract",
             $"Change the component used by \"{variantName}\"?",
-            "This Module Variant is used by one or more Screens. Their previous Runtime payload and animation tracks will be removed and replaced with fresh values for the new contract.",
-            "Replace and reset Screens",
+            "This Module Variant is used by Screens. Matching items, values and animation tracks will be preserved by stable identity. Only removed fields and items will lose their tracks. The Variant and Screens are saved together.",
+            "Update Variant and Screens",
             width: 560,
             height: 270);
     }

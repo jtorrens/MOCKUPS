@@ -553,7 +553,7 @@ internal interface IAppModuleRepository
 
     void UpdateModuleDesignPreview(string moduleId, string designPreviewJson);
 
-    void UpdateModuleMetadata(SqliteConnection connection, string moduleId, string metadataJson);
+    void UpdateModuleMetadata(SqliteConnection connection, string moduleId, string metadataJson, SqliteTransaction? transaction = null);
 
     void RenameApp(SqliteConnection connection, string appId, string name);
 
@@ -564,8 +564,14 @@ internal interface IAppModuleRepository
     void UpdateModuleNode(SqliteConnection connection, string moduleId, string name, string notes);
 }
 
+internal sealed record ModuleVariantDocumentChange(string ModuleId, string VariantReference, string MetadataJson);
+
 internal interface IModuleVariantCatalog
 {
+    ModuleSettings GetModuleSettings(SqliteConnection connection, string moduleId);
+
+    IReadOnlyList<ModuleVariant> GetModuleVariants(SqliteConnection connection, string moduleId);
+
     ModuleSettings GetModuleSettings(string moduleId);
 
     IReadOnlyList<ModuleVariant> GetModuleVariants(string moduleId);
@@ -664,7 +670,7 @@ internal interface IModuleInstanceRepository
 
     void UpdateContent(SqliteConnection connection, string moduleInstanceId, string contentJson);
 
-    void UpdateAnimation(SqliteConnection connection, string moduleInstanceId, string animationJson);
+    void UpdateAnimation(SqliteConnection connection, string moduleInstanceId, string animationJson, SqliteTransaction? transaction = null);
 
     void UpdateActionDelay(
         SqliteConnection connection,
@@ -699,7 +705,8 @@ internal interface IModuleInstanceRepository
         string moduleInstanceId,
         string metadataJson,
         string contentJson,
-        string animationJson);
+        string animationJson,
+        SqliteTransaction? transaction = null);
 
     void UpdateDuration(
         SqliteConnection connection,

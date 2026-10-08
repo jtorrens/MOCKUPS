@@ -213,12 +213,13 @@ internal sealed class AppModuleRepository : IAppModuleRepository
             ("$json", designPreviewJson));
     }
 
-    public void UpdateModuleMetadata(SqliteConnection connection, string moduleId, string metadataJson)
+    public void UpdateModuleMetadata(SqliteConnection connection, string moduleId, string metadataJson, SqliteTransaction? transaction = null)
     {
         var module = GetModule(connection, moduleId);
         ValidateModuleMetadata(metadataJson, moduleId, module.RecordClassId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE modules SET metadata_json = $metadataJson WHERE id = $id",
             ("$id", moduleId),
             ("$metadataJson", metadataJson));

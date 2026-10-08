@@ -192,8 +192,11 @@ Every structured Runtime collection lifecycle operation is one generic
 Application mutation addressed by a typed stable collection/item path. Add,
 duplicate, move and delete use discriminated commands; insertion is expressed
 by a stable `beforeItemId`, never by an ordinal persisted across a write. The
-Application owner creates replacement ids, rebases only declared nested ids
-and forwarding references, and derives the affected animation targets.
+Application owner creates replacement ids only for editable collection items;
+fixed boundary-local ids remain unchanged. It rebases typed item segments in
+declared animation field paths and exact target ids, never arbitrary JSON ids
+or substrings. Duplicate/delete and orphan reconciliation consume the same
+Runtime Input animation target catalog used by semantic validation.
 Production applies the command to cloned candidate `content_json` and
 `animation_json`, validates both complete documents, and persists them in one
 transaction together with derived duration synchronization. Desktop never
@@ -392,13 +395,19 @@ cross-owner application store. It receives the SQLite context plus Design,
 Production and Resources owners for exact contract and Actor validation; it
 does not expose any of those owners or their unrelated operations to Desktop.
 
-`IRuntimeContractUsageStore` is the focused cross-owner command used after an
-accepted authored Runtime-contract replacement. It targets one exact Module
-Variant reference, recreates the complete payload for each referencing Screen
-from an empty object and the updated effective contract, removes orphaned
-animation tracks and synchronizes affected Shot durations in one transaction.
-It does not reconcile values by name or preserve values from the previous
-contract.
+Module Variant config writes cross one composition-owned atomic document
+commit. Design supplies the complete candidate metadata; the composition
+coordinates focused repositories on the same SQLite connection and transaction.
+Runtime content is reconciled by declared stable field, collection and item
+identities. Matching values, item order and tracks survive; newly declared
+fields receive their declared defaults and removed animation targets are
+retired. Variant metadata, every affected Screen and derived Shot durations
+commit together or all roll back. There is no editor-triggered reset command
+or second post-save reconciliation. Contract reads inside this operation use
+the transaction connection, including duration and semantic validation.
+Startup, scalar Runtime writes, collection lifecycle and animation writes
+validate the prepared Runtime document against the same animation value
+contract before publishing a committed result.
 
 `IRuntimeInputOwnerStore` is Design-only. Module Instance Variant and effective
 Runtime Preview reads remain on the Production timeline and are composed with

@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System.Collections.Generic;
@@ -159,9 +160,14 @@ internal sealed partial class SqliteProductionOwner
     public ModuleSettings GetModuleInstanceVariantSettings(
         string moduleInstanceId)
     {
-        var instance = GetModuleInstanceSettings(moduleInstanceId);
-        var reference = GetModuleInstanceVariantReference(
-            moduleInstanceId);
+        using var connection = OpenConnection();
+        return GetModuleInstanceVariantSettings(connection, moduleInstanceId);
+    }
+
+    private ModuleSettings GetModuleInstanceVariantSettings(SqliteConnection connection, string moduleInstanceId)
+    {
+        var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
+        var reference = JsonPath.RequiredString(ParseJsonObject(instance.MetadataJson), "moduleVariantReference", "Screen metadata");
         if (!VariantReferenceId.TryParse(
                 reference,
                 out var moduleId,
@@ -174,8 +180,8 @@ internal sealed partial class SqliteProductionOwner
                 $"Module instance '{moduleInstanceId}' has an invalid module variant reference.");
         }
 
-        var settings = _moduleVariantCatalog.GetModuleSettings(moduleId);
-        var variant = _moduleVariantCatalog.GetModuleVariants(moduleId)
+        var settings = _moduleVariantCatalog.GetModuleSettings(connection, moduleId);
+        var variant = _moduleVariantCatalog.GetModuleVariants(connection, moduleId)
             .FirstOrDefault(
                 (candidate) => candidate.Id.Equals(
                     variantId,
@@ -188,8 +194,10 @@ internal sealed partial class SqliteProductionOwner
     public string GetModuleInstanceEffectiveContractJson(
         string moduleInstanceId)
     {
-        var instance = GetModuleInstanceSettings(moduleInstanceId);
+        using var connection = OpenConnection();
+        var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
         var contract = ResolveModuleInstanceContract(
+            connection,
             instance.ModuleId,
             instance.MetadataJson);
         return RuntimeDurationContract.ApplyPolicy(
@@ -230,6 +238,7 @@ internal sealed partial class SqliteProductionOwner
     }
 
     internal JsonObject ResolveModuleInstanceContract(
+        SqliteConnection connection,
         string moduleId,
         string instanceMetadataJson)
     {
@@ -248,8 +257,8 @@ internal sealed partial class SqliteProductionOwner
                 $"Invalid module variant reference '{reference}'.");
         }
 
-        var module = _moduleVariantCatalog.GetModuleSettings(moduleId);
-        var variant = _moduleVariantCatalog.GetModuleVariants(moduleId)
+        var module = _moduleVariantCatalog.GetModuleSettings(connection, moduleId);
+        var variant = _moduleVariantCatalog.GetModuleVariants(connection, moduleId)
             .FirstOrDefault((candidate) => candidate.Id == variantId)
             ?? throw new InvalidOperationException(
                 $"Missing module variant '{reference}'.");

@@ -67,7 +67,7 @@ public static class StructuredCollectionItemIdentity
             ids.Add(id);
         }
         foreach (var field in collection.Fields.Where((field) =>
-                     field.StructuredCollection is not null))
+                     field.StructuredCollection is { CanEditStructure: true }))
         {
             var nested = field.StructuredCollection!;
             foreach (var child in (item[field.JsonKey] as JsonArray)
@@ -100,7 +100,7 @@ public static class StructuredCollectionItemIdentity
             throw new InvalidOperationException(
                 $"Structured collection '{collection.Id}' reuses stable id '{id}' at '{path}' and '{paths[id]}'.");
         }
-        foreach (var field in collection.Fields.Where((field) => field.StructuredCollection is not null))
+        foreach (var field in collection.Fields.Where((field) => field.StructuredCollection is { CanEditStructure: true }))
         {
             var nested = field.StructuredCollection!;
             var children = item[field.JsonKey] as JsonArray
@@ -205,7 +205,7 @@ public static class StructuredCollectionItemIdentity
         RuntimeInputCollectionDefinition collection,
         Dictionary<string, string> mappings)
     {
-        foreach (var field in collection.Fields.Where((field) => field.StructuredCollection is not null))
+        foreach (var field in collection.Fields.Where((field) => field.StructuredCollection is { CanEditStructure: true }))
         {
             var nested = field.StructuredCollection!;
             foreach (var item in (owner[field.JsonKey] as JsonArray)?.OfType<JsonObject>() ?? [])

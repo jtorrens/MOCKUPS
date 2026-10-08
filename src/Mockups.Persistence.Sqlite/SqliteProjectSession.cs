@@ -31,7 +31,6 @@ public sealed class SqliteProjectSession
         IRuntimeInputOwnerStore runtimeInputOwners,
         IRuntimeInputInstanceStore runtimeInputInstances,
         IModuleInstanceAnimationStore animation,
-        IRuntimeContractUsageStore runtimeContractUsages,
         IReferenceUsageQuery referenceUsage,
         IExternalMediaUsageQuery externalMediaUsage,
         IExternalMediaAssetReplacementStore externalMediaAssetReplacement,
@@ -63,7 +62,6 @@ public sealed class SqliteProjectSession
         RuntimeInputOwners = runtimeInputOwners;
         RuntimeInputInstances = runtimeInputInstances;
         Animation = animation;
-        RuntimeContractUsages = runtimeContractUsages;
         ReferenceUsage = referenceUsage;
         ExternalMediaUsage = externalMediaUsage;
         ExternalMediaAssetReplacement = externalMediaAssetReplacement;
@@ -133,7 +131,6 @@ public sealed class SqliteProjectSession
 
     public IModuleInstanceAnimationStore Animation { get; }
 
-    public IRuntimeContractUsageStore RuntimeContractUsages { get; }
 
     public IReferenceUsageQuery ReferenceUsage { get; }
 

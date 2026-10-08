@@ -738,15 +738,6 @@ internal sealed class ModuleInstanceAnimationEditor
         Grid.SetColumn(extendHorizonButton, 2);
         timelineControl.Children.Add(extendHorizonButton);
         root.Children.Add(timelineControl);
-        if (hasTemporalOwner)
-        {
-            root.Children.Add(CreateTargetDurationEditor(
-                node,
-                document,
-                durationTargetId,
-                ReferenceNaturalDuration(),
-                SaveAndRefresh));
-        }
         root.Children.Add(EditorGroupBlock.CreateSeparator());
         root.Children.Add(trackList);
         root.Children.Add(detailHost);
@@ -964,91 +955,6 @@ internal sealed class ModuleInstanceAnimationEditor
             if (exact is not null) SaveValue(valueControl.Value, interpolation);
         };
         panel.Children.Add(interpolationControl);
-        return panel;
-    }
-
-    private Control CreateTargetDurationEditor(
-        ProjectTreeNode node,
-        ModuleInstanceAnimationDocument document,
-        string targetId,
-        int naturalDuration,
-        Func<
-            Func<ModuleInstanceAnimationDocument, bool>,
-            Task> saveMutation)
-    {
-        var stored = document.TargetDurationFrames(targetId);
-        var enabled = stored is not null;
-        var toggle = new ToggleSwitch
-        {
-            IsChecked = enabled,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        EditorAccessibility.Describe(toggle, "Enable target-duration retime");
-        toggle.PropertyChanged += (_, change) =>
-        {
-            if (change.Property != ToggleSwitch.IsCheckedProperty) return;
-            _ = saveMutation((candidate) =>
-            {
-                candidate.SetTargetDurationFrames(
-                    targetId,
-                    toggle.IsChecked == true
-                        ? naturalDuration
-                        : null);
-                return true;
-            });
-        };
-        var switchRow = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            ColumnSpacing = EditorUiDensity.Card(8),
-        };
-        switchRow.Children.Add(new TextBlock
-        {
-            Text = "Retime",
-            FontWeight = FontWeight.SemiBold,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
-        Grid.SetColumn(toggle, 1);
-        switchRow.Children.Add(toggle);
-        var panel = new StackPanel
-        {
-            Spacing = EditorUiDensity.Card(6),
-        };
-        panel.Children.Add(EditorGroupBlock.CreateSeparator());
-        panel.Children.Add(switchRow);
-        panel.Children.Add(new TextBlock { Text = $"Natural duration: {naturalDuration} frames", Opacity = 0.76 });
-        if (enabled)
-        {
-            var definition = new FieldDefinition(
-                $"animation.targetDuration.{(string.IsNullOrWhiteSpace(targetId) ? "screen" : targetId)}",
-                "Target duration",
-                ValueKind.Integer,
-                DefaultValue: naturalDuration.ToString(CultureInfo.InvariantCulture),
-                Number: new NumberDefinition(1, 100000, 1, 0),
-                Unit: "frames");
-            var control = new DictionaryFieldControl(
-                new FieldValue(definition, stored!.Value.ToString(CultureInfo.InvariantCulture)),
-                DictionaryServices(node));
-            control.ValueCommitted += (_, value) =>
-            {
-                if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var duration)) return;
-                _ = saveMutation((candidate) =>
-                {
-                    candidate.SetTargetDurationFrames(
-                        targetId,
-                        Math.Max(1, duration));
-                    return true;
-                });
-            };
-            panel.Children.Add(control);
-            panel.Children.Add(new TextBlock
-            {
-                Text = "Scales all keyframes and actions without rewriting their authored frames.",
-                TextWrapping = TextWrapping.Wrap,
-                Opacity = 0.62,
-                FontSize = 11,
-            });
-        }
         return panel;
     }
 

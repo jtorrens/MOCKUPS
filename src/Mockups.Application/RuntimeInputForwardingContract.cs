@@ -561,7 +561,8 @@ public static class RuntimeInputForwardingContract
         {
             var id = Text(definition["id"]);
             if (id.Length == 0) return;
-            var nextId = id.Replace(oldOwnerSegment, newOwnerSegment, StringComparison.Ordinal);
+            var nextId = string.Join(".", id.Split('.').Select(segment =>
+                segment.Equals(oldOwnerSegment, StringComparison.Ordinal) ? newOwnerSegment : segment));
             var nextJsonKey = string.Join("_", nextId.Select((character) =>
                 char.IsLetterOrDigit(character) ? character : '_'));
             definition["id"] = nextId;

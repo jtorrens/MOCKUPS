@@ -121,6 +121,9 @@ public static class StructuredCollectionMutationEngine
         var nextContent = content.DeepClone().AsObject();
         var nextAnimation = animation.DeepClone().AsObject();
         var (collection, definition) = Resolve(nextContent, rootDefinition, mutation.Address);
+        var animationTargets = RuntimeInputAnimationValueContract.ReadCollectionTargets(
+            rootDefinition,
+            nextContent[mutation.Address.RootStorageJsonKey]!.AsArray());
         var mappings = new Dictionary<string, string>(StringComparer.Ordinal);
         var removed = new HashSet<string>(StringComparer.Ordinal);
         JsonObject? selectedItem;
@@ -132,7 +135,8 @@ public static class StructuredCollectionMutationEngine
                 selectedItemId = RequiredId(selectedItem, definition.Id);
                 break;
             case DuplicateStructuredCollectionItem duplicate:
-                selectedItem = Duplicate(collection, definition, duplicate, nextAnimation, mappings);
+                selectedItem = Duplicate(collection, definition, duplicate, mappings);
+                DuplicateAnimationTargets(nextAnimation, animationTargets, mappings);
                 selectedItemId = RequiredId(selectedItem, definition.Id);
                 break;
             case MoveStructuredCollectionItem move:
@@ -141,7 +145,8 @@ public static class StructuredCollectionMutationEngine
                 selectedItemId = move.ItemId;
                 break;
             case DeleteStructuredCollectionItem delete:
-                Delete(collection, definition, delete, nextAnimation, removed);
+                Delete(collection, definition, delete, removed);
+                RemoveAnimationTargets(nextAnimation, animationTargets, removed);
                 selectedItem = null;
                 selectedItemId = null;
                 break;
@@ -286,7 +291,6 @@ public static class StructuredCollectionMutationEngine
         JsonArray collection,
         RuntimeInputCollectionDefinition definition,
         DuplicateStructuredCollectionItem mutation,
-        JsonObject animation,
         Dictionary<string, string> mappings)
     {
         var sourceIndex = RequiredIndex(collection, mutation.SourceItemId, definition.Id);
@@ -304,7 +308,6 @@ public static class StructuredCollectionMutationEngine
         }
         StructuredCollectionItemIdentity.RebaseNestedItems(duplicate, definition, mappings);
         InsertBefore(collection, duplicate, mutation.BeforeItemId, definition.Id);
-        DuplicateAnimationTargets(animation, mappings);
         return duplicate;
     }
 
@@ -327,7 +330,6 @@ public static class StructuredCollectionMutationEngine
         JsonArray collection,
         RuntimeInputCollectionDefinition definition,
         DeleteStructuredCollectionItem mutation,
-        JsonObject animation,
         HashSet<string> removed)
     {
         var index = RequiredIndex(collection, mutation.ItemId, definition.Id);
@@ -336,7 +338,6 @@ public static class StructuredCollectionMutationEngine
                 $"Structured collection '{definition.Id}' item '{mutation.ItemId}' must be an object.");
         removed.UnionWith(StructuredCollectionItemIdentity.TargetIds(item, definition));
         collection.RemoveAt(index);
-        RemoveAnimationTargets(animation, removed);
     }
 
     private static void InsertBefore(
@@ -377,13 +378,18 @@ public static class StructuredCollectionMutationEngine
             : throw new InvalidOperationException(
                 $"Structured collection '{owner}' item requires a stable id.");
 
-    private static void RemoveAnimationTargets(JsonObject animation, IReadOnlySet<string> targetIds)
+    private static void RemoveAnimationTargets(
+        JsonObject animation,
+        IReadOnlyList<RuntimeInputAnimationTargetDefinition> targets,
+        IReadOnlySet<string> removedIds)
     {
+        var removedTargets = targets
+            .Where(target => target.OwnerItemIds.Any(removedIds.Contains))
+            .Select(target => (target.FieldId, target.TargetId))
+            .ToHashSet();
         if (animation["tracks"] is not JsonArray tracks) return;
         foreach (var track in tracks.OfType<JsonObject>()
-                     .Where((candidate) => targetIds.Contains(
-                         candidate["targetId"]?.GetValue<string>() ?? ""))
-                     .ToList())
+                     .Where(track => removedTargets.Contains(TrackTarget(track))).ToList())
         {
             tracks.Remove(track);
         }
@@ -391,24 +397,28 @@ public static class StructuredCollectionMutationEngine
 
     private static void DuplicateAnimationTargets(
         JsonObject animation,
+        IReadOnlyList<RuntimeInputAnimationTargetDefinition> targets,
         IReadOnlyDictionary<string, string> mappings)
     {
+        var rebasedTargets = targets
+            .Where(target => target.OwnerItemIds.Any(mappings.ContainsKey))
+            .ToDictionary(target => (target.FieldId, target.TargetId), target => target.Rebase(mappings));
         if (animation["tracks"] is not JsonArray tracks) return;
-        foreach (var sourceTrack in tracks.OfType<JsonObject>()
-                     .Where((track) => mappings.ContainsKey(
-                         track["targetId"]?.GetValue<string>() ?? ""))
-                     .ToList())
+        foreach (var sourceTrack in tracks.OfType<JsonObject>().ToList())
         {
+            if (!rebasedTargets.TryGetValue(TrackTarget(sourceTrack), out var next)) continue;
             var duplicateTrack = sourceTrack.DeepClone().AsObject();
             duplicateTrack["id"] = $"track_{Guid.NewGuid():N}";
-            duplicateTrack["targetId"] = mappings[
-                sourceTrack["targetId"]?.GetValue<string>() ?? ""];
-            foreach (var keyframe in (duplicateTrack["keyframes"] as JsonArray)
-                         ?.OfType<JsonObject>() ?? [])
+            duplicateTrack["fieldId"] = next.FieldId;
+            if (next.TargetId.Length > 0) duplicateTrack["targetId"] = next.TargetId;
+            foreach (var keyframe in duplicateTrack["keyframes"]!.AsArray().OfType<JsonObject>())
             {
                 keyframe["id"] = $"keyframe_{Guid.NewGuid():N}";
             }
             tracks.Add(duplicateTrack);
         }
     }
+
+    private static (string FieldId, string TargetId) TrackTarget(JsonObject track) =>
+        (track["fieldId"]!.GetValue<string>(), track["targetId"]?.GetValue<string>() ?? "");
 }

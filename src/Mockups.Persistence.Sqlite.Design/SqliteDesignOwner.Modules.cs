@@ -10,6 +10,11 @@ internal sealed partial class SqliteDesignOwner
     public ModuleSettings GetModuleSettings(string moduleId)
     {
         using var connection = OpenConnection();
+        return GetModuleSettings(connection, moduleId);
+    }
+
+    public ModuleSettings GetModuleSettings(SqliteConnection connection, string moduleId)
+    {
         var record = _appModuleRepository.GetModule(
             connection,
             moduleId);

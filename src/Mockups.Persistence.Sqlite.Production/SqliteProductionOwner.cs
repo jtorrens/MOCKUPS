@@ -5,8 +5,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProductionOwner :
     IProjectSettingsQuery,
-    IModuleInstanceTimelineStore,
-    IModuleInstanceAnimationStore
+    IModuleInstanceTimelineStore
 {
     private readonly SqliteProjectContext _context;
     private readonly IShotRepository _shotRepository;

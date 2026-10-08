@@ -7,12 +7,15 @@ internal static class SqliteProjectSessionFactory
     internal static SqliteProjectSession Create(
         SqliteProjectContext context)
     {
-        var design = new SqliteDesignOwner(context);
-        var production = new SqliteProductionOwner(
+        SqliteProductionOwner production = null!;
+        SqliteResourceOwner resources = null!;
+        var design = new SqliteDesignOwner(context, (connection, change) =>
+            SqliteModuleVariantDocumentCommit.Commit(context, connection, change, production, resources));
+        production = new SqliteProductionOwner(
             context,
             design,
             design);
-        var resources = new SqliteResourceOwner(
+        resources = new SqliteResourceOwner(
             context,
             production.ProjectEpisodeRepository,
             production.ModuleInstanceThemeContextService);
@@ -87,6 +90,7 @@ internal static class SqliteProjectSessionFactory
                 resources);
         var animations =
             new SqliteModuleInstanceAnimationStore(
+                context,
                 production,
                 resources);
 
@@ -138,10 +142,6 @@ internal static class SqliteProjectSessionFactory
             new SqliteRuntimeInputInstancePort(
                 runtimeInputInstances),
             new SqliteModuleInstanceAnimationPort(animations),
-            new SqliteRuntimeContractUsageStore(
-                context,
-                production,
-                resources),
             new SqliteReferenceUsagePort(referenceUsages),
             new SqliteExternalMediaUsagePort(externalMediaUsages),
             new SqliteExternalMediaAssetReplacementPort(resources),

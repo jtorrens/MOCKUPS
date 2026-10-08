@@ -35,7 +35,7 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
         this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string animationJson) =>
-        engine.Production.UpdateModuleInstanceAnimationJson(
+        engine.Animations.UpdateModuleInstanceAnimationJson(
             moduleInstanceId,
             animationJson);
 

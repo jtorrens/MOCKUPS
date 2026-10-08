@@ -19,9 +19,14 @@ internal sealed partial class SqliteDesignOwner :
     private readonly IAppModuleRepository _appModuleRepository;
     private readonly IComponentClassRepository _componentClassRepository;
 
-    internal SqliteDesignOwner(SqliteProjectContext context)
+    private readonly Action<SqliteConnection, ModuleVariantDocumentChange> _commitModuleVariant;
+
+    internal SqliteDesignOwner(
+        SqliteProjectContext context,
+        Action<SqliteConnection, ModuleVariantDocumentChange> commitModuleVariant)
     {
         _context = context;
+        _commitModuleVariant = commitModuleVariant;
         _appModuleRepository = new AppModuleRepository(context);
         _componentClassRepository = new ComponentClassRepository(context);
     }

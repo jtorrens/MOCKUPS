@@ -33,24 +33,12 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                 var content = ParseRequiredObject(
                     instance.ContentJson,
                     $"Module Instance '{instance.Id}' content_json");
-                _productionOwner.ValidateModuleInstanceRuntimeContent(
+                _productionOwner.ValidateModuleInstanceDocuments(
                     connection,
                     instance.Id,
                     content,
+                    ParseRequiredObject(instance.AnimationJson, $"Module Instance '{instance.Id}' animation_json"),
                     projectActorIds);
-                RuntimeInputAnimationValueContract.Validate(
-                    ValidateProductionRuntimeFixtures(instance.Id),
-                    ParseRequiredObject(
-                        instance.AnimationJson,
-                        $"Module Instance '{instance.Id}' animation_json"),
-                    new System.Collections.Generic.Dictionary<
-                        string,
-                        System.Collections.Generic.IReadOnlySet<string>>(
-                        StringComparer.Ordinal)
-                    {
-                        ["actors"] = projectActorIds,
-                    },
-                    $"Module Instance '{instance.Id}' animation_json");
             }
             catch (InvalidOperationException exception)
             {
@@ -59,18 +47,4 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         }
     }
 
-    private JsonObject ValidateProductionRuntimeFixtures(string moduleInstanceId)
-    {
-        var runtime = ParseRequiredObject(
-            _productionOwner.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
-            $"Module Instance '{moduleInstanceId}' Runtime Preview");
-        var config = ParseRequiredObject(
-            _productionOwner.GetModuleInstanceVariantSettings(moduleInstanceId).ConfigJson,
-            $"Module Instance '{moduleInstanceId}' Variant config");
-        ProductionRuntimeFixtureIsolationContract.Validate(
-            runtime,
-            config,
-            $"Module Instance '{moduleInstanceId}'");
-        return runtime;
-    }
 }

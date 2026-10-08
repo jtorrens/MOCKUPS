@@ -309,7 +309,7 @@ keyframes. Re-entry restarts parent-owned Enter/Exit Motion and does not restart
 the entity's internal timeline. Never bind owners or tracks by index.
 
 The common owner timeline owns frame origins, completion dependencies, finite
-durations, non-sequencing fields, retime and conversion between Screen-local
+durations, non-sequencing fields and conversion between Screen-local
 authoring and the absolute Shot playhead.
 
 Modules declare `calculated` or `explicit` Screen duration. Explicit duration

@@ -7,6 +7,7 @@ using System.Linq;
 namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed class SqliteModuleInstanceAnimationStore(
+    SqliteProjectContext context,
     SqliteProductionOwner production,
     SqliteResourceOwner resources)
     : IModuleInstanceAnimationStore
@@ -15,26 +16,17 @@ internal sealed class SqliteModuleInstanceAnimationStore(
         string moduleInstanceId,
         string animationJson)
     {
-        var instance = production.GetModuleInstanceSettings(moduleInstanceId);
-        var shot = production.GetShotSettings(instance.ShotId);
-        var recordIds = new Dictionary<string, IReadOnlySet<string>>(
-            StringComparer.Ordinal)
+        lock (context.WriteGate)
         {
-            ["actors"] = resources.GetRequiredActorOptions(shot.ProjectId)
-                .Select((option) => option.Value)
-                .ToHashSet(StringComparer.Ordinal),
-        };
-        RuntimeInputAnimationValueContract.Validate(
-            JsonPath.ParseRequiredObject(
-                production.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
-                $"Module Instance '{moduleInstanceId}' Runtime Preview"),
-            ModuleInstanceAnimationDocumentContract.Parse(
-                animationJson,
-                $"Module Instance '{moduleInstanceId}' animation_json"),
-            recordIds,
-            $"Module Instance '{moduleInstanceId}' animation_json");
-        production.UpdateModuleInstanceAnimationJson(
-            moduleInstanceId,
-            animationJson);
+            using var connection = context.OpenConnection();
+            var instance = production.ModuleInstanceRepository.Get(connection, moduleInstanceId);
+            var shot = production.ShotRepository.Get(connection, instance.ShotId);
+            var actorIds = resources.ActorRepository.QueryAll(connection)
+                .Where(actor => actor.ProjectId == shot.ProjectId)
+                .Select(actor => actor.Id)
+                .ToHashSet(StringComparer.Ordinal);
+            production.UpdateModuleInstanceAnimationJson(
+                connection, moduleInstanceId, animationJson, actorIds);
+        }
     }
 }

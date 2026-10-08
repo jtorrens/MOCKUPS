@@ -250,7 +250,7 @@ boundary does not jump in frame value. General, the content boundary and the
 frame counter remain tied only to the independent Screen duration. Releasing an
 item persists its declared offset or presence field without changing Screen or
 Shot duration. The horizon itself is never persisted. An outgoing-edge edit
-never creates or changes retime.
+never scales owner clocks or authored keyframes.
 
 Selecting General or any item lane highlights the complete lane, including its
 label, and opens one Keyframes section after the final visible lane. The section
@@ -452,8 +452,10 @@ always replaces the slot's local Overrides and Runtime document with fresh
 values from the new exact Variant. Runtime values from the previous reference
 are never retained by matching shape or field name. When the owning Module
 Variant is used by Screens, the editor asks for confirmation first; acceptance
-recreates every affected Screen payload from the updated contract and removes
-orphaned animation tracks.
+reconciles affected Screens by declared stable identities, preserving unrelated
+values, items and tracks. Only removed destinations lose their animation tracks.
+The Variant and all affected Screens save atomically; validation failure keeps
+the previous authored state.
 
 Deletion confirmation presents each blocking Usage reference as a navigable
 link. Activating it closes the dialog, switches workspace when necessary,

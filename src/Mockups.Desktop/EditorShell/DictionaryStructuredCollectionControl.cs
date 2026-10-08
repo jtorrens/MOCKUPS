@@ -152,7 +152,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 collection,
                 mutation);
         }
-        async Task ApplyMutationResultAsync(
+        Task ApplyMutationResultAsync(
             StructuredCollectionMutationResult result,
             bool runtimeContractChanged)
         {
@@ -168,12 +168,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             }
             if (runtimeContractChanged)
             {
-                if (_services.ResetUsedRuntimePayloads is not null)
-                {
-                    await _services.ResetUsedRuntimePayloads();
-                }
                 RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
             }
+            return Task.CompletedTask;
         }
         async Task<bool> ConfirmRuntimeContractChangeAsync()
         {
@@ -630,11 +627,6 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 collection,
                 input,
                 itemControls);
-            if (referenceChanged
-                && _services.ResetUsedRuntimePayloads is not null)
-            {
-                await _services.ResetUsedRuntimePayloads();
-            }
             if (collection.Fields.Any((candidate) =>
                     candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)))
             {

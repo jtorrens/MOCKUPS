@@ -23,7 +23,7 @@ public static class ModuleInstanceAnimationDocumentContract
             throw new InvalidOperationException($"{owner} must be a current animation_json v2 document.");
         }
 
-        ValidateRetime(animation["retime"], owner);
+        ValidateRootProperties(animation, owner);
 
         var targets = new HashSet<string>(StringComparer.Ordinal);
         var trackIds = new HashSet<string>(StringComparer.Ordinal);
@@ -53,22 +53,14 @@ public static class ModuleInstanceAnimationDocumentContract
         }
     }
 
-    private static void ValidateRetime(JsonNode? node, string owner)
+    public static void ValidateRootProperties(JsonObject animation, string owner)
     {
-        if (node is null) return;
-        var retime = node as JsonObject
-            ?? throw new InvalidOperationException($"{owner} retime must be an object.");
-        ValidatePositiveFrameCount(retime["targetDurationFrames"], owner);
-        if (retime["targets"] is null) return;
-        var targets = retime["targets"] as JsonObject
-            ?? throw new InvalidOperationException($"{owner} retime targets must be an object.");
-        foreach (var (targetId, targetNode) in targets)
+        foreach (var (key, _) in animation)
         {
-            if (string.IsNullOrWhiteSpace(targetId) || targetNode is not JsonObject target)
+            if (key is not ("schemaVersion" or "tracks"))
             {
-                throw new InvalidOperationException($"{owner} has an invalid animation retime target.");
+                throw new InvalidOperationException($"{owner} contains undeclared property '{key}'.");
             }
-            ValidatePositiveFrameCount(target["targetDurationFrames"], owner);
         }
     }
 
@@ -119,17 +111,6 @@ public static class ModuleInstanceAnimationDocumentContract
         {
             throw new InvalidOperationException(
                 $"{trackContext} must contain at least one enabled keyframe.");
-        }
-    }
-
-    private static void ValidatePositiveFrameCount(JsonNode? node, string owner)
-    {
-        if (node is null) return;
-        if (node is not JsonValue value
-            || !value.TryGetValue<int>(out var frames)
-            || frames <= 0)
-        {
-            throw new InvalidOperationException($"{owner} has an invalid positive target duration.");
         }
     }
 

@@ -26,6 +26,11 @@ internal sealed partial class SqliteDesignOwner
         string moduleId)
     {
         using var connection = OpenConnection();
+        return GetModuleVariants(connection, moduleId);
+    }
+
+    public IReadOnlyList<ModuleVariant> GetModuleVariants(SqliteConnection connection, string moduleId)
+    {
         var module = _appModuleRepository.GetModule(
             connection,
             moduleId);
@@ -384,10 +389,7 @@ internal sealed partial class SqliteDesignOwner
                 fieldId,
                 value);
             variant["config"] = config;
-            _appModuleRepository.UpdateModuleMetadata(
-                connection,
-                moduleId,
-                metadata.ToJsonString());
+            _commitModuleVariant(connection, new(moduleId, node.Id, metadata.ToJsonString()));
         }
     }
 
@@ -486,10 +488,7 @@ internal sealed partial class SqliteDesignOwner
                 module.RecordClassId,
                 config,
                 "Edited Module Variant config");
-            _appModuleRepository.UpdateModuleMetadata(
-                connection,
-                moduleId,
-                metadata.ToJsonString());
+            _commitModuleVariant(connection, new(moduleId, node.Id, metadata.ToJsonString()));
         }
     }
 

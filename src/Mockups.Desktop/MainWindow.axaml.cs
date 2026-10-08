@@ -317,7 +317,6 @@ public partial class MainWindow : SukiWindow
             domainDialogs,
             application.Operations,
             componentClassFieldValues,
-            data.RuntimeContractUsages,
             () => _previewController.SelectedThemeId,
             _previewController.SetDesignPreviewTestValue);
         var fieldValues = new EditorFieldValueRouter(

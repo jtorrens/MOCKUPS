@@ -1,4 +1,4 @@
-import { optionalNumber, optionalString, requiredString } from "./componentResolverCommon.js";
+import { optionalString, requiredString } from "./componentResolverCommon.js";
 import { isRecord, optionalObject, optionalObjectArray } from "./previewJsonHelpers.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
@@ -12,10 +12,7 @@ type ItemTiming = {
   collection: JsonRecord;
   item: JsonRecord;
   rootStart: number;
-  naturalSpan: number;
-  effectiveSpan: number;
-  naturalSequence: number;
-  effectiveSequence: number;
+  sequence: number;
   phase: number;
   fields: Map<string, FieldTiming>;
 };
@@ -91,8 +88,6 @@ export class RuntimeOwnerTimeline {
           targetId,
           phase,
         );
-        const effectiveSpan = this.targetDuration(targetId, durations.span);
-        const effectiveSequence = scale(durations.sequence, durations.span, effectiveSpan);
         if (this.items.has(targetId)) {
           throw new Error(`runtime owner collections contain duplicate target id '${targetId}'`);
         }
@@ -100,15 +95,12 @@ export class RuntimeOwnerTimeline {
           collection,
           item,
           rootStart: start,
-          naturalSpan: durations.span,
-          effectiveSpan,
-          naturalSequence: durations.sequence,
-          effectiveSequence,
+          sequence: durations.sequence,
           phase,
           fields: new Map(),
         });
-        if (sequenceItems && !usesAbsoluteStart) cursor = start + effectiveSequence;
-        naturalEnd = Math.max(naturalEnd, start + effectiveSpan);
+        if (sequenceItems && !usesAbsoluteStart) cursor = start + durations.sequence;
+        naturalEnd = Math.max(naturalEnd, start + durations.span);
       }
       if (sequenceItems) naturalEnd = Math.max(naturalEnd, cursor);
     }
@@ -130,7 +122,7 @@ export class RuntimeOwnerTimeline {
     }
     if (naturalEnd <= 1 && storedFallback > 0) naturalEnd = storedFallback;
     this.naturalDuration = Math.max(1, naturalEnd);
-    this.durationFrames = Math.max(1, round(this.rootTargetDuration(this.naturalDuration)));
+    this.durationFrames = Math.max(1, round(this.naturalDuration));
   }
 
   screenFrame(fieldId: string, targetId: string, localFrame: number) {
@@ -142,7 +134,7 @@ export class RuntimeOwnerTimeline {
       );
     }
     const rootNatural = this.rootNaturalFrame(fieldId, targetId, localFrame);
-    return round(scale(rootNatural, this.naturalDuration, this.durationFrames));
+    return round(rootNatural);
   }
 
   ownsTarget(targetId: string) {
@@ -154,16 +146,11 @@ export class RuntimeOwnerTimeline {
       if (targetId && !this.items.has(targetId)) return screenFrame;
       return this.ownerLocalFrame(targetId, screenFrame) - this.trackOwnerFrameOrigin(targetId);
     }
-    const rootNatural = unscale(
-      screenFrame,
-      this.naturalDuration,
-      this.durationFrames,
-    );
+    const rootNatural = screenFrame;
     if (!targetId) return rootNatural - this.topField(fieldId).origin;
     const item = this.items.get(targetId);
     if (!item) return 0;
-    const ownerEffective = rootNatural - item.rootStart;
-    const ownerNatural = unscale(ownerEffective, item.naturalSpan, item.effectiveSpan);
+    const ownerNatural = rootNatural - item.rootStart;
     return ownerNatural - this.itemField(item, fieldId).origin;
   }
 
@@ -191,15 +178,14 @@ export class RuntimeOwnerTimeline {
 
   temporalOwnerFrame(targetId: string, screenFrame: number, presenceEndFrame?: number) {
     if (!targetId) {
-      const rootNatural = unscale(Math.max(0, screenFrame), this.naturalDuration, this.durationFrames);
+      const rootNatural = Math.max(0, screenFrame);
       return Math.max(0, rootNatural - this.topPhase);
     }
     const item = this.items.get(targetId);
     if (!item) return 0;
     const ownerFrameAt = (candidateFrame: number) => {
-      const rootNatural = unscale(candidateFrame, this.naturalDuration, this.durationFrames);
-      const ownerEffective = rootNatural - item.rootStart;
-      const ownerNatural = unscale(ownerEffective, item.naturalSpan, item.effectiveSpan);
+      const rootNatural = candidateFrame;
+      const ownerNatural = rootNatural - item.rootStart;
       return item.phase > 0 ? Math.max(0, ownerNatural - item.phase) : ownerNatural;
     };
     const entered = ownerFrameAt(screenFrame);
@@ -212,25 +198,21 @@ export class RuntimeOwnerTimeline {
   itemStartFrame(targetId: string) {
     const item = this.items.get(targetId);
     return item
-      ? round(scale(item.rootStart, this.naturalDuration, this.durationFrames))
+      ? round(item.rootStart)
       : 0;
   }
 
   itemPhaseEndFrame(targetId: string) {
     const item = this.items.get(targetId);
     return item
-      ? round(scale(
-          item.rootStart + scale(item.phase, item.naturalSpan, item.effectiveSpan),
-          this.naturalDuration,
-          this.durationFrames,
-        ))
+      ? round(item.rootStart + item.phase)
       : 0;
   }
 
   itemEndFrame(targetId: string) {
     const item = this.items.get(targetId);
     return item
-      ? round(scale(item.rootStart + item.effectiveSequence, this.naturalDuration, this.durationFrames))
+      ? round(item.rootStart + item.sequence)
       : 0;
   }
 
@@ -264,21 +246,19 @@ export class RuntimeOwnerTimeline {
 
   itemOwnerFrame(targetId: string, naturalOwnerFrame: number) {
     if (!targetId) {
-      return round(scale(naturalOwnerFrame, this.naturalDuration, this.durationFrames));
+      return round(naturalOwnerFrame);
     }
     const item = this.items.get(targetId);
     if (!item) return 0;
-    const ownerEffective = scale(naturalOwnerFrame, item.naturalSpan, item.effectiveSpan);
-    return round(scale(item.rootStart + ownerEffective, this.naturalDuration, this.durationFrames));
+    return round(item.rootStart + naturalOwnerFrame);
   }
 
   private ownerLocalFrame(targetId: string, screenFrame: number) {
-    const rootNatural = unscale(screenFrame, this.naturalDuration, this.durationFrames);
+    const rootNatural = screenFrame;
     if (!targetId) return rootNatural;
     const item = this.items.get(targetId);
     if (!item) return 0;
-    const ownerEffective = rootNatural - item.rootStart;
-    return unscale(ownerEffective, item.naturalSpan, item.effectiveSpan);
+    return rootNatural - item.rootStart;
   }
 
   fieldCompletionLocal(fieldId: string, targetId: string) {
@@ -302,8 +282,7 @@ export class RuntimeOwnerTimeline {
     const item = this.items.get(targetId);
     if (!item) return 0;
     const field = this.itemField(item, fieldId);
-    const ownerEffective = scale(field.completion, item.naturalSpan, item.effectiveSpan);
-    return round(scale(item.rootStart + ownerEffective, this.naturalDuration, this.durationFrames));
+    return round(item.rootStart + field.completion);
   }
 
   usesTrackCompletion(fieldId: string, targetId: string) {
@@ -319,7 +298,7 @@ export class RuntimeOwnerTimeline {
     const item = this.items.get(targetId);
     if (!item) return localFrame;
     const natural = this.itemField(item, fieldId).origin + localFrame;
-    return item.rootStart + scale(natural, item.naturalSpan, item.effectiveSpan);
+    return item.rootStart + natural;
   }
 
   private topField(fieldId: string) {
@@ -635,23 +614,6 @@ export class RuntimeOwnerTimeline {
         "runtime animation keyframe frame",
       ));
     return matchingFrames.length ? Math.max(0, Math.min(...matchingFrames)) : 0;
-  }
-
-  private targetDuration(targetId: string, natural: number) {
-    const retime = optionalObject(this.animation, "retime", "runtime owner animation");
-    const targets = optionalObject(retime, "targets", "runtime animation retime");
-    const target = optionalObject(targets, targetId, "runtime animation retime targets");
-    const duration = optionalNumber(target, "targetDurationFrames", 0);
-    return duration > 0 ? duration : natural;
-  }
-
-  private rootTargetDuration(natural: number) {
-    const duration = optionalNumber(
-      optionalObject(this.animation, "retime", "runtime owner animation"),
-      "targetDurationFrames",
-      0,
-    );
-    return duration > 0 ? duration : natural;
   }
 }
 
@@ -1074,14 +1036,6 @@ function declaredBaseDuration(contract: JsonRecord) {
       }
       return Math.max(maximum, duration);
     }, 0);
-}
-
-function scale(value: number, natural: number, effective: number) {
-  return natural <= 0 ? value : value * effective / natural;
-}
-
-function unscale(value: number, natural: number, effective: number) {
-  return effective <= 0 ? value : value * natural / effective;
 }
 
 function round(value: number) {

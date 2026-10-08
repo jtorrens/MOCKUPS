@@ -276,13 +276,13 @@ var tests = new (string Name, Action Run)[]
     ("explicit collection presence does not extend calculated duration", ExplicitCollectionPresenceDoesNotExtendCalculatedDuration),
     ("animated media actions are finite", AnimatedMediaActionsAreFinite),
     ("field completion dependencies reject cycles", FieldCompletionDependenciesRejectCycles),
-    ("target and Screen retime preserve authored keyframes", RetimePreservesAuthoredKeyframes),
+    ("owner clocks preserve authored frames without scaling", OwnerClocksPreserveAuthoredFrames),
     ("non-extending fields overlap later collection items", NonExtendingFieldsOverlapLaterItems),
     ("explicit sequence completion fields isolate independent item actions", ExplicitSequenceCompletionFieldsIsolateIndependentActions),
     ("strict validation rejects duplicate targets", StrictValidationRejectsDuplicateTargets),
     ("strict validation accepts signed frames and rejects duplicates", StrictValidationAcceptsSignedFramesAndRejectsDuplicates),
     ("strict validation rejects malformed entries and unsorted keyframes", StrictValidationRejectsMalformedEntriesAndOrder),
-    ("strict validation rejects invalid target durations", StrictValidationRejectsInvalidTargetDurations),
+    ("strict validation rejects retired animation properties", StrictValidationRejectsRetiredAnimationProperties),
     ("strict validation rejects tracks without an enabled keyframe", StrictValidationRejectsMissingEnabledKeyframe),
     ("legacy animation requires explicit migration", LegacyAnimationRequiresExplicitMigration),
     ("Backup Hub Restore initializes only an empty current owner", BackupHubRestoreInitializesOnlyEmptyCurrentOwner),
@@ -296,6 +296,8 @@ var tests = new (string Name, Action Run)[]
     ("prepared playback owners retain their combined frame cache", PreparedPlaybackOwnersRetainCombinedFrameCache),
     ("timeline frame updates suppress their own playback feedback", TimelineFrameUpdatesSuppressOwnPlaybackFeedback),
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
+    ("Module Variant structure commits preserve Screens and roll back together", ModuleVariantStructureCommitsAreAtomic),
+    ("projected Variant row changes preserve participant payloads and tracks", ProjectedVariantRowsPreserveParticipantPayloads),
     ("new collection items become the only expanded item", NewCollectionItemBecomesOnlyExpanded),
     ("active component variants expose parent class actions", ActiveVariantExposesParentClassActions),
     ("App and Module definitions expose rename-only lifecycle actions", AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions),
@@ -13152,7 +13154,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
                 database.Context,
                 database.Production,
                 database.Resources),
-            database.Production,
+            database.Animations,
             database.Production,
             database.Resources,
             operations);
@@ -13605,7 +13607,7 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
             database.Resources);
         using var operations = new EditorOperationCoordinator();
         var store = new ModuleInstanceAnimationDocumentStore(
-            database.Production,
+            database.Animations,
             database.Production,
             database.Resources,
             timelineDataSource,
@@ -13689,9 +13691,7 @@ static void FailedAnimationCommandRestoresConfirmedDocument()
     var result = coordinator.ExecuteAsync(
             (candidate) =>
             {
-                candidate.SetTargetDurationFrames(
-                    "target-a",
-                    12);
+                candidate.AddTrack("value", "target-a", JsonValue.Create(12)!, "hold");
                 return true;
             })
         .GetAwaiter()
@@ -13703,8 +13703,7 @@ static void FailedAnimationCommandRestoresConfirmedDocument()
         result.ConfirmedAnimationJson);
     True(new ModuleInstanceAnimationDocument(
             result.ConfirmedAnimationJson)
-        .TargetDurationFrames(
-            "target-a") is null);
+        .Track("value", "target-a") is null);
     True(result.Error is InvalidOperationException);
 }
 
@@ -13756,9 +13755,7 @@ static void RapidAnimationCommandsUseLatestConfirmedDocument()
     var first = coordinator.ExecuteAsync(
         (candidate) =>
         {
-            candidate.SetTargetDurationFrames(
-                "target-a",
-                12);
+            candidate.AddTrack("value", "target-a", JsonValue.Create(12)!, "hold");
             return true;
         });
     True(firstStarted.Task.Wait(
@@ -13766,9 +13763,7 @@ static void RapidAnimationCommandsUseLatestConfirmedDocument()
     var second = coordinator.ExecuteAsync(
         (candidate) =>
         {
-            candidate.SetTargetDurationFrames(
-                "target-b",
-                24);
+            candidate.AddTrack("value", "target-b", JsonValue.Create(24)!, "hold");
             return true;
         });
     Thread.Sleep(50);
@@ -13788,21 +13783,17 @@ static void RapidAnimationCommandsUseLatestConfirmedDocument()
             saved[0]);
     Equal(
         12,
-        firstDocument.TargetDurationFrames(
-            "target-a"));
-    True(firstDocument.TargetDurationFrames(
-        "target-b") is null);
+        firstDocument.Track("value", "target-a")!.Keyframes[0].Value!.GetValue<int>());
+    True(firstDocument.Track("value", "target-b") is null);
     var secondDocument =
         new ModuleInstanceAnimationDocument(
             saved[1]);
     Equal(
         12,
-        secondDocument.TargetDurationFrames(
-            "target-a"));
+        secondDocument.Track("value", "target-a")!.Keyframes[0].Value!.GetValue<int>());
     Equal(
         24,
-        secondDocument.TargetDurationFrames(
-            "target-b"));
+        secondDocument.Track("value", "target-b")!.Keyframes[0].Value!.GetValue<int>());
 }
 
 static void IndependentAnimationSurfacesRebaseOnPersistedState()
@@ -13821,7 +13812,7 @@ static void IndependentAnimationSurfacesRebaseOnPersistedState()
         using var operations = new EditorOperationCoordinator();
         ModuleInstanceAnimationDocumentStore CreateStore() =>
             new(
-                database.Production,
+                database.Animations,
                 database.Production,
                 database.Resources,
                 timeline,
@@ -13830,6 +13821,15 @@ static void IndependentAnimationSurfacesRebaseOnPersistedState()
             .First((node) =>
                 node.Kind
                 == ProjectTreeNodeKind.ModuleInstance);
+        var targets = RuntimeInputAnimationValueContract.ReadTargets(
+            Object(database.GetModuleInstanceRuntimePreviewJson(screen.Id)),
+            Object(database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson),
+            Object(database.GetModuleInstanceRuntimePreviewJson(screen.Id)))
+            .Where(target => target.Input.Animation!.Interpolations.Contains("hold"))
+            .Take(2).ToArray();
+        Equal(2, targets.Length);
+        JsonNode Value(RuntimeInputAnimationTargetDefinition target) =>
+            RuntimeInputValueKindContract.ParseValue(target.Input.ValueKind, target.BaseValue, "Test keyframe");
         var firstSurface = CreateStore();
         var secondSurface = CreateStore();
 
@@ -13837,18 +13837,16 @@ static void IndependentAnimationSurfacesRebaseOnPersistedState()
             screen.Id,
             (candidate) =>
             {
-                candidate.SetTargetDurationFrames(
-                    "audit-surface-a",
-                    12);
+                candidate.AddTrack(targets[0].FieldId, targets[0].TargetId, Value(targets[0]), "hold");
+                candidate.UpsertKeyframe(targets[0].FieldId, targets[0].TargetId, 12, Value(targets[0]), "hold");
                 return true;
             });
         var second = secondSurface.ExecuteMutationAsync(
             screen.Id,
             (candidate) =>
             {
-                candidate.SetTargetDurationFrames(
-                    "audit-surface-b",
-                    24);
+                candidate.AddTrack(targets[1].FieldId, targets[1].TargetId, Value(targets[1]), "hold");
+                candidate.UpsertKeyframe(targets[1].FieldId, targets[1].TargetId, 24, Value(targets[1]), "hold");
                 return true;
             });
         Task.WhenAll(first, second)
@@ -13858,14 +13856,8 @@ static void IndependentAnimationSurfacesRebaseOnPersistedState()
         var persisted = new ModuleInstanceAnimationDocument(
             database.GetModuleInstanceSettings(
                 screen.Id).AnimationJson);
-        Equal(
-            12,
-            persisted.TargetDurationFrames(
-                "audit-surface-a"));
-        Equal(
-            24,
-            persisted.TargetDurationFrames(
-                "audit-surface-b"));
+        True(persisted.Track(targets[0].FieldId, targets[0].TargetId)!.Keyframes.Any(key => key.Frame == 12));
+        True(persisted.Track(targets[1].FieldId, targets[1].TargetId)!.Keyframes.Any(key => key.Frame == 24));
     }
     finally
     {
@@ -19241,6 +19233,7 @@ static void ConversationMessageActorsFollowDirectionContract()
             .All((message) => message["actor"]?["id"]?.GetValue<string>() != "sample_actor"));
 
         var animationStore = new SqliteModuleInstanceAnimationStore(
+            database.Context,
             database.Production,
             database.Resources);
         var actorAnimation = new JsonObject
@@ -19327,7 +19320,7 @@ static void ConversationMessageActorsFollowDirectionContract()
                 database.Context,
                 database.Production,
                 database.Resources),
-            database.Production,
+            database.Animations,
             database.Production,
             database.Resources,
             operations);
@@ -21853,15 +21846,25 @@ static void TrackTargetsRoundTrip()
 
 static void NestedCollectionTargetsFollowIdentity()
 {
+    var field = new ComponentInputDefinition(
+        "active", "Active", "active", ComponentInputKind.Boolean, ValueKind.Boolean, "false",
+        Animation: new AnimationFieldDefinition(["hold"]));
+    var collection = new RuntimeInputCollectionDefinition("states", "States", "states", "State", [field]);
+    var content = Object("""{"states":[{"id":"state-1","active":false}]}""");
     var document = EmptyDocument();
     document.AddTrack("active", "state-1", JsonValue.Create(false)!, "hold");
     document.UpsertKeyframe("active", "state-1", 8, JsonValue.Create(true)!, "hold");
-    document.DuplicateTargets(new Dictionary<string, string> { ["state-1"] = "state-2" });
-    var duplicate = Required(document.Track("active", "state-2"));
+    var result = StructuredCollectionMutationEngine.Apply(content, Object(document.ToJson()), collection,
+        new DuplicateStructuredCollectionItem(StructuredCollectionAddress.Root("states"), "state-1"));
+    document = new ModuleInstanceAnimationDocument(result.Animation.ToJsonString());
+    var duplicateId = result.SelectedItemId!;
+    var duplicate = Required(document.Track("active", duplicateId));
     SequenceEqual([0, 8], duplicate.Keyframes.Select((keyframe) => keyframe.Frame));
-    document.RemoveTarget("state-1");
+    result = StructuredCollectionMutationEngine.Apply(result.Content, result.Animation, collection,
+        new DeleteStructuredCollectionItem(StructuredCollectionAddress.Root("states"), "state-1"));
+    document = new ModuleInstanceAnimationDocument(result.Animation.ToJsonString());
     True(document.Track("active", "state-1") is null);
-    True(document.Track("active", "state-2") is not null);
+    True(document.Track("active", duplicateId) is not null);
 }
 
 static void KeyframeUpsertUpdatesAndOrders()
@@ -22636,20 +22639,20 @@ static void FieldCompletionDependenciesRejectCycles()
         ""));
 }
 
-static void RetimePreservesAuthoredKeyframes()
+static void OwnerClocksPreserveAuthoredFrames()
 {
     var contract = SequenceContract();
     var runtime = Object("""{"messages":[{"id":"m1","delay":2,"write":10,"hold":0}]}""");
     var animation = Object("""
-        {"schemaVersion":2,"retime":{"targetDurationFrames":20,"targets":{"m1":{"targetDurationFrames":6}}},"tracks":[
+        {"schemaVersion":2,"tracks":[
           {"id":"text","fieldId":"text","targetId":"m1","keyframes":[
             {"id":"k0","frame":0,"value":"start"},
             {"id":"k2","frame":2,"value":"finish"}
           ]}
         ]}
         """);
-    Equal(20, RuntimeAnimationFrameOrigin.DurationFrames(contract, runtime, animation, 1));
-    Equal(20, RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(contract, runtime, animation, "m1", 3));
+    Equal(5, RuntimeAnimationFrameOrigin.DurationFrames(contract, runtime, animation, 1));
+    Equal(5, RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(contract, runtime, animation, "m1", 3));
     SequenceEqual(
         new[] { 0, 2 },
         animation["tracks"]![0]!["keyframes"]!.AsArray().Select((keyframe) => keyframe!["frame"]!.GetValue<int>()));
@@ -22771,10 +22774,10 @@ static void StrictValidationRejectsMalformedEntriesAndOrder()
         ModuleInstanceAnimationDocumentContract.Validate(unsorted, "Test animation_json"));
 }
 
-static void StrictValidationRejectsInvalidTargetDurations()
+static void StrictValidationRejectsRetiredAnimationProperties()
 {
     var animation = Object("""
-        {"schemaVersion":2,"retime":{"targetDurationFrames":0},"tracks":[]}
+        {"schemaVersion":2,"retime":{"targetDurationFrames":20},"tracks":[]}
         """);
     Throws<InvalidOperationException>(() =>
         ModuleInstanceAnimationDocumentContract.Validate(animation, "Test animation_json"));
@@ -23318,6 +23321,137 @@ static void TimelineFrameUpdatesSuppressOwnPlaybackFeedback()
 
     Throws<InvalidOperationException>(() => gate.Run(() => throw new InvalidOperationException("test")));
     True(!gate.IsActive);
+}
+
+static void ModuleVariantStructureCommitsAreAtomic()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-contract-commit-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = Descendants(database.LoadProjectTree()).DistinctBy(node => (node.Kind, node.Id)).ToArray();
+        var source = nodes.Single(node => node.Kind == ProjectTreeNodeKind.ModuleVariant
+            && node.Id == "module_core_chat::variant::default");
+        var variant = database.DuplicateModuleVariant(source, "Atomic contract test");
+        var screens = nodes.Where(node => node.Kind == ProjectTreeNodeKind.ModuleInstance
+            && database.GetModuleInstanceSettings(node.Id).ModuleId == "module_core_chat").Take(2).ToArray();
+        Equal(2, screens.Length);
+        foreach (var screen in screens)
+        {
+            var messages = Object(database.GetModuleInstanceSettings(screen.Id).ContentJson)["messages"]!.DeepClone();
+            database.UpdateModuleInstanceVariant(screen.Id, variant.Id);
+            True(JsonNode.DeepEquals(messages, Object(database.GetModuleInstanceSettings(screen.Id).ContentJson)["messages"]));
+        }
+
+        var config = Object(database.GetModuleVariantSettings(variant).ConfigJson);
+        var row = config["conversation"]!["headerRightIconRowSlot"]!["overrides"]!["iconRow"]!.AsObject();
+        var buttonId = row["items"]![0]!["id"]!.GetValue<string>();
+        var targetByScreen = screens.ToDictionary(screen => screen.Id, screen =>
+        {
+            var runtime = Object(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
+            var messageId = Object(database.GetModuleInstanceSettings(screen.Id).ContentJson)["messages"]![0]!["id"]!.GetValue<string>();
+            return RuntimeInputAnimationValueContract.ReadTargets(runtime, config, runtime)
+                .First(target => target.TargetId == messageId && target.Input.ValueKind == ValueKind.Boolean);
+        });
+        foreach (var screen in screens)
+        {
+            var target = targetByScreen[screen.Id];
+            var animation = new ModuleInstanceAnimationDocument(database.GetModuleInstanceSettings(screen.Id).AnimationJson);
+            animation.AddTrack(target.FieldId, target.TargetId, JsonValue.Create(false)!, "hold");
+            animation.UpsertKeyframe(target.FieldId, target.TargetId, 13, JsonValue.Create(true)!, "hold");
+            database.UpdateModuleInstanceAnimationJson(screen.Id, animation.ToJson());
+        }
+        var before = screens.ToDictionary(screen => screen.Id, screen => database.GetModuleInstanceSettings(screen.Id));
+        var definition = ComponentClassFieldCatalog.Get("component.iconRow.items").StructuredCollection!;
+        var changed = StructuredCollectionMutationEngine.Apply(row,
+            Object("""{"schemaVersion":2,"tracks":[]}"""), definition,
+            new DuplicateStructuredCollectionItem(StructuredCollectionAddress.Root("items"), buttonId));
+        row["items"] = changed.Collection.DeepClone();
+        database.Design.ReplaceModuleVariantConfig(variant, config.ToJsonString());
+        foreach (var screen in screens)
+        {
+            var after = database.GetModuleInstanceSettings(screen.Id);
+            True(JsonNode.DeepEquals(Object(before[screen.Id].ContentJson)["messages"], Object(after.ContentJson)["messages"]));
+            Equal(before[screen.Id].AnimationJson, after.AnimationJson);
+        }
+        True(Object(database.GetModuleVariantSettings(variant).ConfigJson)["conversation"]!["headerRightIconRowSlot"]!["overrides"]!["iconRow"]!["items"]!
+            .AsArray().OfType<JsonObject>().Any(item => item["id"]!.GetValue<string>() == changed.SelectedItemId));
+        // Reopening consumes exactly the same semantic validation as the commit.
+        _ = new SqliteProjectTestContext(temporary);
+
+        using var connection = database.Context.OpenConnection();
+        var badScreen = screens[1];
+        var validAnimation = database.GetModuleInstanceSettings(badScreen.Id).AnimationJson;
+        var invalid = new ModuleInstanceAnimationDocument(validAnimation);
+        var badTarget = targetByScreen[badScreen.Id];
+        invalid.UpsertKeyframe(badTarget.FieldId, badTarget.TargetId, 13, JsonValue.Create("not a boolean")!, "hold");
+        database.Production.ModuleInstanceRepository.UpdateAnimation(connection, badScreen.Id, invalid.ToJson());
+        var failedBaseline = screens.ToDictionary(screen => screen.Id, screen => database.GetModuleInstanceSettings(screen.Id));
+        var confirmedConfig = database.GetModuleVariantSettings(variant).ConfigJson;
+        var failedConfig = Object(confirmedConfig);
+        failedConfig["conversation"]!["showHeader"] = false;
+        Throws<InvalidOperationException>(() => database.Design.ReplaceModuleVariantConfig(variant, failedConfig.ToJsonString()));
+        Equal(confirmedConfig, database.GetModuleVariantSettings(variant).ConfigJson);
+        foreach (var screen in screens)
+            Equal(failedBaseline[screen.Id], database.GetModuleInstanceSettings(screen.Id));
+        database.Production.ModuleInstanceRepository.UpdateAnimation(connection, badScreen.Id, validAnimation);
+
+        // A collection mutation must not commit when a surviving track has an invalid value.
+        database.Production.ModuleInstanceRepository.UpdateAnimation(connection, badScreen.Id, invalid.ToJson());
+        var badContent = database.GetModuleInstanceSettings(badScreen.Id).ContentJson;
+        var messageId = Object(badContent)["messages"]![0]!["id"]!.GetValue<string>();
+        Throws<InvalidOperationException>(() => database.MutateModuleInstanceStructuredCollection(badScreen.Id,
+            new DuplicateStructuredCollectionItem(StructuredCollectionAddress.Root("messages"), messageId)));
+        Equal(badContent, database.GetModuleInstanceSettings(badScreen.Id).ContentJson);
+        database.Production.ModuleInstanceRepository.UpdateAnimation(connection, badScreen.Id, validAnimation);
+        _ = new SqliteProjectTestContext(temporary);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ProjectedVariantRowsPreserveParticipantPayloads()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-projected-contract-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = Descendants(database.LoadProjectTree()).DistinctBy(node => (node.Kind, node.Id)).ToArray();
+        var screen = nodes.First(node => node.Kind == ProjectTreeNodeKind.ModuleInstance
+            && database.GetModuleInstanceSettings(node.Id).ModuleId == "module_project_foqn_s2_video_call");
+        var sourceReference = database.GetModuleInstanceVariantReference(screen.Id);
+        var source = nodes.Single(node => node.Kind == ProjectTreeNodeKind.ModuleVariant && node.Id == sourceReference);
+        var variant = database.DuplicateModuleVariant(source, "Projected contract test");
+        database.UpdateModuleInstanceVariant(screen.Id, variant.Id);
+        var before = database.GetModuleInstanceSettings(screen.Id);
+        var content = Object(before.ContentJson);
+        var config = Object(database.GetModuleVariantSettings(variant).ConfigJson);
+        var videoCall = config["videoCall"]!.AsObject();
+        var rows = videoCall["headerRows"]!.AsArray();
+        True(rows.Count >= 2);
+        var firstId = rows[0]!["id"]!.GetValue<string>();
+        rows[0]!["label"] = "Updated header identity";
+        var slots = rows[0]!["rowSlot"]!["overrides"]!["contentRow"]!["slots"]!.AsArray();
+        slots[0]!["kind"] = "label";
+        database.Design.ReplaceModuleVariantConfig(variant, config.ToJsonString());
+        var after = database.GetModuleInstanceSettings(screen.Id);
+        True(JsonNode.DeepEquals(content, Object(after.ContentJson)));
+        Equal(before.AnimationJson, after.AnimationJson);
+        var runtime = Object(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
+        var preparedRow = runtime["videoCallHeaderRows"]!.AsArray().OfType<JsonObject>()
+            .Single(row => row["id"]!.GetValue<string>() == firstId);
+        Equal("Updated header identity", preparedRow["label"]!.GetValue<string>());
+        Equal("label", preparedRow["slotInputs"]![0]!["kind"]!.GetValue<string>());
+        _ = new SqliteProjectTestContext(temporary);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void CollectionItemReorderPersistsStableIds()

@@ -19,6 +19,7 @@ internal sealed partial class SqliteProductionOwner
         foreach (var instance in instances)
         {
             var contract = ResolveModuleInstanceContract(
+                connection,
                 instance.ModuleId,
                 instance.MetadataJson);
             if (RuntimeDurationContract.RequireAllowedPolicy(
