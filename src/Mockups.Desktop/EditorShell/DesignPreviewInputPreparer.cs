@@ -24,7 +24,7 @@ internal sealed record PreparedDesignPreviewInputs(
     string ScopeKey,
     string InputSignature,
     string RuntimeJson,
-    IReadOnlyDictionary<string, string> Values,
+    IReadOnlyDictionary<string, string> TransientValues,
     IReadOnlyList<ComponentPreviewActionDefinition> Actions,
     IReadOnlyDictionary<string, string> ActionSignatures,
     IReadOnlyDictionary<string, string> ActionTargetValues,
@@ -214,7 +214,11 @@ internal sealed class DesignPreviewInputPreparer(
                 if (!ActionTargetValues.TryGetValue(id, out var current) || current != previous) RetireAction(id);
             foreach (var input in inputs)
             {
-                EnsureValue(input, preview);
+                // Materialize presentation values only in this request's document.
+                // The session dictionary contains explicit edits and action state,
+                // never a snapshot of values merely shown by the editor.
+                preview[input.JsonKey] = DesignPreviewTestValues.ValueNode(
+                    input, DesignPreviewTestValues.Value(preview, input));
             }
             EnsureActionValues(preview);
 
@@ -233,7 +237,6 @@ internal sealed class DesignPreviewInputPreparer(
                     ApplyRecordReferenceInput(preview, input, value, themeMode, payload.PaletteColors);
                     continue;
                 }
-                preview[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, value);
             }
             foreach (var action in _actions.Where((action) => ComponentPreviewActions.IsApplicable(preview, action)))
             {
@@ -372,32 +375,6 @@ internal sealed class DesignPreviewInputPreparer(
         }
 
 
-        private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
-        {
-            var key = StorageKey(input);
-            if (_values.ContainsKey(key)) return;
-
-            if (!preview.TryGetPropertyValue(input.JsonKey, out var stored))
-            {
-                _values[key] = input.DefaultValue;
-                return;
-            }
-            if (stored is null)
-            {
-                if (input.AllowEmpty)
-                {
-                    _values[key] = "";
-                    return;
-                }
-                throw new InvalidOperationException(
-                    $"Design Preview Runtime value '{input.JsonKey}' cannot be null.");
-            }
-            _values[key] = RuntimeInputValueKindContract.CurrentStorageText(
-                input.ValueKind,
-                stored,
-                $"Design Preview Runtime value '{input.JsonKey}'");
-        }
-
         private void EnsureActionValues(JsonObject preview)
         {
             RetireInvalidCollectionOptionActions(preview);
@@ -477,7 +454,7 @@ internal sealed class DesignPreviewInputPreparer(
         {
             foreach (var input in inputs.Where(input => input.Kind == ComponentInputKind.RecordReference))
             {
-                if (!input.AllowEmpty && string.IsNullOrWhiteSpace(_values.GetValueOrDefault(StorageKey(input))))
+                if (!input.AllowEmpty && string.IsNullOrWhiteSpace(Value(input)))
                 {
                     throw new InvalidOperationException(
                         $"Design Preview Runtime input '{input.Id}' requires an explicit record reference.");
@@ -497,8 +474,7 @@ internal sealed class DesignPreviewInputPreparer(
 
             foreach (var input in variantInputs)
             {
-                var key = StorageKey(input);
-                var storedValue = _values.GetValueOrDefault(key, input.DefaultValue);
+                var storedValue = Value(input);
                 if (input.Kind == ComponentInputKind.ComponentVariantSlot)
                 {
                     var owner = $"Design Preview Runtime value '{input.JsonKey}'";
@@ -508,14 +484,14 @@ internal sealed class DesignPreviewInputPreparer(
                         projectId,
                         input.ComponentType,
                         slotReference);
-                    _values[key] = slot.ToJsonString();
+                    _runtimePreview[input.JsonKey] = slot;
                     continue;
                 }
 
                 var reference = storedValue;
                 if (!string.IsNullOrWhiteSpace(reference))
                 {
-                    _values[key] = _previewInputData.ValidateComponentVariantReference(
+                    _runtimePreview[input.JsonKey] = _previewInputData.ValidateComponentVariantReference(
                         projectId,
                         input.ComponentType,
                         reference);
@@ -524,7 +500,7 @@ internal sealed class DesignPreviewInputPreparer(
 
                 if (!ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType))
                 {
-                    _values[key] = ComponentVariantOptionContract.RequireFixedBoundary(
+                    _runtimePreview[input.JsonKey] = ComponentVariantOptionContract.RequireFixedBoundary(
                         ComponentVariantOptions(input, projectId),
                         $"Design Preview Runtime Input '{input.Id}'").DefaultVariantReference;
                 }
@@ -563,12 +539,15 @@ internal sealed class DesignPreviewInputPreparer(
 
         private string Value(ComponentInputDefinition input)
         {
-            return _values.TryGetValue(StorageKey(input), out var value) ? value : input.DefaultValue;
-        }
-
-        private string StorageKey(ComponentInputDefinition input)
-        {
-            return $"{_scopeKey}:{input.JsonKey}";
+            if (!_runtimePreview.TryGetPropertyValue(input.JsonKey, out var value))
+                throw new InvalidOperationException($"Prepared Runtime value '{input.JsonKey}' is missing.");
+            if (value is null)
+            {
+                if (input.AllowEmpty) return "";
+                throw new InvalidOperationException($"Prepared Runtime value '{input.JsonKey}' cannot be null.");
+            }
+            return RuntimeInputValueKindContract.CurrentStorageText(
+                input.ValueKind, value, $"Prepared Runtime value '{input.JsonKey}'");
         }
 
 
@@ -596,7 +575,6 @@ internal sealed class DesignPreviewInputPreparer(
                 input.JsonKey,
                 input.Kind,
                 input.ValueKind,
-                input.DefaultValue,
                 input.PairLabels?.First ?? "",
                 input.PairLabels?.Second ?? "",
                 input.Minimum.ToString(CultureInfo.InvariantCulture),

@@ -540,6 +540,13 @@ Undeclared keys must fail at the shared preparation boundary, including nested
 structured and embedded collections. Resolved reference, action transport and
 boundary keys are accepted only through their metadata declarations. Current
 composed collection fixtures cross that same boundary without local allowlists.
+Sparse Test Values regressions use a Module and a Component on a temporary
+database, visit two Variants, and promote defaults through the real owner store.
+Returning to an unedited Variant and refreshing the mounted owner must expose
+the new baseline while preserving unrelated edits. An explicit edit equal to
+the current default must survive a later default change until Reset. Separate
+scalar cases preserve null (when allowed), empty text, zero and false without
+creating transient authoring merely by preparing the Preview.
 Queued Test Values lifecycle regressions exercise real Conversation and Video
 Call collection actions: a field edit followed immediately by two duplications,
 then move/delete, an immutable Add prototype, a rejected mutation without publication and a subsequent

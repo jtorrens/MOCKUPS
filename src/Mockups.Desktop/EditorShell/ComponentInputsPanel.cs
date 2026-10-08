@@ -21,7 +21,6 @@ internal sealed class ComponentPreviewInputSession
     private readonly Func<ComponentPreviewActionDefinition, Task<bool>>? _preparePlaybackFrames;
     private readonly DispatcherTimer _playbackTimer;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string> _inputDefaults = new(StringComparer.Ordinal);
     private string _scopeKey = "";
     private string _projectId = "";
     private string _inputSignature = "";
@@ -29,7 +28,6 @@ internal sealed class ComponentPreviewInputSession
     private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _actionSignaturesByScope = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _actionTargetValuesByScope = new(StringComparer.Ordinal);
     private string _activeActionId = "";
-    private JsonObject _config = [];
     private JsonObject _themeTokens = [];
     private JsonObject _runtimePreview = [];
     private string _preparingActionId = "";
@@ -119,7 +117,6 @@ internal sealed class ComponentPreviewInputSession
         _actions = [];
         _activeActionId = "";
         _heldFinalActionId = "";
-        _config = [];
         _themeTokens = [];
         _runtimePreview = [];
     }
@@ -140,7 +137,6 @@ internal sealed class ComponentPreviewInputSession
         _scopeKey = prepared.ScopeKey;
         _projectId = owner.ProjectId;
         _inputSignature = prepared.InputSignature;
-        _config = ParseJsonObject(owner.ConfigJson);
         _themeTokens = ParseJsonObject(owner.ThemeTokensJson);
         _runtimePreview = ParseJsonObject(prepared.RuntimeJson);
         _actions = prepared.Actions;
@@ -154,9 +150,7 @@ internal sealed class ComponentPreviewInputSession
             _playbackSecondsByActionId.Remove(actionId);
             if (_heldFinalActionId == actionId) _heldFinalActionId = "";
         }
-        foreach (var (key, value) in prepared.Values) _values[key] = value;
-        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(_runtimePreview, _config))
-            _inputDefaults[StorageKey(input)] = input.DefaultValue;
+        foreach (var (key, value) in prepared.TransientValues) _values[key] = value;
         SyncPlaybackTimer();
     }
 
@@ -166,7 +160,6 @@ internal sealed class ComponentPreviewInputSession
         foreach (var key in _values.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
         {
             _values.Remove(key);
-            _inputDefaults.Remove(key);
         }
         foreach (var key in _actionSnapshots.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
         {
@@ -367,7 +360,6 @@ internal sealed class ComponentPreviewInputSession
         if (scope.Length == 0) throw new InvalidOperationException("Runtime edits require an exact owner.");
         var key = $"{scope}:{jsonKey}";
         _values.Remove(key);
-        _inputDefaults.Remove(key);
     }
 
     public void DiscardExternalCollectionValues(
@@ -456,7 +448,6 @@ internal sealed class ComponentPreviewInputSession
         // Defaults can also feed another Variant or an embedded dependency.
         // Invalidate prepared metadata, never those owners' temporary authoring.
         _inputSignature = "";
-        _inputDefaults.Clear();
         _refreshPreview();
     }
 
@@ -507,8 +498,6 @@ internal sealed class ComponentPreviewInputSession
     private static string ScopeKey(DesignPreviewPayload payload) =>
         ComponentPreviewTransientValues.ScopeKey(
             DesignPreviewPayloadLayers.PrimaryOwner(payload));
-
-    private string StorageKey(ComponentInputDefinition input) => $"{_scopeKey}:{input.JsonKey}";
 
     private void SyncPlaybackTimer()
     {
@@ -880,7 +869,7 @@ internal sealed class ComponentPreviewInputSession
     {
         var key = ActionStateKey(action);
         return BooleanText.ParseRequired(
-            _values.GetValueOrDefault(key, InputDefault(key, "false")),
+            _values.GetValueOrDefault(key, "false"),
             $"Design Preview action '{action.Id}' playback state");
     }
 
@@ -1081,11 +1070,6 @@ internal sealed class ComponentPreviewInputSession
         return _actions.FirstOrDefault((action) => action.Id == _activeActionId)
             ?? _actions.FirstOrDefault((action) => IsPlaying(action))
             ?? _actions.FirstOrDefault();
-    }
-
-    private string InputDefault(string key, string defaultValue)
-    {
-        return _inputDefaults.GetValueOrDefault(key, defaultValue);
     }
 
     private readonly record struct ActionValueSnapshot(bool Exists, string Value);

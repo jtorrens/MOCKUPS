@@ -600,6 +600,19 @@ boundary, including root actions. It never writes a target into the scalar draft
 dictionary. Idle preparation leaves authored values untouched, and target edits
 retire the corresponding playback overlay before preparing the effective document.
 
+Scalar Test Values are sparse session edits: merely opening or preparing an
+owner never stores its displayed values as temporary authoring. Each request
+reads unedited values from the current prepared owner document through the
+shared Test Values contract. Explicit edits remain owned by that exact session
+scope, including empty values and edits equal to the current default; equality
+does not remove ownership. Prepared scalar values stay in the Runtime document,
+while the published `TransientValues` contains only explicit edits and action
+transport state. The visual session retains no parallel scalar-default cache.
+Default values are authoring data, not Runtime structure signatures. Updating
+defaults from another Variant or while the owner stays mounted refreshes its
+unedited values without clearing unrelated edits. Reset releases those edits
+and prepares the current baseline, not the values captured on first visit.
+
 The shared Runtime document boundary validates collection item keys from their
 declarations, recursively through structured fields and embedded Runtime owners.
 Allowed keys consist of the stable item identity, declared fields and resolved

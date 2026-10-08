@@ -259,6 +259,8 @@ var tests = new (string Name, Action Run)[]
     ("Design defaults preserve later scalar and fixed collection changes", () => DesignCollectionDefaultsUseCurrentState("module_project_foqn_s2_chat_list", "items", "present", "false", ("itemWidth", "318", "421"))),
     ("Design defaults acknowledge committed state before releasing the operation gate", DesignDefaultsAcknowledgeWithinGate),
     ("Design action membership preserves unrelated session values", DesignActionMembershipPreservesSessionValues),
+    ("Design unedited values follow current defaults across Variants", DesignUneditedValuesFollowCurrentDefaults),
+    ("Design preparation preserves empty scalar values without authoring them", DesignPreparationPreservesEmptyScalars),
     ("pinned Module Variant Preview survives changing editor selection", PinnedModuleVariantPreviewSurvivesEditorSelection),
     ("pinned Production Preview keeps its active Screen while editing Design", PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign),
     ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
@@ -648,11 +650,11 @@ static void DesignPreviewSessionConsumesPreparedValues()
             return preparer.Prepare(payload, captured, payload.ThemeMode,
                 ProjectId(database.GetComponentClassSettings(id)));
         }).GetAwaiter().GetResult();
-        Equal("419", prepared.Values[$"{captured.Transient.ScopeKey}:width"]);
+        Equal("419", prepared.TransientValues[$"{captured.Transient.ScopeKey}:width"]);
         session.ApplyPrepared(prepared);
         True(session.IsPreparedFor(owner));
         session.SetOwnerOverrideValue(owner, "width", "427", isCollection: false);
-        Equal("419", prepared.Values[$"{captured.Transient.ScopeKey}:width"]);
+        Equal("419", prepared.TransientValues[$"{captured.Transient.ScopeKey}:width"]);
         Equal("427", session.CapturePreparation(owner).Transient.Values[$"{captured.Transient.ScopeKey}:width"]);
         var runtimeKey = id == "component_project_foqn_s2_list" ? "itemWidth" : "width";
         var latest = session.CaptureTransientState(owner, false);
@@ -871,7 +873,7 @@ static void DesignTargetEditsRetirePendingPlayback()
     True(!session.IsPlaybackActive, "Old prepared frames must not restart a retired origin.");
     var after = Prepare();
     Equal(edited, ComponentPreviewActionRuntimeValue.RequireTargetValue(Object(after.Payload.DesignPreviewJson), action));
-    True(!after.Values.ContainsKey(ComponentPreviewTransientValues.ActionTargetValueKey(after.ScopeKey, action.Id)));
+    True(!after.TransientValues.ContainsKey(ComponentPreviewTransientValues.ActionTargetValueKey(after.ScopeKey, action.Id)));
 
     // A different field may change without retiring this action's target.
     completion = new TaskCompletionSource<bool>();
@@ -924,7 +926,7 @@ static void DesignActionTargetsPreserveAuthoring()
         }
         var initial = Effective(first);
         var edited = initial == "true" ? "false" : "true";
-        True(!first.Values.ContainsKey(overlayKey), "Preparation must not manufacture an action target overlay.");
+        True(!first.TransientValues.ContainsKey(overlayKey), "Preparation must not manufacture an action target overlay.");
         Edit(edited);
         Equal(edited, Effective(Prepare()));
         True(session.SetActionFrame(action.Id, 1));
@@ -942,7 +944,7 @@ static void DesignActionTargetsPreserveAuthoring()
         Edit(initial);
         var afterEdit = Prepare();
         True(afterEdit.ResetActionIds.Contains(action.Id));
-        True(!afterEdit.Values.ContainsKey(overlayKey));
+        True(!afterEdit.TransientValues.ContainsKey(overlayKey));
         Equal(initial, Effective(afterEdit));
         True(session.RestoreAction(action.Id));
         Equal(initial, Effective(Prepare()));
@@ -9939,7 +9941,10 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 });
                 var playButton = Required(play);
                 var initial = controller.CaptureDesignPreviewTransientState(owner);
-                var initialValue = initial.Values[$"{initial.ScopeKey}:{targetKey}"];
+                True(!initial.Values.ContainsKey($"{initial.ScopeKey}:{targetKey}"));
+                var initialDocument = Required(typeof(ComponentPreviewInputSession).GetField("_runtimePreview",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(inputSession) as JsonObject);
+                var initialValue = Required(initialDocument[targetKey]).GetValue<bool>() ? "true" : "false";
                 var editedValue = initialValue == "true" ? "false" : "true";
                 string? targetAtPlay = null;
                 inputSession.PlaybackBusyChanged += busy =>
@@ -14307,6 +14312,116 @@ static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
     {
         File.Delete(temporary);
     }
+}
+
+static void DesignPreparationPreservesEmptyScalars()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = CanonicalProjectNodes(database);
+    var owner = nodes.Single(node => node.Id == "component_project_foqn_s2_media::variant::default");
+    var source = Required(CreatePreviewPayload(database, owner, nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme).Id));
+    var runtime = Object("""
+        {"inputs":[
+          {"id":"nullable-id","jsonKey":"nullable","label":"Optional","kind":"text","valueKind":"StringSingleLine","defaultValue":"","allowEmpty":true},
+          {"id":"text-id","jsonKey":"text","label":"Text","kind":"text","valueKind":"StringSingleLine","defaultValue":"default"},
+          {"id":"number-id","jsonKey":"number","label":"Number","kind":"number","valueKind":"Integer","defaultValue":"7"},
+          {"id":"flag-id","jsonKey":"flag","label":"Flag","kind":"boolean","valueKind":"Boolean","defaultValue":"true"}
+        ],"collections":[],"nullable":null,"text":"","number":0,"flag":false}
+        """);
+    var payload = source with { ConfigJson = "{}", RuntimeContractJson = runtime.ToJsonString(), DesignPreviewJson = runtime.ToJsonString() };
+    var session = new ComponentPreviewInputSession(() => { }, () => { });
+    var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
+    var prepared = preparer.Prepare(payload, session.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId);
+    session.ApplyPrepared(prepared);
+    var values = Object(prepared.Payload.DesignPreviewJson);
+    True(values.ContainsKey("nullable") && values["nullable"] is null);
+    Equal("", values["text"]!.GetValue<string>());
+    Equal(0, values["number"]!.GetValue<int>());
+    Equal(false, values["flag"]!.GetValue<bool>());
+    Equal(0, session.CaptureTransientState(owner, false).Values.Count);
+    session.SetOwnerOverrideValue(owner, "nullable", "", isCollection: false);
+    var edited = preparer.Prepare(payload, session.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId);
+    Equal("", edited.TransientValues[$"{edited.ScopeKey}:nullable"]);
+    True(Object(edited.Payload.DesignPreviewJson)["nullable"] is null);
+}
+
+static void DesignUneditedValuesFollowCurrentDefaults()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-live-defaults-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        using var operations = new EditorOperationCoordinator();
+        var store = new RuntimeInputOwnerDocumentStore(database.Design, database.Production, operations);
+        var nodes = CanonicalProjectNodes(database);
+        var theme = nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme);
+        foreach (var (id, key, first, second, companion, companionValue) in new[]
+        {
+            ("module_core_chat", "headerSubtitle", "New default", "Later default", "typingIndicatorText", "draft"),
+            ("component_project_foqn_s2_audio", "durationSeconds", "71", "83", "availableWidth", "319"),
+        })
+        {
+            var owner = nodes.Single(node => node.Id == id + "::variant::default");
+            var other = owner.Kind == ProjectTreeNodeKind.ModuleVariant
+                ? database.DuplicateModuleVariant(owner, "Live defaults fixture")
+                : database.DuplicateComponentVariant(owner, "Live defaults fixture");
+            var session = new ComponentPreviewInputSession(() => { }, () => { });
+            var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
+            PreparedDesignPreviewInputs Prepare(ProjectTreeNode node)
+            {
+                var payload = Required(CreatePreviewPayload(database, node, theme.Id));
+                var result = preparer.Prepare(payload, session.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId);
+                True(!result.ResetSession, "Changing default values is not a Runtime contract replacement.");
+                session.ApplyPrepared(result);
+                return result;
+            }
+            void SaveDefault(string value)
+            {
+                var source = store.Load(other);
+                var preview = Object(source.RuntimePreviewJson);
+                var input = RuntimeInputDefinitionReader.ReadInputs(preview, Object(source.ConfigJson)).Single(input => input.JsonKey == key);
+                DesignPreviewTestValues.SetValue(preview, input, value);
+                store.PromoteDefaultsAsync(source, preview, () => Task.CompletedTask).GetAwaiter().GetResult();
+            }
+            string Current(PreparedDesignPreviewInputs result, string jsonKey)
+            {
+                var preview = Object(result.Payload.DesignPreviewJson);
+                var input = RuntimeInputDefinitionReader.ReadInputs(preview, Object(result.Payload.ConfigJson)).Single(input => input.JsonKey == jsonKey);
+                return RuntimeInputValueKindContract.CurrentStorageText(input.ValueKind, Required(preview[jsonKey]), jsonKey);
+            }
+            var initial = Prepare(owner);
+            foreach (var input in RuntimeInputDefinitionReader.ReadInputs(Object(initial.RuntimeJson), Object(initial.Payload.ConfigJson)))
+                True(!session.CaptureTransientState(owner, false).Values.ContainsKey($"{initial.ScopeKey}:{input.JsonKey}"),
+                    "Merely presenting an input must not author a temporary value.");
+            session.SetOwnerOverrideValue(owner, companion, companionValue, isCollection: false);
+            Prepare(other);
+            SaveDefault(first);
+            var returned = Prepare(owner);
+            Equal(first, Current(returned, key));
+            Equal(companionValue, Current(returned, companion));
+
+            // A confirmed baseline may change while this exact owner remains mounted.
+            SaveDefault(second);
+            var updated = Prepare(owner);
+            Equal(second, Current(updated, key));
+            Equal(companionValue, Current(updated, companion));
+            True(!updated.TransientValues.ContainsKey($"{updated.ScopeKey}:{key}"));
+
+            // An explicit edit equal to the current default still belongs to the user.
+            session.SetOwnerOverrideValue(owner, key, second, isCollection: false);
+            SaveDefault(first);
+            var edited = Prepare(owner);
+            Equal(second, Current(edited, key));
+            Equal(second, session.CaptureTransientState(owner, false).Values[$"{edited.ScopeKey}:{key}"]);
+            True(session.ResetTestValues(owner));
+            var reset = Prepare(owner);
+            Equal(first, Current(reset, key));
+            True(!reset.TransientValues.ContainsKey($"{reset.ScopeKey}:{key}"));
+            True(!reset.TransientValues.ContainsKey($"{reset.ScopeKey}:{companion}"));
+        }
+    }
+    finally { File.Delete(temporary); }
 }
 
 static void DesignActionMembershipPreservesSessionValues()
