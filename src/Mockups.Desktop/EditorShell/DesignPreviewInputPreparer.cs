@@ -60,6 +60,28 @@ internal sealed class DesignPreviewInputPreparer(
         DesignPreviewPayload payload, ComponentPreviewTransientState state,
         StructuredCollectionAddress address, string itemId, IReadOnlyDictionary<string, JsonNode?> values)
     {
+        var (content, collection) = PrepareCollection(payload, state, address);
+        var updated = StructuredCollectionMutationEngine.UpdateValues(
+            content, collection, address, itemId, values,
+            componentPreview.GetComponentVariantConfig,
+            componentPreview.GetComponentVariantRuntimeContract);
+        return updated[collection.StorageJsonKey]!.DeepClone().AsArray();
+    }
+
+    public StructuredCollectionMutationResult MutateCollection(
+        DesignPreviewPayload payload, ComponentPreviewTransientState state,
+        StructuredCollectionMutation mutation)
+    {
+        var (content, collection) = PrepareCollection(payload, state, mutation.Address);
+        return StructuredCollectionMutationEngine.Apply(content,
+            new JsonObject { ["schemaVersion"] = 2, ["tracks"] = new JsonArray() },
+            collection, mutation);
+    }
+
+    private (JsonObject Content, RuntimeInputCollectionDefinition Definition) PrepareCollection(
+        DesignPreviewPayload payload, ComponentPreviewTransientState state,
+        StructuredCollectionAddress address)
+    {
         var config = ParseJsonObject(payload.ConfigJson);
         var preview = ApplyTransient(ParseJsonObject(payload.RuntimeContractJson), config, state);
         var collection = RuntimeInputDefinitionReader.ReadCollections(preview, config, includeHidden: true)
@@ -71,11 +93,7 @@ internal sealed class DesignPreviewInputPreparer(
                     .Select(item => (JsonNode?)item.DeepClone()).ToArray()),
                 collection, "Design Test Values collection"),
         };
-        var updated = StructuredCollectionMutationEngine.UpdateValues(
-            content, collection, address, itemId, values,
-            componentPreview.GetComponentVariantConfig,
-            componentPreview.GetComponentVariantRuntimeContract);
-        return updated[collection.StorageJsonKey]!.DeepClone().AsArray();
+        return (content, collection);
     }
 
     private static JsonObject ParseJsonObject(string json) =>

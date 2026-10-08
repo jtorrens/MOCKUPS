@@ -522,7 +522,12 @@ pinned elsewhere or the owner's first preparation is pending. Structured item
 edits enter the same operation queue and capture the latest temporary document
 when their turn starts. Publication of the complete updated collection finishes
 before releasing the queue, so two queued edits cannot overwrite each other
-with snapshots captured before either edit was applied.
+with snapshots captured before either edit was applied. Add, duplicate, move and
+delete use that same queued capture/preparation/publication boundary, including
+nested collections. The preparer reads the current declaration and applies the
+shared structured mutation engine; the visual collection editor never mutates
+a detached Test Values snapshot. A nested result publishes its complete root
+collection while returning the addressed child collection to its control.
 
 Design `Save as defaults` and its dirty-state indicator capture that same
 owner-keyed transient state, including structured item edits, rather than the

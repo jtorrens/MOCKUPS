@@ -512,6 +512,12 @@ identities and the edited values, leaves unrelated owners untouched, clears the
 saved owner's transient collection and recognizes the new persisted baseline.
 The editable-collection fixture also duplicates an item after editing it and
 requires the new stable item to retain the current temporary values when saved.
+Queued Test Values lifecycle regressions exercise real Conversation and Video
+Call collection actions: a field edit followed immediately by two duplications,
+then move/delete, an immutable Add prototype, a rejected mutation without publication and a subsequent
+successful operation. Neither fixture writes its temporary values to persistence.
+A declared editable nested fixture checks that child mutations and field edits
+preserve the complete root, its siblings and the original source document.
 The C# startup validator and persistence tests own the complete staged SQLite
 contract. Scaffolding read-only, collision, materialization and integration
 behavior belongs to executable tests over temporary workspaces and databases;

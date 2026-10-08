@@ -702,12 +702,12 @@ test("structured collection lifecycle has one generic source owner", () => {
   assert.deepEqual(
     mutationEngineCallers,
     [
+      "src/Mockups.Desktop/EditorShell/DesignPreviewInputPreparer.cs",
       "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
-      "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
       productionMutationOwner,
     ],
-    "structured collection mutations must use the generic engine; only transient "
-      + "editor state and the atomic Production owner may invoke it",
+    "structured collection mutations must use the generic engine; only Design preparation, "
+      + "dictionary authoring and the atomic Production owner may invoke it",
   );
 
   const identityMutationCallers = files
@@ -757,6 +757,9 @@ test("Runtime collection controls consume confirmed writes without replaying mut
     "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs"), "utf8");
   assert.doesNotMatch(editor, /ApplyCollectionTransition|ComponentVariantSelection\(|\.ForNode\(/);
   assert.match(editor, /AcceptConfirmedDocument\(await _instanceDocuments\.UpdateCollectionValuesAsync/);
+  assert.doesNotMatch(editor, /MutateTransientStructuredCollection/);
+  assert.doesNotMatch(editor, /MutateStructuredCollection\s*=\s*owner\.IsInstance/,
+    "nested Runtime collections must supply the same addressed mutation port in Design and Production");
 });
 
 test("Preview values have one effective document preparation boundary", () => {

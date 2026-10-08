@@ -66,6 +66,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action<string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
         _setPreviewCollectionItemValues;
+    private readonly Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>>
+        _mutatePreviewCollection;
     private readonly Action<string> _discardCommittedProductionRuntimeCollection;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
     private readonly Func<ProjectTreeNode, bool> _resetTestValues;
@@ -120,6 +122,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<string> discardCommittedProductionRuntimeValue,
         Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
             setPreviewCollectionItemValues,
+        Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>> mutatePreviewCollection,
         Action<string> discardCommittedProductionRuntimeCollection,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
         Func<ProjectTreeNode, bool> resetTestValues,
@@ -169,6 +172,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _discardCommittedProductionRuntimeValue =
             discardCommittedProductionRuntimeValue;
         _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
+        _mutatePreviewCollection = mutatePreviewCollection;
         _discardCommittedProductionRuntimeCollection =
             discardCommittedProductionRuntimeCollection;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
@@ -1577,16 +1581,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     owner.Node.Id,
                     mutation);
             }
-            var current = await PrepareCurrentDesignTestValuesAsync(owner.Node);
-            var result = MutateTransientStructuredCollection(
-                current.Preview,
-                collection,
-                mutation);
-            _setPreviewCollectionTestItems(
-                owner.Node,
-                collection.JsonKey,
-                result.Collection.OfType<JsonObject>().ToList());
-            return result;
+            return await _mutatePreviewCollection(owner.Node, mutation);
         }
         return new StructuredCollectionActions(
             AddFirst: async () =>
@@ -1673,32 +1668,6 @@ internal sealed class RuntimeInputsCollectionEditor
                 await Mutate(new DeleteStructuredCollectionItem(address, itemId));
                 changed();
             });
-    }
-
-    private static StructuredCollectionMutationResult
-        MutateTransientStructuredCollection(
-            JsonObject preview,
-            RuntimeInputCollectionDefinition collection,
-            StructuredCollectionMutation mutation)
-    {
-        var storageKey = collection.StorageJsonKey;
-        var content = new JsonObject
-        {
-            [storageKey] = StructuredCollectionDocumentContract.StoredClone(
-                new JsonArray(DesignPreviewTestValues.CollectionItems(preview, collection)
-                    .Select(item => (JsonNode?)item.DeepClone()).ToArray()),
-                collection,
-                $"Design Test Values collection '{collection.Id}'"),
-        };
-        return StructuredCollectionMutationEngine.Apply(
-            content,
-            new JsonObject
-            {
-                ["schemaVersion"] = 2,
-                ["tracks"] = new JsonArray(),
-            },
-            collection,
-            mutation);
     }
 
     private Control CreateTestValueCollectionContent(
@@ -2304,32 +2273,28 @@ internal sealed class RuntimeInputsCollectionEditor
                 }
                 _testValuesChanged();
             },
-            MutateStructuredCollection = owner.IsInstance
-                ? async (mutation) =>
+            MutateStructuredCollection = async (mutation) =>
+            {
+                var nestedAddress = mutation.Address with
                 {
-                    var nestedAddress = mutation.Address with
-                    {
-                        RootStorageJsonKey = address.RootStorageJsonKey,
-                        Owners =
-                        [
-                            .. address.Owners,
-                            new StructuredCollectionOwnerSegment(
-                                address.CollectionJsonKey,
-                                ItemId(item, itemIndex)),
-                            .. mutation.Address.Owners,
-                        ],
-                    };
-                    var result = await _instanceDocuments
-                        .MutateStructuredCollectionAsync(
-                            owner.Node.Id,
-                            StructuredCollectionMutationEngine.WithAddress(
-                                mutation,
-                                nestedAddress));
-                    _onChanged();
-                    _testValuesChanged();
-                    return result;
-                }
-            : null,
+                    RootStorageJsonKey = address.RootStorageJsonKey,
+                    Owners =
+                    [
+                        .. address.Owners,
+                        new StructuredCollectionOwnerSegment(
+                            address.CollectionJsonKey,
+                            ItemId(item, itemIndex)),
+                        .. mutation.Address.Owners,
+                    ],
+                };
+                var addressed = StructuredCollectionMutationEngine.WithAddress(mutation, nestedAddress);
+                var result = owner.IsInstance
+                    ? await _instanceDocuments.MutateStructuredCollectionAsync(owner.Node.Id, addressed)
+                    : await _mutatePreviewCollection(owner.Node, addressed);
+                if (owner.IsInstance) _onChanged();
+                _testValuesChanged();
+                return result;
+            },
             PrepareStructuredCollectionItemCreation = owner.IsInstance
                 ? (nestedCollection, prototype) => PrepareCollectionItemCreation(
                     owner,

@@ -260,6 +260,9 @@ var tests = new (string Name, Action Run)[]
     ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
     ("Design Preview transient snapshots remain immutable across later edits", DesignPreviewTransientSnapshotsRemainImmutable),
     ("Design Preview session accepts prepared values without persistence capabilities", DesignPreviewSessionConsumesPreparedValues),
+    ("Conversation Test Values serialize lifecycle and field edits", () => DesignCollectionMutationsSerialize("module_core_chat", "messages", "text")),
+    ("Video Call Test Values serialize lifecycle and field edits", () => DesignCollectionMutationsSerialize("module_project_foqn_s2_video_call", "participants", "connectionText")),
+    ("Design nested mutations preserve their complete root and sibling values", DesignNestedMutationsPreserveRoot),
     ("Design Preview requires explicit record references across Component fixtures", DesignPreviewRequiresExplicitRecordReferences),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
     ("List Presence replays the same initial-to-final action and restores its origin", ListPresenceReplaysAndRestoresItsOrigin),
@@ -9450,6 +9453,146 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
     {
         File.Delete(temporary);
     }
+}
+
+static void DesignNestedMutationsPreserveRoot()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = CanonicalProjectNodes(database);
+    var owner = nodes.Single(node => node.Id == "module_core_chat::variant::default");
+    var payload = Required(CreatePreviewPayload(database, owner, nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme).Id));
+    // A declared editable child fixture exercises the generic route independently
+    // of today's structure-owned (non-editable) concrete nested collections.
+    var preview = Object("""
+        {"inputs":[],"collections":[{"id":"groups","label":"Groups","jsonKey":"groups","itemLabel":"Group","fields":[
+          {"id":"children","label":"Children","jsonKey":"children","kind":"collection","valueKind":"StructuredCollection","defaultValue":"[]",
+           "structuredCollection":{"id":"children","label":"Children","jsonKey":"children","itemLabel":"Child","fields":[
+             {"id":"enabled","label":"Enabled","jsonKey":"enabled","kind":"boolean","valueKind":"Boolean","defaultValue":"false"}]}}]}],
+         "groups":[{"id":"group-a","children":[{"id":"child-a","enabled":true}]},{"id":"group-b","children":[{"id":"child-b","enabled":false}]}]}
+        """);
+    payload = payload with { ConfigJson = "{}", RuntimeContractJson = preview.ToJsonString(), DesignPreviewJson = preview.ToJsonString() };
+    var session = new ComponentPreviewInputSession(() => { }, () => { });
+    var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
+    var address = new StructuredCollectionAddress("groups", [new("groups", "group-a")], "children");
+    var duplicate = preparer.MutateCollection(payload, session.CaptureTransientState(payload),
+        new DuplicateStructuredCollectionItem(address, "child-a"));
+    Equal(2, duplicate.Collection.Count);
+    Equal(2, duplicate.Content["groups"]!.AsArray().Count);
+    Equal(preview["groups"]![1]!.ToJsonString(), duplicate.Content["groups"]![1]!.ToJsonString());
+    session.SetExternalCollectionItems(payload, "groups", duplicate.Content["groups"]!.AsArray().Select(item => item!.AsObject()).ToArray());
+    var edited = preparer.UpdateCollection(payload, session.CaptureTransientState(payload), address,
+        Required(duplicate.SelectedItemId), new Dictionary<string, JsonNode?> { ["enabled"] = JsonValue.Create(false) });
+    session.SetExternalCollectionItems(payload, "groups", edited.Select(item => item!.AsObject()).ToArray());
+    var deleted = preparer.MutateCollection(payload, session.CaptureTransientState(payload),
+        new DeleteStructuredCollectionItem(address, "child-a"));
+    Equal(1, deleted.Collection.Count);
+    Equal(false, deleted.Collection[0]!["enabled"]!.GetValue<bool>());
+    Equal(preview["groups"]![1]!.ToJsonString(), deleted.Content["groups"]![1]!.ToJsonString());
+    Equal(1, preview["groups"]![0]!["children"]!.AsArray().Count);
+}
+
+static void DesignCollectionMutationsSerialize(string moduleId, string collectionId, string fieldId)
+{
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data",
+        $".mockups-headless-design-mutations-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var database = new SqliteProjectTestContext(temporary);
+            var before = database.GetModuleSettings(moduleId).DesignPreviewJson;
+            var window = CreateTestWindow(temporary);
+            window.Show();
+            void Wait(Func<bool> ready)
+            {
+                True(SpinWait.SpinUntil(() => { Dispatcher.UIThread.RunJobs(); return ready(); },
+                    TimeSpan.FromSeconds(20)), "Queued Design mutation did not complete.");
+            }
+            try
+            {
+                var select = Required(typeof(MainWindow).GetMethod("SelectNodeById",
+                    BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(string)], null));
+                True((bool)Required(select.Invoke(window, [moduleId])));
+                var factory = Required(typeof(MainWindow).GetField("_collectionCards",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorCollectionCardFactory);
+                RuntimeInputsCollectionEditor? editor = null;
+                RuntimeInputSurface? surface = null;
+                Wait(() =>
+                {
+                    var mounted = typeof(EditorCollectionCardFactory).GetField("_mountedPreview",
+                        BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(factory);
+                    if (mounted is not ValueTuple<RuntimeInputsCollectionEditor, EditorPreviewAuthoringSurface> value) return false;
+                    editor = value.Item1;
+                    surface = typeof(RuntimeInputsCollectionEditor).GetField("_mountedSurface",
+                        BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(editor) as RuntimeInputSurface;
+                    return surface?.Owner.Node.Id == $"{moduleId}::variant::default";
+                });
+                var current = Required(surface);
+                var collection = current.Collections.Single(entry => entry.Id == collectionId);
+                var input = collection.Fields.Single(entry => entry.Id == fieldId);
+                var items = DesignPreviewTestValues.CollectionItems(current.Preview, collection);
+                var firstId = items[0]["id"]!.GetValue<string>();
+                var controller = Required(typeof(MainWindow).GetField("_previewController",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
+                var address = StructuredCollectionAddress.Root(collection.StorageJsonKey);
+                JsonArray CurrentItems() => Object(controller.CaptureDesignPreviewTransientState(current.Owner.Node)
+                    .CollectionTestValuesJson)[collection.StorageJsonKey]!.AsArray();
+                var actions = Required(typeof(RuntimeInputsCollectionEditor).GetMethod("CreateTestValueCollectionActions",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(editor,
+                    [current.Owner, collection, items, (Action<JsonObject, int>)((_, _) => { }), (Action)(() => { })])
+                    as StructuredCollectionActions);
+                // Queue all three without pumping the UI or waiting for publication.
+                var edit = controller.SetDesignPreviewCollectionItemValues(current.Owner.Node, address, firstId,
+                    new Dictionary<string, JsonNode?> { [input.JsonKey] = JsonValue.Create("Latest queued value") });
+                var first = actions.Duplicate(0);
+                var second = actions.Duplicate(0);
+                var together = Task.WhenAll(edit, first, second);
+                Wait(() => together.IsCompleted);
+                together.GetAwaiter().GetResult();
+                var updated = CurrentItems();
+                Equal(items.Count + 2, updated.Count);
+                Equal(updated.Count, updated.Select(item => item!["id"]!.GetValue<string>()).Distinct().Count());
+                var ids = items.Select(item => item["id"]!.GetValue<string>()).ToHashSet();
+                var duplicates = updated.OfType<JsonObject>().Where(item => !ids.Contains(item["id"]!.GetValue<string>())).ToArray();
+                True(duplicates.All(item => DesignPreviewTestValues.CollectionValue(item, input) == "Latest queued value"));
+                var duplicateId = duplicates[0]["id"]!.GetValue<string>();
+                var move = controller.MutateDesignPreviewCollectionAsync(current.Owner.Node,
+                    new MoveStructuredCollectionItem(address, duplicateId, firstId));
+                var delete = controller.MutateDesignPreviewCollectionAsync(current.Owner.Node,
+                    new DeleteStructuredCollectionItem(address, firstId));
+                together = Task.WhenAll(move, delete);
+                Wait(() => together.IsCompleted);
+                together.GetAwaiter().GetResult();
+                Equal(items.Count + 1, CurrentItems().Count);
+                Equal(duplicateId, CurrentItems()[0]!["id"]!.GetValue<string>());
+                var prototype = duplicates[0].DeepClone().AsObject();
+                prototype.Remove("id");
+                var add = controller.MutateDesignPreviewCollectionAsync(current.Owner.Node,
+                    new AddStructuredCollectionItem(address, prototype));
+                prototype[input.JsonKey] = "Caller changed prototype after enqueue";
+                Wait(() => add.IsCompleted);
+                var added = add.GetAwaiter().GetResult();
+                Equal("Latest queued value", DesignPreviewTestValues.CollectionValue(Required(added.Item), input));
+                Equal(items.Count + 2, CurrentItems().Count);
+                var beforeFailure = CurrentItems().ToJsonString();
+                var invalid = controller.MutateDesignPreviewCollectionAsync(current.Owner.Node,
+                    new DeleteStructuredCollectionItem(address, "missing-stable-id"));
+                Wait(() => invalid.IsCompleted);
+                Throws<InvalidOperationException>(() => invalid.GetAwaiter().GetResult());
+                Equal(beforeFailure, CurrentItems().ToJsonString());
+                var recovery = controller.MutateDesignPreviewCollectionAsync(current.Owner.Node,
+                    new DeleteStructuredCollectionItem(address, Required(added.SelectedItemId)));
+                Wait(() => recovery.IsCompleted);
+                recovery.GetAwaiter().GetResult();
+                Equal(items.Count + 1, CurrentItems().Count);
+                Equal(before, database.GetModuleSettings(moduleId).DesignPreviewJson);
+            }
+            finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally { File.Delete(temporary); }
 }
 
 static void DesignCollectionDefaultsUseCurrentState(
@@ -20894,6 +21037,8 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "Conversation Test Values serialize lifecycle and field edits",
+    "Video Call Test Values serialize lifecycle and field edits",
     "declared RecordReference Overrides use the shared action",
     "collapsed editor cards defer their snapshot until expansion",
     "flat Variant Overrides include only local inherited fields",

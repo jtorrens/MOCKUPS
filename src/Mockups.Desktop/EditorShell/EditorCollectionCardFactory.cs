@@ -51,6 +51,8 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Action<string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
         _setPreviewCollectionItemValues;
+    private readonly Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>>
+        _mutatePreviewCollection;
     private readonly Action<string> _discardCommittedProductionRuntimeCollection;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
     private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
@@ -101,6 +103,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Action<string> discardCommittedProductionRuntimeValue,
         Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
             setPreviewCollectionItemValues,
+        Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>> mutatePreviewCollection,
         Action<string> discardCommittedProductionRuntimeCollection,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
         Func<ProjectTreeNode, bool> resetPreviewTestValues,
@@ -147,6 +150,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _discardCommittedProductionRuntimeValue =
             discardCommittedProductionRuntimeValue;
         _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
+        _mutatePreviewCollection = mutatePreviewCollection;
         _discardCommittedProductionRuntimeCollection =
             discardCommittedProductionRuntimeCollection;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
@@ -390,6 +394,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _setPreviewTestValue,
             _discardCommittedProductionRuntimeValue,
             _setPreviewCollectionItemValues,
+            _mutatePreviewCollection,
             _discardCommittedProductionRuntimeCollection,
             _setPreviewCollectionTestItems,
             _resetPreviewTestValues,
