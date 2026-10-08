@@ -55,18 +55,11 @@ internal sealed partial class SqliteResourceOwner
         var familySlug = Slug(familyName);
         var relativeDirectory = Path.Combine("fonts", familySlug);
         var mediaRoot = ResolveProjectPath(projectSettings.MediaRoot);
-        var targetDirectory = Path.Combine(mediaRoot, relativeDirectory);
-        AssetCleanup.RequireAvailable(targetDirectory);
-        Directory.CreateDirectory(targetDirectory);
-
+        var files = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         var copiedFiles = new JsonArray();
         foreach (var sourceFile in sourceFiles.OrderBy(Path.GetFileName))
         {
-            var targetPath = Path.Combine(targetDirectory, Path.GetFileName(sourceFile));
-            if (!Path.GetFullPath(sourceFile).Equals(Path.GetFullPath(targetPath), StringComparison.OrdinalIgnoreCase))
-            {
-                File.Copy(sourceFile, targetPath, overwrite: true);
-            }
+            files.Add(NormalizeRelativePath(Path.Combine(relativeDirectory, Path.GetFileName(sourceFile))), File.ReadAllBytes(sourceFile));
 
             copiedFiles.Add(new JsonObject
             {
@@ -78,13 +71,10 @@ internal sealed partial class SqliteResourceOwner
         }
 
         using var connection = OpenConnection();
-        var imported = _productionFontRepository.UpsertImported(
-            connection,
-            project.Id,
-            familyName,
-            category,
-            NormalizeRelativePath(relativeDirectory),
-            copiedFiles.ToJsonString());
+        ProductionFontRecord imported = null!;
+        AssetCleanup.Write(connection, $"Import font · {familyName}", mediaRoot, files, transaction =>
+            imported = _productionFontRepository.UpsertImported(connection, project.Id, familyName, category,
+                NormalizeRelativePath(relativeDirectory), copiedFiles.ToJsonString(), transaction));
 
         return new ProjectTreeNode(
             ProjectTreeNodeKind.ProductionFont,

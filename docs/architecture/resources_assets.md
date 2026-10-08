@@ -267,6 +267,29 @@ composite when they discard alpha.
 
 ## Asset delivery
 
+### Resource imports and replacements
+
+Production Font imports and Icon Theme token imports/replacements use the same
+recoverable resource file-write owner. Originals remain in a durable undo
+image until SQLite confirms all authored metadata together. Failed writes
+restore the original files; failed/interrupted recovery remains in Settings →
+Review resource cleanup for explicit retry, never automatic startup repair.
+Filesystem swaps are per-file, not a filesystem-wide atomic transaction.
+
+Icon search requires at least one selected valid source, not a pair. When both
+providers have equivalents, each collection receives its native SVG. When a
+collection has no equivalent, import explicitly copies an available selected
+SVG using the same semantic token. The canonical copy sources are Lucide
+stroke 2 and Material rounded weight 400; a missing style uses its selected
+provider's canonical source, then the other selected provider. No valid source
+fails preparation; invalid SVG/read/download errors fail rather than being
+treated as absence. The provider script returns prepared SVGs keyed by exact
+Icon Theme id and never writes collection files. Resources validates all ids
+and SVGs, prepares exact mappings and commits them with the file transaction.
+Each mapping records actual provider, source name and whether it was copied;
+refresh preserves that provenance. Preview reads the resulting ordinary files
+and exact mappings, with no provider substitution or alternate rendering path.
+
 ### Resource deletion
 
 Production Font families, Icon Themes and Icon Theme tokens use one shared

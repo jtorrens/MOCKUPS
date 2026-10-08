@@ -150,13 +150,14 @@ internal sealed partial class SqliteResourceOwner
     public IconThemeReplaceSvgResult ReplaceIconThemeTokenSvg(string iconThemeId, string token, string svgText)
     {
         svgText = SvgReplacementService.Validate(svgText);
-        using var connection = OpenConnection();
-        var (row, file) = IconThemeTokenFile(connection, iconThemeId, token);
-        var targetDirectory = IconThemeAssetDirectory(row.AssetRoot);
-        AssetCleanup.RequireAvailable(Path.Combine(targetDirectory, file));
-        Directory.CreateDirectory(targetDirectory);
-        File.WriteAllText(Path.Combine(targetDirectory, file), svgText);
-        return new IconThemeReplaceSvgResult(token, file);
+        lock (_context.WriteGate)
+        {
+            using var connection = OpenConnection();
+            var (row, file) = IconThemeTokenFile(connection, iconThemeId, token);
+            AssetCleanup.Write(connection, $"Replace icon · {row.Name} · {token}", _systemAssets.Root,
+                new Dictionary<string, byte[]> { [ResourceAssetCleanupPlan.StoredPath(Path.Combine(row.AssetRoot, file))] = System.Text.Encoding.UTF8.GetBytes(svgText) }, _ => { });
+            return new IconThemeReplaceSvgResult(token, file);
+        }
     }
 
     public IconThemeWriteAllSvgResult WriteIconThemeTokenSvgToAllSets(
@@ -172,32 +173,15 @@ internal sealed partial class SqliteResourceOwner
             throw new InvalidOperationException("Icon token must be lower_snake_case.");
         }
 
-        using var connection = OpenConnection();
-        _ = _iconThemeRepository.Get(connection, iconThemeId);
-        var rows = _iconThemeRepository.QueryAll(connection);
-        if (rows.Count == 0)
+        lock (_context.WriteGate)
         {
-            throw new InvalidOperationException("Refresh icon sets before saving tokens.");
+            using var connection = OpenConnection();
+            _ = _iconThemeRepository.Get(connection, iconThemeId);
+            var rows = _iconThemeRepository.QueryAll(connection);
+            var prepared = rows.ToDictionary(row => row.Id, _ => new PreparedIconSource(svgText, "manual", "manual-svg-transform", true));
+            var refresh = CommitIconThemeToken(connection, rows, token, IconTokenCategory(token), description, prepared);
+            return new IconThemeWriteAllSvgResult(token, rows.Count, refresh);
         }
-
-        AssetCleanup.RequireAvailable(SystemIconThemesRoot());
-
-        foreach (var row in rows)
-        {
-            var targetDirectory = IconThemeAssetDirectory(row.AssetRoot);
-            Directory.CreateDirectory(targetDirectory);
-            File.WriteAllText(Path.Combine(targetDirectory, $"{token}.svg"), svgText);
-        }
-
-        var refresh = RefreshIconThemeSets(connection);
-        UpdateIconThemeTokenMetadata(
-            connection,
-            token,
-            IconTokenCategory(token),
-            description,
-            "manual-svg-transform",
-            "manual-svg-transform");
-        return new IconThemeWriteAllSvgResult(token, rows.Count, refresh);
     }
 
     public IconThemeReplaceSvgResult ReplaceIconThemeTokenSvgFromFile(string iconThemeId, string token, string sourcePath)

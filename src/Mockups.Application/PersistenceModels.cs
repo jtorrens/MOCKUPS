@@ -182,6 +182,7 @@ public sealed record IconThemeSearchResult(
 public sealed record IconThemeGenerateResult(
     string Token,
     int WrittenFileCount,
+    int CopiedFileCount,
     IconThemeRefreshResult RefreshResult);
 
 public sealed record ComponentClassSettings(

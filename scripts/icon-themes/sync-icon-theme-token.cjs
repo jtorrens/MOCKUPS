@@ -5,8 +5,8 @@
  *
  * This script is intentionally provider-specific and external to the app UI.
  * MOCKUPS passes the full target set context; the script only searches provider
- * packages, normalizes SVGs, writes staged files, and copies them into the
- * provided final set directories once every target is ready.
+ * packages and prepares SVG documents. Only the shared Resources owner may
+ * publish files and mappings through its recoverable write transaction.
  */
 
 const fs = require("fs");
@@ -295,8 +295,17 @@ function providerForSet(set) {
   throw new Error(`Unsupported icon provider for set ${set.name}: ${provider || "(empty)"}`);
 }
 
-function runGenerate(requestPath) {
-  const request = JSON.parse(fs.readFileSync(requestPath, "utf8"));
+function loadSource(provider, sourceName, definition) {
+  const file = provider === "lucide" ? findLucideSvg(sourceName)
+    : findMaterialSvg({ sourceName, style: definition.style, weight: definition.weight });
+  if (!file) return null;
+  const raw = fs.readFileSync(file, "utf8");
+  const svg = provider === "lucide" ? makeLucideSvgTintable(raw, definition.stroke) : makeMaterialSvgTintable(raw);
+  assertValidSvg(svg, sourceName);
+  return svg;
+}
+
+function prepareToken(request, load = loadSource) {
   const token = String(request.token ?? "").trim();
   if (!/^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*$/.test(token)) {
     throw new Error(`Invalid token: ${token}`);
@@ -304,64 +313,39 @@ function runGenerate(requestPath) {
   const sets = Array.isArray(request.sets) ? request.sets : [];
   if (!sets.length) throw new Error("Generate request has no sets.");
   const selectedSources = request.selectedSources ?? {};
-  const stagedRoot = fs.mkdtempSync(path.join(os.tmpdir(), "mockups-icon-token-"));
-  const stagedFiles = [];
-
-  for (const set of sets) {
+  const canonicalDefinitions = {
+    lucide: { stroke: 2 },
+    material: { style: "rounded", weight: MATERIAL_DEFAULT_WEIGHT },
+  };
+  const canonical = {};
+  for (const provider of ["lucide", "material"]) {
+    const sourceName = String(selectedSources[provider] ?? "").trim();
+    const svg = sourceName ? load(provider, sourceName, canonicalDefinitions[provider]) : null;
+    if (svg !== null) {
+      assertValidSvg(svg, sourceName);
+      canonical[provider] = { provider, sourceName, svg };
+    }
+  }
+  if (!Object.keys(canonical).length) throw new Error("Select at least one available valid SVG source.");
+  const ids = new Set();
+  const prepared = sets.map(set => {
+    if (typeof set.id !== "string" || !set.id || ids.has(set.id)) throw new Error("Sets require unique stable ids.");
+    ids.add(set.id);
     const provider = providerForSet(set);
     const sourceName = String(selectedSources[provider] ?? "").trim();
-    if (!sourceName) {
-      throw new Error(`Missing selected ${provider} source for set ${set.name}`);
-    }
-
-    let sourceFile = "";
-    let svg = "";
-    if (provider === "lucide") {
-      sourceFile = findLucideSvg(sourceName);
-      if (!sourceFile) throw new Error(`Lucide icon not found: ${sourceName}`);
-      svg = makeLucideSvgTintable(
-        fs.readFileSync(sourceFile, "utf8"),
-        Number(set.iconSet?.stroke ?? 2),
-      );
-    } else {
-      const style = String(set.iconSet?.style ?? "rounded");
-      const weight = Number(set.iconSet?.weight ?? MATERIAL_DEFAULT_WEIGHT);
-      sourceFile = findMaterialSvg({ sourceName, style, weight });
-      if (!sourceFile) {
-        throw new Error(`Material icon not found: ${sourceName} (${style}, ${weight})`);
-      }
-      svg = makeMaterialSvgTintable(fs.readFileSync(sourceFile, "utf8"));
-    }
-
-    assertValidSvg(svg, `${set.name}/${token}.svg`);
-    const stagedDir = path.join(stagedRoot, set.name);
-    fs.mkdirSync(stagedDir, { recursive: true });
-    const stagedPath = path.join(stagedDir, `${token}.svg`);
-    fs.writeFileSync(stagedPath, svg, "utf8");
-    stagedFiles.push({
-      provider,
-      setName: set.name,
-      sourceName,
-      sourceFile,
-      stagedPath,
-      targetPath: path.join(set.path, `${token}.svg`),
-    });
-  }
-
-  for (const file of stagedFiles) {
-    fs.mkdirSync(path.dirname(file.targetPath), { recursive: true });
-    fs.copyFileSync(file.stagedPath, file.targetPath);
-  }
-
-  return {
-    token,
-    writtenFileCount: stagedFiles.length,
-    sets: stagedFiles.map(({ setName, provider, sourceName }) => ({
-      setName,
-      provider,
-      sourceName,
-    })),
-  };
+    const definition = set.iconSet;
+    if (provider === "lucide" ? !Number.isFinite(definition.stroke) || definition.stroke <= 0
+      : !MATERIAL_STYLES.includes(definition.style) || !Number.isInteger(definition.weight) || definition.weight <= 0)
+      throw new Error(`Invalid provider definition for ${set.id}`);
+    const nativeSvg = sourceName ? load(provider, sourceName, definition) : null;
+    // Import policy, not rendering fallback: persist an explicit copy with its
+    // real provenance when this collection has no selected equivalent.
+    const source = nativeSvg !== null ? { provider, sourceName, svg: nativeSvg }
+      : canonical[provider] ?? canonical[provider === "lucide" ? "material" : "lucide"];
+    assertValidSvg(source.svg, set.id);
+    return { setId: set.id, ...source, copied: nativeSvg === null };
+  });
+  return { token, sets: prepared };
 }
 
 function main() {
@@ -370,16 +354,19 @@ function main() {
   if (args.mode === "search") {
     result = runSearch(String(args.query ?? ""));
   } else if (args.mode === "generate") {
-    result = runGenerate(String(args.request ?? ""));
+    result = prepareToken(JSON.parse(fs.readFileSync(String(args.request ?? ""), "utf8")));
   } else {
     throw new Error("Expected --mode search or --mode generate");
   }
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
+module.exports = { prepareToken };
+if (require.main === module) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }

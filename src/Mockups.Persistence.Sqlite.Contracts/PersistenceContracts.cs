@@ -467,7 +467,8 @@ internal interface IProductionFontRepository
         string familyName,
         string category,
         string sourceDirectory,
-        string filesJson);
+        string filesJson,
+        SqliteTransaction? transaction = null);
 
     void UpdateAssets(
         SqliteConnection connection,

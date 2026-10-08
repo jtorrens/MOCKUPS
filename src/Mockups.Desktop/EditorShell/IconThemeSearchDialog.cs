@@ -73,10 +73,17 @@ internal sealed class IconThemeSearchDialog
         }
 
         var searchButton = new Button { Content = "Search", MinWidth = 90 };
-        var generateButton = new Button { Content = "Generate", MinWidth = 100 };
+        var generateButton = new Button { Content = "Generate", MinWidth = 100, IsEnabled = false };
         var busyArea = EditorBusyOverlay.Create(new Border());
         CancellationTokenSource? activeOperation = null;
         var isDialogClosed = false;
+
+        void UpdateGenerateAvailability() => generateButton.IsEnabled = activeOperation is null
+            && !string.IsNullOrWhiteSpace(TokenFromText(tokenBox.Text ?? ""))
+            && (lucideList.SelectedItem is IconThemeSearchCandidate || materialList.SelectedItem is IconThemeSearchCandidate);
+        lucideList.SelectionChanged += (_, _) => UpdateGenerateAvailability();
+        materialList.SelectionChanged += (_, _) => UpdateGenerateAvailability();
+        tokenBox.TextChanged += (_, _) => UpdateGenerateAvailability();
 
         CancellationTokenSource BeginBusy(string message)
         {
@@ -105,7 +112,7 @@ internal sealed class IconThemeSearchDialog
             }
 
             searchButton.IsEnabled = true;
-            generateButton.IsEnabled = true;
+            UpdateGenerateAvailability();
             EditorBusyOverlay.SetBusy(busyArea, false);
         }
 
@@ -170,9 +177,9 @@ internal sealed class IconThemeSearchDialog
             {
                 var lucide = lucideList.SelectedItem as IconThemeSearchCandidate;
                 var material = materialList.SelectedItem as IconThemeSearchCandidate;
-                if (lucide is null || material is null)
+                if (lucide is null && material is null)
                 {
-                    SetError("Select one Lucide source and one Material source.");
+                    SetError("Select at least one source. Its SVG will be copied to collections without an equivalent.");
                     return;
                 }
 
@@ -182,8 +189,8 @@ internal sealed class IconThemeSearchDialog
                         TokenFromText(token),
                         TokenFromText(category),
                         description,
-                        lucide.SourceName,
-                        material.SourceName,
+                        lucide?.SourceName ?? "",
+                        material?.SourceName ?? "",
                         cancellation.Token),
                     cancellation.Token);
                 if (cancellation.IsCancellationRequested || isDialogClosed)
@@ -198,7 +205,7 @@ internal sealed class IconThemeSearchDialog
                     ("themes", result.RefreshResult.ThemeCount),
                     ("common", result.RefreshResult.CommonTokenCount));
                 EditorModalWindowScope.Close(dialog);
-                await _showInfo("Generate complete", $"Generated “{result.Token}” in {result.WrittenFileCount} set(s). Refreshed {result.RefreshResult.CommonTokenCount} common token(s).");
+                await _showInfo("Generate complete", $"Saved “{result.Token}” in {result.WrittenFileCount} set(s). {result.CopiedFileCount} explicit copy/copies for collections without an equivalent.");
                 _reloadAndSelect(node);
             }
             catch (OperationCanceledException)
@@ -242,7 +249,7 @@ internal sealed class IconThemeSearchDialog
             {
                 new TextBlock
                 {
-                    Text = "Search provider icons, select one Lucide and one Material source, then generate a shared MOCKUPS token.",
+                    Text = "Select one or both providers. Without an equivalent, the available SVG is copied into the other collections using the same token.",
                     TextWrapping = TextWrapping.Wrap,
                     Opacity = 0.8,
                 },
@@ -330,6 +337,8 @@ internal sealed class IconThemeSearchDialog
             row.Children.Add(text);
             return row;
         });
+        var clear = new Button { Content = "No equivalent — copy other source" };
+        clear.Click += (_, _) => listBox.SelectedIndex = -1;
         var panel = new StackPanel
         {
             Spacing = 6,
@@ -337,6 +346,7 @@ internal sealed class IconThemeSearchDialog
             {
                 new TextBlock { Text = title, FontWeight = FontWeight.SemiBold },
                 listBox,
+                clear,
             },
         };
         Grid.SetColumn(panel, column);

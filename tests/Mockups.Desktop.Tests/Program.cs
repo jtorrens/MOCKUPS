@@ -123,6 +123,8 @@ var tests = new (string Name, Action Run)[]
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFocusedContract),
     ("Resource deletion commits records before files for fonts and icon themes", ResourceDeletionCommitsBeforeFiles),
     ("Resource cleanup retries preserve changed new and referenced files", ResourceCleanupRetriesAreSafe),
+    ("Resource imports roll back files and metadata for fonts and icon collections", ResourceImportsRestoreFilesAndMetadata),
+    ("Resource write recovery is explicit durable and preserves external edits", ResourceWriteRecoveryIsSafe),
     ("Production Font file documents reject filtered or inferred values", ProductionFontFileDocumentsAreStrict),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFocusedContract),
     ("generated fill SVG previews preserve their filled geometry", GeneratedFillSvgPreviewsPreserveGeometry),
@@ -13955,6 +13957,165 @@ static void ThemeRepositoryPreservesFocusedContract()
     {
         File.Delete(temporary);
     }
+}
+
+static void ResourceImportsRestoreFilesAndMetadata()
+{
+    var root = Path.Combine(OperatingSystem.IsMacOS() ? "/private/tmp" : Path.GetTempPath(), $"mockups-resource-write-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var path = Path.Combine(root, "project.sqlite");
+        File.Copy(ParityDatabasePath(), path);
+        var database = new SqliteProjectTestContext(path);
+        var context = database.Context;
+        using var connection = context.OpenConnection();
+        var media = Path.Combine(root, "media");
+        var system = Path.Combine(root, "system");
+        var source = Path.Combine(root, "source");
+        Directory.CreateDirectory(media);
+        Directory.CreateDirectory(system);
+        Directory.CreateDirectory(source);
+        var resources = new SqliteResourceOwner(context, database.Production.ProjectEpisodeRepository,
+            database.Production.ModuleInstanceThemeContextService, new SystemAssetPathResolver(system));
+        var project = CanonicalProject(database);
+        context.Execute(connection, "UPDATE projects SET media_root=$root WHERE id=$id", ("$root", media), ("$id", project.Id));
+        var fontRoot = Descendants(new[] { project }).Single(n => n.Kind == ProjectTreeNodeKind.ProductionFontsRoot);
+        var sourceFont = Path.Combine(source, "WriteProbe-Regular.ttf");
+        File.WriteAllText(sourceFont, "first font bytes");
+        var font = resources.ImportProductionFont(fontRoot, [sourceFont]);
+        var settings = resources.GetProductionFontSettings(font.Id);
+        var targetFont = Path.Combine(media, settings.SourceDirectory, Path.GetFileName(sourceFont));
+        Equal("first font bytes", File.ReadAllText(targetFont));
+        File.WriteAllText(sourceFont, "new font bytes");
+        context.ExecuteScript(connection, "CREATE TRIGGER reject_font_import BEFORE UPDATE ON production_fonts BEGIN SELECT RAISE(ABORT,'font import failed'); END;");
+        Throws<Microsoft.Data.Sqlite.SqliteException>(() => resources.ImportProductionFont(fontRoot, [sourceFont]));
+        Equal("first font bytes", File.ReadAllText(targetFont));
+        Equal(settings, resources.GetProductionFontSettings(font.Id));
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+        context.ExecuteScript(connection, "DROP TRIGGER reject_font_import;");
+        resources.ImportProductionFont(fontRoot, [sourceFont]);
+        Equal("new font bytes", File.ReadAllText(targetFont));
+
+        const string svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path d=\"M0 0h24v24z\"/></svg>";
+        var rows = resources.IconThemeRepository.QueryAll(connection);
+        True(rows.Count > 1);
+        var initialMappings = rows.ToDictionary(r => r.Id, r => r.MappingJson);
+        context.ExecuteScript(connection, "CREATE TRIGGER reject_icon_import BEFORE UPDATE OF mapping_json ON icon_themes BEGIN SELECT RAISE(ABORT,'icon import failed'); END;");
+        Throws<Microsoft.Data.Sqlite.SqliteException>(() => resources.WriteIconThemeTokenSvgToAllSets(rows[0].Id, "import_probe", svg, "Probe"));
+        foreach (var row in rows)
+        {
+            Equal(initialMappings[row.Id], resources.GetIconThemeSettings(row.Id).MappingJson);
+            True(!File.Exists(Path.Combine(system, row.AssetRoot, "import_probe.svg")));
+        }
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+        context.ExecuteScript(connection, "DROP TRIGGER reject_icon_import;");
+        resources.WriteIconThemeTokenSvgToAllSets(rows[0].Id, "import_probe", svg, "Probe");
+        foreach (var row in rows)
+        {
+            True(resources.GetIconThemeTokens(row.Id).Any(t => t.Token == "import_probe"));
+            Equal(svg, File.ReadAllText(Path.Combine(system, row.AssetRoot, "import_probe.svg")));
+            var mapping = JsonPath.ParseRequiredObject(resources.GetIconThemeSettings(row.Id).MappingJson, "test");
+            var refreshed = IconTokenRules.BuildMapping(mapping.ToJsonString(), ["import_probe"]);
+            Equal(mapping["tokens"]!["import_probe"]!["sources"]!.ToJsonString(), refreshed["tokens"]!["import_probe"]!["sources"]!.ToJsonString());
+            Equal(true, refreshed["tokens"]!["import_probe"]!["copied"]!.GetValue<bool>());
+        }
+        var replacement = svg.Replace("h24", "h12", StringComparison.Ordinal);
+        resources.ReplaceIconThemeTokenSvg(rows[0].Id, "import_probe", replacement);
+        Equal(replacement, resources.ReadIconThemeTokenSvg(rows[0].Id, "import_probe").SvgText);
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+        var beforeFiles = rows.ToDictionary(r => r.Id, r => resources.ReadIconThemeTokenSvg(r.Id, "import_probe").SvgText);
+        var beforeMappings = rows.ToDictionary(r => r.Id, r => resources.GetIconThemeSettings(r.Id).MappingJson);
+        context.ExecuteScript(connection, $"CREATE TRIGGER reject_late_icon BEFORE UPDATE OF mapping_json ON icon_themes WHEN OLD.id='{rows[^1].Id.Replace("'", "''", StringComparison.Ordinal)}' BEGIN SELECT RAISE(ABORT,'late failure'); END;");
+        Throws<Microsoft.Data.Sqlite.SqliteException>(() => resources.WriteIconThemeTokenSvgToAllSets(rows[0].Id, "import_probe", replacement, "Changed"));
+        foreach (var row in rows)
+        {
+            Equal(beforeFiles[row.Id], resources.ReadIconThemeTokenSvg(row.Id, "import_probe").SvgText);
+            Equal(beforeMappings[row.Id], resources.GetIconThemeSettings(row.Id).MappingJson);
+        }
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+        context.ExecuteScript(connection, "DROP TRIGGER reject_late_icon;");
+        var exactMapping = JsonPath.ParseRequiredObject(beforeMappings[rows[0].Id], "test");
+        exactMapping["tokens"]!["import_probe"]!["file"] = "explicit-file.svg";
+        File.Move(Path.Combine(system, rows[0].AssetRoot, "import_probe.svg"), Path.Combine(system, rows[0].AssetRoot, "explicit-file.svg"));
+        resources.IconThemeRepository.UpdateMapping(connection, rows[0].Id, exactMapping.ToJsonString());
+        resources.WriteIconThemeTokenSvgToAllSets(rows[0].Id, "import_probe", svg, "Exact file");
+        Equal("explicit-file.svg", resources.ReadIconThemeTokenSvg(rows[0].Id, "import_probe").File);
+        Equal(svg, resources.ReadIconThemeTokenSvg(rows[0].Id, "import_probe").SvgText);
+    }
+    finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); Directory.Delete(root, true); }
+}
+
+static void ResourceWriteRecoveryIsSafe()
+{
+    var root = Path.Combine(OperatingSystem.IsMacOS() ? "/private/tmp" : Path.GetTempPath(), $"mockups-resource-undo-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var databasePath = Path.Combine(root, "project.sqlite");
+        File.Copy(ParityDatabasePath(), databasePath);
+        var context = new SqliteProjectContext(databasePath);
+        using var connection = context.OpenConnection();
+        var service = new ResourceAssetCleanupService(context, (_, _) => false);
+        var repository = new ResourceAssetCleanupRepository(context);
+        var file = Path.Combine(root, "original.svg");
+        File.WriteAllText(file, "original");
+        var files = new Dictionary<string, byte[]> { ["original.svg"] = System.Text.Encoding.UTF8.GetBytes("replacement"), ["new/sub/icon.svg"] = [1, 2, 3] };
+        var plan = ResourceAssetWritePlan.Capture("Interrupted import", root, files);
+        repository.AddWrite(connection, plan);
+        plan.Apply();
+        var beforeRead = File.ReadAllBytes(databasePath);
+        var reopened = SqlitePersistence.OpenCurrent(databasePath);
+        Equal(1, reopened.ResourceAssetCleanup.GetPending().Count);
+        SequenceEqual(beforeRead, File.ReadAllBytes(databasePath));
+        Equal("replacement", File.ReadAllText(file));
+        Throws<InvalidOperationException>(() => service.RequireAvailable(file));
+        var deletion = ResourceAssetCleanupPlan.Capture("Blocked", root, "original.svg", false);
+        Throws<InvalidOperationException>(() => service.Commit(connection, [deletion], _ => { }));
+        File.WriteAllText(file, "external edit");
+        service.Retry(plan.Id);
+        Equal("external edit", File.ReadAllText(file));
+        Equal(1, service.GetPending().Count);
+        File.WriteAllText(file, "replacement");
+        service.Retry(plan.Id);
+        Equal("original", File.ReadAllText(file));
+        True(!Directory.Exists(Path.Combine(root, "new")));
+        Equal(0, service.GetPending().Count);
+
+        // A failed SQL write whose rollback encounters an external change stays
+        // recoverable; retry never destroys that change.
+        Throws<IOException>(() => service.Write(connection, "Failed", root, files, _ =>
+        {
+            File.WriteAllText(file, "external edit");
+            throw new InvalidOperationException("injected metadata failure");
+        }));
+        Equal(1, service.GetPending().Count);
+        Equal("external edit", File.ReadAllText(file));
+        File.WriteAllText(file, "replacement");
+        service.Retry(service.GetPending().Single().Id);
+        Equal("original", File.ReadAllText(file));
+
+        // Crash after SQL confirmation: release the journal, never restore.
+        plan = ResourceAssetWritePlan.Capture("Confirmed", root, files);
+        repository.AddWrite(connection, plan);
+        plan.Apply();
+        using (var transaction = connection.BeginTransaction())
+        {
+            repository.ConfirmWrite(connection, transaction, plan.Id);
+            transaction.Commit();
+        }
+        File.WriteAllText(file, "later edit");
+        service.Retry(plan.Id);
+        Equal("later edit", File.ReadAllText(file));
+        Equal(0, service.GetPending().Count);
+        Throws<InvalidOperationException>(() => ResourceAssetWritePlan.Capture("Escape", root,
+            new Dictionary<string, byte[]> { ["../escape"] = [1] }));
+        var link = Path.Combine(root, "link");
+        Directory.CreateSymbolicLink(link, Path.Combine(root, "new"));
+        Throws<IOException>(() => ResourceAssetWritePlan.Capture("Link", root,
+            new Dictionary<string, byte[]> { ["link/a.svg"] = [1] }));
+    }
+    finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); Directory.Delete(root, true); }
 }
 
 static void ResourceDeletionCommitsBeforeFiles()

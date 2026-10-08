@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 
@@ -49,47 +48,60 @@ internal sealed partial class SqliteResourceOwner
             throw new InvalidOperationException("Icon token must be lower_snake_case.");
         }
 
-        using var connection = OpenConnection();
-        _ = _iconThemeRepository.Get(connection, iconThemeId);
-        var rows = _iconThemeRepository.QueryAll(connection).ToList();
-        if (rows.Count == 0)
+        lock (_context.WriteGate)
         {
-            throw new InvalidOperationException("Refresh icon sets before generating tokens.");
+            using var connection = OpenConnection();
+            _ = _iconThemeRepository.Get(connection, iconThemeId);
+            var rows = _iconThemeRepository.QueryAll(connection).ToList();
+            if (rows.Count == 0)
+            {
+                throw new InvalidOperationException("Refresh icon sets before generating tokens.");
+            }
+
+            var requestPath = Path.Combine(Path.GetTempPath(), $"mockups-icon-generate-{Guid.NewGuid():N}.json");
+            var request = new JsonObject
+            {
+                ["token"] = token,
+                ["category"] = string.IsNullOrWhiteSpace(category) ? IconTokenCategory(token) : category.Trim(),
+                ["description"] = description.Trim(),
+                ["selectedSources"] = new JsonObject
+                {
+                    ["lucide"] = lucideSource,
+                    ["material"] = materialSource,
+                },
+                ["sets"] = new JsonArray(rows.Select((row) => new JsonObject
+                {
+                    ["id"] = row.Id,
+                    ["name"] = Path.GetFileName(row.AssetRoot),
+                    ["iconSet"] = IconSetDefinition(row),
+                }).ToArray<JsonNode?>()),
+            };
+            JsonNode parsed;
+            try
+            {
+                File.WriteAllText(requestPath, request.ToJsonString());
+                parsed = RunIconThemeScript(["--mode", "generate", "--request", requestPath], cancellationToken);
+            }
+            finally { File.Delete(requestPath); }
+            if (parsed is not JsonObject response || JsonPath.RequiredString(response, "token", "Icon import") != token
+                || response["sets"] is not JsonArray sets || sets.Count != rows.Count)
+                throw new InvalidOperationException("Icon provider returned an invalid prepared token.");
+            var prepared = new Dictionary<string, PreparedIconSource>(StringComparer.Ordinal);
+            foreach (var node in sets)
+            {
+                if (node is not JsonObject item) throw new InvalidOperationException("Invalid prepared icon.");
+                var id = JsonPath.RequiredString(item, "setId", token);
+                var provider = JsonPath.RequiredString(item, "provider", token);
+                if (!rows.Any(row => row.Id == id) || provider is not ("lucide" or "material"))
+                    throw new InvalidOperationException("Icon provider returned an undeclared identity.");
+                prepared.Add(id, new(SvgReplacementService.Validate(JsonPath.RequiredString(item, "svg", token)),
+                    provider, JsonPath.RequiredString(item, "sourceName", token),
+                    item["copied"]?.GetValue<bool>() ?? throw new InvalidOperationException("Missing icon copy provenance.")));
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            var refresh = CommitIconThemeToken(connection, rows, token, category, description, prepared);
+            return new IconThemeGenerateResult(token, rows.Count, prepared.Values.Count(source => source.Copied), refresh);
         }
-
-        var requestPath = Path.Combine(Path.GetTempPath(), $"mockups-icon-generate-{Guid.NewGuid():N}.json");
-        var setsRoot = SystemIconThemesRoot();
-        var request = new JsonObject
-        {
-            ["token"] = token,
-            ["category"] = string.IsNullOrWhiteSpace(category) ? IconTokenCategory(token) : category.Trim(),
-            ["description"] = description.Trim(),
-            ["iconThemesRoot"] = setsRoot,
-            ["systemAssetsRoot"] = _systemAssets.Root,
-            ["selectedSources"] = new JsonObject
-            {
-                ["lucide"] = lucideSource,
-                ["material"] = materialSource,
-            },
-            ["sets"] = new JsonArray(rows.Select((row) => new JsonObject
-            {
-                ["id"] = row.Id,
-                ["name"] = Path.GetFileName(row.AssetRoot),
-                ["path"] = IconThemeAssetDirectory(row.AssetRoot),
-                ["iconSet"] = IconSetDefinition(row),
-            }).ToArray<JsonNode?>()),
-        };
-        File.WriteAllText(requestPath, request.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-
-        var parsed = RunIconThemeScript([
-            "--mode",
-            "generate",
-            "--request",
-            requestPath,
-        ], cancellationToken);
-        var refresh = RefreshIconThemeSets(connection);
-        UpdateIconThemeTokenMetadata(connection, token, category, description, lucideSource, materialSource);
-        return new IconThemeGenerateResult(token, JsonInt(parsed, ["writtenFileCount"], rows.Count), refresh);
     }
 
     private static IReadOnlyList<IconThemeSearchCandidate> IconThemeCandidates(JsonObject root, string provider)
@@ -152,7 +164,7 @@ internal sealed partial class SqliteResourceOwner
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr) ? "Icon theme script failed." : stderr.Trim());
         }
 
-        return JsonNode.Parse(stdout) ?? new JsonObject();
+        return JsonNode.Parse(stdout) ?? throw new InvalidOperationException("Icon provider returned no document.");
     }
 
     private static void KillProcessTree(Process process)
@@ -172,38 +184,42 @@ internal sealed partial class SqliteResourceOwner
         }
     }
 
-    private static int JsonInt(JsonNode node, IReadOnlyList<string> path, int fallback)
-    {
-        if (node is not JsonObject root) return fallback;
-        var value = GetJsonValue(root, path);
-        return value is JsonValue jsonValue && jsonValue.TryGetValue<int>(out var parsed) ? parsed : fallback;
-    }
+    private sealed record PreparedIconSource(string Svg, string Provider, string SourceName, bool Copied);
 
-    private void UpdateIconThemeTokenMetadata(
-        SqliteConnection connection,
-        string token,
-        string category,
-        string description,
-        string lucideSource,
-        string materialSource)
+    private IconThemeRefreshResult CommitIconThemeToken(SqliteConnection connection,
+        IReadOnlyList<IconThemeRecord> rows, string token, string category, string description,
+        IReadOnlyDictionary<string, PreparedIconSource> prepared)
     {
-        var rows = _iconThemeRepository.QueryAll(connection);
+        var files = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+        var mappings = new Dictionary<string, string>(StringComparer.Ordinal);
+        var tokenSets = new List<HashSet<string>>();
         foreach (var row in rows)
         {
+            var source = prepared[row.Id];
             var mapping = ParseJsonObject(row.MappingJson);
-            var tokens = mapping["tokens"] as JsonObject ?? [];
-            var tokenObject = tokens[token] as JsonObject ?? [];
+            var tokens = JsonPath.RequiredObject(mapping, "tokens", row.Id);
+            var file = tokens.ContainsKey(token) ? IconThemeTokenFile(connection, row.Id, token).File : $"{token}.svg";
+            var tokenObject = new JsonObject();
             tokenObject["category"] = string.IsNullOrWhiteSpace(category) ? IconTokenCategory(token) : category.Trim();
             tokenObject["description"] = description.Trim();
-            tokenObject["file"] = $"{token}.svg";
+            tokenObject["file"] = file;
             tokenObject["sources"] = new JsonObject
             {
-                ["lucide"] = lucideSource,
-                ["material"] = materialSource,
+                [source.Provider] = source.SourceName,
             };
+            tokenObject["copied"] = source.Copied;
             tokens[token] = tokenObject;
-            mapping["tokens"] = tokens;
-            _iconThemeRepository.UpdateMapping(connection, row.Id, mapping.ToJsonString());
+            mapping["categories"] = IconTokenRules.Categories(tokens);
+            mappings.Add(row.Id, mapping.ToJsonString());
+            tokenSets.Add(tokens.Select(pair => pair.Key).ToHashSet(StringComparer.Ordinal));
+            files.Add(ResourceAssetCleanupPlan.StoredPath(Path.Combine(row.AssetRoot, file)), System.Text.Encoding.UTF8.GetBytes(source.Svg));
         }
+        AssetCleanup.Write(connection, $"Import icon · {token}", _systemAssets.Root, files, transaction =>
+        {
+            foreach (var (id, mapping) in mappings) _iconThemeRepository.UpdateMapping(connection, transaction, id, mapping);
+        });
+        var common = tokenSets[0].ToHashSet(StringComparer.Ordinal);
+        foreach (var set in tokenSets.Skip(1)) common.IntersectWith(set);
+        return new IconThemeRefreshResult(rows.Count, common.Count, tokenSets.SelectMany(set => set).Distinct().Count() - common.Count);
     }
 }

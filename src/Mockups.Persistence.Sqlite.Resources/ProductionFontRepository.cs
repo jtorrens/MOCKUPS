@@ -70,12 +70,14 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
         string familyName,
         string category,
         string sourceDirectory,
-        string filesJson)
+        string filesJson,
+        SqliteTransaction? transaction = null)
     {
         ProductionFontFilesContract.ParseRequired(
             filesJson,
             $"Production Font '{familyName}' files_json");
         using var existing = connection.CreateCommand();
+        existing.Transaction = transaction;
         existing.CommandText = "SELECT id FROM production_fonts WHERE project_id = $projectId AND family_name = $familyName";
         existing.Parameters.AddWithValue("$projectId", projectId);
         existing.Parameters.AddWithValue("$familyName", familyName);
@@ -85,6 +87,7 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
         {
             _context.Execute(
                 connection,
+                transaction,
                 """
                 INSERT INTO production_fonts (id, project_id, family_name, category, source_directory, files_json, metadata_json)
                 VALUES ($id, $projectId, $familyName, $category, $sourceDirectory, $filesJson, '{}')
@@ -100,6 +103,7 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
         {
             _context.Execute(
                 connection,
+                transaction,
                 """
                 UPDATE production_fonts
                 SET category = $category,

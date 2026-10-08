@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `25` is the only current schema. Authored Production rows belong
+Schema version `26` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -577,6 +577,8 @@ array
   episodes.shot_manager_episode_path_segments_json
   production_fonts.files_json
   resource_asset_cleanup.entries_json
+  resource_asset_writes.entries_json
+  resource_asset_writes.directories_json
 ```
 
 The `projects` row stores the portable manual Production Output contract, its
@@ -778,6 +780,23 @@ cannot lose its cleanup intent. Restored live resource references block cleanup.
 Stored cleanup paths use platform-independent slash syntax. Opening a backup
 on another OS can inspect them; retry refuses foreign filesystem roots instead
 of reinterpreting them as paths on the new workstation.
+
+The same resource file service owns imports and replacements. Its focused
+repository stores `resource_asset_writes`: exact root, file paths, original
+bytes (null means absent), intended bytes, newly created directories and a
+committed flag. Both byte images are base64 in a strict entries array. The
+prepared journal commits before any destination changes; file swaps are staged
+beside each destination. Resource rows/mappings and the confirmation flag then
+commit in one SQLite transaction. Failure before confirmation restores the
+originals; ambiguous commit errors consult the persisted flag before undo.
+An interrupted write remains available for explicit recovery in the same
+Settings workflow. Uncommitted jobs restore originals, committed jobs release
+only their retained journal and never rewrite current files. Startup never
+recovers either kind. Changed files, symbolic links and unavailable roots keep
+recovery pending. Paths overlapping pending writes cannot be imported,
+replaced, discovered, renamed or deleted. Newly created directories are removed
+only when empty; partially written or externally modified staging files are
+retained for manual inspection, not silently discarded.
 
 Reference discovery, `Used` state, Usage presentation and deletion protection
 consume one typed edge set. Edges come from exact relational declarations and

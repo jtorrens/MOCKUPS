@@ -44,12 +44,11 @@ public static class IconTokenRules
             var existing = currentTokens[token] as JsonObject ?? [];
             var category = JsonPath.String(existing, ["category"]);
             if (string.IsNullOrWhiteSpace(category)) category = CategoryFromToken(token);
-            nextTokens[token] = new JsonObject
-            {
-                ["category"] = category,
-                ["file"] = $"{token}.svg",
-                ["description"] = JsonPath.String(existing, ["description"]),
-            };
+            var next = (JsonObject)existing.DeepClone();
+            next["category"] = category;
+            next["file"] = $"{token}.svg";
+            next["description"] = JsonPath.String(existing, ["description"]);
+            nextTokens[token] = next;
         }
 
         return new JsonObject

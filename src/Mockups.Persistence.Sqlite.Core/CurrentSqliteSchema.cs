@@ -233,7 +233,17 @@ internal static class CurrentSqliteSchema
           last_error TEXT NOT NULL
         );
 
-        PRAGMA user_version = 25;
+        CREATE TABLE IF NOT EXISTS resource_asset_writes (
+          id TEXT PRIMARY KEY,
+          label TEXT NOT NULL,
+          root_path TEXT NOT NULL,
+          entries_json TEXT NOT NULL,
+          directories_json TEXT NOT NULL,
+          committed INTEGER NOT NULL CHECK (committed IN (0, 1)),
+          last_error TEXT NOT NULL
+        );
+
+        PRAGMA user_version = 26;
         """;
 
 }
