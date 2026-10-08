@@ -27,7 +27,16 @@ internal sealed class ComponentPreviewInputSession
     private IReadOnlyList<ComponentPreviewActionDefinition> _actions = [];
     private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _actionSignaturesByScope = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _actionTargetValuesByScope = new(StringComparer.Ordinal);
-    private string _activeActionId = "";
+    private readonly Dictionary<string, string> _activeActionIdsByScope = new(StringComparer.Ordinal);
+    private string ActiveActionId
+    {
+        get => _activeActionIdsByScope.GetValueOrDefault(_scopeKey, "");
+        set
+        {
+            if (value.Length == 0) _activeActionIdsByScope.Remove(_scopeKey);
+            else _activeActionIdsByScope[_scopeKey] = value;
+        }
+    }
     private JsonObject _themeTokens = [];
     private JsonObject _runtimePreview = [];
     private string _preparingActionId = "";
@@ -35,13 +44,22 @@ internal sealed class ComponentPreviewInputSession
     private long _playbackStartedTimestamp;
     private double _playbackStartedAtSeconds;
     private int _lastPlaybackRefreshFrame = -1;
-    private readonly Dictionary<string, double> _playbackSecondsByActionId = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, double> _playbackSecondsByActionKey = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Dictionary<string, ActionValueSnapshot>> _actionSnapshots = new(StringComparer.Ordinal);
     private readonly Dictionary<string, JsonObject> _transientCollectionTestValuesByScope = new(StringComparer.Ordinal);
     private bool _presentEveryPlaybackFrame;
     private bool _awaitingPlaybackPresentation;
     private bool _stopAfterPlaybackPresentation;
-    private string _heldFinalActionId = "";
+    private readonly Dictionary<string, string> _heldFinalActionIdsByScope = new(StringComparer.Ordinal);
+    private string HeldFinalActionId
+    {
+        get => _heldFinalActionIdsByScope.GetValueOrDefault(_scopeKey, "");
+        set
+        {
+            if (value.Length == 0) _heldFinalActionIdsByScope.Remove(_scopeKey);
+            else _heldFinalActionIdsByScope[_scopeKey] = value;
+        }
+    }
 
     public bool PresentEveryPlaybackFrame
     {
@@ -115,23 +133,20 @@ internal sealed class ComponentPreviewInputSession
         _projectId = "";
         _inputSignature = "";
         _actions = [];
-        _activeActionId = "";
-        _heldFinalActionId = "";
         _themeTokens = [];
         _runtimePreview = [];
     }
 
     public void ApplyPrepared(PreparedDesignPreviewInputs prepared)
     {
+        if (_scopeKey != prepared.ScopeKey || prepared.ResetSession)
+            StopPlayback();
         if (prepared.ResetSession)
-        {
-            StopPlayback();
             ClearTransientContractValues(prepared.ScopeKey);
-        }
-        if (_scopeKey == prepared.ScopeKey && prepared.ResetActionIds.Contains(_activeActionId))
+        if (_scopeKey == prepared.ScopeKey && prepared.ResetActionIds.Contains(ActiveActionId))
         {
             StopPlayback();
-            _activeActionId = "";
+            ActiveActionId = "";
         }
         var owner = DesignPreviewPayloadLayers.PrimaryOwner(prepared.Payload);
         _scopeKey = prepared.ScopeKey;
@@ -147,8 +162,9 @@ internal sealed class ComponentPreviewInputSession
         {
             foreach (var key in ComponentPreviewTransientValues.ActionKeys(_scopeKey, actionId)) _values.Remove(key);
             _actionSnapshots.Remove(ActionSnapshotKey(actionId));
-            _playbackSecondsByActionId.Remove(actionId);
-            if (_heldFinalActionId == actionId) _heldFinalActionId = "";
+            _playbackSecondsByActionKey.Remove(ComponentPreviewTransientValues.ActionTimeKey(_scopeKey, actionId));
+            if (ActiveActionId == actionId) ActiveActionId = "";
+            if (HeldFinalActionId == actionId) HeldFinalActionId = "";
         }
         foreach (var (key, value) in prepared.TransientValues) _values[key] = value;
         SyncPlaybackTimer();
@@ -156,6 +172,7 @@ internal sealed class ComponentPreviewInputSession
 
     private void ClearTransientContractValues(string scopeKey)
     {
+        ClearOwnerTransport(scopeKey);
         var prefix = $"{scopeKey}:";
         foreach (var key in _values.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
         {
@@ -170,7 +187,7 @@ internal sealed class ComponentPreviewInputSession
     public bool IsPlaybackActive => SupportsPlayback()
         && ActiveAction() is { } activeAction
         && IsPlaying(activeAction)
-        && _heldFinalActionId != activeAction.Id;
+        && HeldFinalActionId != activeAction.Id;
 
     public bool IsPreparingPlayback => !string.IsNullOrWhiteSpace(_preparingActionId);
 
@@ -209,7 +226,7 @@ internal sealed class ComponentPreviewInputSession
     {
         return _actions.FirstOrDefault((candidate) => candidate.Id == actionId) is { } action
             && IsPlaying(action)
-            && _heldFinalActionId != action.Id;
+            && HeldFinalActionId != action.Id;
     }
 
     public bool CanStepActionFrame(string actionId, int delta)
@@ -271,8 +288,8 @@ internal sealed class ComponentPreviewInputSession
         {
             ApplyActionTarget(action, targetValue);
         }
-        _activeActionId = action.Id;
-        _playbackSecondsByActionId.Remove(action.Id);
+        ActiveActionId = action.Id;
+        _playbackSecondsByActionKey.Remove(ActionTimeKey(action));
         _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(
             action,
             targetFrame / (double)Math.Max(1, _playbackFrameRate));
@@ -282,7 +299,7 @@ internal sealed class ComponentPreviewInputSession
             _values[key] = "true";
         }
         SyncDeactivatedPlaybackInputs(action);
-        _heldFinalActionId = action.Id;
+        HeldFinalActionId = action.Id;
         _refreshPreview();
         return true;
     }
@@ -299,7 +316,7 @@ internal sealed class ComponentPreviewInputSession
         var snapshot = _actionSnapshots[ActionSnapshotKey(actionId)];
         StopPlayback(clearPlayingState: true);
         ApplyActionSnapshot(snapshot);
-        _playbackSecondsByActionId.Remove(action.Id);
+        _playbackSecondsByActionKey.Remove(ActionTimeKey(action));
         _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(action, 0);
         _values[ActionStateKey(action)] = "true";
         foreach (var key in ActivatedPlaybackInputKeys(action))
@@ -307,8 +324,8 @@ internal sealed class ComponentPreviewInputSession
             _values[key] = "true";
         }
         SyncDeactivatedPlaybackInputs(action);
-        _activeActionId = action.Id;
-        _heldFinalActionId = action.Id;
+        ActiveActionId = action.Id;
+        HeldFinalActionId = action.Id;
         _refreshPreview();
         return true;
     }
@@ -462,23 +479,33 @@ internal sealed class ComponentPreviewInputSession
     {
         if (string.IsNullOrWhiteSpace(scopeKey)) return false;
 
-        StopPlayback();
+        if (scopeKey == _scopeKey) StopPlayback();
         var prefix = $"{scopeKey}:";
-        var removed = false;
+        var removed = ClearOwnerTransport(scopeKey);
         foreach (var key in _values.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
         {
             removed |= _values.Remove(key);
         }
         removed |= _transientCollectionTestValuesByScope.Remove(scopeKey);
-        _activeActionId = "";
-        _heldFinalActionId = "";
-        _playbackSecondsByActionId.Clear();
         foreach (var key in _actionSnapshots.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
         {
             _actionSnapshots.Remove(key);
             removed = true;
         }
-        if (removed) _refreshPreview();
+        // Refresh cancels the controller's current frame preparation. A Reset
+        // for another owner changes only its stored session state.
+        if (removed && scopeKey == _scopeKey) _refreshPreview();
+        return removed;
+    }
+
+    private bool ClearOwnerTransport(string scopeKey)
+    {
+        var removed = _activeActionIdsByScope.Remove(scopeKey);
+        removed |= _heldFinalActionIdsByScope.Remove(scopeKey);
+        var prefix = $"{scopeKey}:";
+        foreach (var key in _playbackSecondsByActionKey.Keys
+                     .Where(key => key.StartsWith(prefix, StringComparison.Ordinal)).ToArray())
+            removed |= _playbackSecondsByActionKey.Remove(key);
         return removed;
     }
 
@@ -510,7 +537,7 @@ internal sealed class ComponentPreviewInputSession
         var activeAction = ActiveAction();
         if (activeAction is not null && IsPlaying(activeAction))
         {
-            if (_heldFinalActionId == activeAction.Id)
+            if (HeldFinalActionId == activeAction.Id)
             {
                 if (_playbackTimer.IsEnabled) _playbackTimer.Stop();
                 return;
@@ -567,7 +594,7 @@ internal sealed class ComponentPreviewInputSession
 
     private void TogglePlayback(ComponentPreviewActionDefinition action)
     {
-        var startsPlayback = !IsPlaying(action) || _heldFinalActionId == action.Id;
+        var startsPlayback = !IsPlaying(action) || HeldFinalActionId == action.Id;
         PreviewDebugLog.Write(
             "preview.playback.toggle",
             ("scope", _scopeKey),
@@ -596,7 +623,7 @@ internal sealed class ComponentPreviewInputSession
         var snapshotKey = ActionSnapshotKey(action.Id);
         var origin = _actionSnapshots[snapshotKey];
         PlaybackBusyChanged?.Invoke(true);
-        _activeActionId = action.Id;
+        ActiveActionId = action.Id;
         var prepared = true;
         if (_preparePlaybackFrames is not null)
         {
@@ -660,7 +687,7 @@ internal sealed class ComponentPreviewInputSession
         }
 
         SetPlaybackState(action, true);
-        _heldFinalActionId = "";
+        HeldFinalActionId = "";
         SyncDeactivatedPlaybackInputs(action);
         _values[ActionTimeKey(action)] = "0";
         _playbackStartedAtSeconds = 0;
@@ -734,7 +761,7 @@ internal sealed class ComponentPreviewInputSession
         _stopAfterPlaybackPresentation = false;
         if (activeAction is not null && !IsPlaying(activeAction))
         {
-            _playbackSecondsByActionId.Remove(activeAction.Id);
+            _playbackSecondsByActionKey.Remove(ActionTimeKey(activeAction));
         }
     }
 
@@ -760,7 +787,7 @@ internal sealed class ComponentPreviewInputSession
         var current = _presentEveryPlaybackFrame
             ? NextPlaybackFrameSeconds(activeAction)
             : NormalizedPlaybackSeconds(activeAction, _playbackStartedAtSeconds + elapsed);
-        _playbackSecondsByActionId[activeAction.Id] = current;
+        _playbackSecondsByActionKey[ActionTimeKey(activeAction)] = current;
         _values[ActionTimeKey(activeAction)] = PlaybackTimeStorageValue(activeAction, current);
         var currentFrame = CurrentPlaybackFrame(activeAction);
         var completesPlayback = current >= DurationSeconds(activeAction);
@@ -811,13 +838,13 @@ internal sealed class ComponentPreviewInputSession
     {
         if (action.CompletionBehavior == ComponentPreviewActionCompletionBehavior.HoldFinal)
         {
-            _heldFinalActionId = action.Id;
+            HeldFinalActionId = action.Id;
             StopPlayback();
             PlaybackBusyChanged?.Invoke(false);
             return;
         }
 
-        _heldFinalActionId = "";
+        HeldFinalActionId = "";
         _values[ActionStateKey(action)] = "false";
         StopPlayback();
         PlaybackBusyChanged?.Invoke(false);
@@ -825,7 +852,7 @@ internal sealed class ComponentPreviewInputSession
 
     private double CurrentPlaybackSeconds(ComponentPreviewActionDefinition action)
     {
-        if (IsPlaying(action) && _playbackSecondsByActionId.TryGetValue(action.Id, out var seconds))
+        if (IsPlaying(action) && _playbackSecondsByActionKey.TryGetValue(ActionTimeKey(action), out var seconds))
         {
             return NormalizedPlaybackSeconds(action, seconds);
         }
@@ -878,7 +905,7 @@ internal sealed class ComponentPreviewInputSession
         var stateKey = ActionStateKey(action);
         if (isPlaying)
         {
-            _heldFinalActionId = "";
+            HeldFinalActionId = "";
             StopPlayback();
             foreach (var otherAction in _actions)
             {
@@ -890,8 +917,8 @@ internal sealed class ComponentPreviewInputSession
                 _values[ActionStateKey(otherAction)] = "false";
             }
 
-            _activeActionId = action.Id;
-            _playbackSecondsByActionId[action.Id] = 0;
+            ActiveActionId = action.Id;
+            _playbackSecondsByActionKey[ActionTimeKey(action)] = 0;
             _values[ActionTimeKey(action)] = "0";
             _values[stateKey] = "true";
             foreach (var key in ActivatedPlaybackInputKeys(action))
@@ -902,8 +929,8 @@ internal sealed class ComponentPreviewInputSession
         }
 
         var seconds = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action));
-        if (_heldFinalActionId == action.Id) _heldFinalActionId = "";
-        _playbackSecondsByActionId.Remove(action.Id);
+        if (HeldFinalActionId == action.Id) HeldFinalActionId = "";
+        _playbackSecondsByActionKey.Remove(ActionTimeKey(action));
         _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(action, seconds);
         _values[stateKey] = "false";
     }
@@ -988,7 +1015,7 @@ internal sealed class ComponentPreviewInputSession
         {
             return;
         }
-        var holdsFinal = _heldFinalActionId == action.Id;
+        var holdsFinal = HeldFinalActionId == action.Id;
         var completedReset = !IsPlaying(action)
             && CurrentPlaybackSeconds(action) >= DurationSeconds(action);
         if (!holdsFinal && !completedReset)
@@ -997,9 +1024,9 @@ internal sealed class ComponentPreviewInputSession
         }
 
         ApplyActionSnapshot(snapshot);
-        _playbackSecondsByActionId.Remove(action.Id);
-        if (holdsFinal) _heldFinalActionId = "";
-        _activeActionId = action.Id;
+        _playbackSecondsByActionKey.Remove(ActionTimeKey(action));
+        if (holdsFinal) HeldFinalActionId = "";
+        ActiveActionId = action.Id;
     }
 
     private void ApplyActionSnapshot(
@@ -1067,7 +1094,7 @@ internal sealed class ComponentPreviewInputSession
 
     private ComponentPreviewActionDefinition? ActiveAction()
     {
-        return _actions.FirstOrDefault((action) => action.Id == _activeActionId)
+        return _actions.FirstOrDefault((action) => action.Id == ActiveActionId)
             ?? _actions.FirstOrDefault((action) => IsPlaying(action))
             ?? _actions.FirstOrDefault();
     }

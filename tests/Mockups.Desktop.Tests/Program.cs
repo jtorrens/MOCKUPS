@@ -277,6 +277,8 @@ var tests = new (string Name, Action Run)[]
     ("List Presence replays the same initial-to-final action and restores its origin", ListPresenceReplaysAndRestoresItsOrigin),
     ("Design action targets never overwrite authored Test Values", DesignActionTargetsPreserveAuthoring),
     ("Design target edits retire pending playback origins", DesignTargetEditsRetirePendingPlayback),
+    ("Design playback Reset preserves other Variant transports", () => DesignPlaybackOwnerIsolation(resetOther: true)),
+    ("Design playback clocks and held frames belong to exact Variants", () => DesignPlaybackOwnerIsolation(resetOther: false)),
     ("manifest owners render their committed fixtures and Modules advance time", ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime),
     ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
@@ -842,6 +844,131 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
                 "Effective moved List Runtime item"),
             "state",
             "Effective moved List Runtime item"));
+}
+
+static void DesignPlaybackOwnerIsolation(bool resetOther)
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-playback-owners-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = CanonicalProjectNodes(database);
+        var theme = nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme);
+        foreach (var (id, actionId) in new[]
+        {
+            ("component_project_foqn_s2_media", "fullScreen"),
+            ("component_project_foqn_s2_incoming_call_notification", "togglePresent"),
+        })
+        {
+            var owner = nodes.Single(node => node.Id == id + "::variant::default");
+            var other = database.DuplicateComponentVariant(owner, "Playback isolation fixture");
+            var before = SHA256.HashData(File.ReadAllBytes(temporary));
+            TaskCompletionSource<bool>? pendingFrames = null;
+            var refreshes = 0;
+            var session = new ComponentPreviewInputSession(() => refreshes++, () => { }, _ => pendingFrames?.Task ?? Task.FromResult(true))
+                { PresentEveryPlaybackFrame = true };
+            var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
+            var advance = Required(typeof(ComponentPreviewInputSession).GetMethod("AdvancePlaybackFrame", BindingFlags.Instance | BindingFlags.NonPublic));
+            void Prepare(ProjectTreeNode node)
+            {
+                var payload = Required(CreatePreviewPayload(database, node, theme.Id));
+                session.ApplyPrepared(preparer.Prepare(payload, session.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId));
+            }
+            void Advance(int frames)
+            {
+                for (var i = 0; i < frames; i++)
+                {
+                    session.NotifyPlaybackFramePresented();
+                    advance.Invoke(session, null);
+                }
+            }
+            try
+            {
+                Prepare(owner);
+                True(session.TriggerAction(actionId));
+                Advance(2);
+                Equal(2, session.CurrentActionFrame(actionId));
+                session.ClearPreparedContext();
+                Prepare(other);
+                Equal(0, session.CurrentActionFrame(actionId));
+                True(session.TriggerAction(actionId));
+                Advance(4);
+                Equal(4, session.CurrentActionFrame(actionId));
+                if (resetOther)
+                {
+                    var stopped = 0;
+                    session.PlaybackStopped += _ => stopped++;
+                    var current = session.CaptureTransientState(other, false);
+                    var refreshesBeforeReset = refreshes;
+                    True(session.ResetTestValues(owner));
+                    Equal(0, stopped, "Reset of another owner must not stop the active transport.");
+                    Equal(refreshesBeforeReset, refreshes, "An unrelated Reset must not invalidate current frame preparation.");
+                    True(session.IsActionPlaying(actionId));
+                    Equal(4, session.CurrentActionFrame(actionId));
+                    SequenceEqual(current.Values.OrderBy(pair => pair.Key), session.CaptureTransientState(other, false).Values.OrderBy(pair => pair.Key));
+                    Advance(1);
+                    Equal(5, session.CurrentActionFrame(actionId));
+                    True(!session.ResetTestValues(owner));
+                    Equal(0, stopped, "Even an empty Reset must leave another owner alone.");
+                    True(session.ResetTestValues(other));
+                    True(stopped > 0);
+                    Prepare(other);
+                    Equal(0, session.CurrentActionFrame(actionId));
+                    True(!session.IsPlaybackActive);
+                    pendingFrames = new TaskCompletionSource<bool>();
+                    True(session.TriggerAction(actionId));
+                    True(session.IsPreparingPlayback);
+                    True(!session.ResetTestValues(owner));
+                    pendingFrames.SetResult(true);
+                    True(session.IsPlaybackActive, "Reset of another owner must not cancel prepared playback.");
+                    session.StopActivePlayback();
+                    pendingFrames = new TaskCompletionSource<bool>();
+                    True(session.TriggerAction(actionId));
+                    True(session.IsPreparingPlayback);
+                    True(session.ResetTestValues(other));
+                    pendingFrames.SetResult(true);
+                    True(!session.IsPlaybackActive, "Reset must retire its own pending playback origin.");
+                }
+                else
+                {
+                    session.ClearPreparedContext();
+                    Prepare(owner);
+                    Equal(2, session.CurrentActionFrame(actionId), "Equal action IDs in different Variants must not share a clock.");
+                    True(session.SetActionFrame(actionId, 1));
+                    session.ClearPreparedContext();
+                    Prepare(other);
+                    Equal(4, session.CurrentActionFrame(actionId));
+                    True(session.SetActionFrame(actionId, session.MaximumActionFrame(actionId)));
+                    // Direct owner publication and ClearPreparedContext must obey the same identity boundary.
+                    Prepare(owner);
+                    Equal(1, session.CurrentActionFrame(actionId));
+                    True(!session.IsPlaybackActive, "Returning to a scrubbed frame must not restart playback.");
+                    session.ClearPreparedContext();
+                    Prepare(other);
+                    Equal(session.MaximumActionFrame(actionId), session.CurrentActionFrame(actionId));
+                    True(!session.IsPlaybackActive, "The held final frame belongs to its Variant.");
+                    True(session.RestoreAction(actionId));
+                    Equal(0, session.CurrentActionFrame(actionId));
+                    Prepare(owner);
+                    Equal(1, session.CurrentActionFrame(actionId));
+                    True(session.TriggerAction(actionId));
+                    Advance(session.MaximumActionFrame(actionId));
+                    session.NotifyPlaybackFramePresented();
+                    True(!session.IsPlaybackActive);
+                    var completedFrame = session.CurrentActionFrame(actionId);
+                    Prepare(other);
+                    Equal(0, session.CurrentActionFrame(actionId));
+                    Prepare(owner);
+                    Equal(completedFrame, session.CurrentActionFrame(actionId));
+                    True(!session.IsPlaybackActive, "Returning to a completed action must preserve completion.");
+                }
+                SequenceEqual(before, SHA256.HashData(File.ReadAllBytes(temporary)));
+            }
+            finally { session.ClearPreparedContext(); }
+        }
+    }
+    finally { File.Delete(temporary); }
 }
 
 static void DesignTargetEditsRetirePendingPlayback()
@@ -9998,6 +10125,14 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 // An old control must not redirect an action to the new owner,
                 // even when that owner declares the same action id (fullScreen).
                 var other = nodes.Single(node => node.Id == "component_project_foqn_s2_bubble::variant::default");
+                var stopped = 0;
+                inputSession.PlaybackStopped += _ => stopped++;
+                var resetUnvisited = controller.ResetDesignPreviewTestValues(other);
+                Wait(() => resetUnvisited.IsCompleted);
+                True(!resetUnvisited.GetAwaiter().GetResult());
+                Equal(0, stopped);
+                Equal(3, controller.CurrentDesignPreviewActionFrame(owner, actionId));
+                True(!inputSession.IsActionPlaying(actionId));
                 True((bool)Required(select.Invoke(window, [other.Id])));
                 Wait(() => inputSession.IsPreparedFor(other));
                 var otherBefore = controller.CaptureDesignPreviewTransientState(other);

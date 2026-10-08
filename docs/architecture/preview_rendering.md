@@ -561,6 +561,16 @@ temporary values. The button awaits this operation without a synchronous bypass
 or disabling editing to enforce ordering. Save-as-defaults acknowledgement is
 not Reset: it must preserve changes outside the confirmed snapshot.
 
+Design transport memory uses the exact owner scope and declared action id for
+its live playhead, selected action and held-frame state, as it does for action
+overlays and Restore origins. Leaving a prepared context stops its visual clock
+without discarding that owner's transport memory. Returning restores its own
+playhead and keeps a scrubbed or completed frame held; an identically named
+action in another Variant cannot supply either value. Reset retires only its
+owner's transport and origins, including pending frame preparation. Reset of a
+different or unvisited owner never stops the visible transport, clears its
+held frame or invalidates its pending Play.
+
 Design `Save as defaults` and its dirty-state indicator capture that same
 owner-keyed transient state, including structured item edits, rather than the
 document originally captured by the mounted controls. Their document reads and

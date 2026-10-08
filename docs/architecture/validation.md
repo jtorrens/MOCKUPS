@@ -561,6 +561,15 @@ Play and Restore buttons after pending edits. They verify the captured origin,
 ordered frame selection/stepping and cancellation of commands from an old owner
 after navigation, including a destination declaring the same action id. Both
 fixtures preserve persisted defaults and exercise the shared preparation route.
+Transport-isolation regressions duplicate real Media and Incoming Call Notification
+Variants on a temporary database and run their identical action ids at different
+frames. Returning to either owner must preserve its own playhead, selected
+action and scrubbed/completed hold. Reset of another owner, including an empty
+scope, must not emit a playback stop or change the active transport. Reset of
+the active owner returns to its baseline and retires pending preparation, while
+an unrelated Reset lets that preparation finish. Real controller-queue tests
+also Reset an unvisited owner while the visible action holds a frame. Database
+hashes must remain unchanged by all transport and Reset operations.
 A declared editable nested fixture checks that child mutations and field edits
 preserve the complete root, its siblings and the original source document.
 Runtime scalar regressions queue Conversation item edits and duplication before
