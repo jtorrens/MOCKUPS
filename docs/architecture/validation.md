@@ -518,6 +518,14 @@ then move/delete, an immutable Add prototype, a rejected mutation without public
 successful operation. Neither fixture writes its temporary values to persistence.
 A declared editable nested fixture checks that child mutations and field edits
 preserve the complete root, its siblings and the original source document.
+Runtime scalar regressions queue Conversation item edits and duplication before
+changing positioning through the real dictionary control, then verify item
+identities, preserved starts and the relative/absolute round trip. A declared
+two-collection fixture requires one publication of the mode and both converted
+roots, rejects invalid fields/types without publication, and tests owner-exact
+transient cleanup without an active Preview. List and List Item exercise scalar
+preparation through the same worker contract. Production regressions retain the
+mounted controls after root and item commits, including a pinned Screen in Design.
 The C# startup validator and persistence tests own the complete staged SQLite
 contract. Scaffolding read-only, collision, materialization and integration
 behavior belongs to executable tests over temporary workspaces and databases;

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -143,8 +144,8 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             };
-            field.ValueChanged += (_, next) => SetInputValue(input, next, commit: false);
-            field.ValueCommitted += (_, next) => SetInputValue(input, next, commit: true);
+            field.ValueChanged += async (_, next) => await SetInputValueAsync(input, next, commit: false);
+            field.ValueCommitted += async (_, next) => await SetInputValueAsync(input, next, commit: true);
             content.Children.Add(field);
         }
         if (forwarded is not null)
@@ -288,7 +289,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         return declared;
     }
 
-    private void SetInputValue(ComponentInputBindingDefinition input, string next, bool commit)
+    private async Task SetInputValueAsync(ComponentInputBindingDefinition input, string next, bool commit)
     {
         _value[input.JsonKey] = input.ValueKind == ValueKind.ComponentVariant && !string.IsNullOrWhiteSpace(input.ComponentType)
             ? ComponentVariantSlotNode(input, next)
@@ -303,11 +304,13 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         if (commit)
         {
             ValueCommitted?.Invoke(this, json);
-            foreach (var (jsonKey, value) in _pendingRuntimeTestValues)
-            {
-                _services.SetRuntimeTestValue?.Invoke(jsonKey, value);
-            }
+            var pending = _pendingRuntimeTestValues.ToArray();
             _pendingRuntimeTestValues.Clear();
+            foreach (var (jsonKey, value) in pending)
+            {
+                if (_services.SetRuntimeTestValue is { } publish)
+                    await publish(jsonKey, value);
+            }
             if (transitioned) RefreshRows();
         }
     }

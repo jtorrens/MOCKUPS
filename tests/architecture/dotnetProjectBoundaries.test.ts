@@ -758,6 +758,17 @@ test("Runtime collection controls consume confirmed writes without replaying mut
   assert.doesNotMatch(editor, /ApplyCollectionTransition|ComponentVariantSelection\(|\.ForNode\(/);
   assert.match(editor, /AcceptConfirmedDocument\(await _instanceDocuments\.UpdateCollectionValuesAsync/);
   assert.doesNotMatch(editor, /MutateTransientStructuredCollection/);
+  assert.doesNotMatch(editor, /TryChangeCollectionPositioningMode|CollectionPositioningStorageJsonKeys|_setPreviewCollectionTestItems/);
+  assert.deepEqual(files.filter(file => file.endsWith(".cs")
+    && readFileSync(file, "utf8").includes("RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode("))
+    .map(repositoryPath).sort(), ["src/Mockups.Application/RuntimeInputDocumentContract.cs"],
+    "Runtime field effects must pass through the shared document mutation owner");
+  assert.deepEqual(files.filter(file => file.endsWith(".cs")
+    && readFileSync(file, "utf8").includes("RuntimeInputDocumentContract.UpdateValue("))
+    .map(repositoryPath).sort(), [
+    "src/Mockups.Desktop/EditorShell/DesignPreviewInputPreparer.cs",
+    "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.RuntimeDocuments.cs",
+  ]);
   assert.doesNotMatch(editor, /MutateStructuredCollection\s*=\s*owner\.IsInstance/,
     "nested Runtime collections must supply the same addressed mutation port in Design and Production");
 });

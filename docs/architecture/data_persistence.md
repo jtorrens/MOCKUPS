@@ -159,9 +159,11 @@ explicit presence duration remain child timing: neither changes the calculated
 or explicit Screen duration. Preview and Render clip that child timing to the
 independently resolved Screen interval.
 
-A declared collection-positioning mode change is one complete Production owner
-write. Production snapshots the current resolved item starts, recalculates the
-declared absolute starts or relative offsets, stores the Boolean mode and the
+A Runtime scalar write uses `RuntimeInputDocumentContract.UpdateValue`, shared
+with Design Test Values preparation, to validate the declaration and apply its
+declared effects. A collection-positioning mode change is one complete Production
+owner write. The common timeline owner snapshots the resolved item starts and recalculates the
+declared absolute starts or relative offsets. Production stores the Boolean mode and the
 converted collection in the same complete `content_json` write, then performs the
 normal duration synchronization. Readers never repair one representation from
 the other at startup.

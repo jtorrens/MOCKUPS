@@ -468,7 +468,6 @@ public partial class MainWindow : SukiWindow
             _previewController.SetDesignPreviewCollectionItemValues,
             _previewController.MutateDesignPreviewCollectionAsync,
             _previewController.DiscardCommittedProductionRuntimeCollection,
-            _previewController.SetDesignPreviewCollectionTestItems,
             _previewController.ResetDesignPreviewTestValues,
             _previewController.CaptureDesignPreviewTransientState,
             _previewController.PlaybackState,

@@ -62,11 +62,6 @@ internal sealed partial class SqliteProductionOwner
         CommitModuleInstanceWrite(connection, moduleInstanceId, (transaction, instance) =>
         {
             var content = ParseJsonObject(instance.ContentJson);
-            _ = RequireDeclaredRuntimeInput(
-                connection,
-                moduleInstanceId,
-                jsonKey,
-                value);
             var contract = ResolveModuleInstanceContract(
                 connection,
                 instance.ModuleId,
@@ -75,25 +70,17 @@ internal sealed partial class SqliteProductionOwner
             var project = _projectEpisodeRepository.GetProjectSettings(
                 connection,
                 shot.ProjectId);
-            if (!RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
+            content = RuntimeInputDocumentContract.UpdateValue(
                     contract,
                     content,
                     ParseJsonObject(instance.AnimationJson),
                     jsonKey,
                     value,
-                    out var converted,
                     ParseJsonObject(
                         _moduleInstanceThemeContextService.GetTokensJson(
                             connection,
                             moduleInstanceId)),
-                    shot.FpsOverride ?? project.DefaultFps))
-            {
-                content[jsonKey] = value?.DeepClone();
-            }
-            else
-            {
-                content = converted;
-            }
+                    shot.FpsOverride ?? project.DefaultFps);
             _moduleInstanceRepository.UpdateContentAndAnimation(
                 connection, moduleInstanceId, content.ToJsonString(), instance.AnimationJson, transaction);
             return true;
@@ -550,48 +537,6 @@ internal sealed partial class SqliteProductionOwner
             throw new InvalidOperationException(
                 $"Module Instance '{moduleInstanceId}' has no unique structured collection definition '{collectionJsonKey}'.");
         }
-        return matches[0];
-    }
-
-    private JsonObject RequireDeclaredRuntimeInput(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        string jsonKey,
-        JsonNode? value)
-    {
-        if (string.IsNullOrWhiteSpace(jsonKey))
-        {
-            throw new InvalidOperationException(
-                "Runtime input key cannot be empty.");
-        }
-
-        var contract = ModuleInstanceRuntimeContract(
-            connection,
-            moduleInstanceId);
-        var matches =
-            RuntimeInputDocumentContract.DefinitionObjects(
-                    contract,
-                    "inputs",
-                    $"Module Instance '{moduleInstanceId}' Runtime contract")
-                .Where(
-                    RuntimeInputDocumentContract
-                        .IsRuntimeDefinition)
-                .Where((input) =>
-                    JsonPath.RequiredString(
-                        input,
-                        "jsonKey",
-                        "Runtime Input definition") == jsonKey)
-                .ToList();
-        if (matches.Count != 1)
-        {
-            throw new InvalidOperationException(
-                $"Module Instance '{moduleInstanceId}' has no unique declared runtime input '{jsonKey}'.");
-        }
-
-        RuntimeInputValueKindContract.ValidateRuntimeValue(
-            matches[0],
-            value,
-            $"Module Instance '{moduleInstanceId}' runtime input '{jsonKey}'");
         return matches[0];
     }
 

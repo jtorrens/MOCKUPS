@@ -62,14 +62,13 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action<string, int, string?> _setActionFrame;
     private readonly Func<string, int> _currentActionFrame;
     private readonly Func<string, int> _maximumActionFrame;
-    private readonly Action<ProjectTreeNode, string, string> _setPreviewTestValue;
-    private readonly Action<string> _discardCommittedProductionRuntimeValue;
+    private readonly Func<ProjectTreeNode, string, string, Task> _setPreviewTestValue;
+    private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
         _setPreviewCollectionItemValues;
     private readonly Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>>
         _mutatePreviewCollection;
-    private readonly Action<string> _discardCommittedProductionRuntimeCollection;
-    private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
+    private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeCollection;
     private readonly Func<ProjectTreeNode, bool> _resetTestValues;
     private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
     private readonly Func<string, Task<bool>> _confirmCollectionItemDelete;
@@ -118,13 +117,12 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<string, int, string?> setActionFrame,
         Func<string, int> currentActionFrame,
         Func<string, int> maximumActionFrame,
-        Action<ProjectTreeNode, string, string> setPreviewTestValue,
-        Action<string> discardCommittedProductionRuntimeValue,
+        Func<ProjectTreeNode, string, string, Task> setPreviewTestValue,
+        Action<ProjectTreeNode, string> discardCommittedProductionRuntimeValue,
         Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
             setPreviewCollectionItemValues,
         Func<ProjectTreeNode, StructuredCollectionMutation, Task<StructuredCollectionMutationResult>> mutatePreviewCollection,
-        Action<string> discardCommittedProductionRuntimeCollection,
-        Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
+        Action<ProjectTreeNode, string> discardCommittedProductionRuntimeCollection,
         Func<ProjectTreeNode, bool> resetTestValues,
         Func<string, IReadOnlyList<string>, Task<bool>> confirmSaveDefaults,
         Func<string, Task<bool>> confirmCollectionItemDelete,
@@ -175,7 +173,6 @@ internal sealed class RuntimeInputsCollectionEditor
         _mutatePreviewCollection = mutatePreviewCollection;
         _discardCommittedProductionRuntimeCollection =
             discardCommittedProductionRuntimeCollection;
-        _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
         _resetTestValues = resetTestValues;
         _confirmSaveDefaults = confirmSaveDefaults;
         _confirmCollectionItemDelete = confirmCollectionItemDelete;
@@ -769,61 +766,21 @@ internal sealed class RuntimeInputsCollectionEditor
                 },
                 openRuntimeComponentOverrides: _openEmbeddedContext));
         control.IsEnabled = RuntimeInputIsEnabled(preview, DesignPreviewTestValues.Parse(owner.ConfigJson), input);
-        control.ValueChanged += (_, next) =>
+        var pendingChange = Task.CompletedTask;
+        async Task PublishValueAsync(string next)
         {
-            var positioningCollections = CollectionPositioningStorageJsonKeys(
-                preview,
-                input.Id);
-            var isPositioningMode = positioningCollections.Count > 0;
-            if (!owner.IsInstance)
-            {
-                if (isPositioningMode)
-                {
-                    var runtime = DesignPreviewTestValues.Parse(
-                        DesignPreviewTestValues.RuntimeJson(
-                            preview.ToJsonString()));
-                    if (RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
-                            preview,
-                            runtime,
-                            new JsonObject(),
-                            input.JsonKey,
-                            DesignPreviewTestValues.ValueNode(input, next),
-                            out var converted,
-                            _preparedDictionaryContext?.ThemeTokens()))
-                    {
-                        var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
-                        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
-                                     preview,
-                                     config,
-                                     includeHidden: true)
-                                     .Where((collection) => positioningCollections.Contains(
-                                         collection.StorageJsonKey)))
-                        {
-                            if (converted[collection.StorageJsonKey] is not JsonArray items)
-                                continue;
-                            _setPreviewCollectionTestItems(
-                                owner.Node,
-                                collection.JsonKey,
-                                items.OfType<JsonObject>()
-                                    .Select(CloneObject)
-                                    .ToList());
-                        }
-                    }
-                }
-                DesignPreviewTestValues.SetValue(
-                    preview,
-                    input,
-                    next);
-            }
-            if (ShouldPublishTransientValue(owner.IsInstance, definition)
-                && !(owner.IsInstance && isPositioningMode))
-            {
-                _setPreviewTestValue(owner.Node, input.JsonKey, next);
-            }
+            await _setPreviewTestValue(owner.Node, input.JsonKey, next);
             _testValuesChanged();
+        }
+        control.ValueChanged += async (_, next) =>
+        {
+            if (!ShouldPublishTransientValue(owner.IsInstance, definition)) return;
+            pendingChange = PublishValueAsync(next);
+            await pendingChange;
         };
         control.ValueCommitted += async (_, next) =>
         {
+            await pendingChange;
             if (owner.IsInstance)
             {
                 await CommitSurfaceRuntimeValueAsync(
@@ -831,12 +788,9 @@ internal sealed class RuntimeInputsCollectionEditor
                     input.JsonKey,
                     DesignPreviewTestValues.ValueNode(input, next));
                 _discardCommittedProductionRuntimeValue(
+                    owner.Node,
                     input.JsonKey);
                 _onChanged();
-            }
-            else
-            {
-                DesignPreviewTestValues.SetValue(preview, input, next);
             }
             if (input.RefreshOnCommit)
             {
@@ -846,32 +800,6 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         return DecorateAnimationToggle(owner, input, "", control, ownerInputs);
     }
-
-    private static IReadOnlySet<string> CollectionPositioningStorageJsonKeys(
-        JsonObject contract,
-        string inputId) =>
-        JsonPath.OptionalObjectArray(
-                contract,
-                "collections",
-                "Runtime Input positioning contract")
-            .Where((collection) =>
-            {
-                var positioning = JsonPath.OptionalObject(
-                    collection["animationTimeline"] as JsonObject ?? new JsonObject(),
-                    "positioning",
-                    "Runtime collection animation timeline");
-                return positioning is not null
-                    && JsonPath.RequiredString(
-                            positioning,
-                            "modeInputId",
-                            "Runtime collection positioning")
-                        .Equals(inputId, StringComparison.Ordinal);
-            })
-            .Select((collection) => JsonPath.RequiredString(
-                collection,
-                "jsonKey",
-                "Runtime collection positioning"))
-            .ToHashSet(StringComparer.Ordinal);
 
     private static bool RuntimeInputIsEnabled(
         JsonObject preview,
@@ -1189,6 +1117,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     runtimeContractJsonKey,
                     runtimeContract);
                 _discardCommittedProductionRuntimeCollection(
+                    owner.Node,
                     collection.StorageJsonKey);
                 _onChanged();
                 return;
@@ -2154,6 +2083,7 @@ internal sealed class RuntimeInputsCollectionEditor
         if (owner.IsInstance)
         {
             _discardCommittedProductionRuntimeCollection(
+                owner.Node,
                 address.RootStorageJsonKey);
         }
         item[componentItems.OverridesJsonKey] =
@@ -2437,6 +2367,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     inputsJsonKey,
                     componentInputs);
                 _discardCommittedProductionRuntimeCollection(
+                    owner.Node,
                     address.RootStorageJsonKey);
                 _onChanged();
             }

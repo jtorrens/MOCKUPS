@@ -331,26 +331,39 @@ internal sealed class ComponentPreviewInputSession
         _refreshPreview();
     }
 
-    public void DiscardExternalInputValue(string jsonKey)
+    public void ApplyRuntimeValueEdit(ProjectTreeNode node, PreparedRuntimeValueEdit edit)
     {
-        if (string.IsNullOrWhiteSpace(_scopeKey)
-            || string.IsNullOrWhiteSpace(jsonKey))
+        var scope = ComponentPreviewTransientValues.ScopeKey(node, node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        if (scope.Length == 0) throw new InvalidOperationException("Runtime edits require an exact owner.");
+        var collections = edit.Collections.ToDictionary(pair => pair.Key,
+            pair => JsonPath.ParseRequiredArray(pair.Value, "Prepared Runtime collection"), StringComparer.Ordinal);
+        if (collections.Count > 0)
         {
-            return;
+            var current = _transientCollectionTestValuesByScope.GetValueOrDefault(scope) ?? new JsonObject();
+            foreach (var (key, items) in collections) current[key] = items;
+            _transientCollectionTestValuesByScope[scope] = current;
         }
+        _values[$"{scope}:{edit.JsonKey}"] = edit.Value;
+        _refreshPreview();
+    }
 
-        var key = $"{_scopeKey}:{jsonKey}";
+    public void DiscardExternalInputValue(ProjectTreeNode node, string jsonKey)
+    {
+        var scope = ComponentPreviewTransientValues.ScopeKey(node, node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        if (scope.Length == 0) throw new InvalidOperationException("Runtime edits require an exact owner.");
+        var key = $"{scope}:{jsonKey}";
         _values.Remove(key);
         _inputDefaults.Remove(key);
     }
 
     public void DiscardExternalCollectionValues(
+        ProjectTreeNode node,
         string rootStorageJsonKey)
     {
-        if (string.IsNullOrWhiteSpace(_scopeKey)
-            || string.IsNullOrWhiteSpace(rootStorageJsonKey)
-            || !_transientCollectionTestValuesByScope.TryGetValue(
-                _scopeKey,
+        var scope = ComponentPreviewTransientValues.ScopeKey(node, node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        if (scope.Length == 0) throw new InvalidOperationException("Runtime edits require an exact owner.");
+        if (!_transientCollectionTestValuesByScope.TryGetValue(
+                scope,
                 out var testValues))
         {
             return;
@@ -360,7 +373,7 @@ internal sealed class ComponentPreviewInputSession
         if (testValues.Count == 0)
         {
             _transientCollectionTestValuesByScope.Remove(
-                _scopeKey);
+                scope);
         }
     }
 

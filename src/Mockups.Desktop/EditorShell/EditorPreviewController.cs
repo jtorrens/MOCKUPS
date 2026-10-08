@@ -2122,24 +2122,27 @@ internal sealed class EditorPreviewController : IDisposable
     public void RestoreDesignPreviewAction(string actionId) =>
         _ = RunDesignActionAsync(() => _designInputsPanel.RestoreAction(actionId));
 
-    public void SetDesignPreviewTestValue(ProjectTreeNode node, string jsonKey, string value)
-    {
-        _designInputsPanel.SetOwnerOverrideValue(node, jsonKey, value, isCollection: false);
-    }
+    public Task SetDesignPreviewTestValue(ProjectTreeNode node, string jsonKey, string value) =>
+        EditDesignPreviewInputsAsync(node,
+            (payload, capture) => _designInputPreparer.UpdateValue(payload, capture, jsonKey, value),
+            result => _designInputsPanel.ApplyRuntimeValueEdit(node, result));
 
     public void SetDesignPreviewOwnerOverrideValue(ProjectTreeNode node, string jsonKey, string value, bool isCollection) =>
         _designInputsPanel.SetOwnerOverrideValue(node, jsonKey, value, isCollection);
 
     public void DiscardCommittedProductionRuntimeValue(
+        ProjectTreeNode node,
         string jsonKey)
     {
-        _designInputsPanel.DiscardExternalInputValue(jsonKey);
+        _designInputsPanel.DiscardExternalInputValue(node, jsonKey);
     }
 
     public void DiscardCommittedProductionRuntimeCollection(
+        ProjectTreeNode node,
         string rootStorageJsonKey)
     {
         _designInputsPanel.DiscardExternalCollectionValues(
+            node,
             rootStorageJsonKey);
     }
 
@@ -2148,24 +2151,26 @@ internal sealed class EditorPreviewController : IDisposable
     {
         var capturedAddress = address with { Owners = address.Owners.ToArray() };
         var copied = values.ToDictionary(pair => pair.Key, pair => pair.Value?.DeepClone(), StringComparer.Ordinal);
-        return EditDesignPreviewCollectionAsync(node, capturedAddress.RootStorageJsonKey,
+        return EditDesignPreviewInputsAsync(node,
             (payload, capture) => _designInputPreparer.UpdateCollection(payload, capture, capturedAddress, itemId, copied),
-            result => result);
+            result => _designInputsPanel.SetExternalCollectionItems(node, capturedAddress.RootStorageJsonKey,
+                result.Select(item => item!.AsObject()).ToArray()));
     }
 
     public Task<StructuredCollectionMutationResult> MutateDesignPreviewCollectionAsync(
         ProjectTreeNode node, StructuredCollectionMutation mutation)
     {
         var captured = StructuredCollectionMutationEngine.Snapshot(mutation);
-        return EditDesignPreviewCollectionAsync(node, captured.Address.RootStorageJsonKey,
+        return EditDesignPreviewInputsAsync(node,
             (payload, capture) => _designInputPreparer.MutateCollection(payload, capture, captured),
-            result => result.Content[captured.Address.RootStorageJsonKey]!.AsArray());
+            result => _designInputsPanel.SetExternalCollectionItems(node, captured.Address.RootStorageJsonKey,
+                result.Content[captured.Address.RootStorageJsonKey]!.AsArray().Select(item => item!.AsObject()).ToArray()));
     }
 
-    private Task<T> EditDesignPreviewCollectionAsync<T>(
-        ProjectTreeNode node, string rootStorageJsonKey,
+    private Task<T> EditDesignPreviewInputsAsync<T>(
+        ProjectTreeNode node,
         Func<DesignPreviewPayload, ComponentPreviewTransientState, T> edit,
-        Func<T, JsonArray> rootCollection)
+        Action<T> publish)
     {
         var themeId = _selectedThemeId;
         var mode = _selectedMode;
@@ -2177,23 +2182,17 @@ internal sealed class EditorPreviewController : IDisposable
                 DispatcherPriority.Normal, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             var payload = DesignPreviewPayloadFactory.Create(_previewPayloadData, node, themeId, mode, frame)
-                ?? throw new InvalidOperationException("Collection Test Values owner has no payload.");
+                ?? throw new InvalidOperationException("Runtime Test Values owner has no payload.");
             var result = edit(payload, capture);
-            var updated = rootCollection(result);
             cancellationToken.ThrowIfCancellationRequested();
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (!_disposed)
-                    _designInputsPanel.SetExternalCollectionItems(node, rootStorageJsonKey,
-                        updated.Select(item => item!.AsObject()).ToArray());
+                    publish(result);
             }, DispatcherPriority.Normal, cancellationToken);
             return result;
         });
     }
-
-    public void SetDesignPreviewCollectionTestItems(
-        ProjectTreeNode node, string collectionJsonKey, IReadOnlyList<JsonObject> items) =>
-        _designInputsPanel.SetExternalCollectionItems(node, collectionJsonKey, items);
 
     public ComponentPreviewTransientState CaptureDesignPreviewTransientState(ProjectTreeNode node) =>
         _designInputsPanel.CaptureTransientState(node, node.Kind == ProjectTreeNodeKind.ModuleInstance);

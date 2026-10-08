@@ -13,6 +13,9 @@ internal sealed record DesignPreviewInputCapture(
     ComponentPreviewTransientState Transient,
     string InputSignature);
 
+internal sealed record PreparedRuntimeValueEdit(
+    string JsonKey, string Value, IReadOnlyDictionary<string, string> Collections);
+
 internal sealed record PreparedDesignPreviewInputs(
     DesignPreviewPayload Payload,
     string ScopeKey,
@@ -66,6 +69,28 @@ internal sealed class DesignPreviewInputPreparer(
             componentPreview.GetComponentVariantConfig,
             componentPreview.GetComponentVariantRuntimeContract);
         return updated[collection.StorageJsonKey]!.DeepClone().AsArray();
+    }
+
+    public PreparedRuntimeValueEdit UpdateValue(
+        DesignPreviewPayload payload, ComponentPreviewTransientState state, string jsonKey, string value)
+    {
+        payload = DesignPreviewPayloadLayers.PrimaryOwner(payload);
+        var config = ParseJsonObject(payload.ConfigJson);
+        var preview = ApplyTransient(ParseJsonObject(payload.RuntimeContractJson), config, state);
+        var input = RuntimeInputDefinitionReader.ReadInputs(preview, config)
+            .Single(candidate => candidate.Source == ComponentInputSource.Runtime && candidate.JsonKey == jsonKey);
+        var frameRate = payload.Kind == "moduleInstance" ? payload.FrameRate
+            : new ComponentPreviewInputDataSource(componentPreview, actors).ProjectDefaultFrameRate(payload.ProjectId);
+        var updated = RuntimeInputDocumentContract.UpdateValue(preview, preview,
+            new JsonObject { ["schemaVersion"] = 2, ["tracks"] = new JsonArray() },
+            jsonKey, DesignPreviewTestValues.ValueNode(input, value), ParseJsonObject(payload.ThemeTokensJson), frameRate);
+        var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config, includeHidden: true)
+            .Where(collection => !JsonNode.DeepEquals(preview[collection.StorageJsonKey], updated[collection.StorageJsonKey]))
+            .ToFrozenDictionary(collection => collection.StorageJsonKey,
+                collection => StructuredCollectionDocumentContract.StoredClone(
+                    updated[collection.StorageJsonKey]!.AsArray(), collection, "Runtime value mutation").ToJsonString(),
+                StringComparer.Ordinal);
+        return new(jsonKey, value, collections);
     }
 
     public StructuredCollectionMutationResult MutateCollection(

@@ -529,6 +529,18 @@ shared structured mutation engine; the visual collection editor never mutates
 a detached Test Values snapshot. A nested result publishes its complete root
 collection while returning the addressed child collection to its control.
 
+Root Runtime field edits use the same queue, including live Production drafts.
+`RuntimeInputDocumentContract.UpdateValue` validates the declaration and applies
+the field's declared effects through the common timeline owner. Design preparation
+uses the active Theme and Project frame rate; Production uses its exact Screen
+context. A field and every changed collection root are published together, with
+one Preview refresh, before releasing the gate. The editor neither recognizes
+positioning fields nor converts collections from its mounted document. A control
+waits for its pending field publication before committing or rebuilding its panel.
+Successful Production commits discard temporary field/collection values by the
+exact edited owner identity, never by the active Preview scope; this also applies
+before a first Preview is prepared and while another owner is pinned.
+
 Design `Save as defaults` and its dirty-state indicator capture that same
 owner-keyed transient state, including structured item edits, rather than the
 document originally captured by the mounted controls. Their document reads and

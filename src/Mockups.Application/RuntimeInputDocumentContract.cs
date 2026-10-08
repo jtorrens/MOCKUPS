@@ -5,6 +5,27 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 public static class RuntimeInputDocumentContract
 {
+    public static JsonObject UpdateValue(
+        JsonObject contract, JsonObject content, JsonObject animation,
+        string jsonKey, JsonNode? value, JsonObject themeTokens, int frameRate)
+    {
+        if (string.IsNullOrWhiteSpace(jsonKey))
+            throw new InvalidOperationException("Runtime input key cannot be empty.");
+        var matches = DefinitionObjects(contract, "inputs", "Runtime value mutation")
+            .Where(IsRuntimeDefinition)
+            .Where(input => JsonPath.RequiredString(input, "jsonKey", "Runtime Input definition") == jsonKey)
+            .ToList();
+        if (matches.Count != 1)
+            throw new InvalidOperationException($"Runtime owner has no unique declared runtime input '{jsonKey}'.");
+        RuntimeInputValueKindContract.ValidateRuntimeValue(matches[0], value, $"Runtime input '{jsonKey}'");
+        if (RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
+                contract, content, animation, jsonKey, value, out var converted, themeTokens, frameRate))
+            return converted;
+        var updated = content.DeepClone().AsObject();
+        updated[jsonKey] = value?.DeepClone();
+        return updated;
+    }
+
     public static bool IsRuntimeDefinition(JsonObject definition)
     {
         if (!definition.TryGetPropertyValue("source", out var node))

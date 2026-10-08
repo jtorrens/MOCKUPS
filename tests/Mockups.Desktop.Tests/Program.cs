@@ -263,6 +263,7 @@ var tests = new (string Name, Action Run)[]
     ("Conversation Test Values serialize lifecycle and field edits", () => DesignCollectionMutationsSerialize("module_core_chat", "messages", "text")),
     ("Video Call Test Values serialize lifecycle and field edits", () => DesignCollectionMutationsSerialize("module_project_foqn_s2_video_call", "participants", "connectionText")),
     ("Design nested mutations preserve their complete root and sibling values", DesignNestedMutationsPreserveRoot),
+    ("Runtime scalar effects publish every affected collection together", RuntimeScalarEffectsPublishTogether),
     ("Design Preview requires explicit record references across Component fixtures", DesignPreviewRequiresExplicitRecordReferences),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
     ("List Presence replays the same initial-to-final action and restores its origin", ListPresenceReplaysAndRestoresItsOrigin),
@@ -645,6 +646,13 @@ static void DesignPreviewSessionConsumesPreparedValues()
         session.SetOwnerOverrideValue(owner, "width", "427", isCollection: false);
         Equal("419", prepared.Values[$"{captured.Transient.ScopeKey}:width"]);
         Equal("427", session.CapturePreparation(owner).Transient.Values[$"{captured.Transient.ScopeKey}:width"]);
+        var runtimeKey = id == "component_project_foqn_s2_list" ? "itemWidth" : "width";
+        var latest = session.CaptureTransientState(owner, false);
+        var changed = operations.ExecuteAsync(() => preparer.UpdateValue(prepared.Payload,
+            latest, runtimeKey, "435")).GetAwaiter().GetResult();
+        Equal(0, changed.Collections.Count);
+        session.ApplyRuntimeValueEdit(owner, changed);
+        Equal("435", session.CapturePreparation(owner).Transient.Values[$"{captured.Transient.ScopeKey}:{runtimeKey}"]);
     }
 }
 
@@ -9455,6 +9463,79 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
     }
 }
 
+static void RuntimeScalarEffectsPublishTogether()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = CanonicalProjectNodes(database);
+    var owner = nodes.Single(node => node.Id == "module_core_chat::variant::default");
+    var payload = Required(CreatePreviewPayload(database, owner, nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme).Id));
+    var contract = Object("""
+        {"absolute":true,"caption":"untouched","inputs":[
+          {"id":"mode","jsonKey":"absolute","label":"Absolute","kind":"boolean","valueKind":"Boolean","defaultValue":"true"},
+          {"id":"caption","jsonKey":"caption","label":"Caption","kind":"text","valueKind":"StringSingleLine","defaultValue":""}],
+         "collections":[]}
+        """);
+    foreach (var key in new[] { "first", "second" })
+    {
+        var collection = Object("""
+            {"id":"","label":"Items","jsonKey":"","itemLabel":"Item","fields":[
+              {"id":"delay","jsonKey":"delay","label":"Delay","kind":"number","valueKind":"Integer","defaultValue":"0"},
+              {"id":"start","jsonKey":"start","label":"Start","kind":"number","valueKind":"Integer","defaultValue":"0"},
+              {"id":"duration","jsonKey":"duration","label":"Duration","kind":"number","valueKind":"Integer","defaultValue":"0"}],
+             "animationTimeline":{"sequenceItems":true,"preDurationFieldIds":["delay"],"presenceDurationFieldId":"duration",
+               "positioning":{"modeInputId":"mode","relativeOffsetFieldId":"delay","absoluteStartFieldId":"start"}}}
+            """);
+        collection["id"] = key;
+        collection["jsonKey"] = key;
+        contract["collections"]!.AsArray().Add(collection);
+        contract[key] = new JsonArray(
+            new JsonObject { ["id"] = key + "-a", ["delay"] = 0, ["start"] = 14, ["duration"] = 0 },
+            new JsonObject { ["id"] = key + "-b", ["delay"] = 0, ["start"] = 3, ["duration"] = 120 });
+    }
+    payload = payload with { ConfigJson = "{}", RuntimeContractJson = contract.ToJsonString(), DesignPreviewJson = contract.ToJsonString() };
+    var publications = new List<ComponentPreviewTransientState>();
+    ComponentPreviewInputSession? session = null;
+    session = new ComponentPreviewInputSession(() => publications.Add(session!.CaptureTransientState(owner, false)), () => { });
+    var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
+    var prepared = preparer.UpdateValue(payload, session.CaptureTransientState(owner, false), "absolute", "false");
+    Equal(2, prepared.Collections.Count);
+    Equal(0, publications.Count);
+    session.ApplyRuntimeValueEdit(owner, prepared);
+    Equal(1, publications.Count);
+    Equal("false", publications[0].Values[$"{publications[0].ScopeKey}:absolute"]);
+    foreach (var key in new[] { "first", "second" })
+    {
+        var published = Object(publications[0].CollectionTestValuesJson)[key]!.AsArray();
+        Equal(14, published[0]!["delay"]!.GetValue<int>());
+        Equal(-12, published[1]!["delay"]!.GetValue<int>());
+    }
+    var restored = preparer.UpdateValue(payload, session.CaptureTransientState(owner, false), "absolute", "true");
+    session.ApplyRuntimeValueEdit(owner, restored);
+    var current = preparer.ApplyTransient(contract, new JsonObject(), session.CaptureTransientState(owner, false));
+    foreach (var key in new[] { "first", "second" })
+        SequenceEqual([14, 3], current[key]!.AsArray().Select(item => item!["start"]!.GetValue<int>()));
+    Equal("untouched", current["caption"]!.GetValue<string>());
+    Throws<InvalidOperationException>(() => RuntimeInputDocumentContract.UpdateValue(contract, contract,
+        new JsonObject(), "missing", JsonValue.Create(true), new JsonObject(), 25));
+    Throws<InvalidOperationException>(() => RuntimeInputDocumentContract.UpdateValue(contract, contract,
+        new JsonObject(), "absolute", JsonValue.Create("not a boolean"), new JsonObject(), 25));
+    Equal(2, publications.Count);
+    True(JsonNode.DeepEquals(contract, Object(payload.RuntimeContractJson)));
+    var other = nodes.Single(node => node.Id == "component_project_foqn_s2_list::variant::default");
+    session.SetOwnerOverrideValue(other, "absolute", "other-owner", isCollection: false);
+    session.SetExternalCollectionItems(other, "first", [new JsonObject { ["id"] = "other-item" }]);
+    // No active Preview has been prepared in this session: cleanup must use
+    // the edited owner's identity, not an implicit current Preview scope.
+    session.DiscardExternalInputValue(owner, "absolute");
+    session.DiscardExternalCollectionValues(owner, "first");
+    var cleared = session.CaptureTransientState(owner, false);
+    True(!cleared.Values.ContainsKey($"{cleared.ScopeKey}:absolute"));
+    True(!Object(cleared.CollectionTestValuesJson).ContainsKey("first"));
+    var retained = session.CaptureTransientState(other, false);
+    Equal("other-owner", retained.Values[$"{retained.ScopeKey}:absolute"]);
+    Equal("other-item", Object(retained.CollectionTestValuesJson)["first"]![0]!["id"]!.GetValue<string>());
+}
+
 static void DesignNestedMutationsPreserveRoot()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
@@ -9557,6 +9638,44 @@ static void DesignCollectionMutationsSerialize(string moduleId, string collectio
                 var ids = items.Select(item => item["id"]!.GetValue<string>()).ToHashSet();
                 var duplicates = updated.OfType<JsonObject>().Where(item => !ids.Contains(item["id"]!.GetValue<string>())).ToArray();
                 True(duplicates.All(item => DesignPreviewTestValues.CollectionValue(item, input) == "Latest queued value"));
+                if (collectionId == "messages")
+                {
+                    var modeInput = current.Inputs.Single(field => field.Id == "messageAbsolutePositioning");
+                    var resetMode = controller.SetDesignPreviewTestValue(current.Owner.Node, modeInput.JsonKey, "false");
+                    Wait(() => resetMode.IsCompleted);
+                    resetMode.GetAwaiter().GetResult();
+                    var modeControl = Required(typeof(RuntimeInputsCollectionEditor).GetMethod("CreateTestValueControl",
+                        BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(editor,
+                        [current.Owner, current.Preview, modeInput, current.Inputs]) as DictionaryFieldControl);
+                    // Retain the mounted control's old document while newer item edits
+                    // and structure changes are waiting at the same operation gate.
+                    var delayEdit = controller.SetDesignPreviewCollectionItemValues(current.Owner.Node, address, firstId,
+                        new Dictionary<string, JsonNode?> { ["delayAfterPreviousFrames"] = JsonValue.Create(37) });
+                    var extra = controller.MutateDesignPreviewCollectionAsync(current.Owner.Node,
+                        new DuplicateStructuredCollectionItem(address, firstId));
+                    modeControl.SetValue("true", commit: true);
+                    together = Task.WhenAll(delayEdit, extra);
+                    Wait(() => together.IsCompleted && controller.CaptureDesignPreviewTransientState(current.Owner.Node)
+                        .Values.GetValueOrDefault($"module:{current.Owner.Node.Id}::{modeInput.JsonKey}") == "true");
+                    together.GetAwaiter().GetResult();
+                    Equal(items.Count + 3, CurrentItems().Count);
+                    Equal(37, CurrentItems().OfType<JsonObject>().Single(item => item["id"]!.GetValue<string>() == firstId)
+                        ["startFrame"]!.GetValue<int>());
+                    True(CurrentItems().OfType<JsonObject>().Where(item => !ids.Contains(item["id"]!.GetValue<string>()))
+                        .All(item => DesignPreviewTestValues.CollectionValue(item, input) == "Latest queued value"));
+                    var absolute = CurrentItems().DeepClone().AsArray();
+                    var relative = controller.SetDesignPreviewTestValue(current.Owner.Node, modeInput.JsonKey, "false");
+                    var back = controller.SetDesignPreviewTestValue(current.Owner.Node, modeInput.JsonKey, "true");
+                    together = Task.WhenAll(relative, back);
+                    Wait(() => together.IsCompleted);
+                    together.GetAwaiter().GetResult();
+                    SequenceEqual(absolute.Select(item => item!["startFrame"]!.GetValue<int>()),
+                        CurrentItems().Select(item => item!["startFrame"]!.GetValue<int>()));
+                    var removeExtra = controller.MutateDesignPreviewCollectionAsync(current.Owner.Node,
+                        new DeleteStructuredCollectionItem(address, Required(extra.Result.SelectedItemId)));
+                    Wait(() => removeExtra.IsCompleted);
+                    removeExtra.GetAwaiter().GetResult();
+                }
                 var duplicateId = duplicates[0]["id"]!.GetValue<string>();
                 var move = controller.MutateDesignPreviewCollectionAsync(current.Owner.Node,
                     new MoveStructuredCollectionItem(address, duplicateId, firstId));
@@ -20188,7 +20307,7 @@ static void ProductionRuntimeCommitsDiscardTransientPreviewValues()
                 screen.Id,
                 "actorId",
                 JsonValue.Create(actorId));
-            session.DiscardExternalInputValue("actorId");
+            session.DiscardExternalInputValue(screen, "actorId");
             payload = Required(
                 CreatePreviewPayload(database, screen, null));
             session.UpdateForPayload(payload, projectId);
@@ -20246,7 +20365,7 @@ static void ProductionRuntimeCommitsDiscardTransientPreviewValues()
                     "messages",
                     "transient Production collection")[0]?
                 ["text"]?.GetValue<string>());
-        session.DiscardExternalCollectionValues("messages");
+        session.DiscardExternalCollectionValues(screen, "messages");
         var restoredCollection = JsonPath.ParseRequiredObject(
             session.ApplyInputs(payload, "light", projectId)
                 .RuntimeContractJson,
