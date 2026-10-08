@@ -417,35 +417,16 @@ internal sealed class SqliteEditorNodeCommandStore
             connection,
             node.Id);
         var id = $"icon_theme_{Guid.NewGuid():N}";
-        var duplicatedAssets = _resources.DuplicateIconThemeAssets(
+        var duplicate = _resources.DuplicateIconTheme(
             connection,
             source,
+            id,
             $"{node.Name} copy");
-        var metadata = SqliteResourceOwner.IconThemeMetadata(
-            _resources.IconThemeAssetDirectory(
-                duplicatedAssets.AssetRoot),
-            duplicatedAssets.Name);
-        try
-        {
-            _resources.IconThemeRepository.CreateDuplicate(
-                connection,
-                node.Id,
-                id,
-                duplicatedAssets.Name,
-                duplicatedAssets.AssetRoot,
-                metadata.ToJsonString());
-        }
-        catch
-        {
-            _resources.DeleteIconThemeAssetDirectory(
-                duplicatedAssets.AssetRoot);
-            throw;
-        }
 
         return new ProjectTreeNode(
             ProjectTreeNodeKind.IconTheme,
             id,
-            duplicatedAssets.Name,
+            duplicate.Name,
             node.Notes,
             node.RecordClassId,
             node.Parent);

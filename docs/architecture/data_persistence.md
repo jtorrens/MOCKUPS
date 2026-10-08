@@ -781,7 +781,8 @@ Stored cleanup paths use platform-independent slash syntax. Opening a backup
 on another OS can inspect them; retry refuses foreign filesystem roots instead
 of reinterpreting them as paths on the new workstation.
 
-The same resource file service owns imports and replacements. Its focused
+The same resource file service owns imports, replacements and directory
+transfers for rename/duplication. Its focused
 repository stores `resource_asset_writes`: exact root, file paths, original
 bytes (null means absent), intended bytes, newly created directories and a
 committed flag. Both byte images are base64 in a strict entries array. The
@@ -797,6 +798,20 @@ recovery pending. Paths overlapping pending writes cannot be imported,
 replaced, discovered, renamed or deleted. Newly created directories are removed
 only when empty; partially written or externally modified staging files are
 retained for manual inspection, not silently discarded.
+
+Directory transfers capture the complete source inventory, including empty
+directories, through this same owner. The existing directories array also
+describes empty created directories; a write requires files or directories.
+Source contents are checked again before committing a transfer. A rename
+publishes the destination before atomically updating the resource identity,
+confirming the write and enqueueing the captured source for retirement. Source
+cleanup happens only after this commit. A duplicate uses the same write without
+source retirement. Interrupted transfers use the same two recovery journals;
+there is no separate move/copy compensation route. Existing destinations,
+overlapping paths and case-only aliases are rejected, never silently merged.
+An exact in-place rename rewrites only the prepared contents and metadata.
+Pending write directory paths participate in overlap checks, including empty
+directories. The SQL schema and journal JSON field names remain unchanged.
 
 Reference discovery, `Used` state, Usage presentation and deletion protection
 consume one typed edge set. Edges come from exact relational declarations and

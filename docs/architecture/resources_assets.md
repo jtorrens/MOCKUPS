@@ -276,6 +276,18 @@ restore the original files; failed/interrupted recovery remains in Settings →
 Review resource cleanup for explicit retry, never automatic startup repair.
 Filesystem swaps are per-file, not a filesystem-wide atomic transaction.
 
+Icon Theme rename and duplication use the same resource directory-transfer
+owner, not direct directory moves or local copy/rollback helpers. The source
+stays intact until the destination and authored row commit; rename retires the
+source through the shared cleanup outbox in that same transaction. A failed
+retirement remains in Settings for explicit retry. Empty directories are
+preserved. The stable id is retained on rename and new on duplicate; mappings
+and explicit provider metadata are preserved, with only name fields changed.
+An optional manifest must be valid when present; malformed content fails before
+any write. Invalid directory names and occupied or overlapping destinations
+fail explicitly. Case-only aliases require a distinct intermediate name; they
+are never implemented with an unjournaled temporary move.
+
 Icon search requires at least one selected valid source, not a pair. When both
 providers have equivalents, each collection receives its native SVG. When a
 collection has no equivalent, import explicitly copies an available selected

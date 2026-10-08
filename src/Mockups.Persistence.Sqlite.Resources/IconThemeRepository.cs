@@ -84,12 +84,14 @@ internal sealed class IconThemeRepository : IIconThemeRepository
         string id,
         string name,
         string assetRoot,
-        string metadataJson)
+        string metadataJson,
+        SqliteTransaction? transaction = null)
     {
         JsonPath.ParseRequiredObject(metadataJson, $"Icon Theme '{id}' metadata_json");
         var source = Get(connection, sourceId);
         _context.Execute(
             connection,
+            transaction,
             """
             INSERT INTO icon_themes (id, name, asset_root, mapping_json, metadata_json)
             VALUES ($id, $name, $assetRoot, $mappingJson, $metadataJson)
@@ -127,11 +129,13 @@ internal sealed class IconThemeRepository : IIconThemeRepository
         string iconThemeId,
         string name,
         string assetRoot,
-        string metadataJson)
+        string metadataJson,
+        SqliteTransaction? transaction = null)
     {
         JsonPath.ParseRequiredObject(metadataJson, $"Icon Theme '{iconThemeId}' metadata_json");
         _context.Execute(
             connection,
+            transaction,
             "UPDATE icon_themes SET name = $name, asset_root = $assetRoot, metadata_json = $metadataJson WHERE id = $id",
             ("$id", iconThemeId),
             ("$name", name),

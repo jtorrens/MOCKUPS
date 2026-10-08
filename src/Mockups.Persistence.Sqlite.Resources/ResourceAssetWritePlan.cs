@@ -11,23 +11,32 @@ internal sealed record ResourceAssetWritePlan(string Id, string Label, string Ro
     IReadOnlyList<ResourceAssetWriteEntry> Entries, IReadOnlyList<string> CreatedDirectories,
     bool Committed, string Error)
 {
-    internal static ResourceAssetWritePlan Capture(string label, string root, IReadOnlyDictionary<string, byte[]> files)
+    internal static ResourceAssetWritePlan Capture(string label, string root, IReadOnlyDictionary<string, byte[]> files,
+        IReadOnlyList<string>? declaredDirectories = null)
     {
         if (!System.IO.Path.IsPathFullyQualified(root)) throw new InvalidOperationException("Resource writes require an absolute root.");
         root = ResourceAssetCleanupPlan.StoredPath(System.IO.Path.GetFullPath(root));
         var entries = new List<ResourceAssetWriteEntry>();
         var directories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        void CaptureDirectory(string path)
+        {
+            ResourceAssetCleanupPlan.RequireNoLinks(path);
+            for (var parent = path; !Directory.Exists(parent); parent = System.IO.Path.GetDirectoryName(parent)!)
+            {
+                if (parent == root) throw new IOException("Resource root must exist before import.");
+                if (File.Exists(parent)) throw new IOException($"Resource directory is occupied by a file: '{parent}'.");
+                directories.Add(ResourceAssetCleanupPlan.StoredPath(System.IO.Path.GetRelativePath(root, parent)));
+            }
+        }
+        foreach (var directory in declaredDirectories ?? [])
+            CaptureDirectory(ResourceAssetCleanupPlan.ContainedPath(root, directory));
         foreach (var (relative, bytes) in files)
         {
             var path = ResourceAssetCleanupPlan.ContainedPath(root, relative);
             ResourceAssetCleanupPlan.RequireNoLinks(path);
             var before = ReadBytes(path);
             entries.Add(new(relative, before is null ? null : Convert.ToBase64String(before), Convert.ToBase64String(bytes)));
-            for (var parent = System.IO.Path.GetDirectoryName(path)!; !Directory.Exists(parent); parent = System.IO.Path.GetDirectoryName(parent)!)
-            {
-                if (parent == root) throw new IOException("Resource root must exist before import.");
-                directories.Add(ResourceAssetCleanupPlan.StoredPath(System.IO.Path.GetRelativePath(root, parent)));
-            }
+            CaptureDirectory(System.IO.Path.GetDirectoryName(path)!);
         }
         var plan = new ResourceAssetWritePlan(Guid.NewGuid().ToString("N"), label, root, entries,
             directories.OrderBy(p => p.Length).ToList(), false, "");
@@ -58,27 +67,28 @@ internal sealed record ResourceAssetWritePlan(string Id, string Label, string Ro
             Convert.FromBase64String(after);
             entries.Add(new(path, before, after));
         }
-        if (entries.Count == 0) throw new InvalidOperationException("Resource write has no files.");
         var directories = new List<string>();
         foreach (var node in JsonPath.ParseRequiredArray(directoriesJson, id))
         {
             var path = node?.GetValue<string>() ?? throw new InvalidOperationException("Missing resource directory.");
             ResourceAssetCleanupPlan.ContainedPath(root, path);
-            if (!paths.Add(path) || !entries.Any(e => e.Path.StartsWith(path + '/', StringComparison.Ordinal)))
+            if (!paths.Add(path) || entries.Any(e => path.StartsWith(e.Path + '/', StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException("Invalid resource write directory.");
             directories.Add(path);
         }
+        if (entries.Count == 0 && directories.Count == 0) throw new InvalidOperationException("Resource write has no files or directories.");
         for (var i = 0; i < entries.Count; i++)
             if (entries.Where((_, j) => j != i).Any(e => ResourceAssetCleanupPlan.Overlaps(e.Path, entries[i].Path)))
                 throw new InvalidOperationException("Resource files cannot contain other resource files.");
         return new(id, label, root, entries, directories, committed, error);
     }
 
-    internal IEnumerable<string> Paths => Entries.Select(e => ResourceAssetCleanupPlan.ContainedPath(Root, e.Path));
+    internal IEnumerable<string> Paths => Entries.Select(e => e.Path).Concat(CreatedDirectories)
+        .Select(path => ResourceAssetCleanupPlan.ContainedPath(Root, path));
 
     private void ValidateRoot()
     {
-        new ResourceAssetCleanupPlan(Id, Label, Root, Entries[0].Path, [], "").RequireNativeRoot();
+        new ResourceAssetCleanupPlan(Id, Label, Root, "root-check", [], "").RequireNativeRoot();
         ResourceAssetCleanupPlan.RequireNoLinks(Root);
         if (!Directory.Exists(Root)) throw new IOException("Resource root is unavailable.");
     }

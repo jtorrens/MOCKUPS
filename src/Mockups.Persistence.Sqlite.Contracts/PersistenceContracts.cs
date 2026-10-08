@@ -504,7 +504,8 @@ internal interface IIconThemeRepository
         string id,
         string name,
         string assetRoot,
-        string metadataJson);
+        string metadataJson,
+        SqliteTransaction? transaction = null);
 
     void UpdateMapping(SqliteConnection connection, string iconThemeId, string mappingJson);
 
@@ -519,7 +520,8 @@ internal interface IIconThemeRepository
         string iconThemeId,
         string name,
         string assetRoot,
-        string metadataJson);
+        string metadataJson,
+        SqliteTransaction? transaction = null);
 
     void Delete(SqliteConnection connection, string iconThemeId, SqliteTransaction? transaction = null);
 }

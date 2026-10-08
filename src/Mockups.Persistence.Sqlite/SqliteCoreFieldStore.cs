@@ -200,19 +200,9 @@ internal sealed class SqliteCoreFieldStore
         var row = _resources.IconThemeRepository.Get(
             connection,
             node.Id);
-        var renamedAssets = _resources.RenameIconThemeAssets(
+        _resources.RenameIconTheme(
             connection,
             row,
             node.Name);
-        var metadata = SqliteResourceOwner.IconThemeMetadata(
-            _resources.IconThemeAssetDirectory(
-                renamedAssets.AssetRoot),
-            renamedAssets.Name);
-        _resources.IconThemeRepository.UpdateIdentity(
-            connection,
-            node.Id,
-            renamedAssets.Name,
-            renamedAssets.AssetRoot,
-            metadata.ToJsonString());
     }
 }

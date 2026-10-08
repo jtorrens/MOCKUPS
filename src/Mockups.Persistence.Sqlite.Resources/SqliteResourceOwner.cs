@@ -6,10 +6,6 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed record IconThemeAssetMoveResult(
-    string AssetRoot,
-    string Name);
-
 internal sealed partial class SqliteResourceOwner :
     IActorPreviewRepository,
     IEditorPresentationContextRepository,

@@ -125,6 +125,8 @@ var tests = new (string Name, Action Run)[]
     ("Resource cleanup retries preserve changed new and referenced files", ResourceCleanupRetriesAreSafe),
     ("Resource imports roll back files and metadata for fonts and icon collections", ResourceImportsRestoreFilesAndMetadata),
     ("Resource write recovery is explicit durable and preserves external edits", ResourceWriteRecoveryIsSafe),
+    ("Resource directory transfers share rollback and retirement for fonts and icons", ResourceDirectoryTransfersAreRecoverable),
+    ("Icon Theme rename and duplication preserve identities metadata and files", IconThemeTransfersPreserveContract),
     ("Production Font file documents reject filtered or inferred values", ProductionFontFileDocumentsAreStrict),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFocusedContract),
     ("generated fill SVG previews preserve their filled geometry", GeneratedFillSvgPreviewsPreserveGeometry),
@@ -13957,6 +13959,171 @@ static void ThemeRepositoryPreservesFocusedContract()
     {
         File.Delete(temporary);
     }
+}
+
+static void ResourceDirectoryTransfersAreRecoverable()
+{
+    var root = Path.Combine(OperatingSystem.IsMacOS() ? "/private/tmp" : Path.GetTempPath(), $"mockups-resource-transfer-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var databasePath = Path.Combine(root, "project.sqlite");
+        File.Copy(ParityDatabasePath(), databasePath);
+        var context = new SqliteProjectContext(databasePath);
+        using var connection = context.OpenConnection();
+        var repository = new ResourceAssetCleanupRepository(context);
+        var referenced = false;
+        var service = new ResourceAssetCleanupService(context, (_, _) => referenced);
+        foreach (var extension in new[] { "ttf", "svg" })
+        {
+            var source = "source-" + extension;
+            var destination = "destination-" + extension;
+            var sourcePath = Path.Combine(root, source);
+            var destinationPath = Path.Combine(root, destination);
+            var file = "probe." + extension;
+            Directory.CreateDirectory(Path.Combine(sourcePath, "empty", "nested"));
+            File.WriteAllText(Path.Combine(sourcePath, file), "original");
+            Throws<InvalidOperationException>(() => service.TransferDirectory(connection, extension, root, source, destination, true,
+                _ => { }, _ => throw new InvalidOperationException("injected SQL failure")));
+            Equal("original", File.ReadAllText(Path.Combine(sourcePath, file)));
+            True(!Directory.Exists(destinationPath));
+            Equal(0, service.GetPending().Count);
+
+            // Mutation during preparation fails without publishing anything.
+            Throws<IOException>(() => service.TransferDirectory(connection, extension, root, source, destination, true,
+                _ => File.WriteAllText(Path.Combine(sourcePath, file), "external edit"), _ => { }));
+            True(!Directory.Exists(destinationPath));
+            File.WriteAllText(Path.Combine(sourcePath, file), "original");
+            service.TransferDirectory(connection, extension, root, source, destination, false, _ => { }, _ => { });
+            True(Directory.Exists(Path.Combine(destinationPath, "empty", "nested")));
+            Equal("original", File.ReadAllText(Path.Combine(destinationPath, file)));
+            True(Directory.Exists(sourcePath));
+            Throws<IOException>(() => service.TransferDirectory(connection, extension, root, source, destination, true, _ => { }, _ => { }));
+            Throws<IOException>(() => service.TransferDirectory(connection, extension, root, source, source + "/child", true, _ => { }, _ => { }));
+
+            // After commit, cleanup failure is not a failed mutation. Recovery
+            // retains the original root even after reopening and external edits.
+            referenced = true;
+            service.TransferDirectory(connection, extension, root, source, destination + "-renamed", true, _ => { }, _ => { });
+            var pending = service.GetPending().Single();
+            True(Directory.Exists(sourcePath));
+            True(Directory.Exists(Path.Combine(root, destination + "-renamed")));
+            var beforeRead = File.ReadAllBytes(databasePath);
+            Equal(1, SqlitePersistence.OpenCurrent(databasePath).ResourceAssetCleanup.GetPending().Count);
+            SequenceEqual(beforeRead, File.ReadAllBytes(databasePath));
+            File.WriteAllText(Path.Combine(sourcePath, file), "external edit");
+            referenced = false;
+            service.Retry(pending.Id);
+            Equal("external edit", File.ReadAllText(Path.Combine(sourcePath, file)));
+            Equal(1, service.GetPending().Count);
+            File.WriteAllText(Path.Combine(sourcePath, file), "original");
+            service.Retry(pending.Id);
+            True(!Directory.Exists(sourcePath));
+            Equal(0, service.GetPending().Count);
+        }
+
+        // A directory-only interrupted write has the same explicit undo path.
+        Directory.CreateDirectory(Path.Combine(root, "empty-source", "nested"));
+        var plan = ResourceAssetWritePlan.Capture("Empty directory", root, new Dictionary<string, byte[]>(), ["empty-copy", "empty-copy/nested"]);
+        repository.AddWrite(connection, plan);
+        plan.Apply();
+        True(Directory.Exists(Path.Combine(root, "empty-copy", "nested")));
+        Throws<InvalidOperationException>(() => service.RequireAvailable(Path.Combine(root, "empty-copy")));
+        var reopened = SqlitePersistence.OpenCurrent(databasePath);
+        Equal(1, reopened.ResourceAssetCleanup.GetPending().Count);
+        service.Retry(plan.Id);
+        True(!Directory.Exists(Path.Combine(root, "empty-copy")));
+        service.TransferDirectory(connection, "Empty", root, "empty-source", "empty-renamed", true, _ => { }, _ => { });
+        True(!Directory.Exists(Path.Combine(root, "empty-source")));
+        True(Directory.Exists(Path.Combine(root, "empty-renamed", "nested")));
+        service.TransferDirectory(connection, "Empty in place", root, "empty-renamed", "empty-renamed", true, _ => { }, _ => { });
+        Equal(0, service.GetPending().Count);
+
+        Directory.CreateSymbolicLink(Path.Combine(root, "linked-source"), Path.Combine(root, "empty-renamed"));
+        Throws<IOException>(() => service.TransferDirectory(connection, "Link", root, "linked-source", "link-copy", false, _ => { }, _ => { }));
+        Throws<InvalidOperationException>(() => service.TransferDirectory(connection, "Escape", root, "empty-renamed", "../escape", false, _ => { }, _ => { }));
+    }
+    finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); Directory.Delete(root, true); }
+}
+
+static void IconThemeTransfersPreserveContract()
+{
+    var root = Path.Combine(OperatingSystem.IsMacOS() ? "/private/tmp" : Path.GetTempPath(), $"mockups-icon-transfer-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var path = Path.Combine(root, "project.sqlite");
+        File.Copy(ParityDatabasePath(), path);
+        var database = new SqliteProjectTestContext(path);
+        var context = database.Context;
+        using var connection = context.OpenConnection();
+        var system = Path.Combine(root, "system");
+        var directory = Path.Combine(system, "icon-themes", "Original");
+        Directory.CreateDirectory(Path.Combine(directory, "empty"));
+        File.WriteAllText(Path.Combine(directory, "manifest.json"), "{\"name\":\"Original\",\"custom\":true}");
+        File.WriteAllText(Path.Combine(directory, "probe.svg"), "svg contents");
+        var resources = new SqliteResourceOwner(context, database.Production.ProjectEpisodeRepository,
+            database.Production.ModuleInstanceThemeContextService, new SystemAssetPathResolver(system));
+        var original = resources.IconThemeRepository.QueryAll(connection).First();
+        var metadata = JsonPath.ParseRequiredObject(original.MetadataJson, "test");
+        metadata["custom"] = "preserved";
+        var source = resources.IconThemeRepository.CreateDuplicate(connection, original.Id, "transfer_probe", "Original", "icon-themes/Original", metadata.ToJsonString());
+        var expectedIconSet = JsonPath.RequiredObject(metadata, "iconSet", "test").DeepClone().AsObject();
+        context.ExecuteScript(connection, "CREATE TRIGGER reject_transfer BEFORE UPDATE OF asset_root ON icon_themes BEGIN SELECT RAISE(ABORT,'rename failed'); END;");
+        Throws<Microsoft.Data.Sqlite.SqliteException>(() => resources.RenameIconTheme(connection, source, "Renamed"));
+        Equal(source, resources.IconThemeRepository.Get(connection, source.Id));
+        True(Directory.Exists(directory));
+        True(!Directory.Exists(Path.Combine(system, "icon-themes", "Renamed")));
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+        context.ExecuteScript(connection, "DROP TRIGGER reject_transfer;");
+        // A late failure after the identity update must roll back the row and
+        // destination together, including the retirement outbox insertion.
+        context.ExecuteScript(connection, "CREATE TRIGGER reject_retirement BEFORE INSERT ON resource_asset_cleanup BEGIN SELECT RAISE(ABORT,'retirement failed'); END;");
+        Throws<Microsoft.Data.Sqlite.SqliteException>(() => resources.RenameIconTheme(connection, source, "Renamed"));
+        Equal(source, resources.IconThemeRepository.Get(connection, source.Id));
+        True(Directory.Exists(directory));
+        True(!Directory.Exists(Path.Combine(system, "icon-themes", "Renamed")));
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+        context.ExecuteScript(connection, "DROP TRIGGER reject_retirement;");
+        context.ExecuteScript(connection, "CREATE TRIGGER reject_duplicate BEFORE INSERT ON icon_themes BEGIN SELECT RAISE(ABORT,'duplicate failed'); END;");
+        Throws<Microsoft.Data.Sqlite.SqliteException>(() => resources.DuplicateIconTheme(connection, source, "failed_duplicate", "Copy"));
+        True(!Directory.Exists(Path.Combine(system, "icon-themes", "Copy")));
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+        context.ExecuteScript(connection, "DROP TRIGGER reject_duplicate;");
+
+        var duplicate = resources.DuplicateIconTheme(connection, source, "transfer_copy", "Copy");
+        Equal(source.MappingJson, duplicate.MappingJson);
+        True(Directory.Exists(directory));
+        True(Directory.Exists(Path.Combine(system, duplicate.AssetRoot, "empty")));
+        // Retain both journals after commit to simulate interrupted completion.
+        context.ExecuteScript(connection, "CREATE TRIGGER retain_write BEFORE DELETE ON resource_asset_writes BEGIN SELECT RAISE(ABORT,'retain journal'); END; CREATE TRIGGER retain_cleanup BEFORE DELETE ON resource_asset_cleanup BEGIN SELECT RAISE(ABORT,'retain cleanup'); END;");
+        resources.RenameIconTheme(connection, duplicate, "Renamed");
+        var renamed = resources.IconThemeRepository.Get(connection, duplicate.Id);
+        Equal(2, resources.AssetCleanup.GetPending().Count);
+        context.ExecuteScript(connection, "DROP TRIGGER retain_write; DROP TRIGGER retain_cleanup;");
+        Equal(2, SqlitePersistence.OpenCurrent(path).ResourceAssetCleanup.GetPending().Count);
+        foreach (var pending in resources.AssetCleanup.GetPending()) resources.AssetCleanup.Retry(pending.Id);
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+        Equal(duplicate.Id, renamed.Id);
+        Equal(source.MappingJson, renamed.MappingJson);
+        True(!Directory.Exists(Path.Combine(system, duplicate.AssetRoot)));
+        Equal("svg contents", File.ReadAllText(Path.Combine(system, renamed.AssetRoot, "probe.svg")));
+        var renamedMetadata = JsonPath.ParseRequiredObject(renamed.MetadataJson, "test");
+        Equal("preserved", renamedMetadata["custom"]!.GetValue<string>());
+        expectedIconSet["setName"] = "Renamed";
+        Equal(expectedIconSet.ToJsonString(), renamedMetadata["iconSet"]!.ToJsonString());
+        Equal("Renamed", JsonPath.ParseRequiredObject(File.ReadAllText(Path.Combine(system, renamed.AssetRoot, "manifest.json")), "test")["name"]!.GetValue<string>());
+        resources.RenameIconTheme(connection, renamed, "Renamed");
+        Equal(renamed, resources.IconThemeRepository.Get(connection, renamed.Id));
+        Throws<IOException>(() => resources.RenameIconTheme(connection, renamed, "Original"));
+        Throws<IOException>(() => resources.RenameIconTheme(connection, renamed, "renamed"));
+        Throws<InvalidOperationException>(() => resources.RenameIconTheme(connection, renamed, "../escape"));
+        File.WriteAllText(Path.Combine(directory, "manifest.json"), "invalid JSON");
+        Throws<InvalidOperationException>(() => resources.DuplicateIconTheme(connection, source, "invalid_copy", "Invalid"));
+        True(!Directory.Exists(Path.Combine(system, "icon-themes", "Invalid")));
+        Equal(0, resources.AssetCleanup.GetPending().Count);
+    }
+    finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); Directory.Delete(root, true); }
 }
 
 static void ResourceImportsRestoreFilesAndMetadata()

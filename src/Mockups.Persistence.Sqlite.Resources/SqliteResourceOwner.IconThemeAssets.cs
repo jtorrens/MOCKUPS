@@ -1,142 +1,88 @@
 using Microsoft.Data.Sqlite;
-using System;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
+using Mockups.DesktopEditorShell.Common;
+using System.Text;
 
 namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteResourceOwner
 {
-    internal IconThemeAssetMoveResult DuplicateIconThemeAssets(SqliteConnection connection, IconThemeRecord source, string targetName)
+    internal IconThemeRecord DuplicateIconTheme(SqliteConnection connection, IconThemeRecord source, string id, string targetName)
     {
-        var sourceDirectory = IconThemeAssetDirectory(source.AssetRoot);
-        if (!Directory.Exists(sourceDirectory))
+        lock (_context.WriteGate)
         {
-            throw new InvalidOperationException($"Missing icon theme asset directory '{source.AssetRoot}'.");
+            source = IconThemeRepository.Get(connection, source.Id);
+            var targetDirectory = UniqueIconThemeDirectory(SystemIconThemesRoot(), IconThemeDirectoryName(targetName));
+            TransferIconTheme(connection, source, targetDirectory, false,
+                (transaction, name, assetRoot, metadata) => IconThemeRepository.CreateDuplicate(
+                    connection, source.Id, id, name, assetRoot, metadata, transaction));
+            return IconThemeRepository.Get(connection, id);
         }
-
-        var iconThemesRoot = SystemIconThemesRoot();
-        Directory.CreateDirectory(iconThemesRoot);
-        var targetDirectory = UniqueIconThemeDirectory(iconThemesRoot, IconThemeDirectoryName(targetName));
-        AssetCleanup.RequireAvailable(sourceDirectory);
-        AssetCleanup.RequireAvailable(targetDirectory);
-        CopyDirectory(sourceDirectory, targetDirectory);
-        RewriteIconThemeManifestName(targetDirectory, Path.GetFileName(targetDirectory));
-        return new IconThemeAssetMoveResult(
-            NormalizeRelativePath(Path.GetRelativePath(_systemAssets.Root, targetDirectory)),
-            Path.GetFileName(targetDirectory));
     }
 
-    internal IconThemeAssetMoveResult RenameIconThemeAssets(SqliteConnection connection, IconThemeRecord source, string targetName)
+    internal void RenameIconTheme(SqliteConnection connection, IconThemeRecord source, string targetName)
+    {
+        lock (_context.WriteGate)
+        {
+            source = IconThemeRepository.Get(connection, source.Id);
+            var targetDirectory = Path.Combine(SystemIconThemesRoot(), IconThemeDirectoryName(targetName));
+            TransferIconTheme(connection, source, targetDirectory, true,
+                (transaction, name, assetRoot, metadata) => IconThemeRepository.UpdateIdentity(
+                    connection, source.Id, name, assetRoot, metadata, transaction));
+        }
+    }
+
+    private void TransferIconTheme(SqliteConnection connection, IconThemeRecord source, string destination, bool retireSource,
+        Action<SqliteTransaction, string, string, string> writeRecord)
     {
         var sourceDirectory = IconThemeAssetDirectory(source.AssetRoot);
-        if (!Directory.Exists(sourceDirectory))
-        {
-            throw new InvalidOperationException($"Missing icon theme asset directory '{source.AssetRoot}'.");
-        }
-
-        var iconThemesRoot = SystemIconThemesRoot();
-        Directory.CreateDirectory(iconThemesRoot);
-        var targetDirectory = Path.Combine(iconThemesRoot, IconThemeDirectoryName(targetName));
-        AssetCleanup.RequireAvailable(sourceDirectory);
-        AssetCleanup.RequireAvailable(targetDirectory);
-        if (Path.GetFullPath(sourceDirectory).Equals(Path.GetFullPath(targetDirectory), StringComparison.Ordinal))
-        {
-            RewriteIconThemeManifestName(sourceDirectory, Path.GetFileName(sourceDirectory));
-            return new IconThemeAssetMoveResult(
-                NormalizeRelativePath(Path.GetRelativePath(_systemAssets.Root, sourceDirectory)),
-                Path.GetFileName(sourceDirectory));
-        }
-
-        if (Directory.Exists(targetDirectory))
-        {
-            throw new InvalidOperationException($"Icon theme folder '{Path.GetFileName(targetDirectory)}' already exists.");
-        }
-
-        Directory.Move(sourceDirectory, targetDirectory);
-        RewriteIconThemeManifestName(targetDirectory, Path.GetFileName(targetDirectory));
-        return new IconThemeAssetMoveResult(
-            NormalizeRelativePath(Path.GetRelativePath(_systemAssets.Root, targetDirectory)),
-            Path.GetFileName(targetDirectory));
+        var name = Path.GetFileName(destination);
+        var assetRoot = NormalizeRelativePath(Path.GetRelativePath(_systemAssets.Root, destination));
+        var metadata = JsonPath.ParseRequiredObject(source.MetadataJson, $"Icon Theme '{source.Id}' metadata");
+        JsonPath.RequiredObject(metadata, "iconSet", source.Id)["setName"] = name;
+        if (metadata.ContainsKey("manifest"))
+            JsonPath.RequiredObject(metadata, "manifest", source.Id)["name"] = name;
+        AssetCleanup.TransferDirectory(connection, $"Icon Theme '{source.Name}'", SystemIconThemesRoot(),
+            NormalizeRelativePath(Path.GetRelativePath(SystemIconThemesRoot(), sourceDirectory)),
+            NormalizeRelativePath(Path.GetRelativePath(SystemIconThemesRoot(), destination)), retireSource,
+            files =>
+            {
+                if (files.TryGetValue("manifest.json", out var bytes))
+                {
+                    var manifest = JsonPath.ParseRequiredObject(new UTF8Encoding(false, true).GetString(bytes), source.Id + " manifest");
+                    manifest["name"] = name;
+                    files["manifest.json"] = Encoding.UTF8.GetBytes(manifest.ToJsonString());
+                    metadata["manifest"] = manifest.DeepClone();
+                }
+            }, transaction => writeRecord(transaction, name, assetRoot, metadata.ToJsonString()));
     }
 
     internal string IconThemeAssetDirectory(string assetRoot)
     {
         var directory = ResolveSystemAssetPath(assetRoot);
         var relative = Path.GetRelativePath(SystemIconThemesRoot(), directory);
-        if (relative.StartsWith("..", StringComparison.Ordinal)
-            || Path.IsPathFullyQualified(relative))
-        {
-            throw new InvalidOperationException(
-                $"Icon Theme asset root '{assetRoot}' is outside the System Icon Themes root.");
-        }
-
+        ResourceAssetCleanupPlan.ContainedPath(ResourceAssetCleanupPlan.StoredPath(SystemIconThemesRoot()),
+            ResourceAssetCleanupPlan.StoredPath(relative));
         return directory;
     }
 
-    internal string SystemIconThemesRoot() =>
-        ResolveSystemAssetPath("icon-themes");
+    internal string SystemIconThemesRoot() => ResolveSystemAssetPath("icon-themes");
 
     private static string UniqueIconThemeDirectory(string iconThemesRoot, string directoryName)
     {
-        var safeName = string.IsNullOrWhiteSpace(directoryName) ? "Icon Theme" : directoryName;
-        var candidate = Path.Combine(iconThemesRoot, safeName);
+        var candidate = Path.Combine(iconThemesRoot, directoryName);
         var index = 2;
-        while (Directory.Exists(candidate))
-        {
-            candidate = Path.Combine(iconThemesRoot, $"{safeName} {index}");
-            index++;
-        }
-
+        while (Directory.Exists(candidate) || File.Exists(candidate))
+            candidate = Path.Combine(iconThemesRoot, $"{directoryName} {index++}");
         return candidate;
     }
 
     private static string IconThemeDirectoryName(string name)
     {
-        var invalidCharacters = Path.GetInvalidFileNameChars();
-        var directoryName = new string(name.Trim().Select((character) =>
-            invalidCharacters.Contains(character) ? '_' : character).ToArray()).Trim();
-        return string.IsNullOrWhiteSpace(directoryName) ? "Icon Theme" : directoryName;
-    }
-
-    private static void CopyDirectory(string sourceDirectory, string targetDirectory)
-    {
-        Directory.CreateDirectory(targetDirectory);
-        foreach (var directory in Directory.EnumerateDirectories(sourceDirectory, "*", SearchOption.AllDirectories))
-        {
-            Directory.CreateDirectory(Path.Combine(targetDirectory, Path.GetRelativePath(sourceDirectory, directory)));
-        }
-
-        foreach (var file in Directory.EnumerateFiles(sourceDirectory, "*", SearchOption.AllDirectories))
-        {
-            File.Copy(file, Path.Combine(targetDirectory, Path.GetRelativePath(sourceDirectory, file)), overwrite: false);
-        }
-    }
-
-    private static void RewriteIconThemeManifestName(string directory, string setName)
-    {
-        var manifestPath = Path.Combine(directory, "manifest.json");
-        if (!File.Exists(manifestPath)) return;
-
-        try
-        {
-            var manifest = ParseJsonObject(File.ReadAllText(manifestPath));
-            manifest["name"] = setName;
-            File.WriteAllText(manifestPath, manifest.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-        }
-        catch (JsonException)
-        {
-            // A malformed manifest should not block duplicating or renaming the icon theme.
-        }
-    }
-
-    internal void DeleteIconThemeAssetDirectory(string assetRoot)
-    {
-        var targetDirectory = IconThemeAssetDirectory(assetRoot);
-        var plan = ResourceAssetCleanupPlan.Capture("Uncommitted Icon Theme assets", SystemIconThemesRoot(),
-            Path.GetRelativePath(SystemIconThemesRoot(), targetDirectory));
-        using var connection = OpenConnection();
-        AssetCleanup.Commit(connection, [plan], _ => { });
+        var directoryName = name.Trim();
+        if (string.IsNullOrWhiteSpace(directoryName) || directoryName is "." or ".."
+            || directoryName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
+            || directoryName.Contains('\\') || directoryName.Contains(':'))
+            throw new InvalidOperationException("Icon Theme name must be a valid directory name.");
+        return directoryName;
     }
 }
