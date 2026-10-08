@@ -162,7 +162,7 @@ public partial class MainWindow : SukiWindow
             this);
         var previewAuthoringRefresh =
             new PreviewAuthoringRefreshCoordinator(
-                () => Session.Workspace,
+                () => _previewController.PreviewAuthoringWorkspace,
                 _previewController.NotifyAuthoredPreviewInputsChanged,
                 RefreshPreviewOptionsAsync,
                 RefreshCurrentPreviewAuthoringSurfaceAsync);
@@ -1195,7 +1195,7 @@ public partial class MainWindow : SukiWindow
             candidate.PreviewNode,
             candidate.Prepared is null
                 ? null
-                : EditorCollectionCardFactory
+                : _collectionCards
                     .CreatePreparedPreviewAuthoringSurface(
                         candidate.Prepared));
     }
@@ -1281,7 +1281,7 @@ public partial class MainWindow : SukiWindow
         _previewUtilityTabStateKey =
             $"{EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId}:preview:utility-tab";
         var selectedId = _editorSessionUiState.Selection(_previewUtilityTabStateKey);
-        var supportsTimeline = Session.Workspace == EditorWorkspace.Production
+        var supportsTimeline = _previewController.PreviewAuthoringWorkspace == EditorWorkspace.Production
             && node.Kind is ProjectTreeNodeKind.Shot
                 or ProjectTreeNodeKind.ModuleInstance;
         var selectedTab = selectedId switch

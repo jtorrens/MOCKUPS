@@ -352,7 +352,8 @@ var tests = new (string Name, Action Run)[]
     ("Social Post composes two structure-projected header and footer rows", SocialPostComposesHeaderRows),
     ("Social Post Screen creation persists projected Runtime rows atomically", SocialPostScreenCreationIsAtomic),
     ("Social Post editor exposes its current generic header contract", SocialPostEditorExposesCurrentHeaderContract),
-    ("Production scalar commits keep Screen Payload mounted", ProductionScalarCommitKeepsScreenPayloadMounted),
+    ("Production scalar commits keep Screen Payload mounted", () => ProductionScalarCommitKeepsScreenPayloadMounted(false)),
+    ("pinned Production authoring refreshes its timeline while editing Design", () => ProductionScalarCommitKeepsScreenPayloadMounted(true)),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
@@ -4684,12 +4685,12 @@ static void PostCommitPresentationReadsUseOperationCoordination()
 
 static void ProductionAuthoringRefreshesSessionBeforeTimeline()
 {
-    var workspace = EditorWorkspace.Design;
+    var previewWorkspace = EditorWorkspace.Design;
     var previewRefreshes = 0;
     var productionRefreshOrder = new List<string>();
     var productionSessionRefreshed = true;
     var refresh = new PreviewAuthoringRefreshCoordinator(
-        () => workspace,
+        () => previewWorkspace,
         () => previewRefreshes++,
         async () =>
         {
@@ -4707,7 +4708,7 @@ static void ProductionAuthoringRefreshesSessionBeforeTimeline()
     Equal(1, previewRefreshes);
     Equal(0, productionRefreshOrder.Count);
 
-    workspace = EditorWorkspace.Production;
+    previewWorkspace = EditorWorkspace.Production;
     refresh.NotifyAsync().GetAwaiter().GetResult();
     Equal(1, previewRefreshes);
     SequenceEqual(["session", "timeline"], productionRefreshOrder);
@@ -6790,7 +6791,7 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
     }
 }
 
-static void ProductionScalarCommitKeepsScreenPayloadMounted()
+static void ProductionScalarCommitKeepsScreenPayloadMounted(bool pinWhileEditingDesign)
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(
@@ -6878,6 +6879,43 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
                     + string.Join(", ", fieldIds));
             }
 
+            var preview = typeof(MainWindow)
+                .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorPreviewController
+                ?? throw new InvalidOperationException("Missing Preview controller.");
+            var preparedSession = typeof(EditorPreviewController)
+                .GetField("_productionSessionSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException("Missing prepared Production Preview session.");
+            if (pinWhileEditingDesign)
+            {
+                var lockButton = Required(window.FindControl<Button>("PreviewContextLockButton"));
+                True(SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return lockButton.IsVisible && lockButton.IsEnabled;
+                }, TimeSpan.FromSeconds(10)));
+                lockButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Required(window.FindControl<Button>("DesignWorkspaceButton"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                True(SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return WindowSession(window).Workspace == EditorWorkspace.Design
+                        && authoringHost.Content is Control content
+                        && content.GetVisualDescendants()
+                            .OfType<DictionaryFieldControl>()
+                            .Any(field => field.FieldId == "headerSubtitle");
+                }, TimeSpan.FromSeconds(10)));
+                Equal(EditorWorkspace.Production, preview.PreviewAuthoringWorkspace);
+                True(Required(window.FindControl<TabItem>("PreviewTimelineTab")).IsVisible,
+                    "A pinned Production Preview must keep its Timeline visible in Design.");
+                Equal(screenId, preview.PreviewAuthoringNode(
+                    Required(WindowSession(window).SelectedNode),
+                    WindowSession(window).TreeRoots).Id);
+            }
+            var previousSession = Required(
+                preparedSession.GetValue(preview) as ProductionPreviewSessionSnapshot);
+            var previousFrame = preview.ProductionShotFrame();
             var mountedSurface = Required(
                 authoringHost.Content as Control);
             var mountedField = mountedSurface
@@ -6904,6 +6942,18 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
                 },
                 TimeSpan.FromSeconds(12)));
             True(headerCommit.GetAwaiter().GetResult());
+            True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                return !ReferenceEquals(previousSession, preparedSession.GetValue(preview));
+            }, TimeSpan.FromSeconds(10)),
+                "A Production payload edit must refresh its prepared timeline even from Design.");
+            Equal(previousFrame, preview.ProductionShotFrame());
+            Equal(pinWhileEditingDesign ? EditorWorkspace.Design : EditorWorkspace.Production,
+                WindowSession(window).Workspace);
+            Equal(screenId, preview.PreviewAuthoringNode(
+                Required(WindowSession(window).SelectedNode),
+                WindowSession(window).TreeRoots).Id);
 
             var settle = Stopwatch.StartNew();
             while (settle.Elapsed < TimeSpan.FromSeconds(1))
@@ -7040,6 +7090,56 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted()
                     .GetVisualDescendants()
                     .OfType<DictionaryFieldControl>()
                     .Single((field) => field.FieldId == "direction")));
+
+            // Wait for the complete catalog refresh, not merely SQLite commit:
+            // a slow preparation used to hide the later payload remount.
+            var messageSession = Required(
+                preparedSession.GetValue(preview) as ProductionPreviewSessionSnapshot);
+            messageText.SetValue(nextMessageText + " again", commit: true);
+            True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                return !ReferenceEquals(messageSession, preparedSession.GetValue(preview));
+            }, TimeSpan.FromSeconds(10)));
+            var refreshFinished = Stopwatch.StartNew();
+            while (refreshFinished.Elapsed < TimeSpan.FromSeconds(1))
+            {
+                Dispatcher.UIThread.RunJobs();
+                True(ReferenceEquals(mountedSurface, authoringHost.Content));
+                Thread.Sleep(10);
+            }
+
+            // Verify the view owner's structural invalidation independently of
+            // pending shell notifications from the preceding scalar commits.
+            var factory = Required(typeof(MainWindow)
+                .GetField("_collectionCards", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorCollectionCardFactory);
+            var mounted = ((RuntimeInputsCollectionEditor Editor, EditorPreviewAuthoringSurface View))
+                Required(typeof(EditorCollectionCardFactory)
+                    .GetField("_mountedPreview", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(factory));
+            var mountedSnapshot = Required(typeof(RuntimeInputsCollectionEditor)
+                .GetField("_mountedSurface", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(mounted.Editor) as RuntimeInputSurface);
+            var messageDocument = mountedSnapshot.Preview;
+            var firstMessageId = JsonPath.RequiredString(
+                JsonPath.RequiredArray(messageDocument, "messages", "Test messages")[0]!.AsObject(),
+                "id", "Test message");
+            var mutation = StructuredCollectionMutationEngine.Apply(
+                messageDocument,
+                JsonPath.ParseRequiredObject(
+                    Required(mountedSnapshot.AnimationSnapshot).Source.AnimationJson, "Test animation"),
+                mountedSnapshot.Collections.Single(collection => collection.JsonKey == "messages"),
+                new DuplicateStructuredCollectionItem(
+                    StructuredCollectionAddress.Root("messages"), firstMessageId));
+            var replacement = Required(factory.CreatePreparedPreviewAuthoringSurface(
+                new EditorPreparedPreviewAuthoringSurface("Screen Payload", mounted.Editor,
+                    mountedSnapshot with { Preview = mutation.Content })));
+            True(!ReferenceEquals(mounted.View.Content, replacement.Content),
+                "A collection structure change must replace the payload view.");
+            Equal(screenId, preview.PreviewAuthoringNode(
+                Required(WindowSession(window).SelectedNode),
+                WindowSession(window).TreeRoots).Id);
             window.Close();
             Dispatcher.UIThread.RunJobs();
         }, CancellationToken.None).GetAwaiter().GetResult();
@@ -20313,6 +20413,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",
     "Social Post editor exposes its current generic header contract",
     "Production scalar commits keep Screen Payload mounted",
+    "pinned Production authoring refreshes its timeline while editing Design",
 };
 var exhaustiveTests = new HashSet<string>(StringComparer.Ordinal)
 {

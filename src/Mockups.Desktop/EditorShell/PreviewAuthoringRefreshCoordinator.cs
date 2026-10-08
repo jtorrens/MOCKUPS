@@ -5,18 +5,18 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class PreviewAuthoringRefreshCoordinator
 {
-    private readonly Func<EditorWorkspace> _workspace;
+    private readonly Func<EditorWorkspace> _previewWorkspace;
     private readonly Action _refreshPreview;
     private readonly Func<Task<bool>> _refreshProductionSession;
     private readonly Func<Task> _refreshProductionAuthoring;
 
     public PreviewAuthoringRefreshCoordinator(
-        Func<EditorWorkspace> workspace,
+        Func<EditorWorkspace> previewWorkspace,
         Action refreshPreview,
         Func<Task<bool>> refreshProductionSession,
         Func<Task> refreshProductionAuthoring)
     {
-        _workspace = workspace;
+        _previewWorkspace = previewWorkspace;
         _refreshPreview = refreshPreview;
         _refreshProductionSession = refreshProductionSession;
         _refreshProductionAuthoring = refreshProductionAuthoring;
@@ -26,7 +26,7 @@ internal sealed class PreviewAuthoringRefreshCoordinator
 
     internal async Task NotifyAsync()
     {
-        if (_workspace() == EditorWorkspace.Production)
+        if (_previewWorkspace() == EditorWorkspace.Production)
         {
             if (await _refreshProductionSession())
             {

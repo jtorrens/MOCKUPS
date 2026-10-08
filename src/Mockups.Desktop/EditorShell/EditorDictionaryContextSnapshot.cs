@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -38,6 +40,28 @@ internal sealed record EditorDictionaryContextSnapshot(
     IReadOnlyDictionary<ThemeComponentVariantSource, string>
         ThemeComponentVariantReferences)
 {
+    public bool HasSameContent(EditorDictionaryContextSnapshot other) =>
+        JsonNode.DeepEquals(ContentDocument(), other.ContentDocument());
+
+    private JsonNode? ContentDocument() => JsonSerializer.SerializeToNode(new
+    {
+        ProjectId,
+        IconThemeId,
+        ThemeTokensJson,
+        IconAssetPaths,
+        PaletteColorOptions,
+        // The declared key is a value object, not a JSON property name.
+        RecordReferenceOptions = RecordReferenceOptions.OrderBy(entry => entry.Key.TableId)
+            .ThenBy(entry => entry.Key.IncludeNone).ToArray(),
+        ComponentVariantOptions,
+        ComponentVariantRuntimeInputs,
+        ComponentVariantRuntimeValuesJson,
+        ComponentVariantRuntimeCollections,
+        ComponentVariantSelections,
+        ComponentVariantNames,
+        ThemeComponentVariantReferences,
+    });
+
     public JsonObject ThemeTokens() =>
         DesignPreviewTestValues.Parse(ThemeTokensJson);
 

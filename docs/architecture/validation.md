@@ -475,6 +475,12 @@ Headless UI coverage verifies that deferred cards perform no load while
 collapsed and load exactly once across repeated expansion.
 It also reverses the selected record while editor preparation is in flight and
 requires the committed card owner to match the latest session revision.
+Production payload regressions commit through real dictionary controls both
+in Production and with that Screen pinned while navigating Design. They require
+a refreshed Production timeline catalog without moving the playhead, changing
+the pinned owner or remounting the payload and collection controls.
+They wait beyond persistence for the prepared catalog refresh, repeat a
+collection-field commit and require a structural mutation to replace the view.
 The C# startup validator and persistence tests own the complete staged SQLite
 contract. Scaffolding read-only, collision, materialization and integration
 behavior belongs to executable tests over temporary workspaces and databases;

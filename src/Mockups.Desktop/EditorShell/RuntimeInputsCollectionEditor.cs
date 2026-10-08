@@ -9,6 +9,7 @@ using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -83,6 +84,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _preparedDictionaryContext;
     private string? _preparedAnimationJson;
     private RuntimeInputTimelineMutation? _preparedTimelineMutation;
+    private RuntimeInputSurface? _mountedSurface;
     private IRuntimeInputOptionsDataSource ActiveInputOptions =>
         _preparedDictionaryContext is null
             ? _runtimeInputOptions
@@ -182,6 +184,7 @@ internal sealed class RuntimeInputsCollectionEditor
     public Control CreateProductionScreenPayloadSurface(
         RuntimeInputSurface surface)
     {
+        _mountedSurface = surface;
         UsePreparedContext(surface);
         if (!surface.Owner.IsInstance)
         {
@@ -222,6 +225,7 @@ internal sealed class RuntimeInputsCollectionEditor
     public Control? CreateDesignTestValuesSurface(
         RuntimeInputSurface surface)
     {
+        _mountedSurface = surface;
         UsePreparedContext(surface);
         if (surface.Owner.IsInstance)
         {
@@ -349,6 +353,76 @@ internal sealed class RuntimeInputsCollectionEditor
                     }
                     return result;
                 });
+    }
+
+    internal bool TryRefreshMountedSurface(RuntimeInputSurface next)
+    {
+        if (_mountedSurface is not { } current
+            || current.Owner.Node.Id != next.Owner.Node.Id
+            || current.Owner.IsInstance != next.Owner.IsInstance
+            || !current.Owner.IsInstance
+                && current.Owner.DesignPreviewJson != next.Owner.DesignPreviewJson
+            || current.Owner.ConfigJson != next.Owner.ConfigJson
+            || !JsonNode.DeepEquals(current.Preview, next.Preview)
+            || !JsonNode.DeepEquals(
+                JsonSerializer.SerializeToNode(new { current.Inputs, current.Collections, current.Actions }),
+                JsonSerializer.SerializeToNode(new { next.Inputs, next.Collections, next.Actions }))
+            || current.DictionaryContext is not { } context
+            || next.DictionaryContext is not { } nextContext
+            || !context.HasSameContent(nextContext)
+            || current.AnimationSnapshot?.Source.AnimationJson
+                != next.AnimationSnapshot?.Source.AnimationJson)
+        {
+            return false;
+        }
+
+        // Retain the live document captured by the mounted controls. Successful
+        // scalar writes already update it through the same collection contract.
+        // A different value, structure, declaration or resource context rebuilds
+        // the surface rather than leaving any captured control state stale.
+        _mountedSurface = next with { Preview = current.Preview };
+        UsePreparedContext(next);
+        return true;
+    }
+
+    private async Task CommitSurfaceRuntimeValueAsync(
+        string screenId,
+        string jsonKey,
+        JsonNode? value)
+    {
+        var snapshot = value?.DeepClone();
+        await _instanceDocuments.UpdateRuntimeValueAsync(screenId, jsonKey, snapshot);
+        if (_mountedSurface is { } surface && surface.Owner.Node.Id == screenId)
+        {
+            surface.Preview[jsonKey] = snapshot?.DeepClone();
+        }
+    }
+
+    private Task CommitSurfaceCollectionValueAsync(
+        string screenId,
+        StructuredCollectionAddress address,
+        string itemId,
+        string jsonKey,
+        JsonNode? value) => CommitSurfaceCollectionValuesAsync(
+            screenId, address, itemId, new Dictionary<string, JsonNode?> { [jsonKey] = value });
+
+    private async Task CommitSurfaceCollectionValuesAsync(
+        string screenId,
+        StructuredCollectionAddress address,
+        string itemId,
+        IReadOnlyDictionary<string, JsonNode?> values)
+    {
+        var snapshot = values.ToDictionary(entry => entry.Key, entry => entry.Value?.DeepClone());
+        await _instanceDocuments.UpdateCollectionValuesAsync(screenId, address, itemId, snapshot);
+        if (_mountedSurface is not { } surface || surface.Owner.Node.Id != screenId) return;
+        var root = RuntimeInputDefinitionReader.ReadCollections(
+                surface.Preview,
+                DesignPreviewTestValues.Parse(surface.Owner.ConfigJson),
+                includeHidden: true)
+            .Single(collection => collection.StorageJsonKey == address.RootStorageJsonKey);
+        var updated = StructuredCollectionMutationEngine.UpdateValues(
+            surface.Preview, root, address, itemId, snapshot);
+        surface.Preview[address.RootStorageJsonKey] = updated[address.RootStorageJsonKey]?.DeepClone();
     }
 
     private void UsePreparedContext(
@@ -707,7 +781,7 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             if (owner.IsInstance)
             {
-                await _instanceDocuments.UpdateRuntimeValueAsync(
+                await CommitSurfaceRuntimeValueAsync(
                     owner.Node.Id,
                     input.JsonKey,
                     DesignPreviewTestValues.ValueNode(input, next));
@@ -721,6 +795,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             if (input.RefreshOnCommit)
             {
+                _mountedSurface = null;
                 _reloadAndSelect?.Invoke(owner.Node);
             }
         };
@@ -1061,7 +1136,7 @@ internal sealed class RuntimeInputsCollectionEditor
             item[runtimeContractJsonKey] = runtimeContract.DeepClone();
             if (owner.IsInstance && committed)
             {
-                await _instanceDocuments.UpdateCollectionValueAsync(
+                await CommitSurfaceCollectionValueAsync(
                     owner.Node.Id,
                     StructuredCollectionAddress.Root(collection.StorageJsonKey),
                     itemId,
@@ -2168,7 +2243,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 };
                 if (owner.IsInstance)
                 {
-                    await _instanceDocuments.UpdateCollectionValuesAsync(
+                    await CommitSurfaceCollectionValuesAsync(
                         owner.Node.Id,
                         resolvedAddress,
                         nestedItemId,
@@ -2286,7 +2361,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             if (owner.IsInstance)
             {
-                await _instanceDocuments.UpdateCollectionValuesAsync(
+                await CommitSurfaceCollectionValuesAsync(
                     owner.Node.Id,
                     address,
                     itemId,
@@ -2317,6 +2392,7 @@ internal sealed class RuntimeInputsCollectionEditor
                         input.JsonKey,
                         StringComparison.Ordinal)))
             {
+                _mountedSurface = null;
                 _reloadAndSelect?.Invoke(owner.Node);
             }
         };
@@ -2408,7 +2484,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var itemId = ItemId(item, itemIndex);
             if (owner.IsInstance)
             {
-                await _instanceDocuments.UpdateCollectionValueAsync(
+                await CommitSurfaceCollectionValueAsync(
                     owner.Node.Id,
                     address,
                     itemId,

@@ -550,6 +550,16 @@ prepares a replacement Production catalog before the next interactive Preview
 or Play request. This keeps the slider range, active Screen, payload frame list
 and playback duration on one committed revision after a Shot transition or a
 Screen duration, delay, animation or Runtime collection change.
+The shared authoring refresh coordinator selects this route from the effective
+Preview workspace, not the editor's navigation workspace. A pinned Production
+Screen therefore refreshes its catalog and Timeline while the editor is in
+Design, retaining the pinned owner, playhead and mounted payload controls.
+The collection editor retains its mounted view after its own successful scalar
+writes only when the next prepared document matches that live view's values,
+declarations, Variant config, dictionary resource context and animation. Local
+collection values use the shared stable-id update contract. The retained editor
+accepts the new prepared temporal context; changed structure, external values,
+resources or animation rebuild the view instead of retaining stale callbacks.
 
 Interactive render requests follow the same revision rule. After the external
 renderer returns, the Preview host checks the request sequence before either

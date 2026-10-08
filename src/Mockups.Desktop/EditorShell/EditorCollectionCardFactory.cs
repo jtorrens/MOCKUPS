@@ -65,6 +65,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly EditorSessionUiState _sessionUiState;
     private CancellationTokenSource? _previewAuthoringPreparation;
     private bool _disposed;
+    private (RuntimeInputsCollectionEditor Editor, EditorPreviewAuthoringSurface View)? _mountedPreview;
 
     public EditorCollectionCardFactory(
         IEditorChildStore children,
@@ -275,10 +276,15 @@ internal sealed class EditorCollectionCardFactory : IDisposable
                 or ProjectTreeNodeKind.Module;
     }
 
-    public static EditorPreviewAuthoringSurface?
+    public EditorPreviewAuthoringSurface?
         CreatePreparedPreviewAuthoringSurface(
             EditorPreparedPreviewAuthoringSurface prepared)
     {
+        if (_mountedPreview is { } mounted
+            && mounted.Editor.TryRefreshMountedSurface(prepared.Surface))
+        {
+            return mounted.View;
+        }
         var content = prepared.Surface.Owner.IsInstance
             ? prepared.Editor
                 .CreateProductionScreenPayloadSurface(
@@ -286,11 +292,13 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             : prepared.Editor
                 .CreateDesignTestValuesSurface(
                     prepared.Surface);
-        return content is null
+        var view = content is null
             ? null
             : new EditorPreviewAuthoringSurface(
                 prepared.Header,
                 content);
+        _mountedPreview = view is null ? null : (prepared.Editor, view);
+        return view;
     }
 
     public void CancelPreviewAuthoringPreparation()
@@ -308,6 +316,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         }
 
         _disposed = true;
+        _mountedPreview = null;
         var operation = _previewAuthoringPreparation;
         _previewAuthoringPreparation = null;
         operation?.Cancel();
