@@ -112,9 +112,10 @@ public sealed class EditorOperationCoordinator : IDisposable
         }
 
         stoppedLifetime.Cancel();
-        var ownsGate = await _operationGate.WaitAsync(
-                TimeSpan.FromSeconds(3))
-            .ConfigureAwait(false);
+        // Cancellation does not interrupt a synchronous transaction. Keep the
+        // caller asynchronous, but never publish the final snapshot until the
+        // active operation (including its cleanup) has released the gate.
+        await _operationGate.WaitAsync().ConfigureAwait(false);
         try
         {
             return await Task.Run(operation).ConfigureAwait(false);
@@ -126,10 +127,7 @@ public sealed class EditorOperationCoordinator : IDisposable
         }
         finally
         {
-            if (ownsGate)
-            {
-                _operationGate.Release();
-            }
+            _operationGate.Release();
         }
     }
 

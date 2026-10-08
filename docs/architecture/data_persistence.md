@@ -744,6 +744,15 @@ always publish. A normal application close is serialized after editor writes
 and publishes only when the hash of its consistent SQLite snapshot differs
 from the startup or last-published baseline. Rendering, Preview refresh,
 navigation and other read-only activity therefore create no duplicate backup.
+`EditorOperationCoordinator` stops accepting new work, cancels queued work and
+requests cancellation of active asynchronous work. It then asynchronously waits
+for the active operation and its cleanup to release the shared operation gate.
+Synchronous writes finish under their existing transaction owner. There is no
+timeout bypass: the final backup runs on a worker only after obtaining that
+same gate, and the window closes only after publication completes. A failed
+publication releases the gate and resumes the queue with a fresh cancellation
+lifetime, so keeping the window open permits further editing and another close
+attempt.
 
 The Host consumes only Restore Handoff v2, before the application session opens
 SQLite. It strictly validates the vault marker, request, manifest, exact

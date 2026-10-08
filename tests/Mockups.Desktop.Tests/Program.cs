@@ -306,6 +306,8 @@ var tests = new (string Name, Action Run)[]
     ("Backup Hub integration preserves the database when pre-backup fails", () => BackupHubIntegrationTests.FailedPreBackup(ParityDatabasePath())),
     ("Backup Hub integration blocks replacement during maintenance", () => BackupHubIntegrationTests.ReplacementBlocked(ParityDatabasePath())),
     ("Backup Hub integration recovers interrupted and committed restores", () => BackupHubIntegrationTests.InterruptedRestore(ParityDatabasePath())),
+    ("Backup Hub close publishes only after the active write completes", () => BackupHubIntegrationTests.CloseWaitsForWrite(ParityDatabasePath())),
+    ("Backup Hub close failure permits editing and a publication retry", () => BackupHubIntegrationTests.CloseFailureCanRetry(ParityDatabasePath())),
     ("initial animatable field vocabulary is constrained", AnimatableFieldVocabularyIsConstrained),
     ("playback state publishes play, busy and frame changes", PlaybackStatePublishesChanges),
     ("shared slider behavior maps Wacom Pen drag in every direction", SharedSliderBehaviorMapsPenDrag),

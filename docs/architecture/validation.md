@@ -531,11 +531,13 @@ Publication is supported on macOS/Windows; Linux checks its explicit unsupported
 platform result as well as portable handoff validation, cancellation and crash
 recovery. These tests do not verify Backup Hub's external encryption/sync layer.
 
-Outstanding close-serialization finding: `EditorOperationCoordinator` currently
-invokes its shutdown callback even if its three-second wait for the operation
-gate expires. A controlled pending-write probe reproduced that overlap. Backup
-publication must not be considered fully serialized until the close policy is
-resolved; passing isolated restore tests does not close this finding.
+Close-serialization regressions hold a write beyond the former three-second
+timeout and require shutdown to remain pending without blocking its caller.
+They also cover queued-work cancellation, rejection of duplicate closes/new
+work, waiting for asynchronous cancellation cleanup, and resuming the queue
+after a failed shutdown callback. Backup lifecycle fixtures verify that the
+published snapshot contains the completed write and that a failed publication
+permits further editing and a successful close retry, using only temporary data.
 
 Resource-deletion regressions use isolated font and Icon Theme files. They
 force record and token-mapping rollback, preserve pending cleanup across a

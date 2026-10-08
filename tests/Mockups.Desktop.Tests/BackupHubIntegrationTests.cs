@@ -1,10 +1,84 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell;
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.EditorShell;
 using System.Text.Json;
 
 internal static class BackupHubIntegrationTests
 {
+    public static void CloseWaitsForWrite(string source) =>
+        Task.Run(() => CloseWaitsForWriteAsync(source)).GetAwaiter().GetResult();
+
+    private static async Task CloseWaitsForWriteAsync(string source)
+    {
+        using var fixture = new Fixture(source);
+        using var operations = new EditorOperationCoordinator();
+        var lifecycle = new BackupHubApplicationLifecycle(fixture.Backups, fixture.Backups.CaptureDatabaseFingerprint());
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var writer = operations.ExecuteAsync(() =>
+        {
+            entered.Set();
+            if (!release.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Test write was not released.");
+            fixture.WriteApplicationId(456);
+        });
+        Task<ApplicationBackupResult>? closing = null;
+        try
+        {
+            Equal(true, entered.Wait(TimeSpan.FromSeconds(10)));
+            closing = lifecycle.PublishCleanExitAsync(operations);
+            Equal(false, await Task.WhenAny(closing, Task.Delay(3500)) == closing);
+        }
+        finally
+        {
+            release.Set();
+            await writer;
+        }
+        if (!OperatingSystem.IsMacOS() && !OperatingSystem.IsWindows())
+        {
+            Throws<PlatformNotSupportedException>(() => closing!.GetAwaiter().GetResult());
+            return;
+        }
+        var result = await closing!.WaitAsync(TimeSpan.FromSeconds(60));
+        Equal(ApplicationBackupOutcome.Published, result.Outcome);
+        var packagePath = Path.Combine(fixture.Inbox, result.PackageName!);
+        var id = Guid.Parse(Path.GetFileNameWithoutExtension(result.PackageName!));
+        var manifest = BackupPackageValidator.Validate(packagePath, id);
+        Equal("clean-exit", manifest.Reason);
+        Equal(fixture.Backups.CaptureDatabaseFingerprint(), manifest.Files.Single().Sha256);
+        Equal(1, Directory.GetFileSystemEntries(fixture.Inbox).Length);
+    }
+
+    public static void CloseFailureCanRetry(string source) =>
+        Task.Run(() => CloseFailureCanRetryAsync(source)).GetAwaiter().GetResult();
+
+    private static async Task CloseFailureCanRetryAsync(string source)
+    {
+        using var fixture = new Fixture(source);
+        using var operations = new EditorOperationCoordinator();
+        var lifecycle = new BackupHubApplicationLifecycle(fixture.Backups, fixture.Backups.CaptureDatabaseFingerprint());
+        Directory.Delete(fixture.Inbox);
+        try
+        {
+            await lifecycle.PublishCleanExitAsync(operations);
+            throw new Exception("Missing inbox must reject publication.");
+        }
+        catch (InvalidDataException) { }
+        await operations.ExecuteAsync(() => fixture.WriteApplicationId(789));
+        Directory.CreateDirectory(fixture.Inbox);
+        if (!OperatingSystem.IsMacOS() && !OperatingSystem.IsWindows())
+        {
+            Throws<PlatformNotSupportedException>(() => lifecycle.PublishCleanExitAsync(operations).GetAwaiter().GetResult());
+            return;
+        }
+        var result = await lifecycle.PublishCleanExitAsync(operations);
+        Equal(ApplicationBackupOutcome.Published, result.Outcome);
+        var path = Path.Combine(fixture.Inbox, result.PackageName!);
+        var manifest = BackupPackageValidator.Validate(path, Guid.Parse(Path.GetFileNameWithoutExtension(result.PackageName!)));
+        Equal(fixture.Backups.CaptureDatabaseFingerprint(), manifest.Files.Single().Sha256);
+        Equal(1, Directory.GetFileSystemEntries(fixture.Inbox).Length);
+    }
+
     public static void VaultValidation(string source)
     {
         using var fixture = new Fixture(source);
@@ -251,12 +325,17 @@ internal static class BackupHubIntegrationTests
             BackupHubContract.WriteJsonDurably(Path.Combine(ClaimPath(id, Locations.Outbox), "request.json"), new RestoreRequest(
                 2, id.ToString("D"), "mockups", PackageId.ToString("D"), BackupHubContract.TimestampNow(), new string('a', 64), BackupHubContract.HashFile(manifestPath),
                 new RestoreBackupSummary(manifest.CreatedAt, manifest.Reason, manifest.Snapshot.Format, manifest.Snapshot.SchemaVersion, 1, manifest.Files[0].ByteLength), "prepared"));
+            WriteApplicationId(123);
+            return id;
+        }
+
+        public void WriteApplicationId(int value)
+        {
             using var database = new SqliteConnection($"Data Source={Database};Pooling=False");
             database.Open();
             using var command = database.CreateCommand();
-            command.CommandText = "PRAGMA application_id = 123";
+            command.CommandText = $"PRAGMA application_id = {value}";
             command.ExecuteNonQuery();
-            return id;
         }
 
         public string ClaimPath(Guid id, string parent) => Path.Combine(parent, $"{id:D}.bhrestore");

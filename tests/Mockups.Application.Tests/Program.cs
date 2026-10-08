@@ -56,6 +56,9 @@ var tests = new (string Name, Action Run)[]
     ("asynchronous editor operations retain ordering and propagate cancellation", AsyncEditorOperationsRetainOrdering),
     ("presented editor operations publish their complete activity lifetime", PresentedEditorOperationsPublishActivityLifetime),
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
+    ("editor shutdown waits beyond three seconds and cancels queued work", EditorOperationShutdownTests.WaitForActiveWrite),
+    ("editor shutdown waits for cancellation cleanup", EditorOperationShutdownTests.WaitForCancellationCleanup),
+    ("editor shutdown failure resumes the queue and permits retry", EditorOperationShutdownTests.FailedShutdownCanRetry),
 };
 
 static void RuntimeNumericPresentationSurvivesBoundaries()
