@@ -473,7 +473,13 @@ internal sealed class EditorLayoutCardFactory
                                 definition));
                     _scheduleActiveEditorReload(node);
                     _refreshPreview();
-                });
+                },
+            overrideOwner: _fieldValues.OverrideOwner(node),
+            overridesRestored: () =>
+            {
+                _scheduleActiveEditorReload(node);
+                _refreshPreview();
+            });
         var control = new DictionaryFieldControl(field, services);
         _activeFieldControls.Register(control);
         control.ValueCommitted += async (_, value) =>
@@ -641,7 +647,13 @@ internal sealed class EditorLayoutCardFactory
                     activeFieldControls.RefreshPreviews();
                     _refreshPreview();
                     restored?.Invoke();
-                }) with
+                },
+            overrideOwner: _fieldValues.OverrideOwner(context.OwnerNode, context),
+            overridesRestored: () =>
+            {
+                _refreshPreview();
+                restored?.Invoke();
+            }) with
         {
             AllowRuntimeInputForwarding = context.Slots.All((slot) =>
                 slot.AllowRuntimeInputForwarding),
@@ -657,14 +669,13 @@ internal sealed class EditorLayoutCardFactory
             {
                 if (context.RuntimeSource is not null)
                 {
-                    await _componentClassFieldValues
+                    var confirmed = await _componentClassFieldValues
                         .CommitEmbeddedFieldValueAsync(
                             context,
                             field.Definition.Id,
                             value);
-                    if (value
-                        == field.Definition
-                            .InheritedStorageValue)
+                    control.SetValue(confirmed.Value);
+                    if (confirmed.IsInherited)
                     {
                         control
                             .AcceptInheritedValueAsDefault();
@@ -716,19 +727,20 @@ internal sealed class EditorLayoutCardFactory
             {
                 if (context.RuntimeSource is not null)
                 {
-                    var confirmed =
-                        _componentClassFieldValues
-                            .CreateEmbeddedFieldValue(
-                                context,
-                                field.Definition.Id);
-                    control.SetValue(
-                        confirmed.IsInherited
-                            ? confirmed.Definition
-                                .InheritedStorageValue
-                            : confirmed.Value);
-                    control.MarkCurrentValueCommitted();
-                    activeFieldControls
-                        .RefreshPreviews();
+                    try
+                    {
+                        var confirmed = await _componentClassFieldValues.CreateEmbeddedFieldValueAsync(
+                            context, field.Definition.Id);
+                        control.SetValue(confirmed.IsInherited
+                            ? confirmed.Definition.InheritedStorageValue : confirmed.Value);
+                        control.MarkCurrentValueCommitted();
+                        activeFieldControls.RefreshPreviews();
+                    }
+                    catch (Exception readError)
+                    {
+                        control.IsEnabled = false;
+                        _messages.Error($"Override context {field.Definition.Id}", readError);
+                    }
                 }
                 _messages.Error($"Embedded field {field.Definition.Id}", exception);
             }

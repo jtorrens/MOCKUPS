@@ -1156,6 +1156,8 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var runtimeContractJsonKey = RuntimeContractJsonKey(collection);
         var itemId = ItemId(item, itemIndex);
+        var overrideAddress = new ComponentOverrideAddress(collection.Id,
+            [ComponentOverridePathSegment.Item(itemId), ComponentOverridePathSegment.Field(runtimeContractJsonKey)], "", "");
         var runtimeContract = JsonPath.RequiredObject(
             item,
             runtimeContractJsonKey,
@@ -1237,6 +1239,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 runtimeContract,
                 input,
                 itemId,
+                overrideAddress,
                 PersistRuntimeContract));
         }
         if (general.Children.Count > 0)
@@ -1278,6 +1281,7 @@ internal sealed class RuntimeInputsCollectionEditor
                             runtimeItem,
                             childCollections,
                             itemId,
+                            overrideAddress,
                             PersistRuntimeContract)));
                 }
                 continue;
@@ -1303,6 +1307,7 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject item,
         IReadOnlyList<RuntimeInputCollectionDefinition> childCollections,
         string temporalOwnerId,
+        ComponentOverrideAddress overrideAddress,
         Func<bool, Task> persistRuntimeContract)
     {
         var result = new StackPanel
@@ -1373,6 +1378,10 @@ internal sealed class RuntimeInputsCollectionEditor
                     childCollection,
                     childItem,
                     temporalOwnerId,
+                    overrideAddress with { Path = [.. overrideAddress.Path,
+                        ComponentOverridePathSegment.Field(childCollection.JsonKey),
+                        ComponentOverridePathSegment.Item(childItemId),
+                        ComponentOverridePathSegment.Field(RuntimeContractJsonKey(childCollection))] },
                     PersistChildRuntimeContract);
                 var button = new Button
                 {
@@ -1434,6 +1443,7 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputCollectionDefinition collection,
         JsonObject item,
         string temporalOwnerId,
+        ComponentOverrideAddress overrideAddress,
         Func<bool, Task> persistRuntimeContract)
     {
         var runtimeContract = JsonPath.RequiredObject(
@@ -1457,6 +1467,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 runtimeContract,
                 input,
                 temporalOwnerId,
+                overrideAddress,
                 persistRuntimeContract));
         }
         return result;
@@ -1467,6 +1478,7 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject runtimeContract,
         ComponentInputDefinition input,
         string temporalOwnerId,
+        ComponentOverrideAddress overrideAddress,
         Func<bool, Task> persistRuntimeContract)
     {
         var definition = RuntimeInputFieldDefinitionFactory.Create(
@@ -1486,7 +1498,9 @@ internal sealed class RuntimeInputsCollectionEditor
                     _navigateToNode(reference);
                     return Task.CompletedTask;
                 },
-                openRuntimeComponentOverrides: _openEmbeddedContext));
+                openRuntimeComponentOverrides: _openEmbeddedContext).AtOverridePath(
+                    overrideAddress.FieldId,
+                    [.. overrideAddress.Path, ComponentOverridePathSegment.Field(input.JsonKey)]));
         control.ValueChanged += async (_, next) =>
         {
             runtimeContract[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
@@ -2124,70 +2138,57 @@ internal sealed class RuntimeInputsCollectionEditor
         var variantField = collection.Fields.Single((field) => field.JsonKey == componentItems.VariantReferenceJsonKey);
         var variantReference = DesignPreviewTestValues.CollectionValue(item, variantField);
         if (string.IsNullOrWhiteSpace(variantReference)) return;
-        var overrides = RuntimeComponentCollectionItemDocumentContract.RequireOverrides(
-            item,
-            componentItems.DocumentKeys,
-            $"Runtime collection '{collection.Id}' item '{ItemId(item, itemIndex)}'");
+        _openEmbeddedContext(RuntimeComponentOverrideContext(owner, collection, address, itemIndex, item));
+    }
+
+    private EditorEmbeddedContext RuntimeComponentOverrideContext(
+        RuntimeInputOwner owner, RuntimeInputCollectionDefinition collection,
+        StructuredCollectionAddress address, int itemIndex, JsonObject item)
+    {
+        var componentItems = collection.ComponentItems
+            ?? throw new InvalidOperationException("Runtime Overrides require component item metadata.");
+        var variantReference = JsonPath.RequiredString(item, componentItems.VariantReferenceJsonKey, "Runtime Override boundary");
         var selected = PreparedDictionaryContext.TryVariantSelection(variantReference, out var selection)
-            ? selection
-            : throw new InvalidOperationException($"Variant '{variantReference}' is not prepared.");
-        _openEmbeddedContext(new EditorEmbeddedContext(
+            ? selection : throw new InvalidOperationException($"Variant '{variantReference}' is not prepared.");
+        return new EditorEmbeddedContext(
             owner.Node,
             [],
             _dictionaryServices.RegisterRuntimeOverrides(
+                OverrideOwner(owner.Node),
+                new ComponentOverrideAddress(
+                    RootOverrideFieldId(address), RuntimeOverridePath(address, ItemId(item, itemIndex)),
+                    componentItems.VariantReferenceJsonKey, componentItems.OverridesJsonKey),
                 selected.ProjectId,
                 variantReference,
                 selected.ComponentType,
-                selected.RecordClassId,
-                selected.ConfigJson,
-                overrides,
-                (nextOverrides) => ApplyRuntimeComponentOverrides(
-                    owner,
-                    collection,
-                    address,
-                    itemIndex,
-                    item,
-                    nextOverrides))));
+                selected.RecordClassId));
     }
 
-    private async Task ApplyRuntimeComponentOverrides(
+    private async Task RestoreRuntimeComponentOverrides(
         RuntimeInputOwner owner,
         RuntimeInputCollectionDefinition collection,
         StructuredCollectionAddress address,
         int itemIndex,
-        JsonObject item,
-        JsonObject nextOverrides)
+        JsonObject item)
     {
         var componentItems = collection.ComponentItems
             ?? throw new InvalidOperationException(
                 $"Collection '{collection.Id}' has no component item contract.");
-        var itemId = ItemId(item, itemIndex);
+        await _dictionaryServices.RestoreRuntimeOverridesAsync(
+            RuntimeComponentOverrideContext(owner, collection, address, itemIndex, item));
         if (owner.IsInstance)
         {
-            await _instanceDocuments.UpdateCollectionValueAsync(
-                owner.Node.Id,
-                address,
-                itemId,
-                componentItems.OverridesJsonKey,
-                nextOverrides);
             _discardCommittedProductionRuntimeCollection(
                 address.RootStorageJsonKey);
         }
         item[componentItems.OverridesJsonKey] =
-            nextOverrides.DeepClone();
+            new JsonObject();
         if (owner.IsInstance)
         {
             _onChanged();
         }
         else
         {
-            _setPreviewCollectionItemValues(
-                address,
-                itemId,
-                new Dictionary<string, JsonNode?>
-                {
-                    [componentItems.OverridesJsonKey] = nextOverrides,
-                });
             _testValuesChanged();
         }
     }
@@ -2251,13 +2252,12 @@ internal sealed class RuntimeInputsCollectionEditor
             RestoreEmbeddedComponentOverrides = selectsComponent
                 && componentItems is not null
                 && openComponentOverrides is not null
-                    ? (_) => ApplyRuntimeComponentOverrides(
+                    ? (_) => RestoreRuntimeComponentOverrides(
                         owner,
                         collection,
                         address,
                         itemIndex,
-                        item,
-                        new JsonObject())
+                        item)
                     : null,
             DecorateStructuredCollectionField = owner.IsInstance
                 ? (nestedInput, targetId, nestedControl) => DecorateAnimationToggle(owner, nestedInput, targetId, nestedControl)
@@ -2336,6 +2336,8 @@ internal sealed class RuntimeInputsCollectionEditor
             input,
             CollectionFieldAvailability.AllowsEmpty(item, input),
             values: item);
+        services = services.AtOverridePath(RootOverrideFieldId(address),
+            [.. RuntimeOverridePath(address, ItemId(item, itemIndex)), ComponentOverridePathSegment.Field(input.JsonKey)]);
         var control = new DictionaryFieldControl(
             new FieldValue(
                 definition,
@@ -2422,7 +2424,11 @@ internal sealed class RuntimeInputsCollectionEditor
                     _navigateToNode(reference);
                     return Task.CompletedTask;
                 },
-                openRuntimeComponentOverrides: _openEmbeddedContext));
+                openRuntimeComponentOverrides: _openEmbeddedContext).AtOverridePath(
+                    RootOverrideFieldId(address),
+                    [.. RuntimeOverridePath(address, ItemId(item, itemIndex)),
+                        ComponentOverridePathSegment.Field(RuntimeContractJsonKey(collection)),
+                        ComponentOverridePathSegment.Field(input.JsonKey)]));
         void ApplyTransientValue(string next)
         {
             componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
@@ -2800,7 +2806,36 @@ internal sealed class RuntimeInputsCollectionEditor
                 openComponentVariantReference,
                 openEmbeddedComponent,
                 openComponentInputBinding,
-                openRuntimeComponentOverrides);
+                openRuntimeComponentOverrides,
+                overrideOwner: OverrideOwner(owner.Node),
+                overridesRestored: () =>
+                {
+                    if (owner.IsInstance) _onChanged();
+                    else _testValuesChanged();
+                });
+    }
+
+    private ComponentOverrideFieldOwner OverrideOwner(ProjectTreeNode node) =>
+        _ownerDocuments.OverrideOwner(node, _instanceDocuments, _previewInputData,
+            owner => Dispatcher.UIThread.Invoke(() => _captureTestValues(owner)),
+            _dictionaryServices.PublishTransientOverrideField);
+
+    private string RootOverrideFieldId(StructuredCollectionAddress address) =>
+        (_mountedSurface ?? throw new InvalidOperationException("Runtime Overrides require their prepared surface."))
+            .Collections.Single(collection => collection.StorageJsonKey == address.RootStorageJsonKey).Id;
+
+    private static IReadOnlyList<ComponentOverridePathSegment> RuntimeOverridePath(
+        StructuredCollectionAddress address, string itemId)
+    {
+        var path = new List<ComponentOverridePathSegment>();
+        for (var i = 0; i < address.Owners.Count; i++)
+        {
+            path.Add(ComponentOverridePathSegment.Item(address.Owners[i].ItemId));
+            path.Add(ComponentOverridePathSegment.Field(i + 1 == address.Owners.Count
+                ? address.CollectionJsonKey : address.Owners[i + 1].CollectionJsonKey));
+        }
+        path.Add(ComponentOverridePathSegment.Item(itemId));
+        return path;
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

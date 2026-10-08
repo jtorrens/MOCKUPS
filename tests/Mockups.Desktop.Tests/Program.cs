@@ -107,6 +107,8 @@ var tests = new (string Name, Action Run)[]
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
     ("embedded fields resolve inherited nested Overrides before owner-local Overrides", EmbeddedFieldsResolveInheritedNestedOverrides),
     ("failed Runtime Override persistence restores the confirmed document", FailedRuntimeOverridePersistenceRestoresConfirmedDocument),
+    ("Override commands rebase on live stable boundaries and await confirmation", OverrideCommandsUseLiveStableBoundaries),
+    ("Runtime Override owners preserve scoped Test Values and Production tracks", RuntimeOverrideOwnersPreserveCurrentDocuments),
     ("editor presentation context boundary preserves current data read-only", EditorPresentationContextBoundaryPreservesCurrentData),
     ("Production Screen presentation boundary preserves exact current data read-only", ProductionScreenPresentationBoundaryPreservesCurrentData),
     ("Production active Screen presentation follows exact Shot frame ranges", ProductionActiveScreenPresentationFollowsShotFrames),
@@ -5387,6 +5389,12 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         .Count((text) =>
                             text.Text
                                 == "Buttons · Button Decline"));
+                // An independent write after preparing the flat controls must
+                // survive restoring another leaf from those older controls.
+                var concurrentItems = JsonNode.Parse(database.CreateComponentVariantFieldValue(
+                    iconRowVariant, "component.iconRow.items").Value)!.AsArray();
+                concurrentItems[0]!["buttonOverrides"]!["button"]!["contentGapToken"] = "theme.spacing.xxl";
+                database.UpdateComponentVariantField(iconRowVariant, "component.iconRow.items", concurrentItems.ToJsonString());
                 flatPadding.GetVisualDescendants()
                     .OfType<Button>()
                     .Single((button) =>
@@ -5417,6 +5425,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         "button"]?[
                         "padding"]
                     is null);
+                Equal("theme.spacing.xxl", persistedButtonItems[0]!["buttonOverrides"]!["button"]!["contentGapToken"]!.GetValue<string>());
                 var remainingGap =
                     Required(
                             window.FindControl<StackPanel>(
@@ -9063,7 +9072,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                     "overrides",
                     "Changed fixed Component slot")));
 
-            string? restoredSlotJson = null;
+            var restoreCount = 0;
             var restorableSlot = new DictionaryComponentVariantSlotControl(
                 listField.Definition with { IsEditable = true },
                 """
@@ -9071,9 +9080,16 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 """,
                 false,
                 null,
-                (_, _, _, _) => Task.CompletedTask);
-            restorableSlot.ValueCommitted += (_, json) =>
-                restoredSlotJson = json;
+                (_, _, _) => Task.CompletedTask,
+                (address, reference, _) =>
+                {
+                    Equal(listField.Definition.Id, address.FieldId);
+                    Equal("component_project_foqn_s2_list::variant::chats", reference);
+                    restoreCount++;
+                    return Task.CompletedTask;
+                });
+            restorableSlot.ValueCommitted += (_, _) =>
+                throw new InvalidOperationException("Restore must not publish a second dictionary write.");
             var restoreAll = restorableSlot
                 .GetVisualDescendants()
                 .OfType<Button>()
@@ -9094,10 +9110,11 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                         .GetName(button)
                     == "Edit overrides for List");
             Equal(Brushes.White, neutralOverridesAction.Foreground);
+            Equal(1, restoreCount);
             var restoredSlot = ComponentVariantSlotDocumentContract.Parse(
-                restoredSlotJson
-                    ?? throw new InvalidOperationException(
-                        "Component Variant Slot Restore did not commit."),
+                (string)typeof(DictionaryComponentVariantSlotControl)
+                    .GetMethod("Serialize", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(restorableSlot, null)!,
                 "Restored fixed Component slot");
             Equal(
                 "component_project_foqn_s2_list::variant::chats",
@@ -9124,7 +9141,9 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             var aggregate = new DictionaryFieldControl(
                 new FieldValue(aggregateDefinition, nestedSlotValue),
                 new DictionaryFieldServices(
-                    OpenRuntimeComponentOverrides: (_, _, _, _) =>
+                    OpenRuntimeComponentOverrides: (_, _, _) =>
+                        Task.CompletedTask,
+                    RestoreRuntimeComponentOverrides: (_, _, _) =>
                         Task.CompletedTask));
             True(aggregate.IsDefault);
             True(aggregate.HasOverrides);
@@ -9297,6 +9316,23 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             Check(
                 PreviewUpdateSequence(previewPane) > initialPreviewSequence,
                 "Changing a Chat List Runtime Input did not request a new Preview render.");
+
+            // Activate the actual shared action, not a stand-alone callback.
+            window.GetVisualDescendants().OfType<DictionaryFieldControl>()
+                .Single(field => field.FieldId == "module.core.chatList.list")
+                .GetVisualDescendants().OfType<Button>()
+                .Single(button => Avalonia.Automation.AutomationProperties.GetName(button) == "Edit overrides for List")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                return WindowSession(window).EmbeddedEditor?.RuntimeSource is not null;
+            }, TimeSpan.FromSeconds(15)));
+            var opened = Required(WindowSession(window).EmbeddedEditor);
+            Equal(selected.Id, opened.OwnerNode.Id);
+            Equal("module.core.chatList.list", opened.RuntimeSource!.Address.FieldId);
+            Equal(0, opened.RuntimeSource.Address.Path.Count);
+            True(window.OwnedWindows.Count == 0);
 
             window.Hide();
 
@@ -11573,9 +11609,10 @@ static void SystemBarItemsUseFixedDictionaryCollections()
         var nodes = CanonicalProjectNodes(database);
         var statusClass = nodes.Single((node) => node.Id == "component_project_foqn_s2_status_bar");
         var statusDefault = nodes.Single((node) => node.Id == $"{statusClass.Id}::variant::default");
+        using var operations = new EditorOperationCoordinator();
         True(!new ComponentClassFieldValueService(
                 ComponentFields(database),
-                ComponentDocuments(database))
+                ComponentDocuments(database), operations)
             .CreateFieldValue(statusDefault, statusField.Id)
             .Definition.IsEditable);
         var statusVariant = nodes.Single((node) => node.Id == $"{statusClass.Id}::variant::lock_screen");
@@ -12985,8 +13022,9 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectTestContext(temporary);
+        using var operations = new EditorOperationCoordinator();
         var store = new EmbeddedComponentDocumentStore(
-            ComponentDocuments(database));
+            ComponentDocuments(database), operations);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var audioClass = nodes
             .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentClass)
@@ -13031,22 +13069,22 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
 
         var selection = database.GetComponentVariantSelectionSettings(audioVariant.Id);
         var overrides = new JsonObject();
+        var currentDocument = overrides.ToJsonString();
         var overrideChanges = 0;
         var runtimeContext = new EditorEmbeddedContext(
             audioVariant,
             [],
             store.RegisterRuntimeOverrides(
+                new ComponentOverrideFieldOwner("audio-test-owner", _ => currentDocument, (_, json) =>
+                {
+                    currentDocument = json;
+                    overrideChanges++;
+                }),
+                ComponentOverrideAddress.Overrides("audio-overrides"),
                 ProjectId(selection),
                 audioVariant.Id,
                 selection.ComponentType,
-                selection.RecordClassId,
-                selection.ConfigJson,
-                overrides,
-                (_) =>
-                {
-                    overrideChanges++;
-                    return Task.CompletedTask;
-                }));
+                selection.RecordClassId));
         Equal(
             database.GetRuntimeComponentVariantName(audioVariant.Id, overrides, []),
             store.ActiveVariantName(runtimeContext));
@@ -13066,7 +13104,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
             .GetAwaiter()
             .GetResult();
         Equal(1, overrideChanges);
-        Equal(initialSnapshot.Revision + 1, store.Snapshot(runtimeContext.RuntimeSource!).Revision);
+        True(initialSnapshot != store.Snapshot(runtimeContext.RuntimeSource!));
         True(!store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
         store.CommitFieldValueAsync(
                 runtimeContext,
@@ -13083,6 +13121,171 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
     {
         File.Delete(temporary);
     }
+}
+
+static void OverrideCommandsUseLiveStableBoundaries()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-live-overrides-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        using var operations = new EditorOperationCoordinator();
+        var store = new EmbeddedComponentDocumentStore(ComponentDocuments(database), operations);
+        var nodes = CanonicalProjectNodes(database);
+        foreach (var type in new[] { "audio", "button" })
+        {
+            var variant = nodes.First(node => node.Kind == ProjectTreeNodeKind.ComponentVariant
+                && node.Parent?.RecordClassId == $"component.{type}");
+            var selection = database.GetComponentVariantSelectionSettings(variant.Id);
+            var fieldId = $"component.{type}.padding";
+            var root = new JsonArray(
+                new JsonObject { ["id"] = "other", ["children"] = new JsonArray() },
+                new JsonObject { ["id"] = "parent", ["children"] = new JsonArray(
+                    new JsonObject { ["id"] = "target", ["slot"] = ComponentVariantSlotDocumentContract.Create(
+                        variant.Id, new JsonObject(), "Live Override test") }) }).ToJsonString();
+            var writeCount = 0;
+            var fail = false;
+            using var writing = new ManualResetEventSlim();
+            using var release = new ManualResetEventSlim(true);
+            var owner = new ComponentOverrideFieldOwner($"owner-{type}", _ => root, (_, json) =>
+            {
+                writing.Set();
+                if (!release.Wait(TimeSpan.FromSeconds(10))) throw new TimeoutException("Test did not release Override write.");
+                if (fail) throw new InvalidOperationException("Rejected authoring write");
+                root = json;
+                writeCount++;
+            });
+            var address = new ComponentOverrideAddress("collection", [
+                ComponentOverridePathSegment.Item("parent"), ComponentOverridePathSegment.Field("children"),
+                ComponentOverridePathSegment.Item("target"), ComponentOverridePathSegment.Field("slot")],
+                "variantReference", "overrides");
+            EditorEmbeddedContext Open() => new(variant, [], store.RegisterRuntimeOverrides(owner, address,
+                ProjectId(selection), variant.Id, selection.ComponentType, selection.RecordClassId));
+            var history = Open();
+            var reopened = Open();
+            Equal(history.RuntimeSource!.Address.Identity, reopened.RuntimeSource!.Address.Identity);
+            store.CommitFieldValueAsync(reopened, fieldId, "theme.spacing.xl|theme.spacing.l").GetAwaiter().GetResult();
+            Equal("theme.spacing.xl|theme.spacing.l", store.CreateFieldValue(history, fieldId).Value);
+
+            // An independent authoring update and a reorder happen after navigation.
+            var reordered = JsonNode.Parse(root)!.AsArray();
+            var parent = reordered[1]!.DeepClone();
+            reordered.RemoveAt(1);
+            reordered.Insert(0, parent);
+            parent["children"]![0]!["slot"]!["overrides"]![type]!["contentGapToken"] = "theme.spacing.xl";
+            reordered[1]!["external"] = "preserve";
+            root = reordered.ToJsonString();
+            var confirmed = store.CommitFieldValueAsync(history, fieldId, "theme.spacing.s|theme.spacing.s").GetAwaiter().GetResult();
+            Equal("theme.spacing.s|theme.spacing.s", confirmed.Value);
+            Equal("theme.spacing.xl", JsonNode.Parse(root)![0]!["children"]![0]!["slot"]!["overrides"]![type]!["contentGapToken"]!.GetValue<string>());
+            Equal("preserve", JsonNode.Parse(root)![1]!["external"]!.GetValue<string>());
+
+            fail = true;
+            var beforeFailure = root;
+            Throws<InvalidOperationException>(() => store.CommitFieldValueAsync(history, fieldId,
+                "theme.spacing.m|theme.spacing.m").GetAwaiter().GetResult());
+            Throws<InvalidOperationException>(() => store.ClearOverridesAsync(history).GetAwaiter().GetResult());
+            Equal(beforeFailure, root);
+            fail = false;
+
+            writing.Reset();
+            release.Reset();
+            var pending = store.CommitFieldValueAsync(history, fieldId, "theme.spacing.m|theme.spacing.m");
+            try
+            {
+                True(writing.Wait(TimeSpan.FromSeconds(10)));
+                True(!pending.IsCompleted);
+                Equal(beforeFailure, root);
+            }
+            finally { release.Set(); }
+            Equal("theme.spacing.m|theme.spacing.m", pending.GetAwaiter().GetResult().Value);
+            store.ClearOverridesAsync(reopened).GetAwaiter().GetResult();
+            True(!store.HasAuthoredOverrides(history));
+            Equal("preserve", JsonNode.Parse(root)![1]!["external"]!.GetValue<string>());
+
+            var changed = JsonNode.Parse(root)!.AsArray();
+            changed[0]!["children"]![0]!["slot"]!["variantReference"] = "other-class::variant::different";
+            root = changed.ToJsonString();
+            var beforeRejected = writeCount;
+            Throws<InvalidOperationException>(() => store.CommitFieldValueAsync(history, fieldId,
+                "theme.spacing.s|theme.spacing.s").GetAwaiter().GetResult());
+            changed[0]!["children"] = new JsonArray();
+            root = changed.ToJsonString();
+            Throws<InvalidOperationException>(() => store.ClearOverridesAsync(history).GetAwaiter().GetResult());
+            Equal(beforeRejected, writeCount);
+
+            var themeReference = variant.Id;
+            var themed = owner with { Read = _ => "{}", ThemeVariantReference = _ => themeReference };
+            var themeContext = new EditorEmbeddedContext(variant, [], store.RegisterRuntimeOverrides(themed,
+                ComponentOverrideAddress.Overrides("theme-overrides") with { ThemeSource = ThemeComponentVariantSource.StatusBar },
+                ProjectId(selection), variant.Id, selection.ComponentType, selection.RecordClassId));
+            True(!store.HasAuthoredOverrides(themeContext));
+            themeReference = "other-class::variant::different";
+            Throws<InvalidOperationException>(() => store.ClearOverridesAsync(themeContext).GetAwaiter().GetResult());
+            Equal(beforeRejected, writeCount);
+        }
+    }
+    finally { File.Delete(temporary); }
+}
+
+static void RuntimeOverrideOwnersPreserveCurrentDocuments()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-runtime-override-owners-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        using var operations = new EditorOperationCoordinator();
+        var ownerStore = new RuntimeInputOwnerDocumentStore(database.Design, database.Production, operations);
+        var instances = new RuntimeInputInstanceDocumentStore(
+            new SqliteRuntimeInputInstanceStore(database.Context, database.Production),
+            database.Animations, database.Production, database.Resources, operations);
+        var previewData = new ComponentPreviewInputDataSource(database.Design, database.Resources);
+        var transient = new ComponentPreviewInputSession(database.Design, database.DictionaryContext,
+            database.Resources, database.ProjectPaths, () => { });
+        var store = new EmbeddedComponentDocumentStore(ComponentDocuments(database), operations);
+        var nodes = CanonicalProjectNodes(database);
+        var design = nodes.First(node => node.Kind == ProjectTreeNodeKind.ModuleVariant && node.Parent?.Id == "module_core_chat");
+        var screen = nodes.Single(node => node.Id == "module_instance_900f1616432d4f63a97f2a74dd647e08");
+        foreach (var node in new[] { design, screen })
+        {
+            var databaseBefore = SHA256.HashData(File.ReadAllBytes(temporary));
+            var owner = ownerStore.OverrideOwner(node, instances, previewData,
+                current => transient.CaptureTransientState(current, false), transient.SetOwnerOverrideValue);
+            var messages = JsonNode.Parse(owner.Read("messages"))!.AsArray();
+            var message = messages.OfType<JsonObject>().First(item => item["iconRowRuntime"] is JsonArray { Count: > 0 });
+            var row = message["iconRowRuntime"]![0]!.AsObject();
+            var messageId = message["id"]!.GetValue<string>();
+            var rowId = row["id"]!.GetValue<string>();
+            var reference = row["iconRowSlot"]!["variantReference"]!.GetValue<string>();
+            var selection = database.GetComponentVariantSelectionSettings(reference);
+            var context = new EditorEmbeddedContext(node, [], store.RegisterRuntimeOverrides(owner,
+                new ComponentOverrideAddress("messages", [
+                    ComponentOverridePathSegment.Item(messageId), ComponentOverridePathSegment.Field("iconRowRuntime"),
+                    ComponentOverridePathSegment.Item(rowId), ComponentOverridePathSegment.Field("iconRowSlot")],
+                    "variantReference", "overrides"),
+                ProjectId(selection), reference, selection.ComponentType, selection.RecordClassId));
+            var tracks = node == screen ? database.GetModuleInstanceSettings(node.Id).AnimationJson : "";
+            store.CommitFieldValueAsync(context, "component.iconRow.gap", "theme.spacing.xxl").GetAwaiter().GetResult();
+            Equal("theme.spacing.xxl", store.CreateFieldValue(context, "component.iconRow.gap").Value);
+            var latest = JsonNode.Parse(owner.Read("messages"))!.AsArray();
+            var currentMessage = latest.OfType<JsonObject>().Single(item => item["id"]!.GetValue<string>() == messageId);
+            Equal("theme.spacing.xxl", currentMessage["iconRowRuntime"]![0]!["iconRowSlot"]!["overrides"]!["iconRow"]!["gap"]!.GetValue<string>());
+            SequenceEqual(messages.Select(item => item!["id"]!.GetValue<string>()), latest.Select(item => item!["id"]!.GetValue<string>()));
+            Equal(message["text"]!.GetValue<string>(), currentMessage["text"]!.GetValue<string>());
+            store.ClearOverridesAsync(context).GetAwaiter().GetResult();
+            True(!store.HasAuthoredOverrides(context));
+            if (node == screen) Equal(tracks, database.GetModuleInstanceSettings(node.Id).AnimationJson);
+            else
+            {
+                SequenceEqual(databaseBefore, SHA256.HashData(File.ReadAllBytes(temporary)));
+                True(transient.CaptureTransientState(design, false).HasCollectionTestValues);
+                True(!transient.CaptureTransientState(screen, false).HasCollectionTestValues);
+            }
+        }
+    }
+    finally { File.Delete(temporary); }
 }
 
 static void EmbeddedFieldsResolveInheritedNestedOverrides()
@@ -13154,9 +13357,10 @@ static void FailedRuntimeOverridePersistenceRestoresConfirmedDocument()
         var database =
             new SqliteProjectTestContext(
                 temporary);
+        using var operations = new EditorOperationCoordinator();
         var store =
             new EmbeddedComponentDocumentStore(
-                ComponentDocuments(database));
+                ComponentDocuments(database), operations);
         var nodes = Descendants(
                 database.LoadProjectTree())
             .ToList();
@@ -13183,15 +13387,13 @@ static void FailedRuntimeOverridePersistenceRestoresConfirmedDocument()
             audioVariant,
             [],
             store.RegisterRuntimeOverrides(
+                new ComponentOverrideFieldOwner("failing-owner", _ => confirmedOverrides.ToJsonString(),
+                    (_, _) => throw new InvalidOperationException("persistence failed")),
+                ComponentOverrideAddress.Overrides("test-overrides"),
                 ProjectId(selection),
                 audioVariant.Id,
                 selection.ComponentType,
-                selection.RecordClassId,
-                selection.ConfigJson,
-                confirmedOverrides,
-                (_) => Task.FromException(
-                    new InvalidOperationException(
-                        "persistence failed"))));
+                selection.RecordClassId));
         var confirmedSnapshot = store.Snapshot(context.RuntimeSource!);
 
         Throws<InvalidOperationException>(

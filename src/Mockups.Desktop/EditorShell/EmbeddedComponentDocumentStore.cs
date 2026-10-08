@@ -2,8 +2,8 @@ using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Nodes;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -11,208 +11,148 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EmbeddedComponentDocumentStore
 {
     private readonly IComponentDocumentStore _database;
-    private readonly SemaphoreSlim _runtimeCommitGate =
-        new(1, 1);
-    private readonly Dictionary<Guid, RuntimeDocument> _runtimeDocuments = new();
+    private readonly EditorOperationCoordinator _operations;
+    private readonly Dictionary<(string Owner, string Address), ComponentOverrideFieldOwner> _owners = new();
 
-    private sealed class RuntimeDocument(string json, Func<JsonObject, Task> write,
-        Func<string, Task<ProjectTreeNode>>? promote)
+    public EmbeddedComponentDocumentStore(IComponentDocumentStore database, EditorOperationCoordinator operations)
     {
-        public string Json { get; set; } = json;
-        public long Revision { get; set; }
-        public Func<JsonObject, Task> Write { get; } = write;
-        public Func<string, Task<ProjectTreeNode>>? Promote { get; } = promote;
+        _database = database;
+        _operations = operations;
     }
 
     public RuntimeComponentOverrideSource RegisterRuntimeOverrides(
-        string projectId, string reference, string type, string recordClassId, string configJson,
-        JsonObject overrides, Func<JsonObject, Task> write,
-        Func<string, Task<ProjectTreeNode>>? promote = null)
+        ComponentOverrideFieldOwner owner, ComponentOverrideAddress address,
+        string projectId, string reference, string type, string recordClassId)
     {
-        var id = Guid.NewGuid();
-        lock (_runtimeDocuments) _runtimeDocuments.Add(id, new(overrides.ToJsonString(), write, promote));
-        return new(projectId, reference, type, recordClassId, configJson, id, promote is not null);
-    }
-
-    private RuntimeDocument Document(RuntimeComponentOverrideSource source)
-    {
-        lock (_runtimeDocuments) return _runtimeDocuments.TryGetValue(source.DocumentId, out var document)
-            ? document : throw new InvalidOperationException("The Runtime Override document belongs to another editor session.");
-    }
-
-    internal (long Revision, string Json) Snapshot(RuntimeComponentOverrideSource source)
-    {
-        lock (_runtimeDocuments)
+        ArgumentException.ThrowIfNullOrWhiteSpace(owner.Identity);
+        // Registration supplies an owner capability, never a second copy of its data.
+        lock (_owners)
         {
-            var document = Document(source);
-            return (document.Revision, document.Json);
+            _owners[(owner.Identity, address.Identity)] = owner;
         }
+        return new(projectId, reference, type, recordClassId, owner.Identity,
+            address with { Path = Array.AsReadOnly(address.Path.ToArray()) },
+            owner.Promote is not null && address.ThemeSource == ThemeComponentVariantSource.None);
     }
 
-    private JsonObject Overrides(RuntimeComponentOverrideSource source) =>
-        JsonPath.ParseRequiredObject(Snapshot(source).Json, "Runtime Overrides");
+    private ComponentOverrideFieldOwner Owner(RuntimeComponentOverrideSource source)
+    {
+        lock (_owners) return _owners.TryGetValue((source.OwnerIdentity, source.Address.Identity), out var owner)
+            ? owner : throw new InvalidOperationException("The Override owner belongs to another editor session.");
+    }
+
+    internal string Snapshot(RuntimeComponentOverrideSource source) => Read(source).Overrides.ToJsonString();
+
+    private (JsonNode Root, JsonObject Overrides) Read(RuntimeComponentOverrideSource source)
+    {
+        var root = JsonNode.Parse(Owner(source).Read(source.Address.FieldId))
+            ?? throw new InvalidOperationException("An Override field requires its current document.");
+        JsonNode current = root;
+        foreach (var segment in source.Address.Path)
+        {
+            if (segment.Property.Length > 0 && segment.ItemId.Length == 0)
+                current = (current as JsonObject)?[segment.Property]
+                    ?? throw new InvalidOperationException($"Missing Override field path '{segment.Property}'.");
+            else if (segment.ItemId.Length > 0 && segment.Property.Length == 0)
+                current = (current as JsonArray)?.Select(item => item as JsonObject
+                    ?? throw new InvalidOperationException("An Override collection item must be an object.")).SingleOrDefault(item =>
+                    JsonPath.RequiredString(item, "id", "Override collection item") == segment.ItemId)
+                    ?? throw new InvalidOperationException($"Missing Override collection item '{segment.ItemId}'.");
+            else throw new InvalidOperationException("Invalid Override path segment.");
+        }
+        var boundary = current as JsonObject
+            ?? throw new InvalidOperationException("An Override boundary must be an object.");
+        if (source.Address.ThemeSource != ThemeComponentVariantSource.None
+            && Owner(source).ThemeVariantReference?.Invoke(source.Address.ThemeSource) != source.VariantReference)
+            throw new InvalidOperationException("The Theme now references another Variant. Reopen its current context.");
+        if (source.Address.VariantReferenceKey.Length > 0
+            && JsonPath.RequiredString(boundary, source.Address.VariantReferenceKey, "Override boundary") != source.VariantReference)
+            throw new InvalidOperationException("The Override boundary now references another Variant. Reopen its current context.");
+        return (root, source.Address.OverridesKey.Length == 0 ? boundary
+            : JsonPath.RequiredObject(boundary, source.Address.OverridesKey, "Override boundary"));
+    }
 
     public Task<ProjectTreeNode> PromoteRuntimeOverridesAsync(RuntimeComponentOverrideSource source, string name) =>
-        (Document(source).Promote ?? throw new InvalidOperationException("This boundary cannot promote Overrides."))(name);
+        _operations.ExecuteAsync(() =>
+        {
+            _ = Read(source);
+            if (!source.CanPromoteOverridesToVariant || Owner(source).Promote is not { } promote)
+                throw new InvalidOperationException("This boundary cannot promote Overrides.");
+            return promote(source.Address, name);
+        });
 
-    public EmbeddedComponentDocumentStore(IComponentDocumentStore database)
-    {
-        _database = database;
-    }
-
-    public string ActiveVariantName(EditorEmbeddedContext context)
-    {
-        return context.RuntimeSource is null
+    public string ActiveVariantName(EditorEmbeddedContext context) =>
+        context.RuntimeSource is not { } source
             ? _database.GetEmbeddedComponentVariantName(context.OwnerNode, context.Slots)
-            : _database.GetRuntimeComponentVariantName(
-                context.RuntimeSource.VariantReference,
-                Overrides(context.RuntimeSource),
-                context.Slots);
-    }
+            : _database.GetRuntimeComponentVariantName(source.VariantReference, Read(source).Overrides, context.Slots);
 
     public bool HasAuthoredOverrides(EditorEmbeddedContext context)
     {
-        if (context.RuntimeSource is null)
-        {
-            return _database.HasEmbeddedComponentOverrides(
-                context.OwnerNode,
-                context.Slots);
-        }
-        var overrides = context.Slots.Count == 0
-            ? Overrides(context.RuntimeSource)
-            : RuntimeOverridesAt(
-                Overrides(context.RuntimeSource),
-                context.Slots);
-        return overrides is not null
-            && OverrideDocumentContract.HasAuthoredValues(
-                overrides);
+        if (context.RuntimeSource is not { } source)
+            return _database.HasEmbeddedComponentOverrides(context.OwnerNode, context.Slots);
+        var overrides = RuntimeOverridesAt(Read(source).Overrides, context.Slots);
+        return overrides is not null && OverrideDocumentContract.HasAuthoredValues(overrides);
     }
 
     public FieldValue CreateFieldValue(EditorEmbeddedContext context, string fieldId)
     {
-        return context.RuntimeSource is null
-            ? _database.CreateEmbeddedComponentFieldValue(
-                context.OwnerNode,
-                context.Slots,
-                fieldId)
-            : _database.CreateRuntimeComponentOverrideFieldValue(
-                context.RuntimeSource.ProjectId,
-                context.RuntimeSource.BaseConfigJson,
-                Overrides(context.RuntimeSource),
-                context.Slots,
-                fieldId);
+        if (context.RuntimeSource is not { } source)
+            return _database.CreateEmbeddedComponentFieldValue(context.OwnerNode, context.Slots, fieldId);
+        var config = _database.GetComponentVariantConfigJson(source.VariantReference);
+        return _database.CreateRuntimeComponentOverrideFieldValue(
+            source.ProjectId, config, Read(source).Overrides, context.Slots, fieldId);
     }
 
-    public async Task CommitFieldValueAsync(
-        EditorEmbeddedContext context,
-        string fieldId,
-        string value)
-    {
-        if (context.RuntimeSource is null)
+    public Task<FieldValue> CommitFieldValueAsync(EditorEmbeddedContext context, string fieldId, string value) =>
+        _operations.ExecuteAsync(() =>
         {
-            _database.UpdateEmbeddedComponentField(
-                context.OwnerNode,
-                context.Slots,
-                fieldId,
-                value);
+            CommitFieldValue(context, fieldId, value);
+            return CreateFieldValue(context, fieldId);
+        });
+
+    public Task<FieldValue> CreateFieldValueAsync(EditorEmbeddedContext context, string fieldId) =>
+        _operations.ExecuteAsync(() => CreateFieldValue(context, fieldId));
+
+    public void CommitFieldValue(EditorEmbeddedContext context, string fieldId, string value)
+    {
+        FieldOptionContract.ValidateValue(CreateFieldValue(context, fieldId).Definition, value,
+            $"Dictionary field '{fieldId}'");
+        if (context.RuntimeSource is not { } source)
+        {
+            _database.UpdateEmbeddedComponentField(context.OwnerNode, context.Slots, fieldId, value);
             return;
         }
-
-        await _runtimeCommitGate.WaitAsync();
-        try
-        {
-            var candidate = Overrides(context.RuntimeSource);
-            _database.UpdateRuntimeComponentOverride(
-                candidate,
-                context.Slots,
-                fieldId,
-                value);
-            await PublishAsync(context.RuntimeSource, candidate);
-        }
-        finally
-        {
-            _runtimeCommitGate.Release();
-        }
+        var current = Read(source);
+        _database.UpdateRuntimeComponentOverride(current.Overrides, context.Slots, fieldId, value);
+        Owner(source).Write(source.Address, current.Root.ToJsonString());
     }
 
-    public void CommitFieldValue(
-        EditorEmbeddedContext context,
-        string fieldId,
-        string value)
-    {
-        if (context.RuntimeSource is not null)
+    public Task ClearOverridesAsync(EditorEmbeddedContext context) =>
+        _operations.ExecuteAsync(() =>
         {
-            throw new InvalidOperationException(
-                "Runtime Overrides require the task-returning commit path.");
-        }
-        _database.UpdateEmbeddedComponentField(
-            context.OwnerNode,
-            context.Slots,
-            fieldId,
-            value);
-    }
+            if (context.RuntimeSource is not { } source)
+            {
+                _database.ClearEmbeddedComponentOverrides(context.OwnerNode, context.Slots);
+                return;
+            }
+            var current = Read(source);
+            RuntimeOverridesAt(current.Overrides, context.Slots)?.Clear();
+            Owner(source).Write(source.Address, current.Root.ToJsonString());
+        });
 
-    public async Task ClearOverridesAsync(
-        EditorEmbeddedContext context)
+    private static JsonObject? RuntimeOverridesAt(JsonObject root, IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
     {
-        if (context.RuntimeSource is null)
-        {
-            _database.ClearEmbeddedComponentOverrides(
-                context.OwnerNode,
-                context.Slots);
-            return;
-        }
-
-        await _runtimeCommitGate.WaitAsync();
-        try
-        {
-            var candidate = Overrides(context.RuntimeSource);
-            var target = RuntimeOverridesAt(
-                candidate,
-                context.Slots);
-            target?.Clear();
-            await PublishAsync(context.RuntimeSource, candidate);
-        }
-        finally
-        {
-            _runtimeCommitGate.Release();
-        }
-    }
-
-    private static JsonObject? RuntimeOverridesAt(
-        JsonObject root,
-        IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
-    {
-        JsonObject current = root;
+        var current = root;
         foreach (var slot in slots)
         {
-            var slotNode = JsonPath.Get(current, slot.SlotPath);
-            if (slotNode is null) return null;
-            var slotObject = slotNode as JsonObject
-                ?? throw new InvalidOperationException(
-                    $"Embedded component slot '{slot.FieldId}' must be an object.");
-            if (!slotObject.TryGetPropertyValue(
-                    "overrides",
-                    out var overridesNode))
-            {
-                return null;
-            }
-            current = overridesNode as JsonObject
-                ?? throw new InvalidOperationException(
-                    $"Embedded component slot '{slot.FieldId}' overrides must be an object.");
+            var node = JsonPath.Get(current, slot.SlotPath);
+            if (node is null) return null;
+            var boundary = node as JsonObject
+                ?? throw new InvalidOperationException($"Embedded slot '{slot.FieldId}' must be an object.");
+            if (!boundary.TryGetPropertyValue("overrides", out var overrides)) return null;
+            current = overrides as JsonObject
+                ?? throw new InvalidOperationException($"Embedded slot '{slot.FieldId}' Overrides must be an object.");
         }
         return current;
-    }
-
-    private async Task PublishAsync(RuntimeComponentOverrideSource source, JsonObject candidate)
-    {
-        var document = Document(source);
-        var confirmedJson = candidate.ToJsonString();
-        await document.Write(candidate.DeepClone().AsObject());
-        lock (_runtimeDocuments)
-        {
-            document.Json = confirmedJson;
-            document.Revision++;
-        }
     }
 }

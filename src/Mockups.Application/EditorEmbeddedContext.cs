@@ -79,6 +79,6 @@ public sealed record RuntimeComponentOverrideSource(
     string VariantReference,
     string ComponentType,
     string RecordClassId,
-    string BaseConfigJson,
-    Guid DocumentId,
+    string OwnerIdentity,
+    ComponentOverrideAddress Address,
     bool CanPromoteOverridesToVariant);

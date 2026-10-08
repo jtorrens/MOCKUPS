@@ -266,10 +266,18 @@ needs more than one capability declares each one in its constructor.
 Desktop Runtime Input and animation document stores additionally require the
 session operation coordinator. Their mutation surface is task-returning and
 captures mutable JSON values before queueing synchronous persistence work.
-Embedded Runtime Override editing follows the same complete task boundary. It
-updates a copied candidate, persists the exact stable collection-item field and
-only then replaces the visible authored snapshot. A failed write retains the
-last confirmed document.
+Embedded Override editing follows the same complete task boundary. Its context
+contains an authoring-owner identity and a typed field/property/stable-item
+address, never a cached config, mutable Overrides document or control-owned save
+callback. `EmbeddedComponentDocumentStore` reads the current authoring field and
+referenced Variant, validates the exact boundary, applies the leaf command and
+awaits the owner write on the shared operation queue. It returns the confirmed
+field only after success. Restoring and promoting use the same live address;
+reordering does not retarget it, and deleted items or changed Variant references
+fail without writing. A failed write never publishes a candidate as confirmed.
+Dictionary fields are owned by `EditorFieldValueRouter`; Runtime fields are
+owned by `RuntimeInputOwnerDocumentStore`, which delegates Production writes to
+the instance store and Design Test Values to their exact existing session scope.
 Persistence keeps adapters only for ports exposed by the current session;
 retired area-wide adapters are removed with their contracts.
 

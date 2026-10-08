@@ -13,8 +13,10 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
 {
     private readonly FieldDefinition _definition;
     private readonly DictionaryComponentVariantControl _variantControl;
-    private readonly Func<FieldDefinition, string, JsonObject, Func<JsonObject, Task>, Task>?
+    private readonly Func<ComponentOverrideAddress, string, FieldDefinition, Task>?
         _openRuntimeComponentOverrides;
+    private readonly Func<ComponentOverrideAddress, string, FieldDefinition, Task>?
+        _restoreRuntimeComponentOverrides;
     private JsonObject? _slot;
 
     public DictionaryComponentVariantSlotControl(
@@ -22,11 +24,14 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         string value,
         bool isInherited,
         Func<string, Task>? openComponentVariantReference,
-        Func<FieldDefinition, string, JsonObject, Func<JsonObject, Task>, Task>?
-            openRuntimeComponentOverrides)
+        Func<ComponentOverrideAddress, string, FieldDefinition, Task>?
+            openRuntimeComponentOverrides,
+        Func<ComponentOverrideAddress, string, FieldDefinition, Task>?
+            restoreRuntimeComponentOverrides = null)
     {
         _definition = definition;
         _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
+        _restoreRuntimeComponentOverrides = restoreRuntimeComponentOverrides;
         Spacing = 6;
         MinWidth = 0;
         HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -36,7 +41,7 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         Func<string, Task>? openOverrides = _openRuntimeComponentOverrides is null
             ? null
             : async (_) => await OpenOverridesAsync();
-        Func<string, Task>? restoreOverrides = _openRuntimeComponentOverrides is null
+        Func<string, Task>? restoreOverrides = _restoreRuntimeComponentOverrides is null
             ? null
             : (_) => RestoreOverrides();
         _variantControl = new DictionaryComponentVariantControl(
@@ -110,18 +115,16 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
             && OverrideDocumentContract.HasAuthoredValues(overrides));
     }
 
-    private Task RestoreOverrides()
+    private async Task RestoreOverrides()
     {
-        if (_slot is null) return Task.CompletedTask;
+        if (_slot is null || _restoreRuntimeComponentOverrides is null) return;
+        await _restoreRuntimeComponentOverrides(
+            ComponentOverrideAddress.Slot(_definition.Id), Reference(), _definition);
         _slot["overrides"] = new JsonObject();
         ComponentVariantSlotDocumentContract.Validate(
             _slot,
             $"Dictionary field '{_definition.Id}'");
         RefreshOverrideButton();
-        var serialized = Serialize();
-        ValueChanged?.Invoke(this, serialized);
-        ValueCommitted?.Invoke(this, serialized);
-        return Task.CompletedTask;
     }
 
     internal async Task<bool> OpenOverridesAsync()
@@ -130,21 +133,8 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         if (_slot is null) return false;
         var owner = $"Dictionary field '{_definition.Id}'";
         var currentReference = ComponentVariantSlotDocumentContract.VariantReference(_slot, owner);
-        var currentOverrides = ComponentVariantSlotDocumentContract.Overrides(_slot, owner);
         await _openRuntimeComponentOverrides(
-            _definition,
-            currentReference,
-            currentOverrides.DeepClone().AsObject(),
-            (next) =>
-            {
-                _slot["overrides"] = next.DeepClone();
-                ComponentVariantSlotDocumentContract.Validate(_slot, owner);
-                RefreshOverrideButton();
-                var serialized = Serialize();
-                ValueChanged?.Invoke(this, serialized);
-                ValueCommitted?.Invoke(this, serialized);
-                return Task.CompletedTask;
-            });
+            ComponentOverrideAddress.Slot(_definition.Id), currentReference, _definition);
         return true;
     }
 

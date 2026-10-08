@@ -492,35 +492,26 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         item,
                         input.JsonKey,
                         $"{collection.ItemLabel} '{ItemId(item, itemIndex)}'");
-                    var currentOverrides = JsonPath.RequiredObject(
-                        item,
-                        overridesKey,
-                        $"{collection.ItemLabel} '{ItemId(item, itemIndex)}'");
                     await _services.OpenRuntimeComponentOverrides(
-                        definition,
+                        new ComponentOverrideAddress(_definition.Id,
+                            [ComponentOverridePathSegment.Item(ItemId(item, itemIndex))],
+                            input.JsonKey, overridesKey),
                         reference,
-                        currentOverrides,
-                        (next) =>
-                    {
-                        item[overridesKey] = next.DeepClone();
-                        return PublishItemValuesAsync(
-                            new Dictionary<string, JsonNode?>
-                            {
-                                [overridesKey] = next,
-                            });
-                    });
+                        definition);
                 },
                 RestoreEmbeddedComponentOverrides = async (_) =>
                 {
+                    var restore = _services.RestoreRuntimeComponentOverrides
+                        ?? throw new InvalidOperationException("Override restoration requires its authoring owner.");
+                    await restore(new ComponentOverrideAddress(_definition.Id,
+                            [ComponentOverridePathSegment.Item(ItemId(item, itemIndex))], input.JsonKey, overridesKey),
+                        JsonPath.RequiredString(item, input.JsonKey, "Override boundary"), definition);
                     item[overridesKey] = new JsonObject();
-                    await PublishItemValuesAsync(
-                        new Dictionary<string, JsonNode?>
-                        {
-                            [overridesKey] = item[overridesKey],
-                        });
                 },
             }
-            : _services;
+            : _services.AtOverridePath(_definition.Id,
+                [ComponentOverridePathSegment.Item(ItemId(item, itemIndex)),
+                    ComponentOverridePathSegment.Field(input.JsonKey)]);
         if (input.StructuredCollection is not null)
         {
             var parentMutation = services.MutateStructuredCollection;

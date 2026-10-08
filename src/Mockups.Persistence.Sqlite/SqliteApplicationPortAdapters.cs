@@ -413,6 +413,9 @@ internal sealed class SqliteComponentDocumentPort(
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots) =>
         target.GetEmbeddedComponentVariantName(ownerNode, slots);
 
+    public string GetComponentVariantConfigJson(string variantReference) =>
+        target.GetComponentVariantConfigJson(variantReference);
+
     public string GetRuntimeComponentVariantName(
         string variantReference,
         JsonObject overrides,

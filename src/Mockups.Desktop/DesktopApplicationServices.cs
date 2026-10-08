@@ -75,7 +75,8 @@ internal sealed record DesktopApplicationServices(
                 shotManagerDocuments),
             new ComponentClassFieldValueService(
                 data.ComponentFields,
-                data.Components),
+                data.Components,
+                operations),
             new ProductionShotContextService(
                 new ProductionShotContextDataSource(
                     data.Preview,

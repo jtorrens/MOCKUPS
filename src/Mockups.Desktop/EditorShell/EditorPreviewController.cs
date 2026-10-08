@@ -2118,6 +2118,9 @@ internal sealed class EditorPreviewController : IDisposable
         _designInputsPanel.SetExternalInputValue(jsonKey, value);
     }
 
+    public void SetDesignPreviewOwnerOverrideValue(ProjectTreeNode node, string jsonKey, string value, bool isCollection) =>
+        _designInputsPanel.SetOwnerOverrideValue(node, jsonKey, value, isCollection);
+
     public void DiscardCommittedProductionRuntimeValue(
         string jsonKey)
     {

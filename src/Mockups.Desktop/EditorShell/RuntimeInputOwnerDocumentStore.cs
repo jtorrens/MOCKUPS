@@ -1,6 +1,8 @@
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
@@ -100,6 +102,51 @@ internal sealed class RuntimeInputOwnerDocumentStore
         }
 
         throw new InvalidOperationException($"Runtime inputs are not supported by '{node.Kind}'.");
+    }
+
+    public ComponentOverrideFieldOwner OverrideOwner(
+        ProjectTreeNode node,
+        RuntimeInputInstanceDocumentStore instances,
+        ComponentPreviewInputDataSource previewData,
+        Func<ProjectTreeNode, ComponentPreviewTransientState> capture,
+        Action<ProjectTreeNode, string, string, bool> publish)
+    {
+        (JsonObject Preview, JsonObject Config) Current()
+        {
+            var source = Load(node);
+            var config = DesignPreviewTestValues.Parse(source.ConfigJson);
+            var preview = DesignPreviewTestValues.Parse(source.RuntimePreviewJson);
+            if (!source.IsInstance)
+                preview = ComponentPreviewTransientValues.Apply(preview, config, capture(node),
+                    previewData.ComponentVariantConfig, previewData.ComponentVariantRuntimeContract);
+            return (preview, config);
+        }
+        static (string JsonKey, bool IsCollection) ResolveField(
+            string fieldId, (JsonObject Preview, JsonObject Config) current)
+        {
+            var collection = RuntimeInputDefinitionReader.ReadCollections(current.Preview, current.Config, includeHidden: true)
+                .SingleOrDefault(item => item.Id == fieldId);
+            if (collection is not null) return (collection.StorageJsonKey, true);
+            var input = RuntimeInputDefinitionReader.ReadInputs(current.Preview, current.Config)
+                .Single(item => item.Id == fieldId);
+            return (input.JsonKey, false);
+        }
+        string Read(string fieldId)
+        {
+            var current = Current();
+            var field = ResolveField(fieldId, current);
+            return current.Preview[field.JsonKey]?.ToJsonString()
+                ?? throw new InvalidOperationException($"Missing Runtime Override field '{fieldId}'.");
+        }
+        (string JsonKey, bool IsCollection) Field(string fieldId) => ResolveField(fieldId, Current());
+        var identity = JsonSerializer.Serialize(new { node.Kind, node.Id, Scope = "runtime" });
+        return node.Kind == ProjectTreeNodeKind.ModuleInstance
+            ? instances.OverrideOwner(identity, node.Id, Read, Field)
+            : new ComponentOverrideFieldOwner(identity, Read, (address, json) =>
+            {
+                var field = Field(address.FieldId);
+                publish(node, field.JsonKey, json, field.IsCollection);
+            });
     }
 
     public Task ReplaceDesignPreviewAsync(

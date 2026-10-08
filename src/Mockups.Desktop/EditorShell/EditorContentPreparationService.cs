@@ -541,32 +541,21 @@ internal sealed class EditorContentPreparationService : IDisposable
                     throw new InvalidOperationException(
                         $"Component Variant '{variantReference}' was not included in the prepared dictionary context.");
                 }
-                var overrides = boundary.ReadOverrides(item, boundaryOwner)
-                    .DeepClone()
-                    .AsObject();
                 var runtimeSource = _componentFields.RegisterRuntimeOverrides(
+                    _fieldValues.OverrideOwner(node, owner.Context),
+                    new ComponentOverrideAddress(owner.FieldId,
+                        itemPath.SelectMany(segment => segment.ChildCollectionJsonKey.Length == 0
+                            ? new[] { ComponentOverridePathSegment.Item(segment.ItemId) }
+                            : new[] { ComponentOverridePathSegment.Item(segment.ItemId),
+                                ComponentOverridePathSegment.Field(segment.ChildCollectionJsonKey) })
+                            .Concat(boundary.SlotJsonKey.Length == 0 ? []
+                                : new[] { ComponentOverridePathSegment.Field(boundary.SlotJsonKey) }).ToArray(),
+                        boundary.SlotJsonKey.Length == 0 ? boundary.VariantReferenceJsonKey : "variantReference",
+                        boundary.SlotJsonKey.Length == 0 ? boundary.OverridesJsonKey : "overrides"),
                     selection.ProjectId,
                     variantReference,
                     selection.ComponentType,
-                    selection.RecordClassId,
-                    selection.ConfigJson,
-                    overrides,
-                    (changed) => UpdateCollectionOverridesAsync(
-                        node,
-                        owner,
-                        itemPath,
-                        boundary,
-                        changed),
-                    owner.Context is null
-                        && (node.Kind is ProjectTreeNodeKind.ModuleVariant
-                            or ProjectTreeNodeKind.ComponentVariant)
-                        ? (name) => PromoteCollectionOverridesAsync(
-                            node,
-                            owner,
-                            itemPath,
-                            boundary,
-                            name)
-                        : null);
+                    selection.RecordClassId);
                 PrepareOverrideContext(
                     new EditorEmbeddedContext(node, [], runtimeSource),
                     $"{pathLabel} · {boundary.Label} {presentation.Title}",
@@ -610,122 +599,6 @@ internal sealed class EditorContentPreparationService : IDisposable
         }
     }
 
-    private Task UpdateCollectionOverridesAsync(
-        ProjectTreeNode node,
-        PreparedBoundaryCollectionOwner owner,
-        IReadOnlyList<PreparedCollectionItemPathSegment> itemPath,
-        PreparedCollectionComponentBoundary boundary,
-        JsonObject overrides) =>
-        _operations.ExecuteAsync(() =>
-        {
-            var current = owner.Context is null
-                ? _fieldValues.Create(node, owner.FieldId)
-                : _componentFields.CreateEmbeddedFieldValue(
-                    owner.Context,
-                    owner.FieldId);
-            var items = JsonNode.Parse(current.Value) as JsonArray
-                ?? throw new InvalidOperationException(
-                    $"Structured collection field '{owner.FieldId}' must be an array.");
-            var item = FindCollectionItem(items, owner.FieldId, itemPath);
-            boundary.WriteOverrides(item, overrides);
-            var value = items.ToJsonString();
-            if (owner.Context is null)
-            {
-                _fieldValues.Persist(
-                    node,
-                    owner.FieldId,
-                    value);
-            }
-            else
-            {
-                _componentFields.CommitEmbeddedFieldValue(
-                    owner.Context,
-                    owner.FieldId,
-                    value);
-            }
-        });
-
-    private Task<ProjectTreeNode> PromoteCollectionOverridesAsync(
-        ProjectTreeNode node,
-        PreparedBoundaryCollectionOwner owner,
-        IReadOnlyList<PreparedCollectionItemPathSegment> itemPath,
-        PreparedCollectionComponentBoundary boundary,
-        string name) =>
-        _operations.ExecuteAsync(() =>
-        {
-            if (itemPath.Count == 0)
-            {
-                throw new InvalidOperationException(
-                    $"Structured collection field '{owner.FieldId}' requires a target item.");
-            }
-            var address = PromotionAddress(
-                owner.Collection.JsonKey,
-                itemPath);
-            return _componentFields
-                .PromoteOverridesToVariant(
-                    new ComponentOverridePromotionRequest(
-                        node,
-                        new ComponentOverrideCollectionPromotionTarget(
-                            owner.FieldId,
-                            address,
-                            itemPath[^1].ItemId,
-                            boundary.PromotionBoundary),
-                        name));
-        });
-
-    private static StructuredCollectionAddress PromotionAddress(
-        string rootCollectionJsonKey,
-        IReadOnlyList<PreparedCollectionItemPathSegment> itemPath)
-    {
-        var owners = new List<StructuredCollectionOwnerSegment>();
-        var collectionJsonKey = rootCollectionJsonKey;
-        for (var index = 0; index < itemPath.Count - 1; index++)
-        {
-            var segment = itemPath[index];
-            owners.Add(new StructuredCollectionOwnerSegment(
-                collectionJsonKey,
-                segment.ItemId));
-            if (string.IsNullOrWhiteSpace(
-                    segment.ChildCollectionJsonKey))
-            {
-                throw new InvalidOperationException(
-                    $"Structured collection item '{segment.ItemId}' has no child collection address.");
-            }
-            collectionJsonKey = segment.ChildCollectionJsonKey;
-        }
-        return new StructuredCollectionAddress(
-            rootCollectionJsonKey,
-            owners,
-            collectionJsonKey);
-    }
-
-    private static JsonObject FindCollectionItem(
-        JsonArray root,
-        string fieldId,
-        IReadOnlyList<PreparedCollectionItemPathSegment> path)
-    {
-        var items = root;
-        JsonObject? item = null;
-        foreach (var segment in path)
-        {
-            item = items
-                .Select((candidate) => candidate!.AsObject())
-                .Single((candidate) => JsonPath.RequiredString(
-                        candidate,
-                        "id",
-                        $"Structured collection field '{fieldId}'")
-                    .Equals(segment.ItemId, StringComparison.Ordinal));
-            if (!string.IsNullOrWhiteSpace(segment.ChildCollectionJsonKey))
-            {
-                items = JsonPath.RequiredArray(
-                    item,
-                    segment.ChildCollectionJsonKey,
-                    $"Structured collection field '{fieldId}' item '{segment.ItemId}'");
-            }
-        }
-        return item ?? throw new InvalidOperationException(
-            $"Structured collection field '{fieldId}' requires a non-empty item path.");
-    }
 
     private static bool ContainsComponentBoundaries(
         RuntimeInputCollectionDefinition collection) =>
@@ -769,7 +642,7 @@ internal sealed class EditorContentPreparationService : IDisposable
         if (context.RuntimeSource is { } runtime)
         {
             return $"runtime:{runtime.VariantReference}:"
-                + runtime.DocumentId
+                + runtime.OwnerIdentity + runtime.Address.Identity
                 + (string.IsNullOrWhiteSpace(slots)
                     ? ""
                     : $"/{slots}");
@@ -795,12 +668,6 @@ internal sealed class EditorContentPreparationService : IDisposable
         string OverridesJsonKey,
         bool AllowEmpty)
     {
-        public ComponentOverridePromotionBoundary PromotionBoundary =>
-            new(
-                SlotJsonKey,
-                VariantReferenceJsonKey,
-                OverridesJsonKey);
-
         public static PreparedCollectionComponentBoundary Separate(
             string label,
             string variantReferenceJsonKey,
@@ -817,28 +684,6 @@ internal sealed class EditorContentPreparationService : IDisposable
             string.IsNullOrWhiteSpace(SlotJsonKey)
                 ? JsonPath.RequiredString(item, VariantReferenceJsonKey, owner, allowEmpty: true)
                 : ReadSlotVariantReference(item, owner);
-
-        public JsonObject ReadOverrides(JsonObject item, string owner) =>
-            string.IsNullOrWhiteSpace(SlotJsonKey)
-                ? JsonPath.RequiredObject(item, OverridesJsonKey, owner)
-                : ComponentVariantSlotDocumentContract.Overrides(
-                    JsonPath.RequiredObject(item, SlotJsonKey, owner),
-                    $"{owner}.{SlotJsonKey}");
-
-        public void WriteOverrides(JsonObject item, JsonObject overrides)
-        {
-            if (string.IsNullOrWhiteSpace(SlotJsonKey))
-            {
-                item[OverridesJsonKey] = overrides.DeepClone();
-                return;
-            }
-            var owner = $"Structured collection Component Variant Slot '{SlotJsonKey}'";
-            var slot = JsonPath.RequiredObject(item, SlotJsonKey, owner);
-            item[SlotJsonKey] = ComponentVariantSlotDocumentContract.Create(
-                ComponentVariantSlotDocumentContract.VariantReference(slot, owner),
-                overrides,
-                owner);
-        }
 
         private string ReadSlotVariantReference(JsonObject item, string owner)
         {

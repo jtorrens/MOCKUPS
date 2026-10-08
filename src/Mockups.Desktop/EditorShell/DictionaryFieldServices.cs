@@ -26,8 +26,10 @@ internal sealed record DictionaryFieldServices(
     Func<FieldDefinition, ComponentInputBindingDefinition, Task>? OpenComponentInputBinding = null,
     Func<FieldDefinition, string, int>? ResolveBehaviorTimingFrames = null,
     Func<string, Task<bool>>? ConfirmStopRuntimeInputForwarding = null,
-    Func<FieldDefinition, string, JsonObject, Func<JsonObject, Task>, Task>?
+    Func<ComponentOverrideAddress, string, FieldDefinition, Task>?
         OpenRuntimeComponentOverrides = null,
+    Func<ComponentOverrideAddress, string, FieldDefinition, Task>?
+        RestoreRuntimeComponentOverrides = null,
     Func<FieldDefinition, string, Task>?
         OpenRecordReferenceOverrides = null,
     Func<FieldDefinition, string, Task>?
@@ -46,7 +48,19 @@ internal sealed record DictionaryFieldServices(
         PrepareStructuredCollectionItemCreation = null,
     EditorSessionUiState? StructuredCollectionUiState = null,
     bool AllowIncompleteDraft = false,
-    bool AllowRuntimeInputForwarding = true);
+    bool AllowRuntimeInputForwarding = true)
+{
+    public DictionaryFieldServices AtOverridePath(
+        string fieldId, IReadOnlyList<ComponentOverridePathSegment> path) => this with
+    {
+        OpenRuntimeComponentOverrides = OpenRuntimeComponentOverrides is not { } open ? null
+            : (target, reference, field) => open(
+                target with { FieldId = fieldId, Path = [.. path, .. target.Path] }, reference, field),
+        RestoreRuntimeComponentOverrides = RestoreRuntimeComponentOverrides is not { } restore ? null
+            : (target, reference, field) => restore(
+                target with { FieldId = fieldId, Path = [.. path, .. target.Path] }, reference, field),
+    };
+}
 
 internal static class DictionaryRecordReferenceOptions
 {

@@ -741,6 +741,8 @@ test("Design writers require a versioned replacement and Override contexts expos
     /CS1503.*DesignPreviewDocumentReplacement/,
   );
   assert.match(output, /CS1061.*Overrides/);
+  assert.match(output, /CS1061.*BaseConfigJson/);
+  assert.match(output, /CS1061.*DocumentId/);
 });
 
 test("Runtime collection controls consume confirmed writes without replaying mutations or live reads", () => {

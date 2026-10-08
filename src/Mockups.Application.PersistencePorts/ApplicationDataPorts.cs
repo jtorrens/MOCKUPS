@@ -324,6 +324,7 @@ public interface IEditorNodeCommandStore
 
 public interface IComponentDocumentStore
 {
+    string GetComponentVariantConfigJson(string variantReference);
     ComponentClassSettings GetComponentClassSettings(string componentClassId);
     ComponentClassSettings GetComponentVariantSettings(
         EditorShell.ProjectTreeNode variantNode);

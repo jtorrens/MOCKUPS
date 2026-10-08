@@ -354,6 +354,19 @@ internal sealed class ComponentPreviewInputSession
         _refreshPreview();
     }
 
+    public void SetOwnerOverrideValue(ProjectTreeNode node, string jsonKey, string value, bool isCollection)
+    {
+        var scope = ComponentPreviewTransientValues.ScopeKey(node, isInstance: false);
+        if (isCollection)
+        {
+            var current = _transientCollectionTestValuesByScope.GetValueOrDefault(scope) ?? new JsonObject();
+            current[jsonKey] = JsonPath.ParseRequiredArray(value, "Override collection Test Values");
+            _transientCollectionTestValuesByScope[scope] = current;
+        }
+        else _values[$"{scope}:{jsonKey}"] = value;
+        _refreshPreview();
+    }
+
     public void DiscardExternalInputValue(string jsonKey)
     {
         if (string.IsNullOrWhiteSpace(_scopeKey)

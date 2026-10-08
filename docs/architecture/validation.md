@@ -14,6 +14,11 @@ engine callers, immutable Override contexts, publication only after successful
 persistence, stale Design rejection, and identity-based transient snapshots.
 Behavioral tests cover declared field transitions with different collection
 schemas and real Design default promotion and Production panel retention.
+Override regressions exercise two concrete Component fixtures through one live
+addressed store: independent openings, intervening authoring edits, stable-item
+reorder, delayed confirmation, failed edit/Restore, deleted items and replaced
+Variant/Theme references. Real shared controls must restore without emitting a
+second save event, and flat Overrides must consume that same owner path.
 
 ## Standard checks
 

@@ -16,8 +16,10 @@ internal sealed class DictionaryComponentVariantOverridesControl : StackPanel,
     private readonly FieldDefinition _definition;
     private readonly string _variantReference;
     private readonly DictionaryComponentVariantControl _variantControl;
-    private readonly Func<FieldDefinition, string, JsonObject, Func<JsonObject, Task>, Task>?
+    private readonly Func<ComponentOverrideAddress, string, FieldDefinition, Task>?
         _openRuntimeComponentOverrides;
+    private readonly Func<ComponentOverrideAddress, string, FieldDefinition, Task>?
+        _restoreRuntimeComponentOverrides;
     private JsonObject _overrides;
 
     public DictionaryComponentVariantOverridesControl(
@@ -25,11 +27,14 @@ internal sealed class DictionaryComponentVariantOverridesControl : StackPanel,
         string value,
         Func<ThemeComponentVariantSource, string>? getThemeComponentVariantReference,
         Func<string, Task>? openComponentVariantReference,
-        Func<FieldDefinition, string, JsonObject, Func<JsonObject, Task>, Task>?
-            openRuntimeComponentOverrides)
+        Func<ComponentOverrideAddress, string, FieldDefinition, Task>?
+            openRuntimeComponentOverrides,
+        Func<ComponentOverrideAddress, string, FieldDefinition, Task>?
+            restoreRuntimeComponentOverrides = null)
     {
         _definition = definition;
         _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
+        _restoreRuntimeComponentOverrides = restoreRuntimeComponentOverrides;
         if (definition.ThemeComponentVariantSource
             == ThemeComponentVariantSource.None)
         {
@@ -58,7 +63,7 @@ internal sealed class DictionaryComponentVariantOverridesControl : StackPanel,
         Func<string, Task>? openOverrides = _openRuntimeComponentOverrides is null
             ? null
             : async (_) => await OpenOverridesAsync();
-        Func<string, Task>? restoreOverrides = _openRuntimeComponentOverrides is null
+        Func<string, Task>? restoreOverrides = _restoreRuntimeComponentOverrides is null
             ? null
             : (_) => RestoreOverrides();
         _variantControl = new DictionaryComponentVariantControl(
@@ -78,9 +83,9 @@ internal sealed class DictionaryComponentVariantOverridesControl : StackPanel,
         Children.Add(_variantControl);
     }
 
-    public event EventHandler<string>? ValueChanged;
+    public event EventHandler<string>? ValueChanged { add { } remove { } }
 
-    public event EventHandler<string>? ValueCommitted;
+    public event EventHandler<string>? ValueCommitted { add { } remove { } }
 
     public bool HasOverrides => _variantControl.HasOverrides;
 
@@ -96,31 +101,17 @@ internal sealed class DictionaryComponentVariantOverridesControl : StackPanel,
     {
         if (_openRuntimeComponentOverrides is null) return false;
         await _openRuntimeComponentOverrides(
-            _definition,
-            _variantReference,
-            _overrides.DeepClone().AsObject(),
-            (next) =>
-            {
-                _overrides = next.DeepClone().AsObject();
-                Publish();
-                return Task.CompletedTask;
-            });
+            ComponentOverrideAddress.Overrides(_definition.Id), _variantReference, _definition);
         return true;
     }
 
-    private Task RestoreOverrides()
+    private async Task RestoreOverrides()
     {
+        if (_restoreRuntimeComponentOverrides is null) return;
+        await _restoreRuntimeComponentOverrides(
+            ComponentOverrideAddress.Overrides(_definition.Id), _variantReference, _definition);
         _overrides = new JsonObject();
-        Publish();
-        return Task.CompletedTask;
-    }
-
-    private void Publish()
-    {
         RefreshOverrideButton();
-        var serialized = _overrides.ToJsonString();
-        ValueChanged?.Invoke(this, serialized);
-        ValueCommitted?.Invoke(this, serialized);
     }
 
     private void RefreshOverrideButton() =>

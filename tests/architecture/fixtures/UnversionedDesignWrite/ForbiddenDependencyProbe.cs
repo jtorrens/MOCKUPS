@@ -8,5 +8,7 @@ public static class ForbiddenDependencyProbe
         store.UpdateModuleDesignPreviewJson("module", "{}");
         store.UpdateComponentClassDesignPreviewJson("component", "{}");
         source.Overrides.Clear();
+        _ = source.BaseConfigJson;
+        _ = source.DocumentId;
     }
 }

@@ -144,6 +144,14 @@ Variant reference and any unrelated Runtime values, and leaves an empty object
 only where the current document contract requires it. Empty objects alone do
 not mark a boundary as overridden.
 
+Overrides navigation carries an exact authoring owner and typed stable address,
+not the control's JSON or a save callback. Normal and flat Overrides views share
+that address and read current authoring data for every command. Collection paths
+use stable item ids, never positions or parsed display field names. Restore waits
+for the same owner command before changing its highlight; it does not replay a
+second dictionary commit event. A changed Theme-owned Variant or replaced slot
+invalidates the old context instead of applying its edits to a different target.
+
 Changing a boundary's Variant is one atomic `ComponentVariantSlot` mutation.
 The selected full Variant reference is written together with a new empty local
 Overrides object, so Overrides authored for the previous Variant are removed at

@@ -1,5 +1,6 @@
 using Mockups.DesktopEditorShell.Data;
 using System.Collections.Generic;
+using System;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
@@ -98,6 +99,27 @@ internal sealed class RuntimeInputInstanceDocumentStore
 
     private RuntimeInputCommittedDocument ReadConfirmed(string id) => new(
         id, _timeline.GetModuleInstanceRuntimePreviewJson(id));
+
+    public ComponentOverrideFieldOwner OverrideOwner(
+        string identity, string instanceId, Func<string, string> read,
+        Func<string, (string JsonKey, bool IsCollection)> field) => new(
+        identity, read, (address, json) =>
+        {
+            var root = field(address.FieldId);
+            var value = JsonNode.Parse(json);
+            if (!root.IsCollection)
+            {
+                _database.UpdateModuleInstanceRuntimeValue(instanceId, root.JsonKey, value);
+                return;
+            }
+            var itemId = address.Path[0].ItemId;
+            var item = value!.AsArray().Select(item => item as JsonObject
+                ?? throw new InvalidOperationException("A Runtime Override collection item must be an object."))
+                .Single(item => item["id"]!.GetValue<string>() == itemId);
+            var key = address.Path.Count == 1 ? address.OverridesKey : address.Path[1].Property;
+            _database.UpdateModuleInstanceRuntimeCollectionValue(instanceId,
+                StructuredCollectionAddress.Root(root.JsonKey), itemId, key, item[key]);
+        });
 
     public Task<ModuleInstanceAnimationSnapshot>
         ExecuteAnimationMutationAsync(

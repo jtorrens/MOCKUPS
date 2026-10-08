@@ -19,6 +19,7 @@ internal sealed class EditorDictionaryFieldServices
     private readonly ComponentClassFieldValueService _componentFields;
     private readonly Func<string?> _selectedThemeId;
     private readonly Action<string, string> _setRuntimeTestValue;
+    private readonly Action<ProjectTreeNode, string, string, bool> _setOwnerOverrideValue;
     private readonly EditorSessionUiState _structuredCollectionUiState = new();
 
     public EditorDictionaryFieldServices(
@@ -33,7 +34,8 @@ internal sealed class EditorDictionaryFieldServices
         EditorOperationCoordinator operations,
         ComponentClassFieldValueService componentFields,
         Func<string?> selectedThemeId,
-        Action<string, string> setRuntimeTestValue)
+        Action<string, string> setRuntimeTestValue,
+        Action<ProjectTreeNode, string, string, bool> setOwnerOverrideValue)
     {
         _contextData = new DictionaryFieldContextDataSource(
             database,
@@ -53,14 +55,21 @@ internal sealed class EditorDictionaryFieldServices
             _runtimeInputOptions);
         _selectedThemeId = selectedThemeId;
         _setRuntimeTestValue = setRuntimeTestValue;
+        _setOwnerOverrideValue = setOwnerOverrideValue;
     }
+
+    public void PublishTransientOverrideField(ProjectTreeNode node, string key, string value, bool isCollection) =>
+        Avalonia.Threading.Dispatcher.UIThread.Invoke(() => _setOwnerOverrideValue(node, key, value, isCollection));
 
     public string? CaptureSelectedThemeId() => _selectedThemeId();
 
+    public Task RestoreRuntimeOverridesAsync(EditorEmbeddedContext context) =>
+        _componentFields.ClearEmbeddedComponentOverridesAsync(context);
+
     public RuntimeComponentOverrideSource RegisterRuntimeOverrides(
-        string projectId, string reference, string type, string recordClassId, string configJson,
-        JsonObject overrides, Func<JsonObject, Task> write) =>
-        _componentFields.RegisterRuntimeOverrides(projectId, reference, type, recordClassId, configJson, overrides, write);
+        ComponentOverrideFieldOwner owner, ComponentOverrideAddress address,
+        string projectId, string reference, string type, string recordClassId) =>
+        _componentFields.RegisterRuntimeOverrides(owner, address, projectId, reference, type, recordClassId);
 
     public EditorDictionaryContextSnapshot PrepareContext(
         ProjectTreeNode node,
@@ -108,7 +117,9 @@ internal sealed class EditorDictionaryFieldServices
         Func<string, Task>?
             restoreEmbeddedComponentOverrides = null,
         Func<FieldDefinition, string, Task>?
-            restoreRecordReferenceOverrides = null)
+            restoreRecordReferenceOverrides = null,
+        ComponentOverrideFieldOwner? overrideOwner = null,
+        Action? overridesRestored = null)
     {
         var projectId = ProjectAncestor(node).Id;
         int ResolveBehaviorTimingFrames(
@@ -129,16 +140,11 @@ internal sealed class EditorDictionaryFieldServices
                 value.PaceToken,
                 context.ThemeTokens());
         }
-        async Task OpenRuntimeOverrides(
-            FieldDefinition definition,
+        async Task<EditorEmbeddedContext> OverrideContext(
+            ComponentOverrideAddress address,
             string variantReference,
-            JsonObject overrides,
-            Func<JsonObject, Task> changed)
+            FieldDefinition definition)
         {
-            if (openRuntimeComponentOverrides is null)
-            {
-                return;
-            }
             var selected = context.TryVariantSelection(
                 variantReference,
                 out var preparedSelection)
@@ -148,30 +154,22 @@ internal sealed class EditorDictionaryFieldServices
                         .ComponentVariantSelection(
                             projectId,
                             variantReference));
-            openRuntimeComponentOverrides(new EditorEmbeddedContext(
+            var owner = overrideOwner
+                ?? throw new InvalidOperationException("Override navigation requires its authoring owner.");
+            return new EditorEmbeddedContext(
                 node,
                 [],
                 _componentFields.RegisterRuntimeOverrides(
+                    owner with
+                    {
+                        ThemeVariantReference = source => _contextData.ThemeComponentVariantReference(
+                            node, Avalonia.Threading.Dispatcher.UIThread.Invoke(_selectedThemeId), source),
+                    },
+                    address with { ThemeSource = definition.ThemeComponentVariantSource },
                     selected.ProjectId,
                     variantReference,
                     selected.ComponentType,
-                    selected.RecordClassId,
-                    selected.ConfigJson,
-                    overrides,
-                    changed,
-                    (node.Kind is ProjectTreeNodeKind.ModuleVariant
-                        or ProjectTreeNodeKind.ComponentVariant)
-                        && definition.ValueKind
-                            == ValueKind.ComponentVariantSlot
-                        ? (name) => _operations.ExecuteAsync(() =>
-                            _componentFields
-                                .PromoteOverridesToVariant(
-                                    new ComponentOverridePromotionRequest(
-                                        node,
-                                        new ComponentOverrideFieldPromotionTarget(
-                                            definition.Id),
-                                        name)))
-                        : null)));
+                    selected.RecordClassId));
         }
         return new DictionaryFieldServices(
             BrowsePath: _pathBrowser.BrowsePath,
@@ -215,7 +213,15 @@ internal sealed class EditorDictionaryFieldServices
             OpenRuntimeComponentOverrides:
                 openRuntimeComponentOverrides is null
                     ? null
-                    : OpenRuntimeOverrides,
+                    : async (address, reference, definition) => openRuntimeComponentOverrides(
+                        await OverrideContext(address, reference, definition)),
+            RestoreRuntimeComponentOverrides: overrideOwner is null ? null
+                : async (address, reference, definition) =>
+                {
+                    var target = await OverrideContext(address, reference, definition);
+                    await _componentFields.ClearEmbeddedComponentOverridesAsync(target);
+                    overridesRestored?.Invoke();
+                },
             OpenRecordReferenceOverrides:
                 openRecordReferenceOverrides,
             RestoreRecordReferenceOverrides:

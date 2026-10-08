@@ -324,7 +324,8 @@ public partial class MainWindow : SukiWindow
             application.Operations,
             componentClassFieldValues,
             () => _previewController.SelectedThemeId,
-            _previewController.SetDesignPreviewTestValue);
+            _previewController.SetDesignPreviewTestValue,
+            _previewController.SetDesignPreviewOwnerOverrideValue);
         var fieldValues = new EditorFieldValueRouter(
             coreFieldValues,
             recordClassFieldValues,

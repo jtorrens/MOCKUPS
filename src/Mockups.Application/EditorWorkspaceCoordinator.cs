@@ -1220,9 +1220,9 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                     right.Embedded.Slots.Select(
                         (slot) => slot.FieldId),
                     StringComparer.Ordinal)
-            && ReferenceEquals(
-                left.Embedded.RuntimeSource,
-                right.Embedded.RuntimeSource);
+            && left.Embedded.RuntimeSource?.OwnerIdentity == right.Embedded.RuntimeSource?.OwnerIdentity
+            && left.Embedded.RuntimeSource?.Address.Identity == right.Embedded.RuntimeSource?.Address.Identity
+            && left.Embedded.RuntimeSource?.VariantReference == right.Embedded.RuntimeSource?.VariantReference;
     }
 
     private void InvalidateActiveTreeLoad()

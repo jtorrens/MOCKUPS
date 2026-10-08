@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -44,6 +46,50 @@ internal sealed class EditorFieldValueRouter
         }
 
         throw new InvalidOperationException($"Unknown field '{fieldId}' for record class '{node.RecordClassId}'.");
+    }
+
+    public ComponentOverrideFieldOwner OverrideOwner(ProjectTreeNode node, EditorEmbeddedContext? context = null) => new(
+        JsonSerializer.Serialize(new
+        {
+            node.Kind, node.Id, Scope = "dictionary",
+            RuntimeOwner = context?.RuntimeSource?.OwnerIdentity,
+            RuntimeAddress = context?.RuntimeSource?.Address.Identity,
+            RuntimeVariant = context?.RuntimeSource?.VariantReference,
+            Slots = context?.Slots.Select(slot => slot.FieldId).ToArray(),
+        }),
+        fieldId => context is null ? Create(node, fieldId).Value
+            : _componentClassFields.CreateEmbeddedFieldValue(context, fieldId).Value,
+        (address, value) =>
+        {
+            if (context is null) Persist(node, address.FieldId, value);
+            else _componentClassFields.CommitEmbeddedFieldValue(context, address.FieldId, value);
+        },
+        context is null && node.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant
+            ? (address, name) => _componentClassFields.PromoteOverridesToVariant(
+                new ComponentOverridePromotionRequest(node, PromotionTarget(node, address), name))
+            : null);
+
+    private ComponentOverridePromotionTarget PromotionTarget(ProjectTreeNode node, ComponentOverrideAddress address)
+    {
+        var definition = Create(node, address.FieldId).Definition;
+        if (definition.ValueKind == ValueKind.ComponentVariantSlot && address.Path.Count == 0)
+            return new ComponentOverrideFieldPromotionTarget(address.FieldId);
+        var collection = definition.StructuredCollection
+            ?? throw new InvalidOperationException("An Override collection address requires collection metadata.");
+        var owners = new List<StructuredCollectionOwnerSegment>();
+        var key = collection.JsonKey;
+        var index = 0;
+        while (index + 2 < address.Path.Count)
+        {
+            owners.Add(new StructuredCollectionOwnerSegment(key, address.Path[index].ItemId));
+            key = address.Path[index + 1].Property;
+            index += 2;
+        }
+        var itemId = address.Path[index].ItemId;
+        var slotKey = index + 1 < address.Path.Count ? address.Path[index + 1].Property : "";
+        return new ComponentOverrideCollectionPromotionTarget(address.FieldId,
+            new StructuredCollectionAddress(collection.JsonKey, owners, key), itemId,
+            new ComponentOverridePromotionBoundary(slotKey, address.VariantReferenceKey, address.OverridesKey));
     }
 
     public string ToStorageValue(ProjectTreeNode node, string fieldId, string value)

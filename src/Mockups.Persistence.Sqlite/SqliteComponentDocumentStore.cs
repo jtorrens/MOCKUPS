@@ -23,6 +23,9 @@ internal sealed class SqliteComponentDocumentStore
         string componentClassId) =>
         _design.GetComponentClassSettings(componentClassId);
 
+    internal string GetComponentVariantConfigJson(string variantReference) =>
+        _design.GetComponentVariantConfig(variantReference).ToJsonString();
+
     internal ComponentClassSettings GetComponentVariantSettings(
         ProjectTreeNode variantNode) =>
         _design.GetComponentVariantSettings(variantNode);

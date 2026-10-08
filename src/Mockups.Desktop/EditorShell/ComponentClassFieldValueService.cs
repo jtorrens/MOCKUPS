@@ -1,7 +1,6 @@
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -14,12 +13,13 @@ internal sealed class ComponentClassFieldValueService
 
     public ComponentClassFieldValueService(
         IComponentClassFieldStore database,
-        IComponentDocumentStore documents)
+        IComponentDocumentStore documents,
+        EditorOperationCoordinator operations)
     {
         _database = database;
         _documents = documents;
         _embeddedDocuments =
-            new EmbeddedComponentDocumentStore(documents);
+            new EmbeddedComponentDocumentStore(documents, operations);
     }
 
     public bool CanHandle(ProjectTreeNodeKind nodeKind, string fieldId)
@@ -29,10 +29,9 @@ internal sealed class ComponentClassFieldValueService
     }
 
     public RuntimeComponentOverrideSource RegisterRuntimeOverrides(
-        string projectId, string reference, string type, string recordClassId, string configJson,
-        JsonObject overrides, Func<JsonObject, Task> write,
-        Func<string, Task<ProjectTreeNode>>? promote = null) =>
-        _embeddedDocuments.RegisterRuntimeOverrides(projectId, reference, type, recordClassId, configJson, overrides, write, promote);
+        ComponentOverrideFieldOwner owner, ComponentOverrideAddress address,
+        string projectId, string reference, string type, string recordClassId) =>
+        _embeddedDocuments.RegisterRuntimeOverrides(owner, address, projectId, reference, type, recordClassId);
 
     public string ActiveVariantName(EditorEmbeddedContext context) => _embeddedDocuments.ActiveVariantName(context);
     public bool HasAuthoredOverrides(EditorEmbeddedContext context) => _embeddedDocuments.HasAuthoredOverrides(context);
@@ -188,15 +187,14 @@ internal sealed class ComponentClassFieldValueService
     public FieldValue CreateEmbeddedFieldValue(EditorEmbeddedContext context, string embeddedFieldId) =>
         ValidateFieldValue(_embeddedDocuments.CreateFieldValue(context, embeddedFieldId));
 
-    public Task CommitEmbeddedFieldValueAsync(
+    public Task<FieldValue> CreateEmbeddedFieldValueAsync(EditorEmbeddedContext context, string fieldId) =>
+        _embeddedDocuments.CreateFieldValueAsync(context, fieldId);
+
+    public Task<FieldValue> CommitEmbeddedFieldValueAsync(
         EditorEmbeddedContext context,
         string embeddedFieldId,
         string value)
     {
-        FieldOptionContract.ValidateValue(
-            CreateEmbeddedFieldValue(context, embeddedFieldId).Definition,
-            value,
-            $"Dictionary field '{embeddedFieldId}'");
         return _embeddedDocuments.CommitFieldValueAsync(
             context,
             embeddedFieldId,
