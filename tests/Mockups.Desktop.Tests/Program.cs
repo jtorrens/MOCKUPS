@@ -308,6 +308,15 @@ var tests = new (string Name, Action Run)[]
     ("Backup Hub integration recovers interrupted and committed restores", () => BackupHubIntegrationTests.InterruptedRestore(ParityDatabasePath())),
     ("Backup Hub close publishes only after the active write completes", () => BackupHubIntegrationTests.CloseWaitsForWrite(ParityDatabasePath())),
     ("Backup Hub close failure permits editing and a publication retry", () => BackupHubIntegrationTests.CloseFailureCanRetry(ParityDatabasePath())),
+    ("Backup Hub durable decisions resume interrupted result delivery", () => BackupHubIntegrationTests.InterruptedDecisionDelivery(ParityDatabasePath())),
+    ("Backup Hub published restores never roll back after cleanup failure", () => BackupHubIntegrationTests.PublishedRestoreNeverRollsBack(ParityDatabasePath())),
+    ("Backup Hub partial rollback resumes without losing its decision", () => BackupHubIntegrationTests.PartialRollbackIsRetryable(ParityDatabasePath())),
+    ("Backup Hub cleanup preserves later authoring edits", () => BackupHubIntegrationTests.CleanupPreservesLaterEdits(ParityDatabasePath())),
+    ("Backup Hub rejects conflicting results without changing its decision", () => BackupHubIntegrationTests.ConflictingResultIsRejected(ParityDatabasePath())),
+    ("Backup Hub restore work leaves the caller thread", () => BackupHubIntegrationTests.RestoreRunsOnWorker(ParityDatabasePath())),
+    ("Backup Hub worker confirmation is marshalled to the visual thread", BackupHubWorkerConfirmationUsesVisualThread),
+    ("Backup Hub decision staging has one recoverable publication boundary", () => BackupHubIntegrationTests.DecisionStagingIsRecoverable(ParityDatabasePath())),
+    ("Backup Hub fresh restore keeps its applied result when cleanup promotion fails", () => BackupHubIntegrationTests.FreshRestoreCleanupFailureKeepsDecision(ParityDatabasePath())),
     ("initial animatable field vocabulary is constrained", AnimatableFieldVocabularyIsConstrained),
     ("playback state publishes play, busy and frame changes", PlaybackStatePublishesChanges),
     ("shared slider behavior maps Wacom Pen drag in every direction", SharedSliderBehaviorMapsPenDrag),
@@ -23635,6 +23644,43 @@ static void LegacyAnimationRequiresExplicitMigration()
     {
         File.Delete(temporary);
     }
+}
+
+static void BackupHubWorkerConfirmationUsesVisualThread()
+{
+    using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        var owner = new Window();
+        owner.Show();
+        var pending = new PendingRestore(Guid.NewGuid(), Guid.NewGuid(),
+            new RestoreBackupSummary(BackupHubContract.TimestampNow(), "manual", "mockups-production", "27", 1, 1));
+        var confirmation = Task.Run(() => StartupRestoreDialogs.ConfirmAsync(owner, pending));
+        try
+        {
+            True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                return owner.OwnedWindows.Count > 0 || confirmation.IsFaulted;
+            }, TimeSpan.FromSeconds(10)));
+            if (confirmation.IsFaulted) confirmation.GetAwaiter().GetResult();
+            var dialog = owner.OwnedWindows.Single();
+            var cancel = dialog.GetLogicalDescendants().OfType<Button>()
+                .Single(button => button.Content as string == "Cancel");
+            cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                return confirmation.IsCompleted;
+            }, TimeSpan.FromSeconds(10)));
+            True(!confirmation.GetAwaiter().GetResult());
+        }
+        finally
+        {
+            foreach (var dialog in owner.OwnedWindows.ToArray()) dialog.Close();
+            owner.Close();
+        }
+    }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
 static void BackupHubRestoreInitializesOnlyEmptyCurrentOwner()

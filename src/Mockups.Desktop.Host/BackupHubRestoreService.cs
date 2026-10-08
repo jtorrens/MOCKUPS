@@ -33,11 +33,17 @@ internal sealed class BackupHubRestoreService
         _backups = backups;
     }
 
-    public async Task<IReadOnlyList<RestoreNotification>>
+    public Task<IReadOnlyList<RestoreNotification>>
         ProcessPendingAsync(
             Func<PendingRestore, Task<bool>> confirm)
     {
         ArgumentNullException.ThrowIfNull(confirm);
+        return Task.Run(() => ProcessPendingCoreAsync(confirm));
+    }
+
+    private async Task<IReadOnlyList<RestoreNotification>> ProcessPendingCoreAsync(
+        Func<PendingRestore, Task<bool>> confirm)
+    {
         if (!_backups.Vault.TryRequireVault(out var vault))
         {
             return [];
@@ -46,6 +52,11 @@ internal sealed class BackupHubRestoreService
         var locations = new RestoreLocations(vault);
         locations.PrepareOwnership();
         var notifications = new List<RestoreNotification>();
+        RecoverStaging();
+        foreach (var cleanup in TransactionDirectories("cleanup"))
+        {
+            TryCleanup(cleanup, locations, notifications);
+        }
         RecoverInterruptedTransactions(
             locations,
             notifications);
@@ -55,14 +66,15 @@ internal sealed class BackupHubRestoreService
         {
             var requestId = RequestIdFromDirectory(
                 claimed);
+            if (Directory.Exists(CleanupPath(requestId)))
+            {
+                continue;
+            }
             if (File.Exists(
                     locations.ResultPath(requestId)))
             {
-                FinalizeExistingResult(
-                    claimed,
-                    locations,
-                    requestId);
-                continue;
+                throw new InvalidDataException(
+                    "A restore request has a terminal result but no owned cleanup phase.");
             }
 
             await ProcessClaimedAsync(
@@ -100,7 +112,7 @@ internal sealed class BackupHubRestoreService
             PublishTerminal(
                 rejected,
                 claimed,
-                locations);
+                locations, notifications);
             notifications.Add(new RestoreNotification(
                 "Backup incompatible",
                 exception.Message,
@@ -117,7 +129,7 @@ internal sealed class BackupHubRestoreService
             PublishTerminal(
                 rejected,
                 claimed,
-                locations);
+                locations, notifications);
             notifications.Add(new RestoreNotification(
                 "Solicitud de restauración inválida",
                 exception.Message,
@@ -145,7 +157,7 @@ internal sealed class BackupHubRestoreService
                     "confirmation-failed",
                     exception.Message),
                 claimed,
-                locations);
+                locations, notifications);
             notifications.Add(new RestoreNotification(
                 "No se pudo confirmar la restauración",
                 exception.Message,
@@ -159,7 +171,7 @@ internal sealed class BackupHubRestoreService
                     requestId,
                     Guid.Parse(request.PackageId)),
                 claimed,
-                locations);
+                locations, notifications);
             return;
         }
 
@@ -182,7 +194,7 @@ internal sealed class BackupHubRestoreService
                     "pre-restore-backup-failed",
                     exception.Message),
                 claimed,
-                locations);
+                locations, notifications);
             notifications.Add(new RestoreNotification(
                 "No se pudo proteger la versión actual",
                 exception.Message,
@@ -190,10 +202,10 @@ internal sealed class BackupHubRestoreService
             return;
         }
 
-        string? transaction = null;
+        RestoreResult result;
         try
         {
-            transaction = ApplyReplacement(
+            _ = ApplyReplacement(
                 requestId,
                 Guid.Parse(request.PackageId),
                 preRestore.PackageId,
@@ -202,62 +214,20 @@ internal sealed class BackupHubRestoreService
                     "package",
                     "payload",
                     BackupHubBackupService.PayloadPath));
-            PublishTerminal(
-                RestoreResult.Applied(
-                    requestId,
-                    Guid.Parse(request.PackageId),
-                    preRestore.PackageId),
-                claimed,
-                locations,
-                deferClaimFinalization: true);
-            Directory.Delete(
-                transaction,
-                recursive: true);
-            FinalizeClaim(
-                claimed,
-                locations,
-                appliedOrCancelled: true);
-            notifications.Add(new RestoreNotification(
-                "Backup restaurado",
-                "MOCKUPS restauró y verificó la base de datos. La versión reemplazada está guardada en Backup Hub.",
-                IsError: false));
+            result = RestoreResult.Applied(requestId, Guid.Parse(request.PackageId), preRestore.PackageId);
         }
         catch (Exception exception)
         {
-            var errorCode = transaction is null
-                ? "replacement-failed"
-                : "verification-failed";
-            try
-            {
-                if (transaction is not null
-                    && Directory.Exists(transaction))
-                {
-                    RollBackReplacement(transaction);
-                }
-                PublishTerminal(
-                    RestoreResult.Failed(
-                        requestId,
-                        Guid.Parse(request.PackageId),
-                        preRestore.PackageId,
-                        "confirmed",
-                        errorCode,
-                        exception.Message),
-                    claimed,
-                    locations);
-            }
-            catch (Exception recoveryException)
-            {
-                throw new InvalidOperationException(
-                    "MOCKUPS could not complete or safely roll back the restore transaction.",
-                    new AggregateException(
-                        exception,
-                        recoveryException));
-            }
-            notifications.Add(new RestoreNotification(
-                "La restauración no se aplicó",
-                exception.Message,
-                IsError: true));
+            result = RestoreResult.Failed(requestId, Guid.Parse(request.PackageId),
+                preRestore.PackageId, "confirmed", "replacement-failed", exception.Message);
         }
+        // The decision is outside the replacement catch. Once it is persisted,
+        // delivery and cleanup failures can never choose a different outcome.
+        PublishTerminal(result, claimed, locations, notifications);
+        notifications.Add(new RestoreNotification(
+            result.State == "applied" ? "Backup restaurado" : "La restauración no se aplicó",
+            result.Error?.Message ?? "MOCKUPS restauró y verificó la base de datos. La versión reemplazada está guardada en Backup Hub.",
+            IsError: result.State != "applied"));
     }
 
     private (RestoreRequest Request, BackupManifest Manifest)
@@ -436,7 +406,6 @@ internal sealed class BackupHubRestoreService
         }
 
         Directory.CreateDirectory(staging);
-        var transactionPublished = false;
         try
         {
             var replacement = Path.Combine(
@@ -461,7 +430,6 @@ internal sealed class BackupHubRestoreService
             Directory.Move(
                 staging,
                 transaction);
-            transactionPublished = true;
             BackupHubContract.FlushDirectory(
                 databaseDirectory);
 
@@ -494,11 +462,6 @@ internal sealed class BackupHubRestoreService
             {
                 Directory.Delete(staging, recursive: true);
             }
-            if (transactionPublished
-                && Directory.Exists(transaction))
-            {
-                RollBackReplacement(transaction);
-            }
             throw;
         }
     }
@@ -512,10 +475,16 @@ internal sealed class BackupHubRestoreService
             "previous.sqlite");
         if (File.Exists(previous))
         {
+            BackupHubContract.RequireRegularFile(previous, "restore rollback source");
+            if (BackupHubContract.HashFile(previous) != journal.PreviousSha256)
+            {
+                throw new InvalidDataException("The rollback source differs from its journal.");
+            }
             var recovery = Path.Combine(
                 transaction,
                 "recovery.sqlite");
-            File.Copy(previous, recovery, overwrite: false);
+            if (Path.Exists(recovery)) BackupHubContract.RequireRegularFile(recovery, "rollback staging file");
+            File.Copy(previous, recovery, overwrite: true);
             FlushFile(recovery);
             File.Replace(
                 recovery,
@@ -533,76 +502,43 @@ internal sealed class BackupHubRestoreService
             throw new InvalidDataException(
                 "The previous database could not be restored after a failed replacement.");
         }
-        Directory.Delete(transaction, recursive: true);
+        // Keep the journal until result publication has been durably completed.
     }
 
     private void RecoverInterruptedTransactions(
         RestoreLocations locations,
         List<RestoreNotification> notifications)
     {
-        var databaseDirectory = Path.GetDirectoryName(
-            _databasePath)!;
-        foreach (var transaction in Directory
-                     .EnumerateDirectories(
-                         databaseDirectory,
-                         ".mockups-restore-*.txn")
-                     .Order(StringComparer.Ordinal))
+        foreach (var transaction in TransactionDirectories("txn"))
         {
-            var journal = ReadJournal(transaction);
-            var requestId = Guid.Parse(
-                journal.RequestId);
-            var resultPath = locations.ResultPath(
-                requestId);
-            var claimed = Path.Combine(
-                locations.Processing,
-                $"{journal.RequestId}.bhrestore");
-            if (File.Exists(resultPath))
+            var requestId = TransactionId(transaction);
+            var outcome = Path.Combine(transaction, "outcome.json");
+            if (!File.Exists(outcome))
             {
-                _ = SqliteDatabaseSnapshotService.Validate(
-                    _databasePath);
-                if (BackupHubContract.HashFile(_databasePath)
-                    != journal.CandidateSha256)
+                var journal = ReadJournal(transaction);
+                if (File.Exists(locations.ResultPath(requestId)))
                 {
-                    throw new InvalidDataException(
-                        "A completed restore result does not match the live database.");
+                    throw new InvalidDataException("A published result has no local durable decision.");
                 }
-                Directory.Delete(transaction, recursive: true);
-                if (Directory.Exists(claimed))
-                {
-                    FinalizeExistingResult(
-                        claimed,
-                        locations,
-                        requestId);
-                }
-                continue;
+                CommitOutcome(transaction, RestoreResult.Failed(requestId,
+                    Guid.Parse(journal.PackageId), Guid.Parse(journal.PreRestorePackageId),
+                    "confirmed", "post-pre-restore-internal-error",
+                    "MOCKUPS recovered the previous database after an interrupted restore."));
             }
-
-            RollBackReplacement(transaction);
-            if (!Directory.Exists(claimed))
-            {
-                throw new InvalidDataException(
-                    "An interrupted restore has no claimed request to finalize.");
-            }
-            PublishTerminal(
-                RestoreResult.Failed(
-                    requestId,
-                    Guid.Parse(journal.PackageId),
-                    Guid.Parse(journal.PreRestorePackageId),
-                    "confirmed",
-                    "post-pre-restore-internal-error",
-                    "MOCKUPS recovered the previous database after an interrupted restore."),
-                claimed,
-                locations);
+            var result = ReadOutcome(transaction);
+            CompleteDecision(transaction, result, locations, notifications);
             notifications.Add(new RestoreNotification(
-                "Restauración interrumpida recuperada",
-                "MOCKUPS recuperó y verificó la base anterior. El backup seleccionado no se aplicó.",
-                IsError: true));
+                "Restauración pendiente finalizada",
+                result.State == "applied" ? "Se completó la entrega del resultado de la restauración confirmada."
+                    : result.Error?.Message ?? "Se completó la solicitud pendiente sin aplicar el backup.",
+                IsError: result.State is "failed" or "rejected"));
         }
     }
 
     private static RestoreJournal ReadJournal(
         string transaction)
     {
+        BackupHubContract.RequireRegularDirectory(transaction, "restore transaction");
         var path = Path.Combine(
             transaction,
             "journal.json");
@@ -614,7 +550,8 @@ internal sealed class BackupHubRestoreService
                 BackupHubContract.JsonOptions)
             ?? throw new InvalidDataException(
                 "The restore journal is empty.");
-        if (!Guid.TryParseExact(
+        if (journal.RequestId != BackupHubContract.Canonical(TransactionId(transaction))
+            || !Guid.TryParseExact(
                 journal.RequestId,
                 "D",
                 out _)
@@ -673,6 +610,8 @@ internal sealed class BackupHubRestoreService
             if (!Directory.Exists(destination))
             {
                 Directory.Move(source, destination);
+                BackupHubContract.FlushDirectory(locations.Outbox);
+                BackupHubContract.FlushDirectory(locations.Processing);
             }
         }
     }
@@ -707,54 +646,196 @@ internal sealed class BackupHubRestoreService
         return id;
     }
 
-    private static void PublishTerminal(
+    private void PublishTerminal(
         RestoreResult result,
         string claimed,
         RestoreLocations locations,
-        bool deferClaimFinalization = false)
+        List<RestoreNotification> notifications)
     {
         result.Validate();
-        var destination = locations.ResultPath(
-            Guid.Parse(result.RequestId));
-        if (File.Exists(destination))
+        var requestId = RequestIdFromDirectory(claimed);
+        if (result.RequestId != BackupHubContract.Canonical(requestId))
         {
-            throw new IOException(
-                "A terminal restore result already exists.");
+            throw new InvalidDataException("The restore decision belongs to another request.");
         }
-        var temporary = Path.Combine(
-            locations.Results,
-            $".{result.RequestId}.tmp");
-        BackupHubContract.WriteJsonDurably(
-            temporary,
-            result);
-        File.Move(temporary, destination);
-        BackupHubContract.FlushDirectory(
-            locations.Results);
-        if (!deferClaimFinalization)
+        var transaction = TransactionPath(requestId);
+        if (!Directory.Exists(transaction))
         {
-            FinalizeClaim(
-                claimed,
-                locations,
-                result.State is "applied" or "cancelled");
+            // Non-replacement outcomes use the same durable decision owner.
+            // Publishing the complete directory avoids an empty live journal.
+            var staging = TransactionPath(requestId, "decision");
+            Directory.CreateDirectory(staging);
+            BackupHubContract.RequireRegularDirectory(staging, "restore decision staging");
+            CommitOutcome(staging, result);
+            Directory.Move(staging, transaction);
+            BackupHubContract.FlushDirectory(Path.GetDirectoryName(transaction)!);
+        }
+        else CommitOutcome(transaction, result);
+        CompleteDecision(transaction, result, locations, notifications);
+    }
+
+    private void CompleteDecision(
+        string transaction,
+        RestoreResult result,
+        RestoreLocations locations,
+        List<RestoreNotification> notifications)
+    {
+        var requestId = TransactionId(transaction);
+        var journalPath = Path.Combine(transaction, "journal.json");
+        if (Path.Exists(journalPath))
+        {
+            var journal = ReadJournal(transaction);
+            if (result.PackageId != journal.PackageId || result.PreRestorePackageId != journal.PreRestorePackageId
+                || result.State is not ("applied" or "failed"))
+            {
+                throw new InvalidDataException("The restore decision does not match its replacement journal.");
+            }
+            if (result.State == "applied")
+            {
+                _ = SqliteDatabaseSnapshotService.Validate(_databasePath);
+                if (BackupHubContract.HashFile(_databasePath) != journal.CandidateSha256)
+                    throw new InvalidDataException("The committed restore does not match the live database.");
+            }
+            else RollBackReplacement(transaction);
+        }
+        else if (result.State == "applied")
+        {
+            throw new InvalidDataException("An applied decision requires its replacement journal.");
+        }
+
+        var bytes = File.ReadAllBytes(Path.Combine(transaction, "outcome.json"));
+        var destination = locations.ResultPath(requestId);
+        if (Path.Exists(destination))
+        {
+            BackupHubContract.RequireRegularFile(destination, "restore terminal result");
+            if (!File.ReadAllBytes(destination).SequenceEqual(bytes))
+                throw new InvalidDataException("The published restore result differs from its durable decision.");
+        }
+        else WriteAtomicDocument(destination, bytes,
+            Path.Combine(locations.Results, $".{result.RequestId}.tmp"));
+        BackupHubContract.FlushDirectory(locations.Results);
+
+        // Directory identity marks cleanup-only work. Once promoted, even later
+        // authoring changes must never cause database verification or rollback.
+        var cleanup = CleanupPath(requestId);
+        Directory.Move(transaction, cleanup);
+        BackupHubContract.FlushDirectory(Path.GetDirectoryName(cleanup)!);
+        TryCleanup(cleanup, locations, notifications);
+    }
+
+    private static void CommitOutcome(string transaction, RestoreResult result)
+    {
+        BackupHubContract.RequireRegularDirectory(transaction, "restore transaction");
+        result.Validate();
+        if (result.RequestId != BackupHubContract.Canonical(TransactionId(transaction)))
+            throw new InvalidDataException("The decision identity does not match its transaction.");
+        var path = Path.Combine(transaction, "outcome.json");
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(result, BackupHubContract.JsonOptions);
+        if (Path.Exists(path))
+        {
+            _ = ReadOutcome(transaction);
+            if (!File.ReadAllBytes(path).SequenceEqual(bytes))
+                throw new InvalidDataException("A restore decision cannot be changed after commitment.");
+        }
+        else WriteAtomicDocument(path, bytes, Path.Combine(transaction, "outcome.tmp"));
+        BackupHubContract.FlushDirectory(transaction);
+    }
+
+    private static RestoreResult ReadOutcome(string transaction)
+    {
+        BackupHubContract.RequireRegularDirectory(transaction, "restore transaction");
+        var path = Path.Combine(transaction, "outcome.json");
+        BackupHubContract.RequireRegularFile(path, "restore decision");
+        var result = JsonSerializer.Deserialize<RestoreResult>(File.ReadAllBytes(path), BackupHubContract.JsonOptions)
+            ?? throw new InvalidDataException("The restore decision is empty.");
+        result.Validate();
+        if (result.RequestId != BackupHubContract.Canonical(TransactionId(transaction)))
+            throw new InvalidDataException("The decision identity does not match its transaction.");
+        return result;
+    }
+
+    private static void WriteAtomicDocument(string destination, byte[] bytes, string temporary)
+    {
+        // This exact scratch file is owned by the pending write, not an alternate
+        // source. A partial previous write is recreated from the durable decision.
+        if (Path.Exists(temporary)) BackupHubContract.RequireRegularFile(temporary, "restore document staging");
+        using (var stream = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            stream.Write(bytes);
+            stream.Flush(flushToDisk: true);
+        }
+        File.Move(temporary, destination);
+        BackupHubContract.FlushDirectory(Path.GetDirectoryName(destination)!);
+    }
+
+    private static void TryCleanup(string cleanup, RestoreLocations locations, List<RestoreNotification> notifications)
+    {
+        BackupHubContract.RequireRegularDirectory(cleanup, "restore cleanup");
+        var claimed = Path.Combine(locations.Processing, $"{TransactionId(cleanup):D}.bhrestore");
+        try
+        {
+            if (Path.Exists(claimed))
+            {
+                BackupHubContract.RequireRegularDirectory(claimed, "restore claimed request");
+                var result = ReadOutcome(cleanup);
+                FinalizeClaim(claimed, locations, result.State is "applied" or "cancelled");
+                BackupHubContract.FlushDirectory(locations.Processing);
+                if (result.State is not ("applied" or "cancelled")) BackupHubContract.FlushDirectory(locations.Quarantine);
+            }
+            // Claim finalization precedes removal of the local decision. Partial
+            // directory deletion therefore needs no database or decision replay.
+            Directory.Delete(cleanup, recursive: true);
+            BackupHubContract.FlushDirectory(Path.GetDirectoryName(cleanup)!);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            notifications.Add(new RestoreNotification("Limpieza de restauración pendiente",
+                $"El resultado está guardado y no se modificará. Se reintentará la limpieza al abrir MOCKUPS. {exception.Message}", true));
         }
     }
 
-    private static void FinalizeExistingResult(
-        string claimed,
-        RestoreLocations locations,
-        Guid requestId)
+    private string TransactionPath(Guid requestId, string phase = "txn") =>
+        Path.Combine(Path.GetDirectoryName(_databasePath)!, $".mockups-restore-{requestId:D}.{phase}");
+
+    private string CleanupPath(Guid requestId) => TransactionPath(requestId, "cleanup");
+
+    private IReadOnlyList<string> TransactionDirectories(string phase) =>
+        Directory.EnumerateDirectories(Path.GetDirectoryName(_databasePath)!, $".mockups-restore-*.{phase}")
+            .Order(StringComparer.Ordinal).ToArray();
+
+    private static Guid TransactionId(string path)
     {
-        var result = JsonSerializer.Deserialize<RestoreResult>(
-                File.ReadAllBytes(
-                    locations.ResultPath(requestId)),
-                BackupHubContract.JsonOptions)
-            ?? throw new InvalidDataException(
-                "An existing restore result is empty.");
-        result.Validate();
-        FinalizeClaim(
-            claimed,
-            locations,
-            result.State is "applied" or "cancelled");
+        const string prefix = ".mockups-restore-";
+        var name = Path.GetFileNameWithoutExtension(path);
+        if (!name.StartsWith(prefix, StringComparison.Ordinal)
+            || !Guid.TryParseExact(name[prefix.Length..], "D", out var id)
+            || name[prefix.Length..] != BackupHubContract.Canonical(id))
+            throw new InvalidDataException("Invalid restore transaction directory identity.");
+        return id;
+    }
+
+    private void RecoverStaging()
+    {
+        foreach (var staging in TransactionDirectories("decision"))
+        {
+            BackupHubContract.RequireRegularDirectory(staging, "restore decision staging");
+            if (File.Exists(Path.Combine(staging, "outcome.json")))
+            {
+                var result = ReadOutcome(staging);
+                Directory.Move(staging, TransactionPath(Guid.Parse(result.RequestId)));
+            }
+            else Directory.Delete(staging, recursive: true);
+            BackupHubContract.FlushDirectory(Path.GetDirectoryName(staging)!);
+        }
+        foreach (var staging in Directory.EnumerateDirectories(Path.GetDirectoryName(_databasePath)!, ".*.restore-tmp"))
+        {
+            var name = Path.GetFileNameWithoutExtension(staging)[1..];
+            if (!Guid.TryParseExact(name, "D", out var id) || name != BackupHubContract.Canonical(id)) continue;
+            BackupHubContract.RequireRegularDirectory(staging, "restore replacement staging");
+            // Replacement cannot start before this staging directory is promoted.
+            Directory.Delete(staging, recursive: true);
+            BackupHubContract.FlushDirectory(Path.GetDirectoryName(staging)!);
+        }
     }
 
     private static void FinalizeClaim(

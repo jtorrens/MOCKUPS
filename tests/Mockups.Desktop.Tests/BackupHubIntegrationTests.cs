@@ -249,20 +249,30 @@ internal static class BackupHubIntegrationTests
 
     public static void InterruptedRestore(string source)
     {
-        foreach (var completed in new[] { false, true })
+        foreach (var phase in new[] { "prepared", "replaced", "applied" })
         {
+            var completed = phase == "applied";
             using var fixture = new Fixture(source);
             var request = fixture.Prepare();
             var previous = BackupHubContract.HashFile(fixture.Database);
             var preId = Guid.NewGuid();
             var transaction = Path.Combine(fixture.Root, $".mockups-restore-{request:D}.txn");
             Directory.CreateDirectory(transaction);
-            File.Copy(fixture.Database, Path.Combine(transaction, "previous.sqlite"));
-            File.Copy(fixture.CandidatePath(request), fixture.Database, overwrite: true);
+            if (phase != "prepared")
+            {
+                File.Copy(fixture.Database, Path.Combine(transaction, "previous.sqlite"));
+                File.Copy(fixture.CandidatePath(request), fixture.Database, overwrite: true);
+            }
+            else File.Copy(fixture.CandidatePath(request), Path.Combine(transaction, "replacement.sqlite"));
             BackupHubContract.WriteJsonDurably(Path.Combine(transaction, "journal.json"), new RestoreJournal(
                 request.ToString("D"), fixture.PackageId.ToString("D"), preId.ToString("D"), previous, fixture.CandidateHash));
             Directory.Move(fixture.ClaimPath(request, fixture.Locations.Outbox), fixture.ClaimPath(request, fixture.Locations.Processing));
-            if (completed) BackupHubContract.WriteJsonDurably(fixture.Locations.ResultPath(request), RestoreResult.Applied(request, fixture.PackageId, preId));
+            if (completed)
+            {
+                var outcome = RestoreResult.Applied(request, fixture.PackageId, preId);
+                BackupHubContract.WriteJsonDurably(Path.Combine(transaction, "outcome.json"), outcome);
+                BackupHubContract.WriteJsonDurably(fixture.Locations.ResultPath(request), outcome);
+            }
             fixture.Run(_ => throw new Exception("Crash recovery must not confirm again"));
             Equal(completed ? fixture.CandidateHash : previous, BackupHubContract.HashFile(fixture.Database));
             Equal(completed ? "applied" : "failed", fixture.Result(request).State);
@@ -270,6 +280,185 @@ internal static class BackupHubIntegrationTests
             Equal(false, Directory.Exists(transaction));
             Equal(false, Directory.Exists(fixture.ClaimPath(request, fixture.Locations.Processing)));
             Equal(0, fixture.Run(_ => throw new Exception("Already recovered")).Count);
+        }
+    }
+
+    public static void InterruptedDecisionDelivery(string source)
+    {
+        foreach (var blocked in new[] { false, true })
+        {
+            using var fixture = new Fixture(source);
+            var (request, transaction, _, preId) = fixture.PrepareReplacement();
+            var outcome = RestoreResult.Applied(request, fixture.PackageId, preId);
+            BackupHubContract.WriteJsonDurably(Path.Combine(transaction, "outcome.json"), outcome);
+            var temporary = Path.Combine(fixture.Locations.Results, $".{request:D}.tmp");
+            if (blocked) Directory.CreateDirectory(temporary);
+            else File.WriteAllText(temporary, "{incomplete result");
+            if (blocked)
+            {
+                Throws<InvalidDataException>(() => fixture.Run(_ => throw new Exception("Must not reconfirm")));
+                Equal(fixture.CandidateHash, BackupHubContract.HashFile(fixture.Database));
+                Equal(outcome, Read<RestoreResult>(Path.Combine(transaction, "outcome.json")));
+                Directory.Delete(temporary);
+            }
+            fixture.Run(_ => throw new Exception("A durable decision must not reconfirm"));
+            Equal(outcome, fixture.Result(request));
+            Equal(fixture.CandidateHash, BackupHubContract.HashFile(fixture.Database));
+            Equal(false, File.Exists(temporary));
+            Equal(false, Directory.Exists(transaction));
+        }
+    }
+
+    public static void PublishedRestoreNeverRollsBack(string source)
+    {
+        using var fixture = new Fixture(source);
+        var (request, transaction, _, preId) = fixture.PrepareReplacement();
+        var outcome = RestoreResult.Applied(request, fixture.PackageId, preId);
+        BackupHubContract.WriteJsonDurably(Path.Combine(transaction, "outcome.json"), outcome);
+        var cleanup = Path.ChangeExtension(transaction, "cleanup");
+        File.WriteAllText(cleanup, "block phase promotion");
+        Throws<IOException>(() => fixture.Run(_ => throw new Exception("Must not reconfirm")));
+        Equal(outcome, fixture.Result(request));
+        Equal(fixture.CandidateHash, BackupHubContract.HashFile(fixture.Database));
+        Equal(true, File.Exists(Path.Combine(transaction, "previous.sqlite")));
+        File.Delete(cleanup);
+        fixture.Run(_ => throw new Exception("Must only finish delivery"));
+        Equal(outcome, fixture.Result(request));
+        Equal(fixture.CandidateHash, BackupHubContract.HashFile(fixture.Database));
+    }
+
+    public static void FreshRestoreCleanupFailureKeepsDecision(string source)
+    {
+        using var fixture = new Fixture(source);
+        var request = fixture.Prepare();
+        var cleanup = Path.Combine(fixture.Root, $".mockups-restore-{request:D}.cleanup");
+        Func<PendingRestore, bool> confirm = _ =>
+        {
+            File.WriteAllText(cleanup, "block cleanup promotion after confirmation");
+            return true;
+        };
+        // Unsupported publication platforms stop at the mandatory pre-backup.
+        // Their state recovery is independently covered by portable fixtures.
+        if (!OperatingSystem.IsMacOS() && !OperatingSystem.IsWindows())
+        {
+            Throws<IOException>(() => fixture.Run(confirm));
+            Equal("pre-restore-backup-failed", fixture.Result(request).Error!.Code);
+            return;
+        }
+        Throws<IOException>(() => fixture.Run(confirm));
+        var applied = fixture.Result(request);
+        Equal("applied", applied.State);
+        Equal(fixture.CandidateHash, BackupHubContract.HashFile(fixture.Database));
+        File.Delete(cleanup);
+        fixture.Run(_ => throw new Exception("The applied decision must not reconfirm"));
+        Equal(applied, fixture.Result(request));
+        Equal(fixture.CandidateHash, BackupHubContract.HashFile(fixture.Database));
+    }
+
+    public static void PartialRollbackIsRetryable(string source)
+    {
+        using var fixture = new Fixture(source);
+        var (request, transaction, previous, _) = fixture.PrepareReplacement();
+        File.WriteAllText(Path.Combine(transaction, "recovery.sqlite"), "partial rollback copy");
+        // A complete rollback is kept until result delivery succeeds.
+        var blockedResult = Path.Combine(fixture.Locations.Results, $".{request:D}.tmp");
+        Directory.CreateDirectory(blockedResult);
+        Throws<InvalidDataException>(() => fixture.Run(_ => throw new Exception("Must not reconfirm")));
+        Equal(previous, BackupHubContract.HashFile(fixture.Database));
+        Equal(true, File.Exists(Path.Combine(transaction, "journal.json")));
+        var decision = Read<RestoreResult>(Path.Combine(transaction, "outcome.json"));
+        Equal("failed", decision.State);
+        Directory.Delete(blockedResult);
+        fixture.Run(_ => throw new Exception("Must finish the same rollback"));
+        Equal(previous, BackupHubContract.HashFile(fixture.Database));
+        Equal(decision, fixture.Result(request));
+        Equal(false, Directory.Exists(transaction));
+    }
+
+    public static void CleanupPreservesLaterEdits(string source)
+    {
+        using var fixture = new Fixture(source);
+        var request = fixture.Prepare();
+        var claimed = fixture.ClaimPath(request, fixture.Locations.Processing);
+        Directory.Move(fixture.ClaimPath(request, fixture.Locations.Outbox), claimed);
+        var outcome = RestoreResult.Failed(request, fixture.PackageId, null, "not-presented", "confirmation-failed", "test");
+        var cleanup = Path.Combine(fixture.Root, $".mockups-restore-{request:D}.cleanup");
+        Directory.CreateDirectory(cleanup);
+        BackupHubContract.WriteJsonDurably(Path.Combine(cleanup, "outcome.json"), outcome);
+        BackupHubContract.WriteJsonDurably(fixture.Locations.ResultPath(request), outcome);
+        var occupied = fixture.ClaimPath(request, fixture.Locations.Quarantine);
+        Directory.CreateDirectory(occupied);
+        var notifications = fixture.Run(_ => throw new Exception("Cleanup must not reconfirm"));
+        Equal(true, notifications.Single().IsError);
+        Equal(true, Directory.Exists(cleanup));
+        fixture.WriteApplicationId(890);
+        var edited = BackupHubContract.HashFile(fixture.Database);
+        Directory.Delete(occupied);
+        fixture.Run(_ => throw new Exception("Cleanup must not reconfirm"));
+        Equal(edited, BackupHubContract.HashFile(fixture.Database));
+        Equal(outcome, fixture.Result(request));
+        Equal(false, Directory.Exists(cleanup));
+
+        // Simulate interruption while deleting a cleanup directory after claim
+        // finalization: its journal/decision may already be gone.
+        Directory.CreateDirectory(cleanup);
+        File.WriteAllText(Path.Combine(cleanup, "remaining-staging-file"), "partial cleanup");
+        fixture.Run(_ => throw new Exception("Cleanup must not replay a request"));
+        Equal(edited, BackupHubContract.HashFile(fixture.Database));
+        Equal(false, Directory.Exists(cleanup));
+    }
+
+    public static void ConflictingResultIsRejected(string source)
+    {
+        using var fixture = new Fixture(source);
+        var (request, transaction, _, preId) = fixture.PrepareReplacement();
+        var outcome = RestoreResult.Applied(request, fixture.PackageId, preId);
+        BackupHubContract.WriteJsonDurably(Path.Combine(transaction, "outcome.json"), outcome);
+        var conflicting = RestoreResult.Cancelled(request, fixture.PackageId);
+        BackupHubContract.WriteJsonDurably(fixture.Locations.ResultPath(request), conflicting);
+        Throws<InvalidDataException>(() => fixture.Run(_ => throw new Exception("Must not reconfirm")));
+        Equal(fixture.CandidateHash, BackupHubContract.HashFile(fixture.Database));
+        Equal(outcome, Read<RestoreResult>(Path.Combine(transaction, "outcome.json")));
+        Equal(conflicting, fixture.Result(request));
+    }
+
+    public static void RestoreRunsOnWorker(string source)
+    {
+        using var fixture = new Fixture(source);
+        fixture.Prepare();
+        var caller = Environment.CurrentManagedThreadId;
+        var callbackThread = caller;
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        var pending = new BackupHubRestoreService(fixture.Database, fixture.Backups).ProcessPendingAsync(_ =>
+        {
+            callbackThread = Environment.CurrentManagedThreadId;
+            return Task.FromResult(false);
+        });
+        Equal(true, timer.Elapsed < TimeSpan.FromSeconds(1));
+        pending.GetAwaiter().GetResult();
+        Equal(false, caller == callbackThread);
+    }
+
+    public static void DecisionStagingIsRecoverable(string source)
+    {
+        foreach (var durable in new[] { false, true })
+        {
+            using var fixture = new Fixture(source);
+            var request = fixture.Prepare();
+            var previous = BackupHubContract.HashFile(fixture.Database);
+            Directory.Move(fixture.ClaimPath(request, fixture.Locations.Outbox), fixture.ClaimPath(request, fixture.Locations.Processing));
+            var staging = Path.Combine(fixture.Root, $".mockups-restore-{request:D}.decision");
+            Directory.CreateDirectory(staging);
+            var decision = RestoreResult.Cancelled(request, fixture.PackageId);
+            if (durable) BackupHubContract.WriteJsonDurably(Path.Combine(staging, "outcome.json"), decision);
+            else File.WriteAllText(Path.Combine(staging, "outcome.tmp"), "partial decision");
+            var confirms = 0;
+            fixture.Run(_ => { confirms++; return false; });
+            Equal(durable ? 0 : 1, confirms);
+            Equal(previous, BackupHubContract.HashFile(fixture.Database));
+            Equal("cancelled", fixture.Result(request).State);
+            if (durable) Equal(decision, fixture.Result(request));
+            Equal(false, Directory.Exists(staging));
         }
     }
 
@@ -336,6 +525,21 @@ internal static class BackupHubIntegrationTests
             using var command = database.CreateCommand();
             command.CommandText = $"PRAGMA application_id = {value}";
             command.ExecuteNonQuery();
+        }
+
+        public (Guid Request, string Transaction, string Previous, Guid PreId) PrepareReplacement()
+        {
+            var request = Prepare();
+            var previous = BackupHubContract.HashFile(Database);
+            var preId = Guid.NewGuid();
+            var transaction = Path.Combine(Root, $".mockups-restore-{request:D}.txn");
+            Directory.CreateDirectory(transaction);
+            File.Copy(Database, Path.Combine(transaction, "previous.sqlite"));
+            File.Copy(CandidatePath(request), Database, overwrite: true);
+            BackupHubContract.WriteJsonDurably(Path.Combine(transaction, "journal.json"), new RestoreJournal(
+                request.ToString("D"), PackageId.ToString("D"), preId.ToString("D"), previous, CandidateHash));
+            Directory.Move(ClaimPath(request, Locations.Outbox), ClaimPath(request, Locations.Processing));
+            return (request, transaction, previous, preId);
         }
 
         public string ClaimPath(Guid id, string parent) => Path.Combine(parent, $"{id:D}.bhrestore");

@@ -761,10 +761,39 @@ confirmation. A snapshot is restorable only when its declared and actual
 schema equal the schema supported by that running application; backups from an
 older or newer schema are rejected, while older backups made with the same
 schema remain valid. Confirmation first publishes the mandatory `pre-restore`
-package, then the Host performs a journaled atomic replacement, validates the
-live database, publishes the terminal result and rolls back to the verified
-previous file on any replacement or verification failure. Startup never
-migrates, repairs or normalizes a restored database.
+package, then the Host performs a journaled atomic replacement and validates
+the live database. Its one local restore state machine has these durable phases:
+
+- replacement staging (`.<requestId>.restore-tmp`) cannot touch the live database;
+- a published transaction (`.mockups-restore-<requestId>.txn`) retains the exact
+  `journal.json` hashes and rollback image; without an outcome, restart decides
+  failure and restores the verified previous image;
+- `outcome.json` is the immutable Restore Result v2 decision, atomically written
+  inside that transaction before external delivery. Applied means never roll
+  back; failed replacement means finish the verified rollback before delivery.
+  Decisions without a replacement journal (cancellation, rejection, pre-backup
+  failure) are first staged in `.mockups-restore-<requestId>.decision`, then
+  promoted to the same transaction owner;
+- the external terminal result contains those exact decision bytes. A partial
+  result scratch file is rewritten from that authority; an existing final result
+  must match it exactly. Delivery failure retains the transaction for restart;
+- only after database verification/rollback and durable result delivery does the
+  transaction become `.mockups-restore-<requestId>.cleanup`. Cleanup finalizes the
+  claimed request before deleting local files. I/O failure produces a warning
+  and leaves cleanup pending; it never rewrites or verifies the database again,
+  including after subsequent authoring changes.
+
+Rollback staging is disposable and rebuilt only from the hash-verified previous
+image. Its journal and decision survive until delivery, so interruption during
+rollback or publication cannot invent a new outcome. Partial cleanup can resume
+without a journal after the claimed request has already been finalized.
+These are explicit recovery phases, not alternate readers, backup roots or
+startup schema migrations. Restore Handoff v2 and Backup Package v1 are unchanged.
+
+The restore service executes on a worker. Only `StartupRestoreDialogs` marshals
+confirmation to the visual dispatcher; the Host presents final notifications on
+the visual thread. No SQLite validation, hashing, copying or recovery is performed
+by the dialog. Startup never migrates or normalizes a restored database.
 
 Vault discovery follows Vault Location v1 exclusively: native user application
 data, `com.jtorrens.backup-hub/vault`, and the exact `vault-layout.json` marker.

@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Avalonia.Layout;
 using Avalonia.Media;
 using System;
@@ -100,6 +101,11 @@ internal sealed class StartupRecoveryWindow : Window
 internal static class StartupRestoreDialogs
 {
     public static Task<bool> ConfirmAsync(
+        Window owner,
+        PendingRestore pending) => Dispatcher.UIThread.InvokeAsync(
+            () => ShowConfirmationAsync(owner, pending));
+
+    private static Task<bool> ShowConfirmationAsync(
         Window owner,
         PendingRestore pending)
     {

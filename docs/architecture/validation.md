@@ -530,6 +530,12 @@ application-data environment variables or target the canonical database.
 Publication is supported on macOS/Windows; Linux checks its explicit unsupported
 platform result as well as portable handoff validation, cancellation and crash
 recovery. These tests do not verify Backup Hub's external encryption/sync layer.
+Additional fixtures interrupt decision staging, result delivery, rollback and
+cleanup. They require immutable applied outcomes even when cleanup promotion
+fails, identical result bytes after retry, retained rollback authority while
+delivery is blocked, rejection of conflicting results and preservation of edits
+made after entering cleanup-only state. A worker-thread regression and a real
+headless confirmation dialog verify the disk/UI boundary separately.
 
 Close-serialization regressions hold a write beyond the former three-second
 timeout and require shutdown to remain pending without blocking its caller.
