@@ -356,13 +356,14 @@ function fileSize(fullPath: string) {
 }
 
 function debugVideoFrame(event: string, details: Record<string, unknown>) {
+  const logPath = process.env.MOCKUPS_PREVIEW_DEBUG_LOG;
+  if (logPath === undefined) return;
   try {
-    mkdirSync("logs", { recursive: true });
     const fields = Object.entries(details)
       .map(([key, value]) => `${key}=${debugValue(value)}`)
       .join("\t");
     appendFileSync(
-      process.env.MOCKUPS_PREVIEW_DEBUG_LOG || path.resolve("logs", "desktop-preview-debug.log"),
+      logPath,
       `${new Date().toISOString()}\tpreview.asset.video-frame\tevent=${event}\t${fields}\n`,
     );
   } catch {

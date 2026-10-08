@@ -327,7 +327,10 @@ Development and installed builds use that identical path policy, which is also
 passed explicitly to Preview child processes. Diagnostics never search for a
 repository or derive a writable root from the executable location. If native
 application data is unavailable, resolution fails explicitly without another
-destination. The installed bundle stays immutable while running; final macOS
+destination. The child only appends to that supplied log; it never creates a
+directory or selects another path. Standalone Preview invocations without the
+explicit diagnostic destination do not enable file logging.
+The installed bundle stays immutable while running; final macOS
 review verifies its strict signature again after startup and Preview activity.
 The stable Team-backed designated requirement lets macOS retain local privacy
 authorization across rebuilds without changing the application bundle id.
