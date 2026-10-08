@@ -468,7 +468,7 @@ internal sealed class ReferenceUsageService :
         var modulesById = modules.ToDictionary((module) => module.Id, StringComparer.Ordinal);
         var componentsByReference = ComponentReferenceIndex(components);
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT mi.id, mi.name, mi.module_id, mi.content_json, mi.metadata_json, e.project_id FROM module_instances mi JOIN shots s ON s.id = mi.shot_id JOIN episodes e ON e.id = s.episode_id";
+        command.CommandText = "SELECT mi.id, mi.name, mi.module_id, mi.content_json, mi.metadata_json, e.project_id, mi.animation_json FROM module_instances mi JOIN shots s ON s.id = mi.shot_id JOIN episodes e ON e.id = s.episode_id";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -494,6 +494,12 @@ internal sealed class ReferenceUsageService :
                 usages,
                 componentsByReference,
                 RuntimeValueSource.ProductionPayload);
+            var animation = JsonPath.ParseRequiredObject(ReadString(reader, 6), $"Screen '{instanceId}' animation_json");
+            foreach (var value in RuntimeInputAnimationValueContract.ReadAuthoredValues(
+                         module.DesignPreview, variant.Config, content, animation, $"Screen '{instanceId}' animation"))
+                AddInputReference(value.Target.Input, value.Value, variant.Config, source,
+                    $"{value.Target.FieldId} · {value.Target.TargetId} · Keyframe {value.Frame} ({value.KeyframeId})",
+                    targets, usages, componentsByReference);
         }
     }
 

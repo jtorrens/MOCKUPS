@@ -426,11 +426,13 @@ internal interface IThemeRepository
 {
     ThemeRecord Get(string themeId);
 
+    ThemeRecord Get(SqliteConnection connection, string themeId);
+
     IReadOnlyList<ThemeRecord> QueryAll(SqliteConnection connection);
 
-    void UpdateDirectField(string themeId, string fieldId, string value);
+    void UpdateDirectField(SqliteConnection connection, string themeId, string fieldId, string value, SqliteTransaction? transaction = null);
 
-    void UpdateTokens(string themeId, string tokensJson);
+    void UpdateTokens(SqliteConnection connection, string themeId, string tokensJson, SqliteTransaction? transaction = null);
 
     ThemeRecord Create(
         SqliteConnection connection,

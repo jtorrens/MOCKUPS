@@ -16,15 +16,12 @@ internal sealed class RenderQueueController
 
     public RenderQueueController(
         Window owner,
-        IRenderSnapshotDataSource database,
-        IProjectPathResolver projectPaths,
-        RenderQueueManager? queue = null,
-        RenderJobSnapshotFactory? snapshots = null)
+        RenderQueueManager queue,
+        RenderJobSnapshotFactory snapshots)
     {
         _owner = owner;
-        _queue = queue ?? new RenderQueueManager();
-        _snapshots = snapshots
-            ?? new RenderJobSnapshotFactory(database, projectPaths);
+        _queue = queue;
+        _snapshots = snapshots;
     }
 
     public EditorNavigationRowAction? NavigationAction(ProjectTreeNode node)

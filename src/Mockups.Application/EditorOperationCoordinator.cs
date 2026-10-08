@@ -15,12 +15,19 @@ public sealed class EditorOperationCoordinator : IDisposable
 
     public event Action<EditorOperationActivity>? ActivityChanged;
 
-    public async Task<T> ExecuteAsync<T>(
+    public Task<T> ExecuteAsync<T>(
         Func<T> operation,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(operation);
+        return ExecuteAsync(_ => Task.FromResult(operation()), cancellationToken);
+    }
 
+    public async Task<T> ExecuteAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
         CancellationToken lifetimeToken;
         lock (_stateGate)
         {
@@ -42,7 +49,7 @@ public sealed class EditorOperationCoordinator : IDisposable
         try
         {
             token.ThrowIfCancellationRequested();
-            return await Task.Run(operation, token).ConfigureAwait(false);
+            return await Task.Run(() => operation(token), token).ConfigureAwait(false);
         }
         finally
         {

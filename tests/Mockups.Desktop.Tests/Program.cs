@@ -172,6 +172,9 @@ var tests = new (string Name, Action Run)[]
     ("Conversation message Actors follow their exact direction contract", ConversationMessageActorsFollowDirectionContract),
     ("invalid Conversation message Actor documents fail read-only", InvalidConversationMessageActorsFailReadOnly),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
+    ("animated references protect root and nested authored values from deletion", AnimatedReferencesProtectAuthoredValues),
+    ("Theme changes commit consumer durations atomically", ThemeChangesCommitConsumerDurationsAtomically),
+    ("Render execution captures current data through the shared operation boundary", RenderExecutionCapturesCurrentData),
     ("External Media inventories declared authored media paths", ExternalMediaInventoriesDeclaredAuthoredPaths),
     ("animated media paths validate and retain exact keyframe ownership", AnimatedMediaPathsValidateAndRetainKeyframeOwnership),
     ("External Media keeps existing paths and filenames visible", ExternalMediaKeepsExistingPathsVisible),
@@ -10497,6 +10500,7 @@ static void ReferencesEnforceDeclaredScope()
         IActorRepository actorRepository = new ActorRepository(context);
         IShotRepository shotRepository = new ShotRepository(context);
         IThemeRepository themeRepository = new ThemeRepository(context);
+        using var themeConnection = context.OpenConnection();
         const string actorId = "actor_alex";
         const string shotId = "shot_001";
         const string themeId = "theme_88126480cb044ecdbdee380aea764a2d";
@@ -10514,6 +10518,7 @@ static void ReferencesEnforceDeclaredScope()
                 shotRepository.UpdateField(connection, shotId, "shot.ownerActorId", "actor_cross"));
         }
         themeRepository.UpdateDirectField(
+            themeConnection,
             themeId,
             "theme.iconThemeId",
             "icon_theme_cross");
@@ -10521,22 +10526,27 @@ static void ReferencesEnforceDeclaredScope()
             "icon_theme_cross",
             themeRepository.Get(themeId).IconThemeId);
         themeRepository.UpdateDirectField(
+            themeConnection,
             themeId,
             "theme.iconThemeId",
             themeBefore.IconThemeId);
         themeRepository.UpdateDirectField(
+            themeConnection,
             themeId,
             "theme.statusBarId",
             "component_cross_status_bar::variant::default");
         themeRepository.UpdateDirectField(
+            themeConnection,
             themeId,
             "theme.navigationBarId",
             "component_cross_navigation_bar::variant::default");
         themeRepository.UpdateDirectField(
+            themeConnection,
             themeId,
             "theme.statusBarId",
             themeBefore.StatusBarId);
         themeRepository.UpdateDirectField(
+            themeConnection,
             themeId,
             "theme.navigationBarId",
             themeBefore.NavigationBarId);
@@ -13878,6 +13888,7 @@ static void ThemeRepositoryPreservesFocusedContract()
         var context = new SqliteProjectContext(temporary);
         IThemeRepository themeRepository = new ThemeRepository(context);
         IModuleInstanceThemeContextService themeContextService = new ModuleInstanceThemeContextService(context);
+        using var themeConnection = context.OpenConnection();
         var project = CanonicalProject(database);
         var tree = new[] { project };
         var theme = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Theme);
@@ -13903,7 +13914,7 @@ static void ThemeRepositoryPreservesFocusedContract()
                     .Select((row) => row.Id));
         }
 
-        themeRepository.UpdateDirectField(theme.Id, "theme.family", "repository-test");
+        themeRepository.UpdateDirectField(themeConnection, theme.Id, "theme.family", "repository-test");
         Equal("repository-test", database.GetThemeSettings(theme.Id).Family);
         database.UpdateThemeField(theme.Id, "theme.family", settings.Family);
         Equal(settings.Family, themeRepository.Get(theme.Id).Family);
@@ -13932,8 +13943,8 @@ static void ThemeRepositoryPreservesFocusedContract()
         Throws<InvalidOperationException>(() => themeContextService.GetTokensJson("missing_module_instance"));
 
         var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => themeRepository.UpdateTokens(theme.Id, "[]"));
-        Throws<InvalidOperationException>(() => themeRepository.UpdateDirectField(theme.Id, "theme.unknown", "value"));
+        Throws<InvalidOperationException>(() => themeRepository.UpdateTokens(themeConnection, theme.Id, "[]"));
+        Throws<InvalidOperationException>(() => themeRepository.UpdateDirectField(themeConnection, theme.Id, "theme.unknown", "value"));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }
@@ -17178,6 +17189,7 @@ static void ProductionOutputGeneratesExactShotPlans()
         var draft = new RenderJobSnapshotFactory(
                 RenderSnapshots(database),
                 database.ProjectPaths,
+                new EditorOperationCoordinator(),
                 roots)
             .LoadDraftAsync(
                 DescendantsAndSelf(CanonicalProject(database))
@@ -17535,6 +17547,7 @@ static void ShotManagerOutputResolvesExactAssociations()
         var managedDraft = new RenderJobSnapshotFactory(
                 RenderSnapshots(database),
                 database.ProjectPaths,
+                new EditorOperationCoordinator(),
                 roots,
                 documents)
             .LoadDraftAsync(shotNode)
@@ -17800,7 +17813,8 @@ static void ShotResourceOverridesResolveIndependently()
 
         var draft = new RenderJobSnapshotFactory(
                 RenderSnapshots(database),
-                database.ProjectPaths)
+                database.ProjectPaths,
+                new EditorOperationCoordinator())
             .LoadDraftAsync(shot)
             .GetAwaiter()
             .GetResult();
@@ -18004,7 +18018,8 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
 
         var renderDraft = new RenderJobSnapshotFactory(
                 RenderSnapshots(database),
-                database.ProjectPaths)
+                database.ProjectPaths,
+                new EditorOperationCoordinator())
             .LoadDraftAsync(shotNode)
             .GetAwaiter()
             .GetResult();
@@ -18029,7 +18044,8 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
                 route.VersionPadding);
             var factory = new RenderJobSnapshotFactory(
                 RenderSnapshots(database),
-                new ProjectPathResolver(Directory.GetCurrentDirectory()));
+                new ProjectPathResolver(Directory.GetCurrentDirectory()),
+                new EditorOperationCoordinator());
             var plan = factory.PlanBatch(
                     renderDraft with { RootPath = renderRoot },
                     alternateDeviceId,
@@ -20131,6 +20147,142 @@ static void RejectsMalformedDocuments()
     Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{\"schemaVersion\":2,\"tracks\":[{\"id\":\"t\",\"fieldId\":\"f\",\"keyframes\":[{\"id\":\"k\",\"frame\":0,\"value\":true,\"enabled\":true}]}]}"));
     Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{\"schemaVersion\":2,\"tracks\":[{\"id\":\"t\",\"fieldId\":\"f\",\"keyframes\":[{\"id\":\"k\",\"frame\":0,\"value\":true,\"interpolation\":\"hold\"}]}]}"));
     _ = new ModuleInstanceAnimationDocument("{\"schemaVersion\":2,\"tracks\":[]}");
+}
+
+static void AnimatedReferencesProtectAuthoredValues()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-animation-usage-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = CanonicalProjectNodes(database);
+        var screen = nodes.Single(node => node.Id == "module_instance_900f1616432d4f63a97f2a74dd647e08");
+        var actor = database.Duplicate(nodes.Single(node => node.Id == "actor_alex"));
+        var palette = database.Duplicate(nodes.First(node => node.Kind == ProjectTreeNodeKind.PaletteColor));
+        var runtime = Object(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
+        var targets = RuntimeInputAnimationValueContract.ReadTargets(runtime, new JsonObject(), runtime);
+        var actorTarget = targets.Single(target => target.TargetId == "" && target.Input.Kind == ComponentInputKind.RecordReference);
+        var colorTarget = targets.First(target => target.FieldPath.Count > 1 && target.Input.ValueKind == ValueKind.PaletteColorToken);
+        var animation = new ModuleInstanceAnimationDocument(database.GetModuleInstanceSettings(screen.Id).AnimationJson);
+        animation.AddTrack(actorTarget.FieldId, actorTarget.TargetId, JsonValue.Create(actorTarget.BaseValue)!, "hold");
+        animation.UpsertKeyframe(actorTarget.FieldId, actorTarget.TargetId, 7, JsonValue.Create(actor.Id)!, "hold");
+        animation.AddTrack(colorTarget.FieldId, colorTarget.TargetId, JsonValue.Create(colorTarget.BaseValue)!, "hold");
+        animation.UpsertKeyframe(colorTarget.FieldId, colorTarget.TargetId, 9, JsonValue.Create(palette.Id)!, "hold");
+        var document = Object(animation.ToJson());
+        // Inactive keys are still authored references and cannot be deleted underneath.
+        foreach (var track in document["tracks"]!.AsArray().OfType<JsonObject>())
+            foreach (var key in track["keyframes"]!.AsArray().OfType<JsonObject>())
+                if (key["frame"]!.GetValue<int>() is 7 or 9) key["enabled"] = false;
+        database.UpdateModuleInstanceAnimationJson(screen.Id, document.ToJsonString());
+        foreach (var target in new[] { actor, palette })
+        {
+            var usages = database.ReferenceUsages.GetReferenceUsageDetails(target);
+            True(usages.Any(usage => usage.SourceNodeId == screen.Id && usage.Field.Contains("Keyframe", StringComparison.Ordinal)));
+            True(CanonicalProjectNodes(database).Single(node => node.Id == target.Id).IsUsed);
+            Throws<InvalidOperationException>(() => database.Delete(target));
+        }
+        database.UpdateModuleInstanceAnimationJson(screen.Id, "{\"schemaVersion\":2,\"tracks\":[]}");
+        database.Delete(actor);
+        database.Delete(palette);
+        _ = new SqliteProjectTestContext(temporary);
+    }
+    finally { File.Delete(temporary); }
+}
+
+static void ThemeChangesCommitConsumerDurationsAtomically()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-theme-timing-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = CanonicalProjectNodes(database);
+        var screen = nodes.Single(node => node.Id == "module_instance_900f1616432d4f63a97f2a74dd647e08");
+        var theme = database.Duplicate(nodes.Single(node => node.Id == database.GetModuleInstanceSettings(screen.Id).ThemeId));
+        database.UpdateModuleInstanceField(screen.Id, "moduleInstance.themeId", theme.Id);
+        database.UpdateModuleInstanceField(screen.Id, "moduleInstance.durationPolicy", "calculated");
+        var content = Object(database.GetModuleInstanceSettings(screen.Id).ContentJson);
+        var messageId = content["messages"]![0]!["id"]!.GetValue<string>();
+        database.UpdateModuleInstanceRuntimeCollectionValue(screen.Id, "messages", messageId, "text",
+            JsonValue.Create(new string('x', 500)));
+        database.UpdateModuleInstanceRuntimeCollectionValue(screen.Id, "messages", messageId, "writeOnTiming",
+            Object("{\"mode\":\"natural\",\"fixedFrames\":12,\"paceToken\":\"theme.motion.naturalPace.normal\"}"));
+        database.UpdateModuleInstanceAnimationJson(screen.Id, "{\"schemaVersion\":2,\"tracks\":[]}");
+        database.UpdateThemeField(theme.Id, "theme.motion.naturalPace.normal", "1");
+        var before = database.GetModuleInstanceSettings(screen.Id);
+        using var connection = database.Context.OpenConnection();
+        var unrelated = database.Production.ShotRepository.QueryAll(connection)
+            .Where(shot => shot.Id != before.ShotId).ToArray();
+        database.UpdateThemeField(theme.Id, "theme.motion.naturalPace.normal", "2");
+        var after = database.GetModuleInstanceSettings(screen.Id);
+        True(after.DurationFrames > before.DurationFrames);
+        var timeline = new ModuleInstanceTimelineDataSource(database.Production, database.Resources);
+        Equal(ModuleInstanceTimeline.DurationFrames(timeline, screen.Id), after.DurationFrames);
+        Equal(ModuleInstanceTimeline.ShotDurationFrames(timeline, after.ShotId), database.GetShotSettings(after.ShotId).DurationFrames);
+        foreach (var shot in unrelated) Equal(shot.DurationFrames, database.GetShotSettings(shot.Id).DurationFrames);
+        var tokens = database.GetThemeSettings(theme.Id).TokensJson;
+        using var fault = connection.CreateCommand();
+        fault.CommandText = "CREATE TRIGGER fail_theme_duration BEFORE UPDATE OF duration_frames ON module_instances BEGIN SELECT RAISE(ABORT, 'theme-duration-fault'); END";
+        fault.ExecuteNonQuery();
+        Throws<SqliteException>(() => database.UpdateThemeField(theme.Id, "theme.motion.naturalPace.normal", "3"));
+        Equal(tokens, database.GetThemeSettings(theme.Id).TokensJson);
+        Equal(after, database.GetModuleInstanceSettings(screen.Id));
+        fault.CommandText = "DROP TRIGGER fail_theme_duration";
+        fault.ExecuteNonQuery();
+        _ = new SqliteProjectTestContext(temporary);
+    }
+    finally { File.Delete(temporary); }
+}
+
+static void RenderExecutionCapturesCurrentData()
+{
+    var root = Path.Combine(Path.GetTempPath(), $"mockups-render-current-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    var temporary = Path.Combine(root, "source.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var episode = CanonicalProjectNodes(database).Single(node => node.Id == "episode_001");
+        var shot = database.AddShot(episode, "actor_alex", database.SuggestShotNumber(episode.Id));
+        var module = database.GetAvailableShotModules(shot.Id).Single(choice => choice.Id == "module_project_foqn_s2_lock_screen");
+        var variant = ModuleInstances(database).GetModuleVariantOptions(module.Id)
+            .Single(option => option.Value.EndsWith("::variant::default", StringComparison.Ordinal));
+        var screen = AddPreparedModuleInstance(Children(database), shot,
+            new ShotModuleInstanceDraft(module, variant.Value, variant.Label, "Render source"));
+        database.UpdateModuleInstanceField(screen.Id, "moduleInstance.startFrame", "100");
+        database.UpdateShotField(shot.Id, "shot.durationPolicy", "explicit");
+        database.UpdateShotField(shot.Id, "shot.durationFrames", "4");
+        using var operations = new EditorOperationCoordinator();
+        var roots = new ProductionOutputRootStore(Path.Combine(root, "roots.json"));
+        var factory = new RenderJobSnapshotFactory(RenderSnapshots(database), database.ProjectPaths, operations, roots);
+        var draft = factory.LoadDraftAsync(RenderSnapshots(database).GetCurrentRenderShot(shot.Id)).GetAwaiter().GetResult();
+        var route = draft.Routes.Single();
+        var output = RenderOutputPlanner.Plan(root, route.RelativeDirectory, draft.SuggestedBaseName,
+            [RenderQueueAppearance.Light], RenderOutputModes.Require(RenderOutputModes.PngSequence), 1, route.VersionPadding);
+        var plan = factory.PlanBatch(draft with { RootPath = root }, draft.DeviceId, draft.ThemeSelectionValue,
+            RenderQueueAppearance.Light, RenderOutputModes.PngSequence, route.EntryId, draft.SuggestedBaseName, output, false)
+            .Plans.Single();
+        // An edit after enqueue must be included in this execution.
+        database.UpdateShotField(shot.Id, "shot.durationFrames", "5");
+        Task? queuedWrite = null;
+        var progress = new InlineTestProgress<RenderSnapshotFreezeProgress>(_ =>
+        {
+            queuedWrite ??= operations.ExecuteAsync(() => database.UpdateShotField(
+                shot.Id, "shot.durationFrames", "8"));
+            True(!queuedWrite.IsCompleted);
+        });
+        var first = factory.PrepareAsync(plan, Path.Combine(root, "first"), progress, CancellationToken.None).GetAwaiter().GetResult();
+        Equal(5, first.FrameStore.TotalFrames);
+        Required(queuedWrite).GetAwaiter().GetResult();
+        var second = factory.PrepareAsync(plan, Path.Combine(root, "second"),
+            new InlineTestProgress<RenderSnapshotFreezeProgress>(_ => { }), CancellationToken.None).GetAwaiter().GetResult();
+        Equal(8, second.FrameStore.TotalFrames);
+        Equal(5, RenderSnapshotStore.ReadFrames(first.FrameStore).Count());
+        Equal(8, RenderSnapshotStore.ReadFrames(second.FrameStore).Count());
+    }
+    finally { Directory.Delete(root, recursive: true); }
 }
 
 static void ExplicitReferenceUsageIsExactTypedAndShared()

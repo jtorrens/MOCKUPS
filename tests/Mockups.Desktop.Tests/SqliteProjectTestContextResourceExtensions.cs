@@ -148,7 +148,7 @@ internal static class SqliteProjectTestContextResourceExtensions
         string themeId,
         string fieldId,
         string value) =>
-        engine.Resources.UpdateThemeField(themeId, fieldId, value);
+        engine.ResourceRecordFields.UpdateThemeField(themeId, fieldId, value);
 
     internal static IReadOnlyList<FieldOption> GetProductionFontOptions(
         this SqliteProjectTestContext engine,

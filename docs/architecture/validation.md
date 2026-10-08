@@ -522,6 +522,14 @@ Database validation is read-only and confirms:
 
 Lifecycle and migration tests operate on disposable database copies.
 
+Focused resource-consumer regressions cover root Actor and nested Palette
+keyframe references (including disabled keys) blocking deletion, Theme timing
+changes updating only dependent Shot durations with late-failure rollback, and
+repeated execution of the same render plan observing the latest committed data.
+An edit queued during render preparation must wait for the complete preparation;
+the next execution must include it. Asynchronous operation tests prove ordering
+across awaits and cancellation through the same session lifetime.
+
 Screen-write regressions force a late derived-duration failure and require
 content, animation, metadata, lifecycle changes and Screen/Shot timing to roll
 back together. They exercise more than one Module, reject scalar/item writes

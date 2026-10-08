@@ -44,7 +44,7 @@ internal sealed class ThemeRepository : IThemeRepository
         return rows;
     }
 
-    public void UpdateDirectField(string themeId, string fieldId, string value)
+    public void UpdateDirectField(SqliteConnection connection, string themeId, string fieldId, string value, SqliteTransaction? transaction = null)
     {
         var column = fieldId switch
         {
@@ -54,22 +54,22 @@ internal sealed class ThemeRepository : IThemeRepository
             "theme.navigationBarId" => "navigation_bar_id",
             _ => throw new InvalidOperationException($"Unknown direct theme field '{fieldId}'."),
         };
-        using var connection = _context.OpenConnection();
         var theme = Get(connection, themeId);
         ValidateDirectReference(connection, theme, fieldId, value);
         _context.Execute(
             connection,
+            transaction,
             $"UPDATE themes SET {column} = $value WHERE id = $id",
             ("$id", themeId),
             ("$value", value));
     }
 
-    public void UpdateTokens(string themeId, string tokensJson)
+    public void UpdateTokens(SqliteConnection connection, string themeId, string tokensJson, SqliteTransaction? transaction = null)
     {
         JsonPath.ParseRequiredObject(tokensJson, $"Theme '{themeId}' tokens_json");
-        using var connection = _context.OpenConnection();
         _context.Execute(
             connection,
+            transaction,
             "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id",
             ("$id", themeId),
             ("$tokensJson", tokensJson));
@@ -193,7 +193,7 @@ internal sealed class ThemeRepository : IThemeRepository
             SqliteCommandExecutor.ReadString(reader, 8));
     }
 
-    private static ThemeRecord Get(SqliteConnection connection, string themeId)
+    public ThemeRecord Get(SqliteConnection connection, string themeId)
     {
         using var command = connection.CreateCommand();
         command.CommandText = "SELECT id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json FROM themes WHERE id = $id";

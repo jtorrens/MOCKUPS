@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
@@ -169,7 +170,7 @@ internal sealed partial class SqliteResourceOwner
         };
     }
 
-    public void UpdateThemeField(string themeId, string fieldId, string value)
+    internal void UpdateThemeField(SqliteConnection connection, SqliteTransaction transaction, string themeId, string fieldId, string value)
     {
         switch (fieldId)
         {
@@ -177,10 +178,10 @@ internal sealed partial class SqliteResourceOwner
             case "theme.iconThemeId":
             case "theme.statusBarId":
             case "theme.navigationBarId":
-                _themeRepository.UpdateDirectField(themeId, fieldId, value);
+                _themeRepository.UpdateDirectField(connection, themeId, fieldId, value, transaction);
                 return;
             default:
-                UpdateThemeToken(themeId, fieldId, value);
+                UpdateThemeToken(connection, transaction, themeId, fieldId, value);
                 return;
         }
     }
@@ -238,9 +239,9 @@ internal sealed partial class SqliteResourceOwner
         return palette.TryGetValue(token, out var hex) ? hex : null;
     }
 
-    private void UpdateThemeToken(string themeId, string fieldId, string value)
+    private void UpdateThemeToken(SqliteConnection connection, SqliteTransaction transaction, string themeId, string fieldId, string value)
     {
-        var tokens = ParseJsonObject(_themeRepository.Get(themeId).TokensJson);
+        var tokens = ParseJsonObject(_themeRepository.Get(connection, themeId).TokensJson);
 
         if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
         {
@@ -254,14 +255,14 @@ internal sealed partial class SqliteResourceOwner
             {
                 SetPair(tokens, value, colorPairPaths.Light, colorPairPaths.Dark, asNumber: false);
             }
-            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+            _themeRepository.UpdateTokens(connection, themeId, tokens.ToJsonString(), transaction);
             return;
         }
 
         if (ThemeNumericTokenCatalog.TryGet(fieldId, out var numericToken))
         {
             JsonPath.Set(tokens, numericToken.Path, NumberNode(value));
-            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+            _themeRepository.UpdateTokens(connection, themeId, tokens.ToJsonString(), transaction);
             return;
         }
         if (ThemeMotionTimingPaths.TryGetValue(fieldId, out var timingPath))
@@ -269,13 +270,13 @@ internal sealed partial class SqliteResourceOwner
             var timing = JsonNode.Parse(value) as JsonObject
                 ?? throw new InvalidOperationException($"Theme motion field '{fieldId}' must be a JSON object.");
             SetJsonValue(tokens, timingPath, timing);
-            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+            _themeRepository.UpdateTokens(connection, themeId, tokens.ToJsonString(), transaction);
             return;
         }
         if (ThemeMotionEasingPaths.TryGetValue(fieldId, out var easingPath))
         {
             SetJsonValue(tokens, easingPath, JsonValue.Create(value)!);
-            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+            _themeRepository.UpdateTokens(connection, themeId, tokens.ToJsonString(), transaction);
             return;
         }
         if (fieldId == "theme.motion.reflow")
@@ -291,7 +292,7 @@ internal sealed partial class SqliteResourceOwner
             }
             SetJsonValue(tokens, ["motion", "reflowDurationMs"], JsonValue.Create(durationMs)!);
             SetJsonValue(tokens, ["motion", "reflowEasing"], JsonValue.Create(easing)!);
-            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+            _themeRepository.UpdateTokens(connection, themeId, tokens.ToJsonString(), transaction);
             return;
         }
 
@@ -325,7 +326,7 @@ internal sealed partial class SqliteResourceOwner
                 throw new InvalidOperationException($"Unknown theme field '{fieldId}'.");
         }
 
-        _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+        _themeRepository.UpdateTokens(connection, themeId, tokens.ToJsonString(), transaction);
     }
 
     internal static string DefaultThemeTokensJson(

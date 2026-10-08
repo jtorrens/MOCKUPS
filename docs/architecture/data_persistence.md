@@ -439,6 +439,19 @@ the authored owner store only in the Desktop document adapter.
 `IEditorNodeCommandStore` has no Usage read capability; workflows that guard a
 delete declare both ports explicitly.
 
+Authored animation keyframe values participate in that same typed Usage graph,
+including disabled keys. The common Runtime animation target catalog supplies
+the exact field kind and stable nested target; Usage and External Media share
+its authored-value traversal. Prose and undeclared JSON values do not create
+edges. Collection/Variant mutation remains the owner of orphan-track retirement.
+
+Theme field commits are composition-owned transactions: Resources prepares and
+writes the exact Theme candidate on the transaction connection, then Production
+validates the Screens with that exact Theme and synchronizes their affected
+Shots through the common Screen-write completion boundary before commit.
+Failure rolls back Theme and derived durations together; unrelated Shots are
+not synchronized. Repositories retain only their focused SQL responsibility.
+
 Render Queue receives the explicit aggregate `IRenderSnapshotDataSource`
 because creating its immutable job snapshot requires the prepared Preview,
 Actor, Component, timeline and Theme reads declared by that contract. It is

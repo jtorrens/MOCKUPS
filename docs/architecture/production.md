@@ -302,6 +302,12 @@ application restart without restarting automatically; its next launch resolves
 current authored state again. Retry creates a new pending plan and therefore
 also renders the latest Shot and Screens rather than the earlier failed state.
 
+Each execution serializes its complete preparation with authored editor writes
+through the shared operation coordinator. The current Shot is read after that
+operation starts, not at enqueue. Edits submitted during preparation wait; once
+preparation finishes they may commit while encoding continues. Those edits
+belong to the next execution, never to a later frame of the running job.
+
 The selected route is stored by stable route id. Its relative directory,
 version padding and frame padding come from the resolved portable Project
 contract. Its absolute root comes only from the workstation-local Production

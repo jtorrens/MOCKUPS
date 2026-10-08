@@ -53,6 +53,7 @@ var tests = new (string Name, Action Run)[]
     ("Shot Manager readonly documents expose only the strict stable projection", ShotManagerReadonlyDocumentsAreStrict),
     ("editor operations execute away from the caller thread", EditorOperationsRunOnWorker),
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
+    ("asynchronous editor operations retain ordering and propagate cancellation", AsyncEditorOperationsRetainOrdering),
     ("presented editor operations publish their complete activity lifetime", PresentedEditorOperationsPublishActivityLifetime),
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
 };
@@ -1022,6 +1023,38 @@ static void EditorOperationsAreSerialized()
     Equal(2, order.Count);
     Equal(1, order[0]);
     Equal(2, order[1]);
+}
+
+static void AsyncEditorOperationsRetainOrdering()
+{
+    using var coordinator = new EditorOperationCoordinator();
+    var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var order = new List<int>();
+    var first = coordinator.ExecuteAsync(async token =>
+    {
+        started.SetResult();
+        await release.Task.WaitAsync(token);
+        order.Add(1);
+        return 1;
+    });
+    started.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+    var second = coordinator.ExecuteAsync(() => order.Add(2));
+    True(!second.IsCompleted);
+    release.SetResult();
+    Task.WhenAll(first, second).GetAwaiter().GetResult();
+    Equal(1, order[0]);
+    Equal(2, order[1]);
+    var cancelStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var canceled = coordinator.ExecuteAsync(async token =>
+    {
+        cancelStarted.SetResult();
+        await Task.Delay(Timeout.InfiniteTimeSpan, token);
+        return true;
+    });
+    cancelStarted.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+    coordinator.Dispose();
+    Throws<OperationCanceledException>(() => canceled.GetAwaiter().GetResult());
 }
 
 static void PresentedEditorOperationsPublishActivityLifetime()

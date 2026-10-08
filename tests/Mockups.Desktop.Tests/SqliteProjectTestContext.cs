@@ -87,6 +87,8 @@ internal sealed class SqliteProjectTestContext
                 Design);
         ResourceRecordFields =
             new SqliteResourceRecordFieldStore(
+                context,
+                Production,
                 Resources,
                 CoreFields);
         Navigation = new SqliteEditorNavigationStore(

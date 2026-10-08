@@ -338,57 +338,24 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         string mediaRoot,
         ICollection<ExternalMediaUsageDetail> usages)
     {
-        var targets = RuntimeInputAnimationValueContract.ReadTargets(
-                runtimePreview,
-                config,
-                values)
-            .ToDictionary((target) => (target.FieldId, target.TargetId));
-        foreach (var track in JsonPath.RequiredArray(
-                     animation,
-                     "tracks",
-                     $"Screen '{source.NodeId}' animation_json").OfType<JsonObject>())
+        foreach (var value in RuntimeInputAnimationValueContract.ReadAuthoredValues(
+                     runtimePreview, config, values, animation, $"Screen '{source.NodeId}' animation_json"))
         {
-            var fieldId = JsonPath.RequiredString(
-                track,
-                "fieldId",
-                $"Screen '{source.NodeId}' animation track");
-            var targetId = track["targetId"]?.GetValue<string>() ?? "";
-            if (!targets.TryGetValue((fieldId, targetId), out var target)
-                || !MediaValueKinds.Contains(target.Input.ValueKind))
-            {
-                continue;
-            }
-            var trackId = JsonPath.RequiredString(
-                track,
-                "id",
-                $"Screen '{source.NodeId}' animation track");
-            foreach (var keyframe in JsonPath.RequiredArray(
-                         track,
-                         "keyframes",
-                         $"Screen '{source.NodeId}' animation track '{trackId}'").OfType<JsonObject>())
-            {
-                var keyframeId = JsonPath.RequiredString(
-                    keyframe,
-                    "id",
-                    $"Screen '{source.NodeId}' animation track '{trackId}' keyframe");
-                var frame = JsonPath.RequiredInteger(
-                    keyframe,
-                    "frame",
-                    $"Screen '{source.NodeId}' animation keyframe '{keyframeId}'");
-                AddPath(
-                    usages,
-                    source,
-                    target.Input.Id,
-                    target.Input.Id,
-                    target.Input.JsonKey,
-                    $"{target.Input.Label} · Keyframe {frame}",
-                    StringValue(keyframe["value"]!),
-                    target.Input.ValueKind,
-                    mediaRoot,
-                    itemId: targetId,
-                    animationTrackId: trackId,
-                    animationKeyframeId: keyframeId);
-            }
+            var target = value.Target;
+            if (!MediaValueKinds.Contains(target.Input.ValueKind)) continue;
+            AddPath(
+                usages,
+                source,
+                target.Input.Id,
+                target.Input.Id,
+                target.Input.JsonKey,
+                $"{target.Input.Label} · Keyframe {value.Frame}",
+                StringValue(value.Value!),
+                target.Input.ValueKind,
+                mediaRoot,
+                itemId: target.TargetId,
+                animationTrackId: value.TrackId,
+                animationKeyframeId: value.KeyframeId);
         }
     }
 

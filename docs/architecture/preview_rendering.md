@@ -372,6 +372,15 @@ When the user launches the exact current pending set, each child independently
 reads the latest Shot and Screens at its own start and prepares its explicit
 Theme, Device and requested Light/Dark payloads into a temporary store.
 
+Job-start preparation, including asset capture, owns one complete asynchronous
+operation on the session's shared `EditorOperationCoordinator`. Authored writes
+queued during preparation wait until it finishes or is canceled. Encoding runs
+outside that operation, so editing may continue while the worker renders the
+coherent prepared revision. Every execution and retry reads current data again;
+neither the queue item nor a previous execution supplies cached authored data.
+This boundary serializes application-owned writes, not changes made to external
+files by another application.
+
 The queue manager receives no Project database port, repository or current tree
 selection. The preparation owner resolves the live plan through its focused
 Production and Preview ports, then hands the resulting transient snapshot to

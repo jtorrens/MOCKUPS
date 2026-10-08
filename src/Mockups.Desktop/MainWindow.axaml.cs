@@ -257,6 +257,7 @@ public partial class MainWindow : SukiWindow
             data.RenderSnapshots,
             data.ProductionRecordFields,
             data.ProjectPaths,
+            application.Operations,
             application.ProductionOutputRoots,
             application.ShotManagerDocuments,
             () => _themeController.IsDark,

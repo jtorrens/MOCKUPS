@@ -257,13 +257,19 @@ internal sealed partial class SqliteDesignRecordFieldStore :
 internal sealed class SqliteResourceRecordFieldStore :
     IResourceRecordFieldStore
 {
+    private readonly SqliteProjectContext _context;
+    private readonly SqliteProductionOwner _production;
     private readonly SqliteResourceOwner _resources;
     private readonly SqliteCoreFieldStore _coreFields;
 
     internal SqliteResourceRecordFieldStore(
+        SqliteProjectContext context,
+        SqliteProductionOwner production,
         SqliteResourceOwner resources,
         SqliteCoreFieldStore coreFields)
     {
+        _context = context;
+        _production = production;
         _resources = resources;
         _coreFields = coreFields;
     }
@@ -352,8 +358,19 @@ internal sealed class SqliteResourceRecordFieldStore :
     public void UpdateThemeField(
         string themeId,
         string fieldId,
-        string value) =>
-        _resources.UpdateThemeField(themeId, fieldId, value);
+        string value)
+    {
+        lock (_context.WriteGate)
+        {
+            using var connection = _context.OpenConnection();
+            using var transaction = connection.BeginTransaction();
+            _resources.UpdateThemeField(connection, transaction, themeId, fieldId, value);
+            var shots = _production.ModuleInstanceRepository.QueryAll(connection)
+                .Where(screen => screen.ThemeId == themeId).Select(screen => screen.ShotId);
+            _production.CompleteScreenWrite(connection, transaction, shots);
+            transaction.Commit();
+        }
+    }
 
     public IReadOnlyList<FieldOption> GetIconThemeOptions(
         string projectId) =>

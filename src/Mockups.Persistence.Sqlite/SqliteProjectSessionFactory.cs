@@ -75,6 +75,8 @@ internal static class SqliteProjectSessionFactory
                 design);
         var resourceRecordFields =
             new SqliteResourceRecordFieldStore(
+                context,
+                production,
                 resources,
                 coreFields);
         var navigation = new SqliteEditorNavigationStore(

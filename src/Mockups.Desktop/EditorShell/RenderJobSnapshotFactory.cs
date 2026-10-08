@@ -89,6 +89,7 @@ internal static class RenderThemeSelection
 internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
 {
     private readonly IRenderSnapshotDataSource _database;
+    private readonly EditorOperationCoordinator _operations;
     private readonly ProductionOutputRootStore _roots;
     private readonly ProductionOutputPlanResolver _outputPlans;
     private readonly DesignPreviewPayloadDataSource _payloadData;
@@ -97,10 +98,12 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
     public RenderJobSnapshotFactory(
         IRenderSnapshotDataSource database,
         IProjectPathResolver projectPaths,
+        EditorOperationCoordinator operations,
         ProductionOutputRootStore? roots = null,
         ShotManagerDocumentStore? shotManagerDocuments = null)
     {
         _database = database;
+        _operations = operations;
         _roots = roots ?? new ProductionOutputRootStore();
         _outputPlans = new ProductionOutputPlanResolver(
             _roots,
@@ -295,21 +298,25 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
         return new RenderBatchPlan(plans, summaries);
     }
 
-    public async Task<RenderJobSnapshot> PrepareAsync(
+    public Task<RenderJobSnapshot> PrepareAsync(
         RenderJobPlan plan,
         string temporaryRoot,
         IProgress<RenderSnapshotFreezeProgress> progress,
-        CancellationToken cancellationToken)
-    {
-        var preparation = await ResolveCurrentPreparationAsync(
-            plan,
-            cancellationToken);
-        return (await FreezeAsync(
-            preparation,
-            temporaryRoot,
-            progress,
-            cancellationToken)).Single();
-    }
+        CancellationToken cancellationToken) =>
+        _operations.ExecuteAsync(async token =>
+        {
+            // Capture the live plan only after acquiring the same operation boundary
+            // as authored writes. It remains held through documents and asset capture,
+            // never through encoding. Every execution enters here afresh.
+            var preparation = await ResolveCurrentPreparationAsync(
+                plan,
+                token);
+            return (await FreezeAsync(
+                preparation,
+                temporaryRoot,
+                progress,
+                token)).Single();
+        }, cancellationToken);
 
     internal async Task<RenderBatchSnapshotPreparation>
         ResolveCurrentPreparationAsync(
@@ -365,7 +372,7 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
             [summary]);
     }
 
-    public async Task<IReadOnlyList<RenderJobSnapshot>> FreezeAsync(
+    private async Task<IReadOnlyList<RenderJobSnapshot>> FreezeAsync(
         RenderBatchSnapshotPreparation preparation,
         string batchRoot,
         IProgress<RenderSnapshotFreezeProgress>? progress = null,

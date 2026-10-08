@@ -20,6 +20,7 @@ internal sealed class EditorProductionNavigationActions : IDisposable
         IRenderSnapshotDataSource database,
         IProductionRecordFieldStore production,
         IProjectPathResolver projectPaths,
+        EditorOperationCoordinator operations,
         ProductionOutputRootStore productionOutputRoots,
         ShotManagerDocumentStore shotManagerDocuments,
         Func<bool> isDark,
@@ -37,12 +38,11 @@ internal sealed class EditorProductionNavigationActions : IDisposable
         var snapshots = new RenderJobSnapshotFactory(
             database,
             projectPaths,
+            operations,
             productionOutputRoots,
             shotManagerDocuments);
         _renderQueue = new RenderQueueController(
             owner,
-            database,
-            projectPaths,
             _queue,
             snapshots);
         _renderQueueSurface = new RenderQueueEditorSurface(

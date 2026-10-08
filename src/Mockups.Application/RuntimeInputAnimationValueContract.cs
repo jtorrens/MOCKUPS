@@ -23,8 +23,44 @@ public sealed record RuntimeInputAnimationTargetDefinition(
 
 public sealed record RuntimeAnimationFieldSegment(string Id, bool IsItem);
 
+public sealed record RuntimeAnimationAuthoredValue(
+    RuntimeInputAnimationTargetDefinition Target,
+    string TrackId,
+    string KeyframeId,
+    int Frame,
+    JsonNode? Value);
+
 public static class RuntimeInputAnimationValueContract
 {
+    // Reference discovery follows declared fields, not arbitrary JSON strings.
+    // Disabled keyframes remain authored references. Orphan retirement belongs
+    // to the collection/Variant mutation owner, not to this read projection.
+    public static IReadOnlyList<RuntimeAnimationAuthoredValue> ReadAuthoredValues(
+        JsonObject runtimePreview,
+        JsonObject config,
+        JsonObject values,
+        JsonObject animation,
+        string owner)
+    {
+        ModuleInstanceAnimationDocumentContract.Validate(animation, owner);
+        var tracks = JsonPath.RequiredArray(animation, "tracks", owner)
+            .Cast<JsonObject>().ToDictionary(track => (
+                JsonPath.RequiredString(track, "fieldId", owner),
+                track["targetId"]?.GetValue<string>() ?? ""));
+        var result = new List<RuntimeAnimationAuthoredValue>();
+        foreach (var target in ReadTargets(runtimePreview, config, values))
+        {
+            if (!tracks.TryGetValue((target.FieldId, target.TargetId), out var track)) continue;
+            foreach (var keyframe in JsonPath.RequiredArray(track, "keyframes", owner).Cast<JsonObject>())
+                result.Add(new(target,
+                    JsonPath.RequiredString(track, "id", owner),
+                    JsonPath.RequiredString(keyframe, "id", owner),
+                    JsonPath.RequiredInteger(keyframe, "frame", owner),
+                    keyframe["value"]?.DeepClone()));
+        }
+        return result;
+    }
+
     public static void Validate(
         JsonObject runtimePreview,
         JsonObject animation,
