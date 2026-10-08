@@ -517,6 +517,12 @@ Database validation is read-only and confirms:
 
 Lifecycle and migration tests operate on disposable database copies.
 
+Screen-write regressions force a late derived-duration failure and require
+content, animation, metadata, lifecycle changes and Screen/Shot timing to roll
+back together. They exercise more than one Module, reject scalar/item writes
+when an existing track is invalid, and prove that unrelated Shot durations
+remain unchanged.
+
 Repository validation derives its pristine source from the staged parity
 artifact. This keeps workstation-local Production Output roots and other local
 authoring changes out of test expectations while still validating the exact

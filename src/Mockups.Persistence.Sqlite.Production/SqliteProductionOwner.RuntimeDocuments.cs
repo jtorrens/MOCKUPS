@@ -12,8 +12,7 @@ internal sealed partial class SqliteProductionOwner
         SqliteTransaction transaction,
         string moduleId,
         string variantReference,
-        JsonObject previousContract,
-        IReadOnlyDictionary<string, IReadOnlySet<string>> projectActorIds)
+        JsonObject previousContract)
     {
         var affectedShots = new HashSet<string>(StringComparer.Ordinal);
         foreach (var instance in _moduleInstanceRepository
@@ -39,15 +38,6 @@ internal sealed partial class SqliteProductionOwner
                     ParseJsonObject(instance.AnimationJson),
                     contract,
                     content);
-            var shot = _shotRepository.Get(connection, instance.ShotId);
-            if (!projectActorIds.TryGetValue(
-                    shot.ProjectId,
-                    out var actorIds))
-            {
-                actorIds = new HashSet<string>(StringComparer.Ordinal);
-            }
-            ValidateModuleInstanceDocuments(
-                connection, instance.Id, content, animation, actorIds);
             _moduleInstanceRepository.UpdateContentAndAnimation(
                 connection,
                 instance.Id,
@@ -57,13 +47,7 @@ internal sealed partial class SqliteProductionOwner
             affectedShots.Add(instance.ShotId);
         }
 
-        foreach (var shotId in affectedShots)
-        {
-            SynchronizeTimelineDurations(
-                connection,
-                shotId,
-                transaction: transaction);
-        }
+        CompleteScreenWrite(connection, transaction, affectedShots);
     }
 
     public string GetModuleInstanceRuntimePreviewJson(
@@ -88,71 +72,62 @@ internal sealed partial class SqliteProductionOwner
         SqliteConnection connection,
         string moduleInstanceId,
         string jsonKey,
-        JsonNode? value,
-        IReadOnlySet<string> projectActorIds)
+        JsonNode? value)
     {
-        var instance = _moduleInstanceRepository.Get(
-            connection,
-            moduleInstanceId);
-        var content = ParseJsonObject(instance.ContentJson);
-        _ = RequireDeclaredRuntimeInput(
-            connection,
-            moduleInstanceId,
-            jsonKey,
-            value);
-        var contract = ResolveModuleInstanceContract(
-            connection,
-            instance.ModuleId,
-            instance.MetadataJson);
-        var shot = _shotRepository.Get(connection, instance.ShotId);
-        var project = _projectEpisodeRepository.GetProjectSettings(
-            connection,
-            shot.ProjectId);
-        if (!RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
-                contract,
-                content,
-                ParseJsonObject(instance.AnimationJson),
+        CommitModuleInstanceWrite(connection, moduleInstanceId, (transaction, instance) =>
+        {
+            var content = ParseJsonObject(instance.ContentJson);
+            _ = RequireDeclaredRuntimeInput(
+                connection,
+                moduleInstanceId,
                 jsonKey,
-                value,
-                out var converted,
-                ParseJsonObject(
-                    _moduleInstanceThemeContextService.GetTokensJson(
-                        connection,
-                        moduleInstanceId)),
-                shot.FpsOverride ?? project.DefaultFps))
-        {
-            content[jsonKey] = value?.DeepClone();
-        }
-        else
-        {
-            content = converted;
-        }
-        SaveModuleInstanceRuntimeContent(
-            connection,
-            moduleInstanceId,
-            content,
-            projectActorIds);
+                value);
+            var contract = ResolveModuleInstanceContract(
+                connection,
+                instance.ModuleId,
+                instance.MetadataJson);
+            var shot = _shotRepository.Get(connection, instance.ShotId);
+            var project = _projectEpisodeRepository.GetProjectSettings(
+                connection,
+                shot.ProjectId);
+            if (!RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
+                    contract,
+                    content,
+                    ParseJsonObject(instance.AnimationJson),
+                    jsonKey,
+                    value,
+                    out var converted,
+                    ParseJsonObject(
+                        _moduleInstanceThemeContextService.GetTokensJson(
+                            connection,
+                            moduleInstanceId)),
+                    shot.FpsOverride ?? project.DefaultFps))
+            {
+                content[jsonKey] = value?.DeepClone();
+            }
+            else
+            {
+                content = converted;
+            }
+            _moduleInstanceRepository.UpdateContentAndAnimation(
+                connection, moduleInstanceId, content.ToJsonString(), instance.AnimationJson, transaction);
+            return true;
+        });
     }
 
     internal void UpdateModuleInstanceAnimationJson(
         SqliteConnection connection,
         string moduleInstanceId,
-        string animationJson,
-        IReadOnlySet<string> projectActorIds)
+        string animationJson)
     {
-        lock (WriteGate)
+        CommitModuleInstanceWrite(connection, moduleInstanceId, (transaction, instance) =>
         {
-            using var transaction = connection.BeginTransaction();
-            var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
             var animation = ModuleInstanceAnimationDocumentContract.Parse(
                 animationJson, $"Module Instance '{moduleInstanceId}' animation_json");
-            ValidateModuleInstanceDocuments(
-                connection, moduleInstanceId, ParseJsonObject(instance.ContentJson), animation, projectActorIds);
-            _moduleInstanceRepository.UpdateAnimation(
-                connection, moduleInstanceId, animation.ToJsonString(), transaction);
-            SynchronizeTimelineDurations(connection, instance.ShotId, transaction: transaction);
-            transaction.Commit();
-        }
+            _moduleInstanceRepository.UpdateContentAndAnimation(
+                connection, moduleInstanceId, instance.ContentJson, animation.ToJsonString(), transaction);
+            return true;
+        });
     }
 
     internal void UpdateModuleInstanceRuntimeCollectionValues(
@@ -160,44 +135,36 @@ internal sealed partial class SqliteProductionOwner
         string moduleInstanceId,
         StructuredCollectionAddress address,
         string itemId,
-        IReadOnlyDictionary<string, JsonNode?> values,
-        IReadOnlySet<string> projectActorIds)
+        IReadOnlyDictionary<string, JsonNode?> values)
     {
-        var content = ParseJsonObject(
-            _moduleInstanceRepository
-                .Get(connection, moduleInstanceId)
-                .ContentJson);
-        var rootDefinition = RequireDeclaredRuntimeCollectionDefinition(
-            connection,
-            moduleInstanceId,
-            address.RootStorageJsonKey,
-            content);
-        var nextContent = StructuredCollectionMutationEngine.UpdateValues(
-            content,
-            rootDefinition,
-            address,
-            itemId,
-            values);
+        CommitModuleInstanceWrite(connection, moduleInstanceId, (transaction, instance) =>
+        {
+            var content = ParseJsonObject(instance.ContentJson);
+            var rootDefinition = RequireDeclaredRuntimeCollectionDefinition(
+                connection,
+                moduleInstanceId,
+                address.RootStorageJsonKey,
+                content);
+            var nextContent = StructuredCollectionMutationEngine.UpdateValues(
+                content,
+                rootDefinition,
+                address,
+                itemId,
+                values);
 
-        SaveModuleInstanceRuntimeContent(
-            connection,
-            moduleInstanceId,
-            nextContent,
-            projectActorIds);
+            _moduleInstanceRepository.UpdateContentAndAnimation(
+                connection, moduleInstanceId, nextContent.ToJsonString(), instance.AnimationJson, transaction);
+            return true;
+        });
     }
 
     internal StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(
         SqliteConnection connection,
         string moduleInstanceId,
-        StructuredCollectionMutation mutation,
-        IReadOnlySet<string> projectActorIds)
+        StructuredCollectionMutation mutation)
     {
-        lock (WriteGate)
+        return CommitModuleInstanceWrite(connection, moduleInstanceId, (transaction, settings) =>
         {
-            using var transaction = connection.BeginTransaction();
-            var settings = _moduleInstanceRepository.Get(
-                connection,
-                moduleInstanceId);
             var content = ParseJsonObject(settings.ContentJson);
             var rootDefinition = RequireDeclaredRuntimeCollectionDefinition(
                 connection,
@@ -211,37 +178,23 @@ internal sealed partial class SqliteProductionOwner
                 rootDefinition,
                 mutation);
 
-            ValidateModuleInstanceDocuments(
-                connection,
-                moduleInstanceId,
-                result.Content,
-                result.Animation,
-                projectActorIds);
             _moduleInstanceRepository.UpdateContentAndAnimation(
                 connection,
                 moduleInstanceId,
                 result.Content.ToJsonString(),
                 result.Animation.ToJsonString(),
                 transaction);
-            SynchronizeTimelineDurations(
-                connection,
-                settings.ShotId,
-                transaction: transaction);
-            transaction.Commit();
             return result;
-        }
+        });
     }
 
     internal void UpdateModuleInstanceVariant(
         SqliteConnection connection,
         string moduleInstanceId,
-        string reference,
-        IReadOnlySet<string> projectActorIds)
+        string reference)
     {
-        lock (WriteGate)
+        CommitModuleInstanceWrite(connection, moduleInstanceId, (transaction, instance) =>
         {
-            using var transaction = connection.BeginTransaction();
-            var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
             if (!VariantReferenceId.TryParse(reference, out var moduleId, out var variantId)
                 || moduleId != instance.ModuleId
                 || _moduleVariantCatalog.GetModuleVariants(connection, moduleId).All(variant => variant.Id != variantId))
@@ -257,122 +210,68 @@ internal sealed partial class SqliteProductionOwner
                 ParseJsonObject(instance.AnimationJson), contract, content);
             _moduleInstanceRepository.UpdateVariantDocuments(
                 connection, moduleInstanceId, metadata.ToJsonString(), content.ToJsonString(), animation.ToJsonString(), transaction);
-            ValidateModuleInstanceDocuments(connection, moduleInstanceId, content, animation, projectActorIds);
-            SynchronizeTimelineDurations(connection, instance.ShotId, transaction: transaction);
-            transaction.Commit();
-        }
+            return true;
+        });
     }
 
     internal void UpdateModuleInstanceField(
         SqliteConnection connection,
         string moduleInstanceId,
         string fieldId,
-        string value,
-        IReadOnlySet<string> projectActorIds)
+        string value)
     {
-        switch (fieldId)
+        if (fieldId == "moduleInstance.variant")
         {
-            case "moduleInstance.startFrame":
-                lock (WriteGate)
-                {
-                    using var transaction = connection.BeginTransaction();
-                    _moduleInstanceRepository.UpdateStartFrame(
-                        connection,
-                        moduleInstanceId,
-                        NumericText.Int32(value, 0),
-                        transaction);
-                    SynchronizeTimelineDurations(
-                        connection,
-                        transaction: transaction);
-                    transaction.Commit();
-                }
-                return;
-            case "moduleInstance.themeId":
-                var resourceInstance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
-                var resourceShot = _shotRepository.Get(connection, resourceInstance.ShotId);
-                ProjectReferenceIntegrity.RequireSameProjectReference(
-                    connection,
-                    resourceShot.ProjectId,
-                    ProjectReferenceKind.Theme,
-                    value,
-                    $"Screen '{moduleInstanceId}' Theme",
-                    required: true);
-                _moduleInstanceRepository.UpdateTheme(
-                    connection,
-                    moduleInstanceId,
-                    value);
-                return;
-            case "moduleInstance.variant":
-                UpdateModuleInstanceVariant(
-                    connection,
-                    moduleInstanceId,
-                    value,
-                    projectActorIds);
-                return;
-            case "moduleInstance.durationFrames":
-                if (RuntimeDurationContract.ParsePolicy(
-                        _moduleInstanceRepository
-                            .Get(connection, moduleInstanceId)
-                            .DurationPolicy)
-                    != RuntimeDurationPolicy.Explicit)
-                {
-                    throw new InvalidOperationException(
-                        "Calculated Screen duration cannot be edited.");
-                }
-
-                _moduleInstanceRepository.UpdateDuration(
-                    connection,
-                    moduleInstanceId,
-                    Math.Max(1, NumericText.Int32(value, 1)));
-                SynchronizeTimelineDurations(connection);
-                return;
-            case "moduleInstance.durationPolicy":
-                var instance = _moduleInstanceRepository.Get(
-                    connection,
-                    moduleInstanceId);
-                var contract = ResolveModuleInstanceContract(
-                    connection,
-                    instance.ModuleId,
-                    instance.MetadataJson);
-                var policy = RuntimeDurationContract.RequireAllowedPolicy(
-                    contract,
-                    value);
-                _moduleInstanceRepository.UpdateDurationPolicy(
-                    connection,
-                    moduleInstanceId,
-                    RuntimeDurationContract.FormatPolicy(policy));
-                SynchronizeTimelineDurations(connection);
-                return;
-            case "moduleInstance.actionDelayFrames":
-                _moduleInstanceRepository.UpdateActionDelay(
-                    connection,
-                    moduleInstanceId,
-                    Math.Max(
-                        0,
-                        NumericText.Int32(
-                            value,
-                            0)));
-                SynchronizeTimelineDurations(
-                    connection);
-                return;
-            default:
-                throw new InvalidOperationException(
-                    $"Unknown module instance field '{fieldId}'.");
+            UpdateModuleInstanceVariant(connection, moduleInstanceId, value);
+            return;
         }
+        CommitModuleInstanceWrite(connection, moduleInstanceId, (transaction, instance) =>
+        {
+            switch (fieldId)
+            {
+                case "moduleInstance.startFrame":
+                    _moduleInstanceRepository.UpdateStartFrame(connection, moduleInstanceId,
+                        NumericText.Int32(value, 0), transaction);
+                    break;
+                case "moduleInstance.themeId":
+                    var shot = _shotRepository.Get(connection, instance.ShotId);
+                    ProjectReferenceIntegrity.RequireSameProjectReference(connection, shot.ProjectId,
+                        ProjectReferenceKind.Theme, value, $"Screen '{moduleInstanceId}' Theme", required: true);
+                    _moduleInstanceRepository.UpdateTheme(connection, moduleInstanceId, value, transaction);
+                    break;
+                case "moduleInstance.durationFrames":
+                    if (RuntimeDurationContract.ParsePolicy(instance.DurationPolicy) != RuntimeDurationPolicy.Explicit)
+                        throw new InvalidOperationException("Calculated Screen duration cannot be edited.");
+                    _moduleInstanceRepository.UpdateDuration(connection, moduleInstanceId,
+                        Math.Max(1, NumericText.Int32(value, 1)), transaction);
+                    break;
+                case "moduleInstance.durationPolicy":
+                    var contract = ResolveModuleInstanceContract(connection, instance.ModuleId, instance.MetadataJson);
+                    var policy = RuntimeDurationContract.RequireAllowedPolicy(contract, value);
+                    _moduleInstanceRepository.UpdateDurationPolicy(connection, moduleInstanceId,
+                        RuntimeDurationContract.FormatPolicy(policy), transaction);
+                    break;
+                case "moduleInstance.actionDelayFrames":
+                    _moduleInstanceRepository.UpdateActionDelay(connection, moduleInstanceId,
+                        Math.Max(0, NumericText.Int32(value, 0)), transaction);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown module instance field '{fieldId}'.");
+            }
+            return true;
+        });
     }
 
     public void UpdateModuleInstanceDeviceOverrides(
         string moduleInstanceId,
         string overridesJson)
     {
-        lock (WriteGate)
+        using var connection = OpenConnection();
+        CommitModuleInstanceWrite(connection, moduleInstanceId, (transaction, instance) =>
         {
-            using var connection = OpenConnection();
-            _moduleInstanceRepository.UpdateDeviceOverrides(
-                connection,
-                moduleInstanceId,
-                overridesJson);
-        }
+            _moduleInstanceRepository.UpdateDeviceOverrides(connection, moduleInstanceId, overridesJson, transaction);
+            return true;
+        });
     }
 
     internal RecordCreationDefinition PrepareModuleInstanceCreation(
@@ -411,74 +310,48 @@ internal sealed partial class SqliteProductionOwner
         SqliteConnection connection,
         ProjectTreeNode shot,
         ShotModuleInstanceCreationDraft creation,
-        IReadOnlySet<string> projectActorIds,
         IReadOnlyList<FieldOption> actorOptions)
     {
-        var draft = creation.Selection;
-        RequireModuleInstanceSelection(shot, draft);
-        var module = draft.Module;
-        var requestedName = draft.Name.Trim();
-        var moduleSettings =
-            _moduleVariantCatalog.GetModuleSettings(module.Id);
-        var initialDuration =
-            RuntimeDurationContract.InitialDurationFrames(
-                moduleSettings.DesignPreviewJson);
-        var initialDurationPolicy = RuntimeDurationContract.FormatPolicy(
-            RuntimeDurationContract.Policy(
-                moduleSettings.DesignPreviewJson));
-        var initialThemeId = _moduleInstanceThemeContextService.GetInitialThemeId(
-            connection,
-            shot.Id);
-        var metadata = ModuleInstanceMetadata(draft);
-        var contract = ResolveModuleInstanceContract(
-            connection,
-            module.Id,
-            metadata.ToJsonString());
-        var initialContent =
-            RuntimeInputDocumentContract.CreateContentForContract(
-                new JsonObject(),
-                contract);
-        var moduleConfig = ParseJsonObject(moduleSettings.ConfigJson);
-        var initialRuntime = RuntimePreviewDocumentContract.PrepareRuntime(
-            ParseJsonObject(moduleSettings.DesignPreviewJson),
-            moduleConfig,
-            initialContent,
-            _componentVariantConfigCatalog.GetComponentVariantConfig,
-            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
-        var content = ProductionRuntimeCreationContract.Complete(
-            ModuleInstanceCreationDefinitionId(draft),
-            initialContent,
-            initialRuntime,
-            moduleConfig,
-            actorOptions,
-            creation.RuntimeValues);
-        RuntimeInputDocumentContract.ValidateCurrentCollections(
-            contract,
-            content,
-            $"New Module Instance '{module.Id}' content_json");
-        RuntimeInputDocumentContract.ValidateCurrentValues(
-            contract,
-            content,
-            $"New Module Instance '{module.Id}' content_json");
-        ModuleRuntimeDocumentContracts.ValidateCurrent(
-            moduleSettings.RecordClassId,
-            $"New Module Instance '{module.Id}' content_json",
-            content,
-            projectActorIds);
-        var effectiveRuntime = RuntimePreviewDocumentContract.PrepareRuntime(
-            ParseJsonObject(moduleSettings.DesignPreviewJson),
-            moduleConfig,
-            content,
-            _componentVariantConfigCatalog.GetComponentVariantConfig,
-            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
-        ProductionRuntimeFixtureIsolationContract.Validate(
-            effectiveRuntime,
-            moduleConfig,
-            $"New Module Instance '{module.Id}'");
-
-        lock (WriteGate)
+        var createdId = CommitScreenWrite(connection, transaction =>
         {
-            using var transaction = connection.BeginTransaction();
+            var draft = creation.Selection;
+            RequireModuleInstanceSelection(shot, draft);
+            var module = draft.Module;
+            var requestedName = draft.Name.Trim();
+            var moduleSettings =
+                _moduleVariantCatalog.GetModuleSettings(module.Id);
+            var initialDuration =
+                RuntimeDurationContract.InitialDurationFrames(
+                    moduleSettings.DesignPreviewJson);
+            var initialDurationPolicy = RuntimeDurationContract.FormatPolicy(
+                RuntimeDurationContract.Policy(
+                    moduleSettings.DesignPreviewJson));
+            var initialThemeId = _moduleInstanceThemeContextService.GetInitialThemeId(
+                connection,
+                shot.Id);
+            var metadata = ModuleInstanceMetadata(draft);
+            var contract = ResolveModuleInstanceContract(
+                connection,
+                module.Id,
+                metadata.ToJsonString());
+            var initialContent =
+                RuntimeInputDocumentContract.CreateContentForContract(
+                    new JsonObject(),
+                    contract);
+            var moduleConfig = ParseJsonObject(moduleSettings.ConfigJson);
+            var initialRuntime = RuntimePreviewDocumentContract.PrepareRuntime(
+                ParseJsonObject(moduleSettings.DesignPreviewJson),
+                moduleConfig,
+                initialContent,
+                _componentVariantConfigCatalog.GetComponentVariantConfig,
+                _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
+            var content = ProductionRuntimeCreationContract.Complete(
+                ModuleInstanceCreationDefinitionId(draft),
+                initialContent,
+                initialRuntime,
+                moduleConfig,
+                actorOptions,
+                creation.RuntimeValues);
             var index = _moduleInstanceRepository.NextSortOrder(
                 connection,
                 shot.Id);
@@ -521,23 +394,13 @@ internal sealed partial class SqliteProductionOwner
                     DefaultModuleAnimationJson(),
                     metadata.ToJsonString()),
                 transaction);
-            SynchronizeTimelineDurations(
-                connection,
-                shot.Id,
-                transaction);
-            var duration = _moduleInstanceRepository
-                .Get(connection, id)
-                .DurationFrames;
-            transaction.Commit();
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.ModuleInstance,
-                id,
-                name,
-                $"{module.Name} · {duration} frames · None",
-                ProjectTreeNode.DefaultRecordClassId(
-                    ProjectTreeNodeKind.ModuleInstance),
-                shot);
-        }
+            return (id, (IReadOnlyList<string>)[shot.Id]);
+        });
+        var created = _moduleInstanceRepository.Get(connection, createdId);
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.ModuleInstance, created.Id, created.Name,
+            $"{creation.Selection.Module.Name} · {created.DurationFrames} frames · None",
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance), shot);
     }
 
     private void RequireModuleInstanceSelection(
@@ -575,24 +438,6 @@ internal sealed partial class SqliteProductionOwner
 
     private static string ModuleInstanceCreationDefinitionId(ShotModuleInstanceDraft draft) =>
         $"screen-runtime:{draft.Module.Id}:{draft.VariantReference}";
-
-    private void SaveModuleInstanceRuntimeContent(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        JsonObject content,
-        IReadOnlySet<string> projectActorIds)
-    {
-        ValidateModuleInstanceRuntimeContent(
-            connection,
-            moduleInstanceId,
-            content,
-            projectActorIds);
-        _moduleInstanceRepository.UpdateContent(
-            connection,
-            moduleInstanceId,
-            content.ToJsonString());
-        SynchronizeTimelineDurations(connection);
-    }
 
     internal JsonObject ValidateModuleInstanceRuntimeContent(
         SqliteConnection connection,

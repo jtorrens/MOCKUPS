@@ -358,17 +358,10 @@ internal sealed class SqliteEditorChildStore
         var shotSettings = _production.GetShotSettings(shot.Id);
         var actorOptions = _resources.GetRequiredActorOptions(
             shotSettings.ProjectId);
-        var actorIds = _resources.ActorRepository.QueryAll(connection)
-            .Where((actor) => actor.ProjectId.Equals(
-                shotSettings.ProjectId,
-                StringComparison.Ordinal))
-            .Select((actor) => actor.Id)
-            .ToHashSet(StringComparer.Ordinal);
         return _production.AddModuleInstance(
             connection,
             shot,
             new ShotModuleInstanceCreationDraft(selection, draft),
-            actorIds,
             actorOptions);
     }
 

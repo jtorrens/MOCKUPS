@@ -14,7 +14,9 @@ internal sealed partial class SqliteProductionOwner
         var instances = shotId is null
             ? _moduleInstanceRepository.QueryAll(connection)
             : _moduleInstanceRepository.QueryByShot(connection, shotId);
-        var shots = _shotRepository.QueryAll(connection);
+        var shots = shotId is null
+            ? _shotRepository.QueryAll(connection)
+            : new[] { _shotRepository.Get(connection, shotId) };
         var updates = new List<(string Id, int Duration)>();
         foreach (var instance in instances)
         {
@@ -58,8 +60,9 @@ internal sealed partial class SqliteProductionOwner
             new Dictionary<string, int>(
                 StringComparer.Ordinal);
         foreach (var group in
-                 _moduleInstanceRepository
-                     .QueryAll(connection)
+                 (shotId is null
+                     ? _moduleInstanceRepository.QueryAll(connection)
+                     : _moduleInstanceRepository.QueryByShot(connection, shotId))
                      .GroupBy(
                          (instance) =>
                              instance.ShotId,

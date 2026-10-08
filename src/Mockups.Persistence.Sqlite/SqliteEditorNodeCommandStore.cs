@@ -111,10 +111,7 @@ internal sealed class SqliteEditorNodeCommandStore
                     node.Id);
                 return;
             case ProjectTreeNodeKind.ModuleInstance:
-                _production.ModuleInstanceRepository.Delete(
-                    connection,
-                    node.Id);
-                _production.SynchronizeTimelineDurations(connection);
+                _production.DeleteModuleInstance(connection, node.Id);
                 return;
             case ProjectTreeNodeKind.Shot:
                 _production.ShotRepository.Delete(
@@ -208,8 +205,7 @@ internal sealed class SqliteEditorNodeCommandStore
             }
             case ProjectTreeNodeKind.Episode:
             {
-                var copy = _production.ProjectEpisodeRepository
-                    .DuplicateEpisode(
+                var copy = _production.DuplicateEpisode(
                         connection,
                         node.Id,
                         $"{node.Name} copy");
@@ -245,31 +241,12 @@ internal sealed class SqliteEditorNodeCommandStore
             }
             case ProjectTreeNodeKind.ModuleInstance:
             {
-                var settings = _production.GetModuleInstanceSettings(node.Id);
-                var id = $"module_instance_{Guid.NewGuid():N}";
-                var sortOrder = _production.ModuleInstanceRepository
-                    .NextSortOrder(connection, settings.ShotId);
-                var copyName = _production.ModuleInstanceRepository
-                    .UniqueName(
-                        connection,
-                        settings.ShotId,
-                        $"{node.Name} copy");
-                _production.ModuleInstanceRepository.Duplicate(
-                    connection,
-                    node.Id,
-                    id,
-                    settings.ShotId,
-                    copyName,
-                    sortOrder);
-                _production.SynchronizeTimelineDurations(connection);
+                var copy = _production.DuplicateModuleInstance(connection, node.Id, $"{node.Name} copy");
                 return new ProjectTreeNode(
-                    ProjectTreeNodeKind.ModuleInstance,
-                    id,
-                    copyName,
-                    node.Notes,
-                    node.RecordClassId,
-                    node.Parent);
+                    ProjectTreeNodeKind.ModuleInstance, copy.Id, copy.Name,
+                    node.Notes, node.RecordClassId, node.Parent);
             }
+
             case ProjectTreeNodeKind.Device:
             {
                 var copy = _resources.DeviceRepository.Duplicate(

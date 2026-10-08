@@ -10,8 +10,7 @@ internal static class SqliteModuleVariantDocumentCommit
         SqliteProjectContext context,
         SqliteConnection connection,
         ModuleVariantDocumentChange change,
-        SqliteProductionOwner production,
-        SqliteResourceOwner resources)
+        SqliteProductionOwner production)
     {
         lock (context.WriteGate)
         {
@@ -20,15 +19,10 @@ internal static class SqliteModuleVariantDocumentCommit
                 connection,
                 change.ModuleId,
                 new JsonObject { ["moduleVariantReference"] = change.VariantReference }.ToJsonString());
-            var actorIds = resources.ActorRepository.QueryAll(connection)
-                .GroupBy(actor => actor.ProjectId, StringComparer.Ordinal)
-                .ToDictionary(group => group.Key,
-                    group => (IReadOnlySet<string>)group.Select(actor => actor.Id).ToHashSet(StringComparer.Ordinal),
-                    StringComparer.Ordinal);
             new AppModuleRepository(context).UpdateModuleMetadata(
                 connection, change.ModuleId, change.MetadataJson, transaction);
             production.ReconcileModuleVariantRuntimePayloads(
-                connection, transaction, change.ModuleId, change.VariantReference, previousContract, actorIds);
+                connection, transaction, change.ModuleId, change.VariantReference, previousContract);
             transaction.Commit();
         }
     }

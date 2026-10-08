@@ -23,16 +23,17 @@ internal sealed class SqliteProjectTestContext
     {
         Context = context;
         Design = new SqliteDesignOwner(context, (connection, change) =>
-            SqliteModuleVariantDocumentCommit.Commit(context, connection, change, Production!, Resources!));
+            SqliteModuleVariantDocumentCommit.Commit(context, connection, change, Production!));
         Production = new SqliteProductionOwner(
             context,
             Design,
-            Design);
+            Design,
+            new SqliteProductionRuntimeReferences(new ActorRepository(context)));
         Resources = new SqliteResourceOwner(
             context,
             Production.ProjectEpisodeRepository,
             Production.ModuleInstanceThemeContextService);
-        Animations = new SqliteModuleInstanceAnimationStore(context, Production, Resources);
+        Animations = new SqliteModuleInstanceAnimationStore(context, Production);
         var componentFieldOptions =
             new ComponentFieldOptionResolver(
                 Design,
@@ -76,9 +77,7 @@ internal sealed class SqliteProjectTestContext
         ProductionRecordFields =
             new SqliteProductionRecordFieldStore(
                 context,
-                Production,
-                Design,
-                Resources);
+                Production);
         RecordReferenceOverrides =
             new SqliteRecordReferenceOverrideStore(
                 Production,
@@ -99,8 +98,7 @@ internal sealed class SqliteProjectTestContext
         RuntimeInputInstances =
             new SqliteRuntimeInputInstanceStore(
                 context,
-                Production,
-                Resources);
+                Production);
 
         ValidateFixtureOnce(
             context,

@@ -391,9 +391,21 @@ queue; persistence success supplies the next confirmed snapshot and failure
 leaves the prior snapshot current.
 
 The SQLite implementation of Runtime Input Instance writes is a focused
-cross-owner application store. It receives the SQLite context plus Design,
-Production and Resources owners for exact contract and Actor validation; it
-does not expose any of those owners or their unrelated operations to Desktop.
+application store. It delegates to Production's shared Screen-write boundary;
+it does not expose that owner or its unrelated operations to Desktop.
+The outer persistence composition supplies the exact same-Project Actor catalog
+through a narrow reference contract, read on the transaction connection.
+
+Every Screen write prepares its candidate under the context write gate and one
+transaction, validates content and animation together with the startup semantic
+guard, and synchronizes the affected Screen and Shot durations before commit.
+This includes scalar and collection-item values, collection lifecycle, tracks,
+Variant selection, timing, Theme, Device Overrides, Rename, reorder, creation,
+duplication and deletion. A failure in any phase rolls back the whole candidate.
+Shot/Episode duplication, hierarchy transfers and Module Variant changes use
+the same completion boundary inside their enclosing aggregate transaction.
+Repositories retain SQL and row mapping, never semantic validation or timing.
+Duration synchronization scoped to a Shot never writes unrelated Shots.
 
 Module Variant config writes cross one composition-owned atomic document
 commit. Design supplies the complete candidate metadata; the composition

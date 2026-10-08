@@ -604,7 +604,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
         return new EpisodeRecord(id, projectId, name, slug, notes, sortOrder);
     }
 
-    public EpisodeRecord DuplicateEpisode(SqliteConnection connection, string sourceEpisodeId, string copyName)
+    public EpisodeRecord DuplicateEpisode(SqliteConnection connection, string sourceEpisodeId, string copyName, SqliteTransaction transaction)
     {
         var source = QueryEpisodes(connection).SingleOrDefault((episode) => episode.Id == sourceEpisodeId)
             ?? throw new InvalidOperationException($"Missing episode '{sourceEpisodeId}'.");
@@ -620,7 +620,6 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
             GetProjectSettings(connection, source.ProjectId)
                 .ProductionOutput.EpisodePrefix,
             sortOrder + 1);
-        using var transaction = connection.BeginTransaction();
         _context.Execute(
             connection,
             transaction,
@@ -655,7 +654,6 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                     transaction);
             }
         }
-        transaction.Commit();
         return new EpisodeRecord(id, source.ProjectId, copyName, slug, source.Notes, sortOrder);
     }
 

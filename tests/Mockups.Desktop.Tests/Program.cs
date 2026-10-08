@@ -297,6 +297,7 @@ var tests = new (string Name, Action Run)[]
     ("timeline frame updates suppress their own playback feedback", TimelineFrameUpdatesSuppressOwnPlaybackFeedback),
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
     ("Module Variant structure commits preserve Screens and roll back together", ModuleVariantStructureCommitsAreAtomic),
+    ("Screen writes roll back documents lifecycle and durations together", ScreenWritesAreAtomic),
     ("projected Variant row changes preserve participant payloads and tracks", ProjectedVariantRowsPreserveParticipantPayloads),
     ("new collection items become the only expanded item", NewCollectionItemBecomesOnlyExpanded),
     ("active component variants expose parent class actions", ActiveVariantExposesParentClassActions),
@@ -13152,8 +13153,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         var store = new RuntimeInputInstanceDocumentStore(
             new SqliteRuntimeInputInstanceStore(
                 database.Context,
-                database.Production,
-                database.Resources),
+                database.Production),
             database.Animations,
             database.Production,
             database.Resources,
@@ -14493,10 +14493,12 @@ static void ModuleInstanceRepositoryPreservesFocusedContract()
             {
                 var first = siblings[0];
                 var second = siblings[1];
-                repository.SwapSortOrder(connection, first.Id, first.SortOrder, second.Id, second.SortOrder);
+                using var reorderTransaction = connection.BeginTransaction();
+                repository.SwapSortOrder(connection, first.Id, first.SortOrder, second.Id, second.SortOrder, reorderTransaction);
                 Equal(second.SortOrder, repository.Get(connection, first.Id).SortOrder);
                 Equal(first.SortOrder, repository.Get(connection, second.Id).SortOrder);
-                repository.SwapSortOrder(connection, first.Id, second.SortOrder, second.Id, first.SortOrder);
+                repository.SwapSortOrder(connection, first.Id, second.SortOrder, second.Id, first.SortOrder, reorderTransaction);
+                reorderTransaction.Commit();
             }
 
             var duplicateId = $"module_instance_repository_{Guid.NewGuid():N}";
@@ -14655,10 +14657,12 @@ static void ShotRepositoryPreservesFocusedContract()
             Equal(original.MetadataJson, duplicate.MetadataJson);
             repository.Delete(connection, duplicate.Id);
 
+            using var episodeTransaction = connection.BeginTransaction();
             var duplicatedEpisode = episodeRepository.DuplicateEpisode(
                 connection,
                 original.EpisodeId,
-                "Repository Episode");
+                "Repository Episode", episodeTransaction);
+            episodeTransaction.Commit();
             var episodeShot = repository.QueryByEpisode(connection, duplicatedEpisode.Id)
                 .Single((candidate) => candidate.ShotNumber == original.ShotNumber);
             Equal(original.OwnerActorId, episodeShot.OwnerActorId);
@@ -19234,8 +19238,7 @@ static void ConversationMessageActorsFollowDirectionContract()
 
         var animationStore = new SqliteModuleInstanceAnimationStore(
             database.Context,
-            database.Production,
-            database.Resources);
+            database.Production);
         var actorAnimation = new JsonObject
         {
                 ["schemaVersion"] = 2,
@@ -19318,8 +19321,7 @@ static void ConversationMessageActorsFollowDirectionContract()
         var store = new RuntimeInputInstanceDocumentStore(
             new SqliteRuntimeInputInstanceStore(
                 database.Context,
-                database.Production,
-                database.Resources),
+                database.Production),
             database.Animations,
             database.Production,
             database.Resources,
@@ -23321,6 +23323,150 @@ static void TimelineFrameUpdatesSuppressOwnPlaybackFeedback()
 
     Throws<InvalidOperationException>(() => gate.Run(() => throw new InvalidOperationException("test")));
     True(!gate.IsActive);
+}
+
+static void ScreenWritesAreAtomic()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-screen-write-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = Descendants(database.LoadProjectTree()).DistinctBy(node => (node.Kind, node.Id)).ToArray();
+        var episode = nodes.Single(node => node.Id == "episode_001");
+        foreach (var moduleId in new[] { "module_core_chat", "module_project_foqn_s2_lock_screen" })
+        {
+            var shot = database.AddShot(episode, "actor_alex", database.SuggestShotNumber(episode.Id));
+            var module = database.GetAvailableShotModules(shot.Id).Single(choice => choice.Id == moduleId);
+            var variant = ModuleInstances(database).GetModuleVariantOptions(moduleId)
+                .Single(option => option.Value.EndsWith("::variant::default", StringComparison.Ordinal));
+            var draft = new ShotModuleInstanceDraft(module, variant.Value, variant.Label, "Atomic Screen");
+            var screen = AddPreparedModuleInstance(Children(database), shot, draft);
+            JsonObject? message = null;
+            string? createdMessageId = null;
+            if (moduleId == "module_core_chat")
+            {
+                message = Object(database.GetModuleInstanceSettings(
+                    "module_instance_900f1616432d4f63a97f2a74dd647e08").ContentJson)["messages"]![0]!.DeepClone().AsObject();
+                message.Remove("id");
+                message.Remove("type");
+                createdMessageId = database.MutateModuleInstanceStructuredCollection(screen.Id,
+                    new AddStructuredCollectionItem(StructuredCollectionAddress.Root("messages"), message)).SelectedItemId!;
+            }
+            _ = database.Duplicate(screen);
+            var state = database.GetModuleInstanceSettings(screen.Id);
+            using var connection = database.Context.OpenConnection();
+            var repository = database.Production.ModuleInstanceRepository;
+            string Snapshot() => System.Text.Json.JsonSerializer.Serialize(new
+            {
+                Screens = repository.QueryAll(connection),
+                Shots = database.Production.ShotRepository.QueryAll(connection),
+                Episodes = database.Production.ProjectEpisodeRepository.QueryEpisodes(connection),
+            });
+            void Sql(string sql)
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = sql;
+                command.Parameters.AddWithValue("$shot", shot.Id);
+                command.ExecuteNonQuery();
+            }
+
+            // Force completion to write the derived duration even for a no-op
+            // value edit. This fault occurs after the candidate has been written.
+            var duration = database.GetShotSettings(shot.Id).DurationFrames;
+            Sql("UPDATE shots SET duration_frames = duration_frames + 1000 WHERE id = $shot");
+            // The mutation opens its own connection. The fault trigger is
+            // confined to this disposable test database.
+            Sql("""
+                CREATE TRIGGER fail_screen_completion BEFORE UPDATE OF duration_frames ON shots
+                BEGIN SELECT RAISE(ABORT, 'screen-completion-fault'); END;
+                """);
+            var operations = new List<(string Name, Action Write)>
+            {
+                ("root value", () => database.UpdateModuleInstanceRuntimeValue(screen.Id, "actorId", JsonValue.Create("actor_alex_b"))),
+                ("animation", () => database.UpdateModuleInstanceAnimationJson(screen.Id, state.AnimationJson)),
+                ("Variant", () => database.UpdateModuleInstanceVariant(screen.Id, variant.Value)),
+                ("start", () => database.UpdateModuleInstanceField(screen.Id, "moduleInstance.startFrame", "25")),
+                ("delay", () => database.UpdateModuleInstanceField(screen.Id, "moduleInstance.actionDelayFrames", "13")),
+                ("Theme", () => database.UpdateModuleInstanceField(screen.Id, "moduleInstance.themeId", state.ThemeId)),
+                ("policy", () => database.UpdateModuleInstanceField(screen.Id, "moduleInstance.durationPolicy", state.DurationPolicy)),
+                ("Device Overrides", () => database.Production.UpdateModuleInstanceDeviceOverrides(screen.Id, state.DeviceOverridesJson)),
+                ("rename", () => database.RenameModuleInstance(screen, "Rolled back")),
+                ("reorder", () => database.MoveModuleInstance(screen.Id, 1)),
+                ("duplicate", () => database.Duplicate(screen)),
+                ("delete", () => database.Delete(screen)),
+                ("creation", () => AddPreparedModuleInstance(Children(database), shot, draft)),
+                ("Shot duplication", () => database.Duplicate(shot)),
+            };
+            if (message is not null && createdMessageId is not null)
+            {
+                var address = StructuredCollectionAddress.Root("messages");
+                operations.Add(("item value", () => database.UpdateModuleInstanceRuntimeCollectionValue(
+                    screen.Id, "messages", createdMessageId, "text", JsonValue.Create("Rolled back"))));
+                operations.Add(("item creation", () => database.MutateModuleInstanceStructuredCollection(
+                    screen.Id, new AddStructuredCollectionItem(address, message))));
+                operations.Add(("item duplication", () => database.MutateModuleInstanceStructuredCollection(
+                    screen.Id, new DuplicateStructuredCollectionItem(address, createdMessageId))));
+                operations.Add(("item deletion", () => database.MutateModuleInstanceStructuredCollection(
+                    screen.Id, new DeleteStructuredCollectionItem(address, createdMessageId))));
+            }
+            if (state.DurationPolicy == "explicit")
+                operations.Add(("duration", () => database.UpdateModuleInstanceField(screen.Id, "moduleInstance.durationFrames", "300")));
+            foreach (var operation in operations)
+            {
+                var before = Snapshot();
+                try
+                {
+                    operation.Write();
+                    throw new InvalidOperationException($"Expected late rollback for {moduleId}: {operation.Name}.");
+                }
+                catch (SqliteException error) when (error.Message.Contains("screen-completion-fault", StringComparison.Ordinal)) { }
+                Equal(before, Snapshot());
+            }
+            Sql("DROP TRIGGER fail_screen_completion");
+            Sql($"UPDATE shots SET duration_frames = {duration} WHERE id = $shot");
+            database.UpdateModuleInstanceRuntimeValue(screen.Id, "actorId", JsonValue.Create("actor_alex_b"));
+            Equal("actor_alex_b", Object(database.GetModuleInstanceSettings(screen.Id).ContentJson)["actorId"]!.GetValue<string>());
+            // A write must not synchronize unrelated Shots.
+            var unrelated = database.Production.ShotRepository.QueryAll(connection).First(candidate => candidate.Id != shot.Id);
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "UPDATE shots SET duration_frames = duration_frames + 37 WHERE id = $id";
+                command.Parameters.AddWithValue("$id", unrelated.Id);
+                command.ExecuteNonQuery();
+            }
+            database.UpdateModuleInstanceRuntimeValue(screen.Id, "actorId", JsonValue.Create("actor_alex"));
+            Equal(unrelated.DurationFrames + 37, database.GetShotSettings(unrelated.Id).DurationFrames);
+            database.Production.ShotRepository.UpdateDuration(connection, unrelated.Id, unrelated.DurationFrames);
+            _ = new SqliteProjectTestContext(temporary);
+        }
+        var conversation = nodes.Single(node => node.Id == "module_instance_900f1616432d4f63a97f2a74dd647e08");
+        var beforeState = database.GetModuleInstanceSettings(conversation.Id);
+        var content = Object(beforeState.ContentJson);
+        var messageId = content["messages"]![0]!["id"]!.GetValue<string>();
+        var runtime = Object(database.GetModuleInstanceRuntimePreviewJson(conversation.Id));
+        var target = RuntimeInputAnimationValueContract.ReadTargets(runtime, new JsonObject(), runtime)
+            .First(candidate => candidate.TargetId == messageId && candidate.Input.ValueKind == ValueKind.Boolean);
+        var invalid = new ModuleInstanceAnimationDocument(beforeState.AnimationJson);
+        invalid.AddTrack(target.FieldId, target.TargetId, JsonValue.Create("invalid boolean")!, "hold");
+        using (var connection = database.Context.OpenConnection())
+        {
+            database.Production.ModuleInstanceRepository.UpdateAnimation(connection, conversation.Id, invalid.ToJson());
+            var before = database.GetModuleInstanceSettings(conversation.Id);
+            Throws<InvalidOperationException>(() => database.UpdateModuleInstanceRuntimeValue(
+                conversation.Id, "headerSubtitle", JsonValue.Create("Must roll back")));
+            Equal(before, database.GetModuleInstanceSettings(conversation.Id));
+            Throws<InvalidOperationException>(() => database.UpdateModuleInstanceRuntimeCollectionValue(
+                conversation.Id, "messages", messageId, "text", JsonValue.Create("Must also roll back")));
+            Equal(before, database.GetModuleInstanceSettings(conversation.Id));
+            database.Production.ModuleInstanceRepository.UpdateAnimation(connection, conversation.Id, beforeState.AnimationJson);
+        }
+        _ = new SqliteProjectTestContext(temporary);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void ModuleVariantStructureCommitsAreAtomic()

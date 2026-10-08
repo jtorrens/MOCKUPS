@@ -228,7 +228,7 @@ internal interface IProjectEpisodeRepository
 
     EpisodeRecord CreateEpisode(SqliteConnection connection, string projectId);
 
-    EpisodeRecord DuplicateEpisode(SqliteConnection connection, string sourceEpisodeId, string copyName);
+    EpisodeRecord DuplicateEpisode(SqliteConnection connection, string sourceEpisodeId, string copyName, SqliteTransaction transaction);
 
     void DeleteEpisode(SqliteConnection connection, string episodeId);
 
@@ -633,6 +633,11 @@ internal interface IComponentClassRepository
     void UpdateNode(SqliteConnection connection, string componentClassId, string name, string notes);
 }
 
+internal interface IProductionRuntimeReferences
+{
+    IReadOnlySet<string> ActorIds(SqliteConnection connection, string projectId);
+}
+
 internal interface IModuleInstanceRepository
 {
     ModuleInstanceRecord Get(string moduleInstanceId);
@@ -675,7 +680,8 @@ internal interface IModuleInstanceRepository
     void UpdateActionDelay(
         SqliteConnection connection,
         string moduleInstanceId,
-        int actionDelayFrames);
+        int actionDelayFrames,
+        SqliteTransaction? transaction = null);
 
     void UpdateStartFrame(
         SqliteConnection connection,
@@ -686,12 +692,14 @@ internal interface IModuleInstanceRepository
     void UpdateTheme(
         SqliteConnection connection,
         string moduleInstanceId,
-        string themeId);
+        string themeId,
+        SqliteTransaction? transaction = null);
 
     void UpdateDeviceOverrides(
         SqliteConnection connection,
         string moduleInstanceId,
-        string overridesJson);
+        string overridesJson,
+        SqliteTransaction? transaction = null);
 
     void UpdateContentAndAnimation(
         SqliteConnection connection,
@@ -725,13 +733,14 @@ internal interface IModuleInstanceRepository
         string firstId,
         int firstSortOrder,
         string secondId,
-        int secondSortOrder);
+        int secondSortOrder,
+        SqliteTransaction transaction);
 
     long CountVariantReferences(SqliteConnection connection, string moduleId, string variantReference);
 
-    void Rename(SqliteConnection connection, string moduleInstanceId, string name);
+    void Rename(SqliteConnection connection, string moduleInstanceId, string name, SqliteTransaction? transaction = null);
 
-    void Delete(SqliteConnection connection, string moduleInstanceId);
+    void Delete(SqliteConnection connection, string moduleInstanceId, SqliteTransaction? transaction = null);
 }
 
 internal interface IModuleInstanceThemeContextService

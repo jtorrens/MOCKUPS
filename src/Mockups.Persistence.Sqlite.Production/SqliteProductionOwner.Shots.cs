@@ -134,8 +134,9 @@ internal sealed partial class SqliteProductionOwner
                     sourceScreen.SortOrder,
                     transaction);
             }
+            CompleteScreenWrite(connection, transaction, [duplicate.Id]);
             transaction.Commit();
-            return duplicate;
+            return _shotRepository.Get(connection, duplicate.Id);
         }
     }
 

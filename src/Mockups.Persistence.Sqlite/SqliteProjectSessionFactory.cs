@@ -10,11 +10,12 @@ internal static class SqliteProjectSessionFactory
         SqliteProductionOwner production = null!;
         SqliteResourceOwner resources = null!;
         var design = new SqliteDesignOwner(context, (connection, change) =>
-            SqliteModuleVariantDocumentCommit.Commit(context, connection, change, production, resources));
+            SqliteModuleVariantDocumentCommit.Commit(context, connection, change, production));
         production = new SqliteProductionOwner(
             context,
             design,
-            design);
+            design,
+            new SqliteProductionRuntimeReferences(new ActorRepository(context)));
         resources = new SqliteResourceOwner(
             context,
             production.ProjectEpisodeRepository,
@@ -63,9 +64,7 @@ internal static class SqliteProjectSessionFactory
         var productionRecordFields =
             new SqliteProductionRecordFieldStore(
                 context,
-                production,
-                design,
-                resources);
+                production);
         var recordReferenceOverrides =
             new SqliteRecordReferenceOverrideStore(
                 production,
@@ -86,13 +85,11 @@ internal static class SqliteProjectSessionFactory
         var runtimeInputInstances =
             new SqliteRuntimeInputInstanceStore(
                 context,
-                production,
-                resources);
+                production);
         var animations =
             new SqliteModuleInstanceAnimationStore(
                 context,
-                production,
-                resources);
+                production);
 
         new SqliteCurrentDatabaseValidator(
             context,

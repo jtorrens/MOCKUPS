@@ -112,10 +112,11 @@ internal sealed partial class SqliteProductionOwner
         }
 
         using var connection = OpenConnection();
-        _moduleInstanceRepository.Rename(
-            connection,
-            node.Id,
-            requestedName);
+        CommitModuleInstanceWrite(connection, node.Id, (transaction, instance) =>
+        {
+            _moduleInstanceRepository.Rename(connection, node.Id, requestedName, transaction);
+            return true;
+        });
         return new ProjectTreeNode(
             ProjectTreeNodeKind.ModuleInstance,
             node.Id,
@@ -134,27 +135,19 @@ internal sealed partial class SqliteProductionOwner
             return;
         }
 
-        var current = GetModuleInstanceSettings(moduleInstanceId);
-        var slots = GetShotModuleInstanceSlots(current.ShotId).ToList();
-        var currentIndex = slots.FindIndex(
-            (slot) => slot.Id == moduleInstanceId);
-        var targetIndex = currentIndex + offset;
-        if (currentIndex < 0
-            || targetIndex < 0
-            || targetIndex >= slots.Count)
-        {
-            return;
-        }
-
-        var currentSlot = slots[currentIndex];
-        var targetSlot = slots[targetIndex];
         using var connection = OpenConnection();
-        _moduleInstanceRepository.SwapSortOrder(
-            connection,
-            currentSlot.Id,
-            currentSlot.SortOrder,
-            targetSlot.Id,
-            targetSlot.SortOrder);
+        CommitModuleInstanceWrite(connection, moduleInstanceId, (transaction, current) =>
+        {
+            var slots = _moduleInstanceRepository.QueryByShot(connection, current.ShotId).ToList();
+            var currentIndex = slots.FindIndex(slot => slot.Id == moduleInstanceId);
+            var targetIndex = currentIndex + offset;
+            if (currentIndex < 0 || targetIndex < 0 || targetIndex >= slots.Count)
+                return false;
+            var target = slots[targetIndex];
+            _moduleInstanceRepository.SwapSortOrder(connection,
+                current.Id, current.SortOrder, target.Id, target.SortOrder, transaction);
+            return true;
+        });
     }
 
     public ModuleSettings GetModuleInstanceVariantSettings(

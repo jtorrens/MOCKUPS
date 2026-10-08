@@ -105,6 +105,7 @@ internal sealed partial class SqliteProductionOwner
                 transaction);
         }
 
+        CompleteScreenWrite(connection, transaction, [transferred.Id]);
         return new ProjectTreeNode(
             ProjectTreeNodeKind.Shot,
             transferred.Id,
@@ -211,9 +212,7 @@ internal sealed partial class SqliteProductionOwner
                 transaction);
         }
 
-        SynchronizeTimelineDurations(
-            connection,
-            transaction: transaction);
+        CompleteScreenWrite(connection, transaction, [source.ShotId, targetShot.Id]);
         return new ProjectTreeNode(
             ProjectTreeNodeKind.ModuleInstance,
             transferred.Id,

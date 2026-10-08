@@ -6,8 +6,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed class SqliteRuntimeInputInstanceStore(
     SqliteProjectContext context,
-    SqliteProductionOwner production,
-    SqliteResourceOwner resources)
+    SqliteProductionOwner production)
     : IRuntimeInputInstanceStore
 {
     public void UpdateModuleInstanceRuntimeValue(
@@ -20,10 +19,7 @@ internal sealed class SqliteRuntimeInputInstanceStore(
             connection,
             moduleInstanceId,
             jsonKey,
-            value,
-            ModuleInstanceProjectActorIds(
-                connection,
-                moduleInstanceId));
+            value);
     }
 
     public void UpdateModuleInstanceRuntimeCollectionValue(
@@ -53,10 +49,7 @@ internal sealed class SqliteRuntimeInputInstanceStore(
             moduleInstanceId,
             address,
             itemId,
-            values,
-            ModuleInstanceProjectActorIds(
-                connection,
-                moduleInstanceId));
+            values);
     }
 
     public StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(
@@ -67,27 +60,7 @@ internal sealed class SqliteRuntimeInputInstanceStore(
         return production.MutateModuleInstanceStructuredCollection(
             connection,
             moduleInstanceId,
-            mutation,
-            ModuleInstanceProjectActorIds(
-                connection,
-                moduleInstanceId));
+            mutation);
     }
 
-    private IReadOnlySet<string> ModuleInstanceProjectActorIds(
-        SqliteConnection connection,
-        string moduleInstanceId)
-    {
-        var instance = production.ModuleInstanceRepository.Get(
-            connection,
-            moduleInstanceId);
-        var shot = production.ShotRepository.Get(
-            connection,
-            instance.ShotId);
-        return resources.ActorRepository.QueryAll(connection)
-            .Where((actor) => actor.ProjectId.Equals(
-                shot.ProjectId,
-                StringComparison.Ordinal))
-            .Select((actor) => actor.Id)
-            .ToHashSet(StringComparer.Ordinal);
-    }
 }

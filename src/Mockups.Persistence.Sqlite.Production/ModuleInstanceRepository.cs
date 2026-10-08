@@ -207,7 +207,8 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     public void UpdateActionDelay(
         SqliteConnection connection,
         string moduleInstanceId,
-        int actionDelayFrames)
+        int actionDelayFrames,
+        SqliteTransaction? transaction = null)
     {
         if (actionDelayFrames < 0)
         {
@@ -217,6 +218,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         _ = Get(connection, moduleInstanceId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE module_instances SET action_delay_frames = $actionDelayFrames WHERE id = $id",
             ("$actionDelayFrames", actionDelayFrames),
             ("$id", moduleInstanceId));
@@ -240,11 +242,13 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     public void UpdateTheme(
         SqliteConnection connection,
         string moduleInstanceId,
-        string themeId)
+        string themeId,
+        SqliteTransaction? transaction = null)
     {
         _ = Get(connection, moduleInstanceId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE module_instances SET theme_id = $value WHERE id = $id",
             ("$value", themeId),
             ("$id", moduleInstanceId));
@@ -253,7 +257,8 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     public void UpdateDeviceOverrides(
         SqliteConnection connection,
         string moduleInstanceId,
-        string overridesJson)
+        string overridesJson,
+        SqliteTransaction? transaction = null)
     {
         _ = DeviceSettingsFieldContract.ParseScreenOverrides(
             overridesJson,
@@ -261,6 +266,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         _ = Get(connection, moduleInstanceId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE module_instances SET device_overrides_json = $value WHERE id = $id",
             ("$value", overridesJson),
             ("$id", moduleInstanceId));
@@ -347,27 +353,17 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         string firstId,
         int firstSortOrder,
         string secondId,
-        int secondSortOrder)
+        int secondSortOrder,
+        SqliteTransaction transaction)
     {
         _ = Get(connection, firstId);
         _ = Get(connection, secondId);
-        lock (_context.WriteGate)
-        {
-            using var transaction = connection.BeginTransaction();
-            _context.Execute(
-                connection,
-                transaction,
-                "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
-                ("$sortOrder", secondSortOrder),
-                ("$id", firstId));
-            _context.Execute(
-                connection,
-                transaction,
-                "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
-                ("$sortOrder", firstSortOrder),
-                ("$id", secondId));
-            transaction.Commit();
-        }
+        _context.Execute(connection, transaction,
+            "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
+            ("$sortOrder", secondSortOrder), ("$id", firstId));
+        _context.Execute(connection, transaction,
+            "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
+            ("$sortOrder", firstSortOrder), ("$id", secondId));
     }
 
     public long CountVariantReferences(SqliteConnection connection, string moduleId, string variantReference)
@@ -394,21 +390,23 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         return count;
     }
 
-    public void Rename(SqliteConnection connection, string moduleInstanceId, string name)
+    public void Rename(SqliteConnection connection, string moduleInstanceId, string name, SqliteTransaction? transaction = null)
     {
         _ = Get(connection, moduleInstanceId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE module_instances SET name = $name WHERE id = $id",
             ("$name", name),
             ("$id", moduleInstanceId));
     }
 
-    public void Delete(SqliteConnection connection, string moduleInstanceId)
+    public void Delete(SqliteConnection connection, string moduleInstanceId, SqliteTransaction? transaction = null)
     {
         _ = Get(connection, moduleInstanceId);
         _context.Execute(
             connection,
+            transaction,
             "DELETE FROM module_instances WHERE id = $id",
             ("$id", moduleInstanceId));
     }

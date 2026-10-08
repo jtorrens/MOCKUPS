@@ -3,24 +3,18 @@ using Mockups.DesktopEditorShell.EditorShell;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProductionRecordFieldStore :
+internal sealed class SqliteProductionRecordFieldStore :
     IProductionRecordFieldStore
 {
     private readonly SqliteProjectContext _context;
     private readonly SqliteProductionOwner _production;
-    private readonly SqliteDesignOwner _design;
-    private readonly SqliteResourceOwner _resources;
 
     internal SqliteProductionRecordFieldStore(
         SqliteProjectContext context,
-        SqliteProductionOwner production,
-        SqliteDesignOwner design,
-        SqliteResourceOwner resources)
+        SqliteProductionOwner production)
     {
         _context = context;
         _production = production;
-        _design = design;
-        _resources = resources;
     }
 
     public ProjectSettings GetProjectSettings(string projectId) =>
@@ -121,10 +115,7 @@ internal sealed partial class SqliteProductionRecordFieldStore :
             connection,
             moduleInstanceId,
             fieldId,
-            value,
-            ModuleInstanceProjectActorIds(
-                connection,
-                moduleInstanceId));
+            value);
     }
 }
 
@@ -413,25 +404,4 @@ internal sealed partial class SqliteDesignRecordFieldStore
     public IReadOnlyList<FieldOption>
         GetNavigationBarComponentVariantOptions(string projectId) =>
         _design.GetNavigationBarComponentVariantOptions(projectId);
-}
-
-internal sealed partial class SqliteProductionRecordFieldStore
-{
-    private IReadOnlySet<string> ModuleInstanceProjectActorIds(
-        SqliteConnection connection,
-        string moduleInstanceId)
-    {
-        var instance = _production.ModuleInstanceRepository.Get(
-            connection,
-            moduleInstanceId);
-        var shot = _production.ShotRepository.Get(
-            connection,
-            instance.ShotId);
-        return _resources.ActorRepository.QueryAll(connection)
-            .Where((actor) => actor.ProjectId.Equals(
-                shot.ProjectId,
-                StringComparison.Ordinal))
-            .Select((actor) => actor.Id)
-            .ToHashSet(StringComparer.Ordinal);
-    }
 }
