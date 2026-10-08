@@ -38,7 +38,8 @@ internal static class BackupHubMaintenanceCommand
                 "A pre-migration backup requires active MOCKUPS workstation maintenance.");
         }
         var publication = new BackupHubBackupService(
-                databasePath)
+                databasePath,
+                BackupHubVaultLocation.ForCurrentUser())
             .Publish(BackupReason.PreMigration)
             ?? throw new InvalidOperationException(
                 "A pre-migration backup cannot be deduplicated.");

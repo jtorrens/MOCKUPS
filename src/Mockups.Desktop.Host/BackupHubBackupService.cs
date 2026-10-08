@@ -32,9 +32,13 @@ internal sealed class BackupHubBackupService
 
     private readonly string _databasePath;
 
-    public BackupHubBackupService(string databasePath)
+    internal BackupHubVaultLocation Vault { get; }
+
+    public BackupHubBackupService(string databasePath, BackupHubVaultLocation vault)
     {
+        ArgumentNullException.ThrowIfNull(vault);
         _databasePath = Path.GetFullPath(databasePath);
+        Vault = vault;
     }
 
     public string CaptureDatabaseFingerprint()
@@ -59,7 +63,7 @@ internal sealed class BackupHubBackupService
         BackupReason reason,
         string? unchangedDatabaseSha256 = null)
     {
-        var inbox = BackupHubVaultLocation.RequireInbox();
+        var inbox = Vault.RequireInbox();
         var packageId = Guid.NewGuid();
         var identity = BackupHubContract.Canonical(packageId);
         var staging = Path.Combine(inbox, $".{identity}.tmp");
@@ -143,12 +147,23 @@ internal sealed class BackupHubBackupService
     }
 }
 
-internal static class BackupHubVaultLocation
+internal sealed class BackupHubVaultLocation
 {
     internal const string VaultIdentifier =
         "com.jtorrens.backup-hub";
 
-    public static string RequireVault()
+    private readonly string _path;
+
+    public BackupHubVaultLocation(string path)
+    {
+        if (!Path.IsPathFullyQualified(path))
+        {
+            throw new ArgumentException("Backup Hub requires an absolute vault path.", nameof(path));
+        }
+        _path = Path.GetFullPath(path);
+    }
+
+    public static BackupHubVaultLocation ForCurrentUser()
     {
         var applicationData = Environment.GetFolderPath(
             Environment.SpecialFolder.ApplicationData);
@@ -157,10 +172,26 @@ internal static class BackupHubVaultLocation
             throw new InvalidOperationException(
                 "The operating system did not provide its application-data directory.");
         }
-        var vault = Path.Combine(
+        return new BackupHubVaultLocation(Path.Combine(
             applicationData,
             VaultIdentifier,
-            "vault");
+            "vault"));
+    }
+
+    public bool TryRequireVault(out string vault)
+    {
+        if (!Path.Exists(_path))
+        {
+            vault = "";
+            return false;
+        }
+        vault = RequireVault();
+        return true;
+    }
+
+    public string RequireVault()
+    {
+        var vault = _path;
         BackupHubContract.RequireRegularDirectory(
             vault,
             "Backup Hub vault");
@@ -196,7 +227,7 @@ internal static class BackupHubVaultLocation
         return vault;
     }
 
-    public static string RequireInbox()
+    public string RequireInbox()
     {
         var inbox = Path.Combine(
             RequireVault(),

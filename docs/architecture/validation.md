@@ -522,6 +522,21 @@ Database validation is read-only and confirms:
 
 Lifecycle and migration tests operate on disposable database copies.
 
+Backup Hub integration regressions use a temporary vault and a disposable copy
+of the parity database, passed through the same explicit vault owner as the
+Host. They exercise public publication and restore services, not reflected
+private replacement methods. No test may discover the real vault, rewrite
+application-data environment variables or target the canonical database.
+Publication is supported on macOS/Windows; Linux checks its explicit unsupported
+platform result as well as portable handoff validation, cancellation and crash
+recovery. These tests do not verify Backup Hub's external encryption/sync layer.
+
+Outstanding close-serialization finding: `EditorOperationCoordinator` currently
+invokes its shutdown callback even if its three-second wait for the operation
+gate expires. A controlled pending-write probe reproduced that overlap. Backup
+publication must not be considered fully serialized until the close policy is
+resolved; passing isolated restore tests does not close this finding.
+
 Resource-deletion regressions use isolated font and Icon Theme files. They
 force record and token-mapping rollback, preserve pending cleanup across a
 read-only reopen, retry interrupted file work, protect changed/new/referenced

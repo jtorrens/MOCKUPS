@@ -763,6 +763,18 @@ MOCKUPS never creates the vault, searches alternate locations or writes a
 fallback backup. Backup Hub owns encryption, retention, history and
 synchronization after package ingestion.
 
+The Host resolves this official location once at composition and passes an
+explicit `BackupHubVaultLocation` to publication. Restore consumes the same
+location through its publication dependency, including the mandatory
+pre-restore backup. That owner alone validates the marker on use; operations
+never rediscover a location. An absent vault means no pending restore, not
+permission to create one. Integration tests supply a temporary absolute vault
+through this identical contract; production has no location override or test
+branch. Tests exercise publication, confirmation/cancellation, rejected
+handoffs, pre-backup failure, blocked replacement and restart recovery. On
+unsupported publication platforms they verify explicit rejection; they do not
+invent a supported producer identity for the running application.
+
 ## References and lifecycle
 
 Icon Theme discovery uses `IconThemeImportDocument`: a version-1 external

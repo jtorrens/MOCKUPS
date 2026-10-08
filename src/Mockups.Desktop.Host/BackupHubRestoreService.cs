@@ -38,7 +38,7 @@ internal sealed class BackupHubRestoreService
             Func<PendingRestore, Task<bool>> confirm)
     {
         ArgumentNullException.ThrowIfNull(confirm);
-        if (!TryResolveVault(out var vault))
+        if (!_backups.Vault.TryRequireVault(out var vault))
         {
             return [];
         }
@@ -778,23 +778,6 @@ internal sealed class BackupHubRestoreService
         Directory.Move(claimed, destination);
     }
 
-    private static bool TryResolveVault(
-        out string vault)
-    {
-        var applicationData = Environment.GetFolderPath(
-            Environment.SpecialFolder.ApplicationData);
-        var candidate = Path.Combine(
-            applicationData,
-            BackupHubVaultLocation.VaultIdentifier,
-            "vault");
-        if (!Directory.Exists(candidate))
-        {
-            vault = "";
-            return false;
-        }
-        vault = BackupHubVaultLocation.RequireVault();
-        return true;
-    }
 }
 
 internal sealed record RestoreLocations(string Vault)

@@ -26,11 +26,13 @@ internal sealed class HostedApp : App
         };
         startup.Opened += async (_, _) =>
         {
-            var backups = new BackupHubBackupService(
-                databasePath);
+            BackupHubBackupService backups;
             IReadOnlyList<RestoreNotification> notifications;
             try
             {
+                backups = new BackupHubBackupService(
+                    databasePath,
+                    BackupHubVaultLocation.ForCurrentUser());
                 notifications = await new BackupHubRestoreService(
                         databasePath,
                         backups)
