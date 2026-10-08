@@ -85,11 +85,7 @@ internal sealed partial class SqliteDesignOwner
                 connection,
                 config);
             SetDefaultComponentVariantConfig(metadata, config);
-            _componentClassRepository.UpdateConfigAndMetadata(
-                connection,
-                componentClassId,
-                config.ToJsonString(),
-                metadata.ToJsonString());
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString())]);
         }
     }
 
@@ -176,10 +172,7 @@ internal sealed partial class SqliteDesignOwner
             }
 
             variant["config"] = nextConfig;
-            _componentClassRepository.UpdateMetadata(
-                connection,
-                componentClassId,
-                metadata.ToJsonString());
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString())]);
         }
     }
 
@@ -204,11 +197,7 @@ internal sealed partial class SqliteDesignOwner
             connection,
             config);
         SetDefaultComponentVariantConfig(metadata, config);
-        _componentClassRepository.UpdateConfigAndMetadata(
-            connection,
-            componentClassId,
-            config.ToJsonString(),
-            metadata.ToJsonString());
+        _commitVariants(connection, [new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString())]);
     }
 
     internal void PersistComponentVariantUpdate(
@@ -253,10 +242,7 @@ internal sealed partial class SqliteDesignOwner
             return;
         }
 
-        _componentClassRepository.UpdateMetadata(
-            connection,
-            componentClassId,
-            metadata.ToJsonString());
+        _commitVariants(connection, [new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString())]);
     }
 
     internal static JsonNode ComponentConfigJsonValue(

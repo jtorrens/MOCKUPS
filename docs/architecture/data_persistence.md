@@ -402,19 +402,29 @@ guard, and synchronizes the affected Screen and Shot durations before commit.
 This includes scalar and collection-item values, collection lifecycle, tracks,
 Variant selection, timing, Theme, Device Overrides, Rename, reorder, creation,
 duplication and deletion. A failure in any phase rolls back the whole candidate.
-Shot/Episode duplication, hierarchy transfers and Module Variant changes use
+Shot/Episode duplication, hierarchy transfers and Variant changes use
 the same completion boundary inside their enclosing aggregate transaction.
 Repositories retain SQL and row mapping, never semantic validation or timing.
 Duration synchronization scoped to a Shot never writes unrelated Shots.
 
-Module Variant config writes cross one composition-owned atomic document
-commit. Design supplies the complete candidate metadata; the composition
-coordinates focused repositories on the same SQLite connection and transaction.
+Component and Module Variant writes cross one composition-owned atomic document
+commit (`SqliteVariantDocumentCommit`). Design supplies a batch of complete
+candidate metadata documents; the composition coordinates focused repositories
+on the same SQLite connection and transaction. Override promotion uses this
+same batch, including both the new Variant and its referencing owner; it has no
+separate SQL or post-save propagation route.
+Affected owners are discovered from the shared typed Reference Usage graph,
+plus the explicit class-fixture ownership of its named Variants. References in
+Design fixtures and Production payloads participate alongside config references.
+Candidates reject dependency cycles before recursive preparation, then prepare
+dependent Variants in dependency order. Recursive Component reads retain the
+transaction connection and see the complete candidate batch.
 Runtime content is reconciled by declared stable field, collection and item
 identities. Matching values, item order and tracks survive; newly declared
 fields receive their declared defaults and removed animation targets are
-retired. Variant metadata, every affected Screen and derived Shot durations
-commit together or all roll back. There is no editor-triggered reset command
+retired. Nested payloads pass through `RuntimePreviewDocumentContract` before
+storage and track reconciliation. Variant metadata, every affected Screen and
+derived Shot durations commit together or all roll back. There is no editor-triggered reset command
 or second post-save reconciliation. Contract reads inside this operation use
 the transaction connection, including duration and semantic validation.
 Startup, scalar Runtime writes, collection lifecycle and animation writes

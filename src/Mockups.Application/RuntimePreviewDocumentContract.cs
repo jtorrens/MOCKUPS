@@ -126,6 +126,19 @@ public static class RuntimePreviewDocumentContract
         Func<string, JsonObject>? componentVariantConfig,
         Func<string, JsonObject>? componentRuntimeValues)
     {
+        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(
+                     runtimeContract, effectiveConfig, includeHidden: true))
+        {
+            if (input.ValueKind != ValueKind.StructuredCollection || input.StructuredCollection is null) continue;
+            PrepareCollectionItems(
+                JsonPath.ObjectItems(
+                    JsonPath.RequiredArray(runtimeContract, input.JsonKey, "Runtime structured input"),
+                    "Runtime structured input").ToArray(),
+                input.StructuredCollection,
+                effectiveConfig,
+                componentVariantConfig,
+                componentRuntimeValues);
+        }
         foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
                      runtimeContract,
                      effectiveConfig,

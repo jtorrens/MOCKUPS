@@ -169,10 +169,7 @@ internal sealed partial class SqliteDesignOwner
                     metadata,
                     "variants",
                     $"Module '{moduleId}'");
-                _appModuleRepository.UpdateModuleMetadata(
-                    connection,
-                    moduleId,
-                    value);
+                _commitVariants(connection, [new(ProjectTreeNodeKind.ModuleVariant, moduleId, value)]);
                 return;
             case "module.recordClassId":
                 return;

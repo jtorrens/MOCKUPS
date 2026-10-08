@@ -564,7 +564,7 @@ internal interface IAppModuleRepository
     void UpdateModuleNode(SqliteConnection connection, string moduleId, string name, string notes);
 }
 
-internal sealed record ModuleVariantDocumentChange(string ModuleId, string VariantReference, string MetadataJson);
+internal sealed record VariantDocumentChange(ProjectTreeNodeKind Kind, string OwnerId, string MetadataJson);
 
 internal interface IModuleVariantCatalog
 {
@@ -585,7 +585,9 @@ internal interface IModuleVariantCatalog
 internal interface IComponentVariantConfigCatalog
 {
     JsonObject GetComponentVariantConfig(string variantReference);
+    JsonObject GetComponentVariantConfig(SqliteConnection connection, string variantReference);
     JsonObject GetComponentVariantRuntimeContract(string variantReference);
+    JsonObject GetComponentVariantRuntimeContract(SqliteConnection connection, string variantReference);
 }
 
 internal interface IComponentFieldDesignOptionSource
@@ -624,9 +626,10 @@ internal interface IComponentClassRepository
         SqliteConnection connection,
         string componentClassId,
         string configJson,
-        string metadataJson);
+        string metadataJson,
+        SqliteTransaction? transaction = null);
 
-    void UpdateMetadata(SqliteConnection connection, string componentClassId, string metadataJson);
+    void UpdateMetadata(SqliteConnection connection, string componentClassId, string metadataJson, SqliteTransaction? transaction = null);
 
     void Rename(SqliteConnection connection, string componentClassId, string name);
 

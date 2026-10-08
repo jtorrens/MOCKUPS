@@ -126,10 +126,7 @@ internal sealed partial class SqliteDesignOwner
                 variantId,
                 variantName,
                 defaultConfig));
-            _appModuleRepository.UpdateModuleMetadata(
-                connection,
-                moduleId,
-                metadata.ToJsonString());
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ModuleVariant, moduleId, metadata.ToJsonString())]);
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ModuleVariant,
                 VariantReferenceId.Format(moduleId, variantId),
@@ -172,10 +169,7 @@ internal sealed partial class SqliteDesignOwner
                 variantId,
                 copyName,
                 ParseJsonObject(source.ConfigJson)));
-            _appModuleRepository.UpdateModuleMetadata(
-                connection,
-                moduleId,
-                metadata.ToJsonString());
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ModuleVariant, moduleId, metadata.ToJsonString())]);
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ModuleVariant,
                 VariantReferenceId.Format(moduleId, variantId),
@@ -256,10 +250,7 @@ internal sealed partial class SqliteDesignOwner
             }
         }
 
-        _appModuleRepository.UpdateModuleMetadata(
-            connection,
-            moduleId,
-            metadata.ToJsonString());
+        _commitVariants(connection, [new(ProjectTreeNodeKind.ModuleVariant, moduleId, metadata.ToJsonString())]);
     }
 
     internal void RequireModuleVariantDeleteAllowed(
@@ -389,7 +380,7 @@ internal sealed partial class SqliteDesignOwner
                 fieldId,
                 value);
             variant["config"] = config;
-            _commitModuleVariant(connection, new(moduleId, node.Id, metadata.ToJsonString()));
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ModuleVariant, moduleId, metadata.ToJsonString())]);
         }
     }
 
@@ -431,10 +422,7 @@ internal sealed partial class SqliteDesignOwner
             var metadata = ParseJsonObject(module.MetadataJson);
             var variant = FindModuleVariant(metadata, node.Id);
             update(variant);
-            _appModuleRepository.UpdateModuleMetadata(
-                connection,
-                moduleId,
-                metadata.ToJsonString());
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ModuleVariant, moduleId, metadata.ToJsonString())]);
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ModuleVariant,
                 node.Id,
@@ -488,7 +476,7 @@ internal sealed partial class SqliteDesignOwner
                 module.RecordClassId,
                 config,
                 "Edited Module Variant config");
-            _commitModuleVariant(connection, new(moduleId, node.Id, metadata.ToJsonString()));
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ModuleVariant, moduleId, metadata.ToJsonString())]);
         }
     }
 

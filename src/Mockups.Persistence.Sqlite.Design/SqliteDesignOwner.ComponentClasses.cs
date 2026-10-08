@@ -210,10 +210,7 @@ internal sealed partial class SqliteDesignOwner
                 copyId,
                 copyName,
                 copyConfig));
-            _componentClassRepository.UpdateMetadata(
-                connection,
-                componentClassId,
-                metadata.ToJsonString());
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString())]);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentVariant,
@@ -271,10 +268,7 @@ internal sealed partial class SqliteDesignOwner
                 variantId,
                 variantName,
                 defaultConfig));
-            _componentClassRepository.UpdateMetadata(
-                connection,
-                componentClassId,
-                metadata.ToJsonString());
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString())]);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentVariant,
@@ -326,10 +320,7 @@ internal sealed partial class SqliteDesignOwner
                 ?? throw new InvalidOperationException(
                     $"Missing component variant '{variantId}'.");
             variant["name"] = nextName;
-            _componentClassRepository.UpdateMetadata(
-                connection,
-                componentClassId,
-                metadata.ToJsonString());
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString())]);
         }
 
         return new ProjectTreeNode(
@@ -394,10 +385,7 @@ internal sealed partial class SqliteDesignOwner
 
             var nextLocked = !JsonBool(variant, ["locked"]);
             variant["locked"] = nextLocked;
-            _componentClassRepository.UpdateMetadata(
-                connection,
-                componentClassId,
-                metadata.ToJsonString());
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString())]);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentVariant,
@@ -479,10 +467,7 @@ internal sealed partial class SqliteDesignOwner
             }
 
             variants.RemoveAt(index);
-            _componentClassRepository.UpdateMetadata(
-                connection,
-                componentClassId,
-                metadata.ToJsonString());
+            _commitVariants(connection, [new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString())]);
             return;
         }
 

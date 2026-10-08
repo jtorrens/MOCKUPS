@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System.Text.Json.Nodes;
@@ -16,8 +17,13 @@ internal sealed partial class SqliteDesignOwner
                 effective.ToJsonString()));
     }
 
-    public JsonObject GetComponentVariantRuntimeContract(
-        string variantReference)
+    public JsonObject GetComponentVariantRuntimeContract(string variantReference)
+    {
+        using var connection = OpenConnection();
+        return GetComponentVariantRuntimeContract(connection, variantReference);
+    }
+
+    public JsonObject GetComponentVariantRuntimeContract(SqliteConnection connection, string variantReference)
     {
         if (!VariantReferenceId.TryParse(
                 variantReference,
@@ -28,13 +34,14 @@ internal sealed partial class SqliteDesignOwner
                 $"Invalid component Variant reference '{variantReference}'.");
         }
 
-        var settings = GetComponentClassSettings(componentClassId);
-        var config = GetComponentVariantConfig(variantReference);
+        var settings = GetComponentClassSettings(connection, componentClassId);
+        var config = GetComponentVariantConfig(connection, variantReference);
         var effective = RuntimePreviewDocumentContract.PrepareFixture(
             ParseJsonObject(settings.DesignPreviewJson),
             config,
-            GetComponentVariantConfig,
-            GetComponentVariantRuntimeInputs);
+            reference => GetComponentVariantConfig(connection, reference),
+            reference => ParseJsonObject(DesignPreviewTestValues.RuntimeJson(
+                GetComponentVariantRuntimeContract(connection, reference).ToJsonString())));
         return effective;
     }
 
@@ -90,6 +97,12 @@ internal sealed partial class SqliteDesignOwner
 
     public JsonObject GetComponentVariantConfig(string variantReference)
     {
+        using var connection = OpenConnection();
+        return GetComponentVariantConfig(connection, variantReference);
+    }
+
+    public JsonObject GetComponentVariantConfig(SqliteConnection connection, string variantReference)
+    {
         if (!VariantReferenceId.TryParse(
                 variantReference,
                 out var componentClassId,
@@ -99,7 +112,6 @@ internal sealed partial class SqliteDesignOwner
                 $"Invalid component Variant reference '{variantReference}'.");
         }
 
-        using var connection = OpenConnection();
         var row = _componentClassRepository.Get(
             connection,
             componentClassId);

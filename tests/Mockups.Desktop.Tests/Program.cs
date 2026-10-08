@@ -297,6 +297,8 @@ var tests = new (string Name, Action Run)[]
     ("timeline frame updates suppress their own playback feedback", TimelineFrameUpdatesSuppressOwnPlaybackFeedback),
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
     ("Module Variant structure commits preserve Screens and roll back together", ModuleVariantStructureCommitsAreAtomic),
+    ("Component Variant commits propagate nested Screen values and tracks atomically", ComponentVariantCommitsPropagateNestedScreens),
+    ("Override promotion commits both Variant owners and Screens atomically", OverridePromotionCommitsAreAtomic),
     ("Screen writes roll back documents lifecycle and durations together", ScreenWritesAreAtomic),
     ("projected Variant row changes preserve participant payloads and tracks", ProjectedVariantRowsPreserveParticipantPayloads),
     ("new collection items become the only expanded item", NewCollectionItemBecomesOnlyExpanded),
@@ -23557,6 +23559,191 @@ static void ModuleVariantStructureCommitsAreAtomic()
     {
         File.Delete(temporary);
     }
+}
+
+static void ComponentVariantCommitsPropagateNestedScreens()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-component-commit-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = CanonicalProjectNodes(database);
+        var source = nodes.Single(node => node.Kind == ProjectTreeNodeKind.ComponentVariant
+            && node.Id == "component_project_foqn_s2_iconRow::variant::default");
+        var variant = database.DuplicateComponentVariant(source, "Atomic nested dependency");
+        var screens = nodes.Where(node => node.Kind == ProjectTreeNodeKind.ModuleInstance
+            && database.GetModuleInstanceSettings(node.Id).ModuleId == "module_core_chat").Take(2).ToArray();
+        Equal(2, screens.Length);
+        var messages = new Dictionary<string, string>();
+        var tracks = new Dictionary<string, string>();
+        var config = database.GetComponentVariantConfig(variant.Id);
+        var itemId = config["iconRow"]!["items"]![0]!["id"]!.GetValue<string>();
+        config["iconRow"]!["items"]![0]!["buttonOverrides"] = Object("""{"button":{"pressedScale":0.85}}""");
+        database.ReplaceComponentVariantConfig(variant, config.ToJsonString());
+        foreach (var screen in screens)
+        {
+            var content = Object(database.GetModuleInstanceSettings(screen.Id).ContentJson);
+            var message = content["messages"]![0]!.AsObject();
+            var messageId = message["id"]!.GetValue<string>();
+            messages.Add(screen.Id, messageId);
+            var rows = message["iconRowRuntime"]!.DeepClone().AsArray();
+            rows[0]!["iconRowSlot"] = ComponentVariantSlotDocumentContract.Create(variant.Id, new JsonObject(), "Test Icon Row");
+            rows[0]!["runtimeInputs"] = database.GetComponentVariantRuntimeContract(variant.Id);
+            rows[0]!["runtimeInputs"]!["buttonInputs"]![0]!["surfaceTintAmount"] = 0.75;
+            database.UpdateModuleInstanceRuntimeCollectionValue(screen.Id, "messages", messageId, "iconRowRuntime", rows);
+            var runtime = Object(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
+            var target = RuntimeInputAnimationValueContract.ReadTargets(runtime, new JsonObject(), runtime)
+                .First(target => target.TargetId == messageId && target.Input.Id == "pressed");
+            var animation = new ModuleInstanceAnimationDocument(database.GetModuleInstanceSettings(screen.Id).AnimationJson);
+            animation.AddTrack(target.FieldId, target.TargetId, JsonValue.Create(false)!, "hold");
+            animation.UpsertKeyframe(target.FieldId, target.TargetId, 9, JsonValue.Create(true)!, "hold");
+            database.UpdateModuleInstanceAnimationJson(screen.Id, animation.ToJson());
+            tracks.Add(screen.Id, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
+        }
+        var row = config["iconRow"]!.AsObject();
+        var definition = ComponentClassFieldCatalog.Get("component.iconRow.items").StructuredCollection!;
+        var mutation = StructuredCollectionMutationEngine.Apply(row, Object("""{"schemaVersion":2,"tracks":[]}"""),
+            definition, new DuplicateStructuredCollectionItem(StructuredCollectionAddress.Root("items"), itemId));
+        row["items"] = mutation.Collection.DeepClone();
+        database.ReplaceComponentVariantConfig(variant, config.ToJsonString());
+        foreach (var screen in screens)
+        {
+            var after = database.GetModuleInstanceSettings(screen.Id);
+            var message = Object(after.ContentJson)["messages"]!.AsArray().OfType<JsonObject>()
+                .Single(item => item["id"]!.GetValue<string>() == messages[screen.Id]);
+            var buttons = message["iconRowRuntime"]![0]!["runtimeInputs"]!["buttonInputs"]!.AsArray();
+            SequenceEqual(row["items"]!.AsArray().Select(item => item!["id"]!.GetValue<string>()),
+                buttons.Select(item => item!["id"]!.GetValue<string>()));
+            Equal(0.75, buttons.OfType<JsonObject>().Single(item => item["id"]!.GetValue<string>() == itemId)
+                ["surfaceTintAmount"]!.GetValue<double>());
+            Equal(tracks[screen.Id], after.AnimationJson);
+        }
+        _ = new SqliteProjectTestContext(temporary);
+
+        var baseline = VariantCommitSnapshot(database);
+        using var connection = database.Context.OpenConnection();
+        using var fault = connection.CreateCommand();
+        fault.CommandText = "CREATE TRIGGER fail_variant_screen BEFORE UPDATE ON module_instances BEGIN SELECT RAISE(ABORT, 'Variant commit fault'); END";
+        fault.ExecuteNonQuery();
+        row["items"]![0]!["text"] = "Failed candidate";
+        Throws<SqliteException>(() => database.ReplaceComponentVariantConfig(variant, config.ToJsonString()));
+        Equal(baseline, VariantCommitSnapshot(database));
+        fault.CommandText = "DROP TRIGGER fail_variant_screen";
+        fault.ExecuteNonQuery();
+
+        // A Component-owned collection promotion uses the same aggregate as
+        // the Module-owned field promotion, including its indirect Screens.
+        var promotion = new ComponentOverridePromotionRequest(variant,
+            new ComponentOverrideCollectionPromotionTarget("component.iconRow.items",
+                StructuredCollectionAddress.Root("items"), itemId,
+                new ComponentOverridePromotionBoundary("", "buttonVariantReference", "buttonOverrides")),
+            "Atomic promoted button");
+        fault.CommandText = "CREATE TRIGGER fail_variant_screen BEFORE UPDATE ON module_instances BEGIN SELECT RAISE(ABORT, 'Promotion commit fault'); END";
+        fault.ExecuteNonQuery();
+        Throws<SqliteException>(() => database.Design.PromoteOverridesToVariant(promotion));
+        Equal(baseline, VariantCommitSnapshot(database));
+        fault.CommandText = "DROP TRIGGER fail_variant_screen";
+        fault.ExecuteNonQuery();
+        var beforePromotion = screens.ToDictionary(screen => screen.Id, screen => database.GetModuleInstanceSettings(screen.Id));
+        var promoted = database.Design.PromoteOverridesToVariant(promotion);
+        config = database.GetComponentVariantConfig(variant.Id);
+        var promotedItem = config["iconRow"]!["items"]!.AsArray().OfType<JsonObject>()
+            .Single(item => item["id"]!.GetValue<string>() == itemId);
+        Equal(promoted.Id, promotedItem["buttonVariantReference"]!.GetValue<string>());
+        Equal(0, promotedItem["buttonOverrides"]!.AsObject().Count);
+        Equal(0.85, database.GetComponentVariantConfig(promoted.Id)["button"]!["pressedScale"]!.GetValue<double>());
+        var promotedSurface = database.Design.PromoteOverridesToVariant(new ComponentOverridePromotionRequest(
+            promoted, new ComponentOverrideFieldPromotionTarget("component.button.appearance.surface.editor"),
+            "Atomic promoted surface"));
+        var surfaceSlot = database.GetComponentVariantConfig(promoted.Id)["button"]!["appearance"]!["surfaceSlot"]!.AsObject();
+        Equal(promotedSurface.Id, surfaceSlot["variantReference"]!.GetValue<string>());
+        Equal(0, surfaceSlot["overrides"]!.AsObject().Count);
+        foreach (var screen in screens)
+        {
+            var after = database.GetModuleInstanceSettings(screen.Id);
+            True(JsonNode.DeepEquals(Object(beforePromotion[screen.Id].ContentJson), Object(after.ContentJson)));
+            Equal(tracks[screen.Id], after.AnimationJson);
+
+            var runtime = Object(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
+            var target = RuntimeInputAnimationValueContract.ReadTargets(runtime, new JsonObject(), runtime)
+                .Single(target => target.TargetId == messages[screen.Id] && target.Input.Id == "pressed"
+                    && target.FieldId.Contains(mutation.SelectedItemId!, StringComparison.Ordinal));
+            var animation = new ModuleInstanceAnimationDocument(after.AnimationJson);
+            animation.AddTrack(target.FieldId, target.TargetId, JsonValue.Create(false)!, "hold");
+            database.UpdateModuleInstanceAnimationJson(screen.Id, animation.ToJson());
+        }
+        row = config["iconRow"]!.AsObject();
+        var deleted = StructuredCollectionMutationEngine.Apply(row, Object("""{"schemaVersion":2,"tracks":[]}"""),
+            definition, new DeleteStructuredCollectionItem(StructuredCollectionAddress.Root("items"), mutation.SelectedItemId!));
+        row["items"] = deleted.Collection.DeepClone();
+        database.ReplaceComponentVariantConfig(variant, config.ToJsonString());
+        foreach (var screen in screens)
+            Equal(tracks[screen.Id], database.GetModuleInstanceSettings(screen.Id).AnimationJson);
+        _ = new SqliteProjectTestContext(temporary);
+    }
+    finally { File.Delete(temporary); }
+}
+
+static void OverridePromotionCommitsAreAtomic()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-promotion-commit-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = CanonicalProjectNodes(database);
+        var source = nodes.Single(node => node.Kind == ProjectTreeNodeKind.ModuleVariant
+            && node.Id == "module_core_chat::variant::default");
+        var variant = database.DuplicateModuleVariant(source, "Atomic promotion owner");
+        var screen = nodes.First(node => node.Kind == ProjectTreeNodeKind.ModuleInstance
+            && database.GetModuleInstanceSettings(node.Id).ModuleId == "module_core_chat");
+        database.UpdateModuleInstanceVariant(screen.Id, variant.Id);
+        var config = Object(database.GetModuleVariantSettings(variant).ConfigJson);
+        var before = database.GetModuleInstanceSettings(screen.Id);
+        var request = new ComponentOverridePromotionRequest(variant,
+            new ComponentOverrideFieldPromotionTarget("module.core.chat.headerRightIconRow.editor"), "Atomic promoted row");
+        var baseline = VariantCommitSnapshot(database);
+        using var connection = database.Context.OpenConnection();
+        using var fault = connection.CreateCommand();
+        fault.CommandText = "CREATE TRIGGER fail_promotion BEFORE UPDATE ON module_instances BEGIN SELECT RAISE(ABORT, 'Promotion commit fault'); END";
+        fault.ExecuteNonQuery();
+        Throws<SqliteException>(() => database.Design.PromoteOverridesToVariant(request));
+        Equal(baseline, VariantCommitSnapshot(database));
+        fault.CommandText = "DROP TRIGGER fail_promotion";
+        fault.ExecuteNonQuery();
+        var promoted = database.Design.PromoteOverridesToVariant(request);
+        var afterConfig = Object(database.GetModuleVariantSettings(variant).ConfigJson);
+        var slot = afterConfig["conversation"]!["headerRightIconRowSlot"]!.AsObject();
+        Equal(promoted.Id, slot["variantReference"]!.GetValue<string>());
+        Equal(0, slot["overrides"]!.AsObject().Count);
+        var effectiveBefore = database.GetComponentVariantConfig(config["conversation"]!["headerRightIconRowSlot"]!["variantReference"]!.GetValue<string>());
+        ComponentConfigOverrideMerger.MergeInto(effectiveBefore, config["conversation"]!["headerRightIconRowSlot"]!["overrides"]!.AsObject());
+        True(JsonNode.DeepEquals(effectiveBefore, database.GetComponentVariantConfig(promoted.Id)));
+        True(JsonNode.DeepEquals(Object(before.ContentJson), Object(database.GetModuleInstanceSettings(screen.Id).ContentJson)));
+        Equal(before.AnimationJson, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
+        _ = new SqliteProjectTestContext(temporary);
+    }
+    finally { File.Delete(temporary); }
+}
+
+static string VariantCommitSnapshot(SqliteProjectTestContext database)
+{
+    using var connection = database.Context.OpenConnection();
+    var rows = new List<string>();
+    foreach (var table in new[] { "component_classes", "modules", "module_instances", "shots" })
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT * FROM {table} ORDER BY id";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var values = new object[reader.FieldCount];
+            reader.GetValues(values);
+            rows.Add(System.Text.Json.JsonSerializer.Serialize(values));
+        }
+    }
+    return string.Join('\n', rows);
 }
 
 static void ProjectedVariantRowsPreserveParticipantPayloads()

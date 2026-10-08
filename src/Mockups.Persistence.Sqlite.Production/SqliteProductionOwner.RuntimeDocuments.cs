@@ -7,47 +7,27 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProductionOwner
 {
-    internal void ReconcileModuleVariantRuntimePayloads(
+    internal void ReconcileVariantRuntimePayloads(
         SqliteConnection connection,
         SqliteTransaction transaction,
-        string moduleId,
-        string variantReference,
-        JsonObject previousContract)
+        IReadOnlyDictionary<string, JsonObject> previousContracts)
     {
-        var affectedShots = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var instance in _moduleInstanceRepository
-                     .QueryAll(connection)
-                     .Where((candidate) =>
-                         candidate.ModuleId.Equals(moduleId, StringComparison.Ordinal)
-                         && JsonPath.String(
-                                ParseJsonObject(candidate.MetadataJson),
-                                "moduleVariantReference",
-                                "")
-                            .Equals(variantReference, StringComparison.Ordinal)))
+        var shots = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (id, previousContract) in previousContracts)
         {
-            var contract = ResolveModuleInstanceContract(
-                connection,
-                instance.ModuleId,
-                instance.MetadataJson);
+            var instance = _moduleInstanceRepository.Get(connection, id);
+            var contract = ResolveModuleInstanceContract(connection, instance.ModuleId, instance.MetadataJson);
             var content = RuntimeInputDocumentContract.ReconcileContentForContract(
-                ParseJsonObject(instance.ContentJson),
-                previousContract,
-                contract);
-            var animation = RuntimeInputDocumentContract
-                .RemoveOrphanedAnimationTracks(
-                    ParseJsonObject(instance.AnimationJson),
-                    contract,
-                    content);
-            _moduleInstanceRepository.UpdateContentAndAnimation(
-                connection,
-                instance.Id,
-                content.ToJsonString(),
-                animation.ToJsonString(),
-                transaction);
-            affectedShots.Add(instance.ShotId);
+                ParseJsonObject(instance.ContentJson), previousContract, contract);
+            var runtime = PrepareModuleInstanceRuntimeDocument(connection, id, content);
+            content = RuntimeInputDocumentContract.CreateContentForContract(runtime, runtime);
+            var animation = RuntimeInputDocumentContract.RemoveOrphanedAnimationTracks(
+                ParseJsonObject(instance.AnimationJson), runtime, runtime);
+            _moduleInstanceRepository.UpdateContentAndAnimation(connection, id,
+                content.ToJsonString(), animation.ToJsonString(), transaction);
+            shots.Add(instance.ShotId);
         }
-
-        CompleteScreenWrite(connection, transaction, affectedShots);
+        CompleteScreenWrite(connection, transaction, shots);
     }
 
     public string GetModuleInstanceRuntimePreviewJson(
@@ -55,17 +35,22 @@ internal sealed partial class SqliteProductionOwner
     {
         using var connection = OpenConnection();
         var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
-        var module = GetModuleInstanceVariantSettings(connection, moduleInstanceId);
-        var config = ParseJsonObject(module.ConfigJson);
-        var preview = RuntimePreviewDocumentContract.PrepareRuntime(
-            ParseJsonObject(module.DesignPreviewJson),
-            config,
-            ParseJsonObject(instance.ContentJson),
-            _componentVariantConfigCatalog.GetComponentVariantConfig,
-            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
-
+        var preview = PrepareModuleInstanceRuntimeDocument(connection, moduleInstanceId, ParseJsonObject(instance.ContentJson));
         preview.Remove("testValues");
         return preview.ToJsonString();
+    }
+
+    private JsonObject PrepareModuleInstanceRuntimeDocument(
+        SqliteConnection connection, string moduleInstanceId, JsonObject content)
+    {
+        var module = GetModuleInstanceVariantSettings(connection, moduleInstanceId);
+        var config = ParseJsonObject(module.ConfigJson);
+        return RuntimePreviewDocumentContract.PrepareRuntime(
+            ParseJsonObject(module.DesignPreviewJson),
+            config,
+            content,
+            reference => _componentVariantConfigCatalog.GetComponentVariantConfig(connection, reference),
+            reference => _componentVariantConfigCatalog.GetComponentVariantRuntimeContract(connection, reference));
     }
 
     internal void UpdateModuleInstanceRuntimeValue(
@@ -296,8 +281,8 @@ internal sealed partial class SqliteProductionOwner
             ParseJsonObject(moduleSettings.DesignPreviewJson),
             config,
             content,
-            _componentVariantConfigCatalog.GetComponentVariantConfig,
-            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
+            reference => _componentVariantConfigCatalog.GetComponentVariantConfig(connection, reference),
+            reference => _componentVariantConfigCatalog.GetComponentVariantRuntimeContract(connection, reference));
         return ProductionRuntimeCreationContract.Prepare(
             ModuleInstanceCreationDefinitionId(draft),
             content,
@@ -343,8 +328,8 @@ internal sealed partial class SqliteProductionOwner
                 ParseJsonObject(moduleSettings.DesignPreviewJson),
                 moduleConfig,
                 initialContent,
-                _componentVariantConfigCatalog.GetComponentVariantConfig,
-                _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
+                reference => _componentVariantConfigCatalog.GetComponentVariantConfig(connection, reference),
+                reference => _componentVariantConfigCatalog.GetComponentVariantRuntimeContract(connection, reference));
             var content = ProductionRuntimeCreationContract.Complete(
                 ModuleInstanceCreationDefinitionId(draft),
                 initialContent,
@@ -467,12 +452,7 @@ internal sealed partial class SqliteProductionOwner
             content,
             projectActorIds);
         var config = ParseJsonObject(module.ConfigJson);
-        var effectiveRuntime = RuntimePreviewDocumentContract.PrepareRuntime(
-            ParseJsonObject(module.DesignPreviewJson),
-            config,
-            content,
-            _componentVariantConfigCatalog.GetComponentVariantConfig,
-            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
+        var effectiveRuntime = PrepareModuleInstanceRuntimeDocument(connection, moduleInstanceId, content);
         ProductionRuntimeFixtureIsolationContract.Validate(
             effectiveRuntime,
             config,

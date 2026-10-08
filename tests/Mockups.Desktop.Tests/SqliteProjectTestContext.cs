@@ -23,7 +23,7 @@ internal sealed class SqliteProjectTestContext
     {
         Context = context;
         Design = new SqliteDesignOwner(context, (connection, change) =>
-            SqliteModuleVariantDocumentCommit.Commit(context, connection, change, Production!));
+            SqliteVariantDocumentCommit.Commit(context, connection, change, Design!, Production!));
         Production = new SqliteProductionOwner(
             context,
             Design,

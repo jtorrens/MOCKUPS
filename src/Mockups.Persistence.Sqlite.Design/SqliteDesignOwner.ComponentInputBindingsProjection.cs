@@ -55,8 +55,8 @@ internal sealed partial class SqliteDesignOwner
                     projected,
                     effective.Contract,
                     effective.Config,
-                    GetComponentVariantConfig,
-                    GetComponentVariantRuntimeInputs));
+                    reference => GetComponentVariantConfig(connection, reference),
+                    reference => ParseJsonObject(DesignPreviewTestValues.RuntimeJson(GetComponentVariantRuntimeContract(connection, reference).ToJsonString()))));
         }
     }
 
@@ -85,8 +85,8 @@ internal sealed partial class SqliteDesignOwner
         var contract = RuntimePreviewDocumentContract.PrepareFixture(
             ParseJsonObject(row.DesignPreviewJson),
             config,
-            GetComponentVariantConfig,
-            GetComponentVariantRuntimeInputs);
+            reference => GetComponentVariantConfig(connection, reference),
+            reference => ParseJsonObject(DesignPreviewTestValues.RuntimeJson(GetComponentVariantRuntimeContract(connection, reference).ToJsonString())));
         return new EffectiveComponentRuntimeProjection(
             config,
             contract);

@@ -86,7 +86,8 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
         SqliteConnection connection,
         string componentClassId,
         string configJson,
-        string metadataJson)
+        string metadataJson,
+        SqliteTransaction? transaction = null)
     {
         var current = Get(connection, componentClassId);
         var config = JsonPath.ParseRequiredObject(configJson, $"Component class '{componentClassId}' config_json");
@@ -106,13 +107,14 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
             componentClassId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
             ("$id", componentClassId),
             ("$configJson", configJson),
             ("$metadataJson", metadataJson));
     }
 
-    public void UpdateMetadata(SqliteConnection connection, string componentClassId, string metadataJson)
+    public void UpdateMetadata(SqliteConnection connection, string componentClassId, string metadataJson, SqliteTransaction? transaction = null)
     {
         var current = Get(connection, componentClassId);
         var metadata = ValidateMetadata(metadataJson, componentClassId);
@@ -123,6 +125,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
             componentClassId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
             ("$id", componentClassId),
             ("$metadataJson", metadataJson));

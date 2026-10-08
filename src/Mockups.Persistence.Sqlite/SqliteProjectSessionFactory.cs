@@ -9,8 +9,9 @@ internal static class SqliteProjectSessionFactory
     {
         SqliteProductionOwner production = null!;
         SqliteResourceOwner resources = null!;
-        var design = new SqliteDesignOwner(context, (connection, change) =>
-            SqliteModuleVariantDocumentCommit.Commit(context, connection, change, production));
+        SqliteDesignOwner design = null!;
+        design = new SqliteDesignOwner(context, (connection, change) =>
+            SqliteVariantDocumentCommit.Commit(context, connection, change, design, production));
         production = new SqliteProductionOwner(
             context,
             design,

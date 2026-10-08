@@ -102,6 +102,11 @@ It includes:
   gesture intent, valid cross-Episode Shot and cross-Shot Screen destinations,
   aggregate identity replacement versus retention, Shot Manager release,
   preserved signed Screen origins and atomic calculated-duration synchronization;
+- shared Component/Module Variant document commits, covering exact dependency
+  propagation into nested Screen Runtime collections, retained item identities,
+  authored values and tracks, and whole-aggregate rollback on a forced Screen
+  write failure; Override promotion covers its new Variant, referencing owner,
+  affected Screens and derived Shot durations in the same transaction;
 - operation-coordinated Production playback payload preparation, covering exact
   frame order, preserved local frames, Actor and animation documents,
   cancellation, byte-for-byte read-only persistence and exact owner/frame

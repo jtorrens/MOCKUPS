@@ -140,20 +140,11 @@ internal sealed partial class SqliteDesignOwner
                 moduleId,
                 module.RecordClassId);
 
-            using var transaction = connection.BeginTransaction();
-            _context.Execute(
-                connection,
-                transaction,
-                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", promoted.Component.Id),
-                ("$metadataJson", promoted.MetadataJson));
-            _context.Execute(
-                connection,
-                transaction,
-                "UPDATE modules SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", moduleId),
-                ("$metadataJson", moduleMetadataJson));
-            transaction.Commit();
+            _commitVariants(connection,
+            [
+                new(ProjectTreeNodeKind.ComponentVariant, promoted.Component.Id, promoted.MetadataJson),
+                new(ProjectTreeNodeKind.ModuleVariant, moduleId, moduleMetadataJson),
+            ]);
             return PromotedVariantNode(
                 promoted,
                 name);
@@ -183,10 +174,10 @@ internal sealed partial class SqliteDesignOwner
             var ownerConfig = ownerVariant["config"] as JsonObject
                 ?? throw new InvalidOperationException(
                     $"Component Variant '{request.OwnerNode.Id}' has no config.");
-            var field = RecordClassFieldCatalog.Get(
+            var field = ComponentClassFieldCatalog.Get(
                 request.FieldId);
             if (field.ValueKind != ValueKind.ComponentVariantSlot
-                || field.ConfigJsonPath is not { Length: > 0 } path)
+                || field.JsonPath is not { Length: > 0 } path)
             {
                 throw new InvalidOperationException(
                     $"Component field '{request.FieldId}' is not a Component Variant Slot.");
@@ -230,34 +221,13 @@ internal sealed partial class SqliteDesignOwner
                     promoted.Reference,
                     new JsonObject(),
                     owner));
-            PrepareComponentOwnerUpdate(
-                connection,
-                ownerComponent,
-                ownerVariantId,
-                finalOwnerConfig,
-                finalOwnerMetadata);
             var ownerMetadataJson = finalOwnerMetadata.ToJsonString();
 
-            using var transaction = connection.BeginTransaction();
-            if (!promoted.Component.Id.Equals(
-                    ownerComponentId,
-                    StringComparison.Ordinal))
-            {
-                _context.Execute(
-                    connection,
-                    transaction,
-                    "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                    ("$id", promoted.Component.Id),
-                    ("$metadataJson", promoted.MetadataJson));
-            }
-            UpdateComponentVariantOwner(
-                connection,
-                transaction,
-                ownerComponentId,
-                ownerVariantId,
-                finalOwnerConfig,
-                ownerMetadataJson);
-            transaction.Commit();
+            var changes = new List<VariantDocumentChange>();
+            if (promoted.Component.Id != ownerComponentId)
+                changes.Add(new(ProjectTreeNodeKind.ComponentVariant, promoted.Component.Id, promoted.MetadataJson));
+            changes.Add(new(ProjectTreeNodeKind.ComponentVariant, ownerComponentId, ownerMetadataJson));
+            _commitVariants(connection, changes);
             return PromotedVariantNode(
                 promoted,
                 name);
@@ -377,20 +347,11 @@ internal sealed partial class SqliteDesignOwner
                 moduleId,
                 module.RecordClassId);
 
-            using var transaction = connection.BeginTransaction();
-            _context.Execute(
-                connection,
-                transaction,
-                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", promoted.Component.Id),
-                ("$metadataJson", promoted.MetadataJson));
-            _context.Execute(
-                connection,
-                transaction,
-                "UPDATE modules SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", moduleId),
-                ("$metadataJson", moduleMetadataJson));
-            transaction.Commit();
+            _commitVariants(connection,
+            [
+                new(ProjectTreeNodeKind.ComponentVariant, promoted.Component.Id, promoted.MetadataJson),
+                new(ProjectTreeNodeKind.ModuleVariant, moduleId, moduleMetadataJson),
+            ]);
 
             return PromotedVariantNode(
                 promoted,
@@ -421,14 +382,14 @@ internal sealed partial class SqliteDesignOwner
             var ownerConfig = ownerVariant["config"] as JsonObject
                 ?? throw new InvalidOperationException(
                     $"Component Variant '{request.OwnerNode.Id}' has no config.");
-            var field = RecordClassFieldCatalog.Get(
+            var field = ComponentClassFieldCatalog.Get(
                 request.CollectionFieldId);
             var definition = field.StructuredCollection
                 ?? throw new InvalidOperationException(
                     $"Component field '{request.CollectionFieldId}' is not a structured collection.");
-            var path = field.ConfigJsonPath
-                ?? throw new InvalidOperationException(
-                    $"Component field '{request.CollectionFieldId}' has no config path.");
+            var path = field.JsonPath;
+            if (path.Length == 0)
+                throw new InvalidOperationException($"Component field '{request.CollectionFieldId}' has no config path.");
             var items = JsonPath.Get(ownerConfig, path) as JsonArray
                 ?? throw new InvalidOperationException(
                     $"Component field '{request.CollectionFieldId}' must be an array.");
@@ -484,34 +445,13 @@ internal sealed partial class SqliteDesignOwner
                 finalItems,
                 definition,
                 $"Component field '{request.CollectionFieldId}'");
-            PrepareComponentOwnerUpdate(
-                connection,
-                ownerComponent,
-                ownerVariantId,
-                finalOwnerConfig,
-                finalOwnerMetadata);
             var ownerMetadataJson = finalOwnerMetadata.ToJsonString();
 
-            using var transaction = connection.BeginTransaction();
-            if (!promoted.Component.Id.Equals(
-                    ownerComponentId,
-                    StringComparison.Ordinal))
-            {
-                _context.Execute(
-                    connection,
-                    transaction,
-                    "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                    ("$id", promoted.Component.Id),
-                    ("$metadataJson", promoted.MetadataJson));
-            }
-            UpdateComponentVariantOwner(
-                connection,
-                transaction,
-                ownerComponentId,
-                ownerVariantId,
-                finalOwnerConfig,
-                ownerMetadataJson);
-            transaction.Commit();
+            var changes = new List<VariantDocumentChange>();
+            if (promoted.Component.Id != ownerComponentId)
+                changes.Add(new(ProjectTreeNodeKind.ComponentVariant, promoted.Component.Id, promoted.MetadataJson));
+            changes.Add(new(ProjectTreeNodeKind.ComponentVariant, ownerComponentId, ownerMetadataJson));
+            _commitVariants(connection, changes);
             return PromotedVariantNode(
                 promoted,
                 name);
@@ -630,20 +570,11 @@ internal sealed partial class SqliteDesignOwner
                 moduleId,
                 module.RecordClassId);
 
-            using var transaction = connection.BeginTransaction();
-            _context.Execute(
-                connection,
-                transaction,
-                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", promoted.Component.Id),
-                ("$metadataJson", promoted.MetadataJson));
-            _context.Execute(
-                connection,
-                transaction,
-                "UPDATE modules SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", moduleId),
-                ("$metadataJson", moduleMetadataJson));
-            transaction.Commit();
+            _commitVariants(connection,
+            [
+                new(ProjectTreeNodeKind.ComponentVariant, promoted.Component.Id, promoted.MetadataJson),
+                new(ProjectTreeNodeKind.ModuleVariant, moduleId, moduleMetadataJson),
+            ]);
             return PromotedVariantNode(
                 promoted,
                 name);
@@ -713,34 +644,13 @@ internal sealed partial class SqliteDesignOwner
                     finalOwnerConfig,
                     request.Slots),
                 promoted.Reference);
-            PrepareComponentOwnerUpdate(
-                connection,
-                ownerComponent,
-                ownerVariantId,
-                finalOwnerConfig,
-                finalOwnerMetadata);
             var ownerMetadataJson = finalOwnerMetadata.ToJsonString();
 
-            using var transaction = connection.BeginTransaction();
-            if (!promoted.Component.Id.Equals(
-                    ownerComponentId,
-                    StringComparison.Ordinal))
-            {
-                _context.Execute(
-                    connection,
-                    transaction,
-                    "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                    ("$id", promoted.Component.Id),
-                    ("$metadataJson", promoted.MetadataJson));
-            }
-            UpdateComponentVariantOwner(
-                connection,
-                transaction,
-                ownerComponentId,
-                ownerVariantId,
-                finalOwnerConfig,
-                ownerMetadataJson);
-            transaction.Commit();
+            var changes = new List<VariantDocumentChange>();
+            if (promoted.Component.Id != ownerComponentId)
+                changes.Add(new(ProjectTreeNodeKind.ComponentVariant, promoted.Component.Id, promoted.MetadataJson));
+            changes.Add(new(ProjectTreeNodeKind.ComponentVariant, ownerComponentId, ownerMetadataJson));
+            _commitVariants(connection, changes);
             return PromotedVariantNode(
                 promoted,
                 name);
@@ -894,65 +804,6 @@ internal sealed partial class SqliteDesignOwner
                 $"Component Variant '{variantId}' is locked.");
         }
         return variant;
-    }
-
-    private void PrepareComponentOwnerUpdate(
-        Microsoft.Data.Sqlite.SqliteConnection connection,
-        ComponentClassDefinitionRecord ownerComponent,
-        string ownerVariantId,
-        JsonObject ownerConfig,
-        JsonObject ownerMetadata)
-    {
-        ApplyComponentInputBindingsProjections(
-            connection,
-            ownerConfig,
-            ComponentInputBindingsProjectionCatalog.ComponentOwners());
-        CurrentComponentConfigContract.Validate(
-            ownerComponent.ComponentType,
-            ownerConfig,
-            $"Component class '{ownerComponent.Id}' Variant '{ownerVariantId}' config");
-        ValidateDeclaredComponentVariantReferences(
-            connection,
-            ownerConfig);
-        var ownerMetadataJson = ownerMetadata.ToJsonString();
-        var validatedMetadata =
-            global::Mockups.DesktopEditorShell.Data.ComponentClassRepository.ValidateMetadata(
-                ownerMetadataJson,
-                ownerComponent.Id);
-        global::Mockups.DesktopEditorShell.Data.ComponentClassRepository.ValidateVariantConfigs(
-            ownerComponent.ComponentType,
-            ownerComponent.RecordClassId,
-            validatedMetadata,
-            ownerComponent.Id);
-    }
-
-    private void UpdateComponentVariantOwner(
-        Microsoft.Data.Sqlite.SqliteConnection connection,
-        Microsoft.Data.Sqlite.SqliteTransaction transaction,
-        string ownerComponentId,
-        string ownerVariantId,
-        JsonObject ownerConfig,
-        string ownerMetadataJson)
-    {
-        if (ownerVariantId.Equals(
-                VariantEnvelopeContract.DefaultId,
-                StringComparison.Ordinal))
-        {
-            _context.Execute(
-                connection,
-                transaction,
-                "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
-                ("$id", ownerComponentId),
-                ("$configJson", ownerConfig.ToJsonString()),
-                ("$metadataJson", ownerMetadataJson));
-            return;
-        }
-        _context.Execute(
-            connection,
-            transaction,
-            "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-            ("$id", ownerComponentId),
-            ("$metadataJson", ownerMetadataJson));
     }
 
     private PreparedPromotedVariant PreparePromotedVariant(

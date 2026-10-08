@@ -636,6 +636,7 @@ internal sealed class ReferenceUsageService :
             AddDescriptorValue(
                 descriptor,
                 value,
+                config,
                 source,
                 descriptor.Label,
                 targets,
@@ -649,6 +650,7 @@ internal sealed class ReferenceUsageService :
     private static void AddDescriptorValue(
         ComponentClassFieldDescriptor descriptor,
         JsonNode value,
+        JsonObject config,
         SourceContext source,
         string fieldLabel,
         TargetCatalog targets,
@@ -698,7 +700,7 @@ internal sealed class ReferenceUsageService :
         }
         if (descriptor.ValueKind == ValueKind.StructuredCollection && descriptor.StructuredCollection is not null)
         {
-            ScanCollection(value, descriptor.StructuredCollection, fieldLabel, source, targets, usages, componentsByReference);
+            ScanCollection(value, descriptor.StructuredCollection, config, fieldLabel, source, targets, usages, componentsByReference);
             return;
         }
         AddTypedValue(descriptor.ValueKind, "", value, source, fieldLabel, targets, usages);
@@ -715,11 +717,12 @@ internal sealed class ReferenceUsageService :
         RuntimeValueSource valueSource)
     {
         var includeContractDefaults = valueSource == RuntimeValueSource.DesignPreview;
-        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(preview, config))
+        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(preview, config, includeHidden: true))
         {
             AddInputReference(
                 input,
                 RuntimeValue(values, input.JsonKey, valueSource),
+                config,
                 source,
                 input.Label,
                 targets,
@@ -730,6 +733,7 @@ internal sealed class ReferenceUsageService :
                 AddInputReference(
                     input,
                     DefaultNode(input),
+                    config,
                     source,
                     $"{input.Label} · Default",
                     targets,
@@ -738,16 +742,17 @@ internal sealed class ReferenceUsageService :
             }
         }
 
-        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(preview, config))
+        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(preview, config, includeHidden: true))
         {
             var collectionValue = RuntimeCollectionValue(values, collection, valueSource);
-            ScanCollection(collectionValue, collection, collection.Label, source, targets, usages, componentsByReference);
+            ScanCollection(collectionValue, collection, config, collection.Label, source, targets, usages, componentsByReference);
             if (!includeContractDefaults) continue;
             foreach (var field in collection.Fields)
             {
                 AddInputReference(
                     field,
                     DefaultNode(field),
+                    config,
                     source,
                     $"{collection.Label} · {field.Label} · Default",
                     targets,
@@ -789,6 +794,7 @@ internal sealed class ReferenceUsageService :
     private static void AddInputReference(
         ComponentInputDefinition input,
         JsonNode? value,
+        JsonObject config,
         SourceContext source,
         string fieldLabel,
         TargetCatalog targets,
@@ -798,7 +804,7 @@ internal sealed class ReferenceUsageService :
         if (value is null) return;
         if (input.ValueKind == ValueKind.StructuredCollection && input.StructuredCollection is not null)
         {
-            ScanCollection(value, input.StructuredCollection, fieldLabel, source, targets, usages, componentsByReference);
+            ScanCollection(value, input.StructuredCollection, config, fieldLabel, source, targets, usages, componentsByReference);
             return;
         }
         if (input.ValueKind == ValueKind.ComponentVariantSlot)
@@ -829,6 +835,7 @@ internal sealed class ReferenceUsageService :
     private static void ScanCollection(
         JsonNode? value,
         RuntimeInputCollectionDefinition collection,
+        JsonObject config,
         string fieldLabel,
         SourceContext source,
         TargetCatalog targets,
@@ -851,7 +858,20 @@ internal sealed class ReferenceUsageService :
             var itemLabel = $"{fieldLabel} · {stableItemId}";
             foreach (var field in collection.Fields)
             {
-                AddInputReference(field, item[field.JsonKey], source, $"{itemLabel} · {field.Label}", targets, usages, componentsByReference);
+                AddInputReference(field, item[field.JsonKey], config, source, $"{itemLabel} · {field.Label}", targets, usages, componentsByReference);
+            }
+
+            if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
+                && item[collection.ItemRuntimeContractJsonKey] is JsonObject runtime
+                && (string.IsNullOrWhiteSpace(collection.ItemRuntimeVariantSlotJsonKey)
+                    || item[collection.ItemRuntimeVariantSlotJsonKey] is not null))
+            {
+                var childConfig = RuntimeCollectionItemContractOwner.ResolveItemVariantConfig(
+                    item, collection, config, reference => componentsByReference.TryGetValue(reference, out var child)
+                        ? child.Variant.Config
+                        : throw new InvalidOperationException($"Missing Component Variant '{reference}'."));
+                AddRuntimeDocumentReferences(runtime, childConfig, runtime, source, targets, usages,
+                    componentsByReference, RuntimeValueSource.ExplicitValues);
             }
 
             if (collection.ComponentItems is not { } componentItems) continue;
@@ -988,7 +1008,6 @@ internal sealed class ReferenceUsageService :
         {
             return;
         }
-        if (target.Kind == source.Kind && target.Id.Equals(source.NodeId, StringComparison.Ordinal)) return;
         usages.Add(new ReferenceUsageRecord(
             target,
             source.NodeId,
