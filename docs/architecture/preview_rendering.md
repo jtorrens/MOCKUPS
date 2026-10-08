@@ -490,6 +490,21 @@ position. The visual shell shows the shared loading state and constructs
 controls only from the prepared result whose selection revision is still
 current.
 
+Design `Save as defaults` and its dirty-state indicator capture that same
+owner-keyed transient state, including structured item edits, rather than the
+document originally captured by the mounted controls. Their document reads and
+preparation run through the session operation coordinator; obsolete dirty-state
+results cannot re-enable the action. Confirmation saves the prepared snapshot,
+and only successful persistence clears that owner's temporary values. Cancel or
+failure retains them. The next dirty-state preparation reads the newly persisted
+baseline. Design collection mutations also consume the current captured state,
+so duplicating or reordering an item cannot discard earlier temporary edits.
+Transient collection documents are complete storage-root snapshots, not sparse
+item overlays. The shared transient preparation applies them before Runtime
+structure preparation, preserving added/deleted ids and ordering as well as
+field values. The existing authoring-document projection removes resolved
+presentation and playback fields before a structured mutation.
+
 Design preparation may resolve only the synthetic Actor and media identities
 declared by the System Preview fixture catalog. The payload carries the exact
 App Support fixture root. Production continues to reject System Preview Actor

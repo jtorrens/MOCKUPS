@@ -481,6 +481,14 @@ a refreshed Production timeline catalog without moving the playhead, changing
 the pinned owner or remounting the payload and collection controls.
 They wait beyond persistence for the prepared catalog refresh, repeat a
 collection-field commit and require a structural mutation to replace the view.
+Design defaults regressions use temporary databases and the real Dictionary
+collection commit and defaults-confirmation actions for Conversation and Chat
+List. Collection-only edits must enable saving even when the mounted document
+is unchanged. Cancel preserves temporary edits; confirmed saving preserves item
+identities and the edited values, leaves unrelated owners untouched, clears the
+saved owner's transient collection and recognizes the new persisted baseline.
+The editable-collection fixture also duplicates an item after editing it and
+requires the new stable item to retain the current temporary values when saved.
 The C# startup validator and persistence tests own the complete staged SQLite
 contract. Scaffolding read-only, collision, materialization and integration
 behavior belongs to executable tests over temporary workspaces and databases;

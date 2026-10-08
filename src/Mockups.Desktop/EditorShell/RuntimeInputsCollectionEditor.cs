@@ -51,6 +51,9 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly IProductionRecordFieldStore _productionRecordFields;
     private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
+    private readonly EditorOperationCoordinator _operations;
+    private readonly IEditorShellMessageSink _messages;
+    private readonly Func<ProjectTreeNode, ComponentPreviewTransientState> _captureTestValues;
     private readonly Action _onChanged;
     private readonly Action<string, string?> _triggerAction;
     private readonly Action<string> _restoreAction;
@@ -103,6 +106,8 @@ internal sealed class RuntimeInputsCollectionEditor
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         EditorOperationCoordinator operations,
         EditorDictionaryFieldServices dictionaryServices,
+        IEditorShellMessageSink messages,
+        Func<ProjectTreeNode, ComponentPreviewTransientState> captureTestValues,
         Action onChanged,
         Action<string, string?> triggerAction,
         Action<string> restoreAction,
@@ -151,6 +156,9 @@ internal sealed class RuntimeInputsCollectionEditor
         _runtimeInputOptions =
             new RuntimeInputOptionsDataSource(dictionary, actors);
         _dictionaryServices = dictionaryServices;
+        _operations = operations;
+        _messages = messages;
+        _captureTestValues = captureTestValues;
         _onChanged = onChanged;
         _triggerAction = triggerAction;
         _restoreAction = restoreAction;
@@ -438,6 +446,41 @@ internal sealed class RuntimeInputsCollectionEditor
             surface.AnimationSnapshot);
     }
 
+    private sealed record PreparedDesignTestValues(
+        RuntimeInputOwner Owner,
+        JsonObject Preview,
+        IReadOnlyList<ComponentInputDefinition> Inputs,
+        IReadOnlyList<RuntimeInputCollectionDefinition> Collections,
+        IReadOnlyList<DesignPreviewTestValues.Difference> Differences);
+
+    private Task<PreparedDesignTestValues> PrepareCurrentDesignTestValuesAsync(
+        ProjectTreeNode node,
+        CancellationToken cancellationToken = default)
+    {
+        // Capture on the visual thread by exact owner, before any asynchronous
+        // work. The same transient contract prepares Preview and saved defaults.
+        var transient = _captureTestValues(node);
+        return _operations.ExecuteAsync(() =>
+        {
+            var owner = ResolveOwner(node);
+            if (owner.IsInstance)
+                throw new InvalidOperationException("Production payloads cannot become Design defaults.");
+            var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
+            var baseline = PrepareDefaultPreview(owner.DesignPreviewJson, config,
+                _previewInputData.ComponentVariantConfig,
+                _previewInputData.ComponentVariantRuntimeContract);
+            var current = ComponentPreviewTransientValues.Apply(
+                DesignPreviewTestValues.Parse(owner.DesignPreviewJson), config, transient,
+                _previewInputData.ComponentVariantConfig,
+                _previewInputData.ComponentVariantRuntimeContract);
+            var inputs = RuntimeInputDefinitionReader.ReadInputs(current, config);
+            var collections = RuntimeInputDefinitionReader.ReadCollections(current, config);
+            cancellationToken.ThrowIfCancellationRequested();
+            return new PreparedDesignTestValues(owner, current, inputs, collections,
+                DesignPreviewTestValues.Differences(current, baseline, inputs, collections));
+        }, cancellationToken);
+    }
+
     private Control CreateTestValuesTab(
         RuntimeInputOwner owner,
         JsonObject preview,
@@ -466,15 +509,6 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         if (!owner.IsInstance)
         {
-            var config =
-                DesignPreviewTestValues.Parse(
-                    owner.ConfigJson);
-            JsonObject DefaultPreview() =>
-                PrepareDefaultPreview(
-                    owner.DesignPreviewJson,
-                    config,
-                    _previewInputData.ComponentVariantConfig,
-                    _previewInputData.ComponentVariantRuntimeContract);
             var reset = new Button
             {
                 MinWidth = 150,
@@ -494,40 +528,55 @@ internal sealed class RuntimeInputsCollectionEditor
                 MinWidth = 170,
                 Content = "Save as defaults…",
             };
-            void RefreshSaveState()
+            var saveStatePreparation = new PreviewPreparationCancellation();
+            async void RefreshSaveState()
             {
-                var current = preview.DeepClone().AsObject();
-                var baseline = DefaultPreview();
-                var currentInputs =
-                    RuntimeInputDefinitionReader.ReadInputs(
-                        current,
-                        config);
-                var currentCollections =
-                    RuntimeInputDefinitionReader.ReadCollections(
-                        current,
-                        config);
-                var currentDifferences = DesignPreviewTestValues.Differences(current, baseline, currentInputs, currentCollections);
-                saveDefaults.IsEnabled = currentDifferences.Count > 0;
-                ToolTip.SetTip(saveDefaults, currentDifferences.Count == 0
-                    ? "There are no differences from the default values."
-                    : $"Save {currentDifferences.Count} field(s) as default values.");
+                var preparation = saveStatePreparation.Begin();
+                saveDefaults.IsEnabled = false;
+                try
+                {
+                    var current = await PrepareCurrentDesignTestValuesAsync(owner.Node, preparation.Token);
+                    if (!saveStatePreparation.IsCurrent(preparation) || preparation.IsCancellationRequested) return;
+                    saveDefaults.IsEnabled = current.Differences.Count > 0;
+                    ToolTip.SetTip(saveDefaults, current.Differences.Count == 0
+                        ? "There are no differences from the default values."
+                        : $"Save {current.Differences.Count} field(s) as default values.");
+                }
+                catch (OperationCanceledException) { }
+                catch (Exception exception)
+                {
+                    if (saveStatePreparation.IsCurrent(preparation)) _messages.Error("Prepare Test Values", exception);
+                }
+                finally
+                {
+                    saveStatePreparation.Complete(preparation);
+                }
             }
             _testValuesChanged = RefreshSaveState;
             saveDefaults.Click += async (_, args) =>
             {
                 args.Handled = true;
-                var current = preview.DeepClone().AsObject();
-                var differences =
-                    DesignPreviewTestValues.Differences(
-                        current,
-                        DefaultPreview(),
-                        inputs,
-                        collections);
-                if (differences.Count == 0 || !await _confirmSaveDefaults(owner.Node.Name, differences.Select((difference) => difference.Label).ToList())) return;
-                DesignPreviewTestValues.PromoteToDefaults(current, inputs, collections);
-                await owner.Save(current.ToJsonString());
-                _resetTestValues(owner.Node);
-                _onChanged();
+                saveStatePreparation.Cancel();
+                saveDefaults.IsEnabled = false;
+                try
+                {
+                    var current = await PrepareCurrentDesignTestValuesAsync(owner.Node);
+                    if (current.Differences.Count == 0 || !await _confirmSaveDefaults(
+                            owner.Node.Name, current.Differences.Select(difference => difference.Label).ToList())) return;
+                    DesignPreviewTestValues.PromoteToDefaults(current.Preview, current.Inputs, current.Collections);
+                    await current.Owner.Save(current.Preview.ToJsonString());
+                    _resetTestValues(owner.Node);
+                    _onChanged();
+                }
+                catch (OperationCanceledException) { }
+                catch (Exception exception)
+                {
+                    _messages.Error("Save Test Values", exception);
+                }
+                finally
+                {
+                    RefreshSaveState();
+                }
             };
             buttons.Children.Add(saveDefaults);
             RefreshSaveState();
@@ -893,7 +942,6 @@ internal sealed class RuntimeInputsCollectionEditor
         var selectionKey = $"{owner.Node.Id}:test-values";
         var collectionActions = CreateTestValueCollectionActions(
             owner,
-            preview,
             collection,
             items,
             (item, fallbackIndex) => _sessionUiState.Select(
@@ -1501,7 +1549,6 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private StructuredCollectionActions CreateTestValueCollectionActions(
         RuntimeInputOwner owner,
-        JsonObject preview,
         RuntimeInputCollectionDefinition collection,
         IReadOnlyList<JsonObject> items,
         Action<JsonObject, int> activate,
@@ -1520,8 +1567,9 @@ internal sealed class RuntimeInputsCollectionEditor
                     owner.Node.Id,
                     mutation);
             }
+            var current = await PrepareCurrentDesignTestValuesAsync(owner.Node);
             var result = MutateTransientStructuredCollection(
-                preview,
+                current.Preview,
                 collection,
                 mutation);
             _setPreviewCollectionTestItems(
@@ -1626,10 +1674,11 @@ internal sealed class RuntimeInputsCollectionEditor
         var storageKey = collection.StorageJsonKey;
         var content = new JsonObject
         {
-            [storageKey] = new JsonArray(
-                DesignPreviewTestValues.CollectionItems(preview, collection)
-                    .Select((item) => item.DeepClone())
-                    .ToArray()),
+            [storageKey] = StructuredCollectionDocumentContract.StoredClone(
+                new JsonArray(DesignPreviewTestValues.CollectionItems(preview, collection)
+                    .Select(item => (JsonNode?)item.DeepClone()).ToArray()),
+                collection,
+                $"Design Test Values collection '{collection.Id}'"),
         };
         return StructuredCollectionMutationEngine.Apply(
             content,
@@ -1659,7 +1708,6 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         var collectionActions = CreateTestValueCollectionActions(
             owner,
-            preview,
             collection,
             items,
             (item, fallbackIndex) => editor!.ActivateOnly(item, fallbackIndex),

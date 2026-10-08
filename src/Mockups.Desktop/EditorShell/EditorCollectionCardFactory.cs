@@ -55,6 +55,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Action<string> _discardCommittedProductionRuntimeCollection;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
     private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
+    private readonly Func<ProjectTreeNode, ComponentPreviewTransientState> _captureTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
     private readonly Func<ReferenceUsageDetail, Task> _navigateToUsage;
@@ -105,6 +106,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Action<string> discardCommittedProductionRuntimeCollection,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
         Func<ProjectTreeNode, bool> resetPreviewTestValues,
+        Func<ProjectTreeNode, ComponentPreviewTransientState> captureTestValues,
         PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode,
         Func<ReferenceUsageDetail, Task> navigateToUsage,
@@ -152,6 +154,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             discardCommittedProductionRuntimeCollection;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
         _resetPreviewTestValues = resetPreviewTestValues;
+        _captureTestValues = captureTestValues;
         _previewPlaybackState = previewPlaybackState;
         _navigateToNode = navigateToNode;
         _navigateToUsage = navigateToUsage;
@@ -378,6 +381,8 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _moduleInstanceThemes,
             _operations,
             _dictionaryServices,
+            _messages,
+            _captureTestValues,
             _onChanged,
             _triggerPreviewAction,
             _restorePreviewAction,

@@ -251,6 +251,8 @@ var tests = new (string Name, Action Run)[]
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
     ("Conversation Module exposes its Test Values Runtime in the real editor", ConversationModuleEditorVisualTreeExposesTestValues),
+    ("Design collection defaults save the current scoped Test Values", () => DesignCollectionDefaultsUseCurrentState("module_core_chat", "messages", "text", "Saved transient message")),
+    ("Design fixed collection defaults save the current scoped Test Values", () => DesignCollectionDefaultsUseCurrentState("module_project_foqn_s2_chat_list", "items", "present", "false")),
     ("pinned Module Variant Preview survives changing editor selection", PinnedModuleVariantPreviewSurvivesEditorSelection),
     ("pinned Production Preview keeps its active Screen while editing Design", PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign),
     ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
@@ -9262,6 +9264,143 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
     {
         File.Delete(temporary);
     }
+}
+
+static void DesignCollectionDefaultsUseCurrentState(
+    string moduleId, string collectionId, string fieldId, string nextValue)
+{
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data",
+        $".mockups-headless-design-defaults-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var database = new SqliteProjectTestContext(temporary);
+            var before = database.GetModuleSettings(moduleId).DesignPreviewJson;
+            var otherId = moduleId == "module_core_chat"
+                ? "module_project_foqn_s2_chat_list" : "module_core_chat";
+            var otherBefore = database.GetModuleSettings(otherId).DesignPreviewJson;
+            var window = CreateTestWindow(temporary);
+            window.Width = 3000;
+            window.Height = 900;
+            window.Show();
+            void Wait(Func<bool> condition, string message)
+            {
+                True(SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return condition();
+                }, TimeSpan.FromSeconds(15)), message + " "
+                    + window.FindControl<TextBox>("ShellMessagesTextBox")?.Text);
+            }
+            try
+            {
+                var select = Required(typeof(MainWindow).GetMethod("SelectNodeById",
+                    BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(string)], null));
+                True((bool)Required(select.Invoke(window, [moduleId])));
+                var host = Required(window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
+                Button? save = null;
+                Wait(() =>
+                {
+                    save = (host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
+                        .SingleOrDefault(button => button.Content as string == "Save as defaults…");
+                    return save is not null && ToolTip.GetTip(save) is string;
+                }, "Design defaults did not become ready.");
+                var saveButton = Required(save);
+                var factory = Required(typeof(MainWindow).GetField("_collectionCards",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorCollectionCardFactory);
+                var mounted = ((RuntimeInputsCollectionEditor Editor, EditorPreviewAuthoringSurface View))
+                    Required(typeof(EditorCollectionCardFactory).GetField("_mountedPreview",
+                        BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(factory));
+                var surface = Required(typeof(RuntimeInputsCollectionEditor).GetField("_mountedSurface",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(mounted.Editor) as RuntimeInputSurface);
+                var collection = surface.Collections.Single(entry => entry.Id == collectionId);
+                var input = collection.Fields.Single(entry => entry.Id == fieldId);
+                var items = DesignPreviewTestValues.CollectionItems(surface.Preview, collection);
+                var firstId = items[0]["id"]!.GetValue<string>();
+                var originalIds = items.Select(item => item["id"]!.GetValue<string>()).ToArray();
+                var originalValue = DesignPreviewTestValues.CollectionValue(items[0], input);
+                True(originalValue != nextValue);
+                // Exercise the actual Dictionary commit wiring against the same
+                // detached item document used by the shared collection editor.
+                var createControl = Required(typeof(RuntimeInputsCollectionEditor).GetMethod(
+                    "CreateTestValueCollectionControl", BindingFlags.Instance | BindingFlags.NonPublic));
+                var control = Required(createControl.Invoke(mounted.Editor,
+                    [surface.Owner, collection, StructuredCollectionAddress.Root(collection.StorageJsonKey),
+                        0, items[0], input, null, null, null, null]) as DictionaryFieldControl);
+                control.SetValue(nextValue, commit: true);
+                Wait(() => saveButton.IsEnabled, "A collection-only change must enable Save as defaults.");
+                Equal(before, database.GetModuleSettings(moduleId).DesignPreviewJson);
+                Equal(originalValue, DesignPreviewTestValues.CollectionValue(
+                    DesignPreviewTestValues.CollectionItems(surface.Preview, collection)[0], input));
+                var controller = Required(typeof(MainWindow).GetField("_previewController",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
+                var transient = controller.CaptureDesignPreviewTransientState(surface.Owner.Node);
+                True(transient.HasCollectionTestValues);
+                var edited = Object(transient.CollectionTestValuesJson)[collection.StorageJsonKey]!.AsArray();
+                Equal(nextValue, DesignPreviewTestValues.CollectionValue(
+                    edited.OfType<JsonObject>().Single(item => item["id"]!.GetValue<string>() == firstId), input));
+
+                saveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Wait(() => window.GetLogicalDescendants().OfType<Button>()
+                    .Any(button => button.Content as string == "Save default values"), "Missing defaults confirmation.");
+                window.GetLogicalDescendants().OfType<Button>()
+                    .Single(button => button.Content as string == "Cancel")
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Wait(() => saveButton.IsEnabled, "Cancel must retain the pending Test Values.");
+                Equal(before, database.GetModuleSettings(moduleId).DesignPreviewJson);
+                string? duplicatedId = null;
+                if (collection.CanEditStructure && string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey))
+                {
+                    var createActions = Required(typeof(RuntimeInputsCollectionEditor).GetMethod(
+                        "CreateTestValueCollectionActions", BindingFlags.Instance | BindingFlags.NonPublic));
+                    var actions = Required(createActions.Invoke(mounted.Editor,
+                        [surface.Owner, collection, items,
+                            (Action<JsonObject, int>)((item, _) => duplicatedId = item["id"]!.GetValue<string>()),
+                            (Action)(() => { })]) as StructuredCollectionActions);
+                    var duplication = actions.Duplicate(0);
+                    Wait(() => duplication.IsCompleted, "Transient duplication did not complete.");
+                    duplication.GetAwaiter().GetResult();
+                    True(duplicatedId is not null && !originalIds.Contains(duplicatedId));
+                    var duplicatedState = controller.CaptureDesignPreviewTransientState(surface.Owner.Node);
+                    var duplicatedItems = Object(duplicatedState.CollectionTestValuesJson)[collection.StorageJsonKey]!.AsArray();
+                    Equal(nextValue, DesignPreviewTestValues.CollectionValue(duplicatedItems.OfType<JsonObject>()
+                        .Single(item => item["id"]!.GetValue<string>() == duplicatedId), input));
+                    Equal(before, database.GetModuleSettings(moduleId).DesignPreviewJson);
+                }
+                saveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Wait(() => window.GetLogicalDescendants().OfType<Button>()
+                    .Any(button => button.Content as string == "Save default values"), "Missing second defaults confirmation.");
+                window.GetLogicalDescendants().OfType<Button>()
+                    .Single(button => button.Content as string == "Save default values")
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Wait(() => ToolTip.GetTip(saveButton) as string
+                    == "There are no differences from the default values." && !saveButton.IsEnabled,
+                    "Saved defaults must become the new baseline.");
+                var saved = Object(database.GetModuleSettings(moduleId).DesignPreviewJson);
+                var savedItems = DesignPreviewTestValues.CollectionItems(saved, collection);
+                var expectedIds = originalIds.ToList();
+                if (duplicatedId is not null) expectedIds.Insert(1, duplicatedId);
+                Equal(string.Join("|", expectedIds), string.Join("|", savedItems.Select(item => item["id"]!.GetValue<string>())));
+                Equal(nextValue, DesignPreviewTestValues.CollectionValue(
+                    savedItems.Single(item => item["id"]!.GetValue<string>() == firstId), input));
+                if (duplicatedId is not null)
+                    Equal(nextValue, DesignPreviewTestValues.CollectionValue(
+                        savedItems.Single(item => item["id"]!.GetValue<string>() == duplicatedId), input));
+                Equal(otherBefore, database.GetModuleSettings(otherId).DesignPreviewJson);
+                True(!controller.CaptureDesignPreviewTransientState(surface.Owner.Node).HasCollectionTestValues);
+            }
+            finally
+            {
+                foreach (var dialog in window.OwnedWindows.ToArray()) dialog.Close();
+                window.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally { File.Delete(temporary); }
 }
 
 static void ConversationModuleEditorVisualTreeExposesTestValues()
@@ -20408,6 +20547,8 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",
     "Conversation Module exposes its Test Values Runtime in the real editor",
+    "Design collection defaults save the current scoped Test Values",
+    "Design fixed collection defaults save the current scoped Test Values",
     "pinned Module Variant Preview survives changing editor selection",
     "pinned Production Preview keeps its active Screen while editing Design",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",

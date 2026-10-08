@@ -91,16 +91,22 @@ internal static class ComponentPreviewTransientValues
         NestedRuntimeRecordReferenceResolver.RemoveDeclaredResolvedValues(
             authoring,
             config);
+        if (state.HasCollectionTestValues)
+        {
+            // The transient owner stores complete storage-root snapshots, not
+            // sparse per-item overlays. Apply them before structure preparation
+            // so additions, deletion and order travel with scalar item edits.
+            authoring.Remove("testValues");
+            foreach (var (storageKey, value) in ParseJsonObject(state.CollectionTestValuesJson))
+            {
+                authoring[storageKey] = value?.DeepClone();
+            }
+        }
         var envelope = RuntimePreviewDocumentContract.PrepareFixture(
             authoring,
             config,
             componentVariantConfig,
             componentRuntimeValues);
-        if (state.HasCollectionTestValues)
-        {
-            envelope["testValues"] = ParseJsonObject(
-                state.CollectionTestValuesJson).DeepClone();
-        }
         NestedRuntimeRecordReferenceResolver.RemoveDeclaredResolvedValues(
             envelope,
             config);
