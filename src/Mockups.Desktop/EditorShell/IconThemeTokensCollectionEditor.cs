@@ -154,7 +154,7 @@ internal sealed class IconThemeTokensCollectionEditor
                 var result = await _operations.ExecuteAsync(
                     () => _database.RefreshIconThemeSetsForTheme(
                         node.Id));
-                await _showInfo("Refresh complete", $"Refreshed {result.CommonTokenCount} common token(s) across {result.ThemeCount} icon set(s). Omitted {result.OmittedTokenCount} token(s).");
+                await _showInfo("Refresh complete", $"{result.ThemeCount} icon set(s), {result.TokenCount} token(s). {result.MissingFileCount} mapped file(s) unavailable. Existing mappings were preserved.");
                 _reloadAndSelect(node);
             }
             catch (Exception exception)
@@ -299,14 +299,11 @@ internal sealed class IconThemeTokensCollectionEditor
 
             try
             {
-                var result = await _operations.ExecuteAsync(
+                await _operations.ExecuteAsync(
                     () => _database.DeleteIconThemeToken(
                         node.Id,
                         token.Token));
                 _reloadAndSelect(node);
-                if (result.PendingCleanupCount > 0)
-                    await _showInfo("Resource cleanup pending",
-                        "The token mappings were deleted. Some files remain pending cleanup; review them in Settings → Review resource cleanup.");
             }
             catch (Exception exception)
             {

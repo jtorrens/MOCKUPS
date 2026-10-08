@@ -12,7 +12,6 @@ internal sealed class EditorNodeCommandController
 {
     private readonly Window _owner;
     private readonly IEditorNodeCommandStore _database;
-    private readonly IResourceAssetCleanupStore _resourceCleanup;
     private readonly IReferenceUsageQuery _referenceUsage;
     private readonly IEditorChildStore _children;
     private readonly IModuleInstanceCollectionStore _moduleInstances;
@@ -32,7 +31,6 @@ internal sealed class EditorNodeCommandController
     public EditorNodeCommandController(
         Window owner,
         IEditorNodeCommandStore database,
-        IResourceAssetCleanupStore resourceCleanup,
         IReferenceUsageQuery referenceUsage,
         IEditorChildStore children,
         IModuleInstanceCollectionStore moduleInstances,
@@ -49,7 +47,6 @@ internal sealed class EditorNodeCommandController
     {
         _owner = owner;
         _database = database;
-        _resourceCleanup = resourceCleanup;
         _referenceUsage = referenceUsage;
         _children = children;
         _moduleInstances = moduleInstances;
@@ -347,18 +344,6 @@ internal sealed class EditorNodeCommandController
         {
             await ShowInfoDialog("Delete failed", exception.Message);
             return;
-        }
-
-        try
-        {
-            var pending = await _operations.ExecuteAsync(_resourceCleanup.GetPending);
-            if (pending.Count > 0)
-                _messages.Warning("Resource cleanup pending",
-                    "The record was deleted. Some resource files remain pending cleanup; review them in Settings → Review resource cleanup.");
-        }
-        catch (Exception exception)
-        {
-            _messages.Error("Record deleted; could not read pending resource cleanup", exception);
         }
 
         if (nextSelection is null)

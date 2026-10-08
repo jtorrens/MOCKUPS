@@ -24,49 +24,13 @@ public static class IconTokenRules
         return index <= 0 ? "misc" : token[..index];
     }
 
-    public static HashSet<string> SvgTokenSet(string directory)
-    {
-        if (!Directory.Exists(directory)) return [];
-        return Directory
-            .EnumerateFiles(directory, "*.svg", SearchOption.TopDirectoryOnly)
-            .Select(Path.GetFileNameWithoutExtension)
-            .Where((token) => !string.IsNullOrWhiteSpace(token))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase)!;
-    }
-
-    public static JsonObject BuildMapping(string currentMappingJson, HashSet<string> commonTokens)
-    {
-        var current = JsonPath.ParseRequiredObject(currentMappingJson, "Icon Theme mapping");
-        var currentTokens = current["tokens"] as JsonObject ?? [];
-        var nextTokens = new JsonObject();
-        foreach (var token in commonTokens.OrderBy((token) => token, StringComparer.OrdinalIgnoreCase))
-        {
-            var existing = currentTokens[token] as JsonObject ?? [];
-            var category = JsonPath.String(existing, ["category"]);
-            if (string.IsNullOrWhiteSpace(category)) category = CategoryFromToken(token);
-            var next = (JsonObject)existing.DeepClone();
-            next["category"] = category;
-            next["file"] = $"{token}.svg";
-            next["description"] = JsonPath.String(existing, ["description"]);
-            nextTokens[token] = next;
-        }
-
-        return new JsonObject
-        {
-            ["schemaVersion"] = 1,
-            ["tokens"] = nextTokens,
-            ["categories"] = Categories(nextTokens),
-        };
-    }
-
     public static JsonObject Categories(JsonObject tokens)
     {
         var categories = new SortedDictionary<string, JsonArray>(StringComparer.OrdinalIgnoreCase);
         foreach (var pair in tokens.OrderBy((pair) => pair.Key, StringComparer.OrdinalIgnoreCase))
         {
-            var tokenObject = pair.Value as JsonObject ?? [];
-            var category = JsonPath.String(tokenObject, ["category"]);
-            if (string.IsNullOrWhiteSpace(category)) category = CategoryFromToken(pair.Key);
+            var tokenObject = pair.Value as JsonObject ?? throw new InvalidOperationException("Invalid icon token object.");
+            var category = JsonPath.RequiredString(tokenObject, "category", pair.Key);
             if (!categories.TryGetValue(category, out var categoryTokens))
             {
                 categoryTokens = [];
@@ -82,19 +46,27 @@ public static class IconTokenRules
     public static IReadOnlyList<IconThemeTokenMapping> Tokens(string mappingJson)
     {
         var mapping = JsonPath.ParseRequiredObject(mappingJson, "Icon Theme mapping");
-        var tokens = mapping["tokens"] as JsonObject;
-        if (tokens is null) return [];
+        if (mapping["schemaVersion"]?.GetValue<int>() != 1) throw new InvalidOperationException("Invalid icon mapping version.");
+        var tokens = JsonPath.RequiredObject(mapping, "tokens", "Icon Theme mapping");
+        var categories = JsonPath.RequiredObject(mapping, "categories", "Icon Theme mapping");
+        if (!JsonNode.DeepEquals(categories, Categories(tokens))) throw new InvalidOperationException("Icon categories must match their explicit tokens.");
 
         return tokens
             .OrderBy((pair) => pair.Key, StringComparer.OrdinalIgnoreCase)
             .Select((pair) =>
             {
-                var tokenObject = pair.Value as JsonObject ?? [];
+                var tokenObject = pair.Value as JsonObject ?? throw new InvalidOperationException("Invalid icon token object.");
+                var file = JsonPath.RequiredString(tokenObject, "file", pair.Key);
+                if (!Regex.IsMatch(pair.Key, "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)*$")
+                    || Path.GetFileName(file) != file || file.Contains('\\') || file.Contains(':')
+                    || !file.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Invalid icon token identity or exact file reference.");
+                var description = tokenObject["description"]?.GetValue<string>() ?? throw new InvalidOperationException("Missing icon description.");
                 return new IconThemeTokenMapping(
                     pair.Key,
-                    JsonPath.String(tokenObject, ["category"]),
-                    JsonPath.String(tokenObject, ["file"]),
-                    JsonPath.String(tokenObject, ["description"]));
+                    JsonPath.RequiredString(tokenObject, "category", pair.Key),
+                    file,
+                    description);
             })
             .ToList();
     }

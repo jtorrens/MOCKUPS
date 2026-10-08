@@ -537,6 +537,14 @@ explicit provider metadata, reject malformed manifests before writing and
 verify that duplicate originals survive. All files and SQL rows are disposable
 fixtures, never workstation resources.
 
+Icon discovery regressions cover non-destructive refresh for Lucide and
+Material, explicit non-token filenames, unavailable directories/files,
+unlisted SVGs, exact-id relocation, stale import snapshots, first discovery,
+duplicate identities, invalid manifests, symlink rejection and SQL rollback.
+Resource recovery-notice tests exercise the real shared workflow with a native
+headless window: committed cleanup versus uncommitted restoration, delivery
+from a worker, observer-failure isolation and detachment on window close.
+
 Focused resource-consumer regressions cover root Actor and nested Palette
 keyframe references (including disabled keys) blocking deletion, Theme timing
 changes updating only dependent Shot durations with late-failure rollback, and

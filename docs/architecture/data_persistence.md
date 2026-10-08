@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `26` is the only current schema. Authored Production rows belong
+Schema version `27` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -765,6 +765,16 @@ synchronization after package ingestion.
 
 ## References and lifecycle
 
+Icon Theme discovery uses `IconThemeImportDocument`: a version-1 external
+manifest with exact `id`, `name`, `mapping` and `metadata` objects. SQLite is
+the sole authority after import. Existing ids may update only their asset path
+during discovery, never their name, mapping or metadata. Names and filesystem
+stems never reconcile identities. A missing directory or mapped SVG does not
+remove any row or mapping. Ambiguous ids, names or paths reject the complete
+prepared transaction. Metadata stores an explicit validated `iconSet`, not a
+second embedded `manifest` snapshot. Schema 27 removes that redundant snapshot
+without changing ids, mappings or Production references.
+
 Resource file deletion uses a durable outbox owned by Resources:
 `resource_asset_cleanup`. A focused repository stores its strict entries array,
 exact absolute root, relative target, file SHA-256 fingerprints and diagnostic.
@@ -798,6 +808,13 @@ recovery pending. Paths overlapping pending writes cannot be imported,
 replaced, discovered, renamed or deleted. Newly created directories are removed
 only when empty; partially written or externally modified staging files are
 retained for manual inspection, not silently discarded.
+
+The resource cleanup port publishes `RecoveryPending` notices from the shared
+file owner for every failed recovery/retirement attempt. The shared Desktop
+cleanup workflow marshals notices onto the UI thread and detaches on window
+close. It distinguishes committed writes from pending restoration; subscriber
+failure cannot change a durable operation result. Startup does not replay
+notices or retry work. Settings remains the explicit pending-job inventory.
 
 Directory transfers capture the complete source inventory, including empty
 directories, through this same owner. The existing directories array also

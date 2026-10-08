@@ -173,7 +173,7 @@ internal sealed class EditorAddChildWorkflow
         {
             var result = await _operations.ExecuteAsync(
                 () => _database.RefreshIconThemeSets(parent));
-            await _showInfo("Refresh complete", $"Refreshed {result.CommonTokenCount} common token(s) across {result.ThemeCount} icon set(s). Omitted {result.OmittedTokenCount} token(s) not present in every set.");
+            await _showInfo("Refresh complete", $"{result.ThemeCount} icon set(s), {result.TokenCount} token(s). {result.MissingFileCount} mapped file(s) unavailable. Existing mappings were preserved.");
         }
         catch (Exception exception)
         {

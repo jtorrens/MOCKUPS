@@ -158,8 +158,8 @@ public sealed record IconThemeTokenSvg(
 
 public sealed record IconThemeRefreshResult(
     int ThemeCount,
-    int CommonTokenCount,
-    int OmittedTokenCount);
+    int TokenCount,
+    int MissingFileCount);
 
 public sealed record IconThemeReplaceSvgResult(
     string Token,

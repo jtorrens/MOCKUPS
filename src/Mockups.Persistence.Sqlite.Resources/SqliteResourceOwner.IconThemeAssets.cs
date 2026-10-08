@@ -12,7 +12,7 @@ internal sealed partial class SqliteResourceOwner
         {
             source = IconThemeRepository.Get(connection, source.Id);
             var targetDirectory = UniqueIconThemeDirectory(SystemIconThemesRoot(), IconThemeDirectoryName(targetName));
-            TransferIconTheme(connection, source, targetDirectory, false,
+            TransferIconTheme(connection, source, id, targetDirectory, false,
                 (transaction, name, assetRoot, metadata) => IconThemeRepository.CreateDuplicate(
                     connection, source.Id, id, name, assetRoot, metadata, transaction));
             return IconThemeRepository.Get(connection, id);
@@ -25,34 +25,31 @@ internal sealed partial class SqliteResourceOwner
         {
             source = IconThemeRepository.Get(connection, source.Id);
             var targetDirectory = Path.Combine(SystemIconThemesRoot(), IconThemeDirectoryName(targetName));
-            TransferIconTheme(connection, source, targetDirectory, true,
+            TransferIconTheme(connection, source, source.Id, targetDirectory, true,
                 (transaction, name, assetRoot, metadata) => IconThemeRepository.UpdateIdentity(
                     connection, source.Id, name, assetRoot, metadata, transaction));
         }
     }
 
-    private void TransferIconTheme(SqliteConnection connection, IconThemeRecord source, string destination, bool retireSource,
+    private void TransferIconTheme(SqliteConnection connection, IconThemeRecord source, string targetId, string destination, bool retireSource,
         Action<SqliteTransaction, string, string, string> writeRecord)
     {
         var sourceDirectory = IconThemeAssetDirectory(source.AssetRoot);
         var name = Path.GetFileName(destination);
         var assetRoot = NormalizeRelativePath(Path.GetRelativePath(_systemAssets.Root, destination));
-        var metadata = JsonPath.ParseRequiredObject(source.MetadataJson, $"Icon Theme '{source.Id}' metadata");
+        var metadata = IconThemeImportDocument.ValidateMetadata(source.MetadataJson);
         JsonPath.RequiredObject(metadata, "iconSet", source.Id)["setName"] = name;
-        if (metadata.ContainsKey("manifest"))
-            JsonPath.RequiredObject(metadata, "manifest", source.Id)["name"] = name;
         AssetCleanup.TransferDirectory(connection, $"Icon Theme '{source.Name}'", SystemIconThemesRoot(),
             NormalizeRelativePath(Path.GetRelativePath(SystemIconThemesRoot(), sourceDirectory)),
             NormalizeRelativePath(Path.GetRelativePath(SystemIconThemesRoot(), destination)), retireSource,
             files =>
             {
-                if (files.TryGetValue("manifest.json", out var bytes))
-                {
-                    var manifest = JsonPath.ParseRequiredObject(new UTF8Encoding(false, true).GetString(bytes), source.Id + " manifest");
-                    manifest["name"] = name;
-                    files["manifest.json"] = Encoding.UTF8.GetBytes(manifest.ToJsonString());
-                    metadata["manifest"] = manifest.DeepClone();
-                }
+                if (!files.TryGetValue("manifest.json", out var bytes))
+                    throw new InvalidOperationException("Icon Theme directory has no identity manifest.");
+                var manifest = IconThemeImportDocument.Read(new UTF8Encoding(false, true).GetString(bytes));
+                if (manifest.Id != source.Id) throw new InvalidOperationException("Icon Theme directory identity does not match its row.");
+                files["manifest.json"] = Encoding.UTF8.GetBytes(new IconThemeImportDocument(
+                    targetId, name, source.MappingJson, metadata.ToJsonString()).ToJson());
             }, transaction => writeRecord(transaction, name, assetRoot, metadata.ToJsonString()));
     }
 

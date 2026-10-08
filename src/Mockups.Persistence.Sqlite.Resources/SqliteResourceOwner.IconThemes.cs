@@ -201,79 +201,43 @@ internal sealed partial class SqliteResourceOwner
 
     private IconThemeRefreshResult RefreshIconThemeSets(SqliteConnection connection)
     {
-        var iconThemesRoot = SystemIconThemesRoot();
-        AssetCleanup.RequireAvailable(iconThemesRoot);
-        Directory.CreateDirectory(iconThemesRoot);
-
-        var setDirectories = Directory
-            .EnumerateDirectories(iconThemesRoot)
-            .Where((directory) => !Path.GetFileName(directory).StartsWith(".", StringComparison.Ordinal))
-            .Where((directory) => !Path.GetFileName(directory).StartsWith("_", StringComparison.Ordinal))
-            .OrderBy(Path.GetFileName)
-            .ToList();
-
-        var existingRows = _iconThemeRepository.QueryAll(connection).ToList();
-        var discovered = new List<(IconThemeRecord Row, string MetadataJson)>();
-        foreach (var directory in setDirectories)
+        lock (_context.WriteGate)
         {
-            var setName = Path.GetFileName(directory);
-            var existing = existingRows.SingleOrDefault((row) => row.Name == setName);
-            var id = existing?.Id ?? $"icon_theme_system_{Slug(setName)}";
-            var assetRoot = NormalizeRelativePath(
-                Path.GetRelativePath(_systemAssets.Root, directory));
-            var metadata = IconThemeMetadata(directory, setName);
-            discovered.Add((
-                new IconThemeRecord(
-                    id,
-                    setName,
-                    assetRoot,
-                    existing?.MappingJson ?? "{}",
-                    metadata.ToJsonString()),
-                metadata.ToJsonString()));
+            var root = SystemIconThemesRoot();
+            AssetCleanup.RequireAvailable(root);
+            ResourceAssetCleanupPlan.RequireNoLinks(root);
+            if (!Directory.Exists(root)) throw new IOException("System Icon Themes directory is unavailable; no records were changed.");
+            var existing = _iconThemeRepository.QueryAll(connection).ToDictionary(row => row.Id, StringComparer.Ordinal);
+            var discovered = new Dictionary<string, IconThemeRecord>(StringComparer.Ordinal);
+            foreach (var directory in Directory.EnumerateDirectories(root)
+                         .Where(directory => !Path.GetFileName(directory).StartsWith(".", StringComparison.Ordinal)
+                             && !Path.GetFileName(directory).StartsWith("_", StringComparison.Ordinal)))
+            {
+                ResourceAssetCleanupPlan.RequireNoLinks(directory);
+                var manifestPath = Path.Combine(directory, "manifest.json");
+                ResourceAssetCleanupPlan.RequireNoLinks(manifestPath);
+                var manifest = IconThemeImportDocument.Read(File.ReadAllText(manifestPath));
+                var assetRoot = NormalizeRelativePath(Path.GetRelativePath(_systemAssets.Root, directory));
+                var row = existing.TryGetValue(manifest.Id, out var authored)
+                    ? authored with { AssetRoot = assetRoot }
+                    : new IconThemeRecord(manifest.Id, manifest.Name, assetRoot, manifest.MappingJson, manifest.MetadataJson);
+                if (!discovered.TryAdd(row.Id, row))
+                    throw new InvalidOperationException($"Icon Theme id '{row.Id}' occurs in multiple directories.");
+            }
+            var rows = existing.Values.Where(row => !discovered.ContainsKey(row.Id)).Concat(discovered.Values).ToList();
+            if (rows.Select(row => row.Name).Distinct(StringComparer.Ordinal).Count() != rows.Count
+                || rows.Select(row => row.AssetRoot).Distinct(StringComparer.OrdinalIgnoreCase).Count() != rows.Count)
+                throw new InvalidOperationException("Icon Theme identities conflict with existing names or asset locations.");
+            var missing = rows.Sum(row => IconThemeTokens(row.MappingJson)
+                .Count(token => !File.Exists(Path.Combine(IconThemeAssetDirectory(row.AssetRoot), token.File))));
+            var tokenCount = rows.SelectMany(row => IconThemeTokens(row.MappingJson).Select(token => token.Token))
+                .Distinct(StringComparer.Ordinal).Count();
+            using var transaction = connection.BeginTransaction();
+            foreach (var row in discovered.Values)
+                _iconThemeRepository.UpsertDiscovered(connection, transaction, row.Id, row.Name, row.AssetRoot, row.MappingJson, row.MetadataJson);
+            transaction.Commit();
+            return new IconThemeRefreshResult(rows.Count, tokenCount, missing);
         }
-
-        var discoveredNames = discovered.Select((item) => item.Row.Name).ToHashSet(StringComparer.Ordinal);
-        var rows = existingRows
-            .Where((row) => !discoveredNames.Contains(row.Name))
-            .Concat(discovered.Select((item) => item.Row))
-            .ToList();
-        var tokensBySet = rows.ToDictionary(
-            (row) => row.Id,
-            (row) => IconTokenRules.SvgTokenSet(IconThemeAssetDirectory(row.AssetRoot)));
-        var commonTokens = tokensBySet.Values.FirstOrDefault()?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
-        foreach (var setTokens in tokensBySet.Values.Skip(1))
-        {
-            commonTokens.IntersectWith(setTokens);
-        }
-
-        var allTokens = tokensBySet.Values.SelectMany((set) => set).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var mappings = rows.ToDictionary(
-            (row) => row.Id,
-            (row) => BuildIconThemeMapping(row.MappingJson, commonTokens).ToJsonString(),
-            StringComparer.Ordinal);
-        using var transaction = connection.BeginTransaction();
-        foreach (var item in discovered)
-        {
-            _iconThemeRepository.UpsertDiscovered(
-                connection,
-                transaction,
-                item.Row.Id,
-                item.Row.Name,
-                item.Row.AssetRoot,
-                mappings[item.Row.Id],
-                item.MetadataJson);
-        }
-        foreach (var row in existingRows.Where((row) => !discoveredNames.Contains(row.Name)))
-        {
-            _iconThemeRepository.UpdateMapping(
-                connection,
-                transaction,
-                row.Id,
-                mappings[row.Id]);
-        }
-        transaction.Commit();
-
-        return new IconThemeRefreshResult(rows.Count, commonTokens.Count, Math.Max(0, allTokens.Count - commonTokens.Count));
     }
 
     private (IconThemeRecord Row, string File) IconThemeTokenFile(SqliteConnection connection, string iconThemeId, string token)
@@ -301,11 +265,6 @@ internal sealed partial class SqliteResourceOwner
         return (row, file);
     }
 
-    private static JsonObject BuildIconThemeMapping(string currentMappingJson, HashSet<string> commonTokens)
-    {
-        return IconTokenRules.BuildMapping(currentMappingJson, commonTokens);
-    }
-
     private static IReadOnlyList<IconThemeToken> IconThemeTokens(string mappingJson)
     {
         return IconTokenRules.Tokens(mappingJson)
@@ -323,98 +282,8 @@ internal sealed partial class SqliteResourceOwner
         return IconTokenRules.CategoryFromToken(token);
     }
 
-    internal static JsonObject IconThemeMetadata(string directory, string setName)
-    {
-        var manifestPath = Path.Combine(directory, "manifest.json");
-        var metadata = new JsonObject
-        {
-            ["iconSet"] = IconSetDefinitionFromName(setName),
-        };
-        if (!File.Exists(manifestPath)) return metadata;
-
-        try
-        {
-            var manifest = ParseJsonObject(File.ReadAllText(manifestPath));
-            metadata["manifest"] = manifest.DeepClone();
-            metadata["iconSet"] = IconSetDefinition(manifest, setName);
-        }
-        catch (InvalidOperationException)
-        {
-            // A malformed manifest should not block refreshing SVG tokens.
-        }
-
-        return metadata;
-    }
-
-    private static JsonObject IconSetDefinition(IconThemeRecord row)
-    {
-        var metadata = ParseJsonObject(row.MetadataJson);
-        return metadata["iconSet"] is JsonObject iconSet
-            ? (JsonObject)iconSet.DeepClone()
-            : throw new InvalidOperationException($"Icon Theme '{row.Id}' metadata has no explicit iconSet contract.");
-    }
-
-    private static JsonObject IconSetDefinition(JsonObject manifest, string fallbackName)
-    {
-        var source = JsonString(manifest, ["source"]);
-        var style = JsonString(manifest, ["style"]);
-        var weight = JsonNumberString(manifest, ["weight"]);
-        var manifestSetName = JsonString(manifest, ["name"]);
-        if (string.IsNullOrWhiteSpace(manifestSetName))
-        {
-            manifestSetName = fallbackName;
-        }
-
-        if (source.Contains("lucide", StringComparison.OrdinalIgnoreCase) || style.Equals("lucide", StringComparison.OrdinalIgnoreCase))
-        {
-            return new JsonObject
-            {
-                ["provider"] = "lucide",
-                ["setName"] = manifestSetName,
-                ["package"] = string.IsNullOrWhiteSpace(source) ? "lucide-static" : source,
-                ["stroke"] = JsonNumberDouble(manifest, ["stroke"], 2),
-                ["fillMode"] = "stroke",
-            };
-        }
-
-        return new JsonObject
-        {
-            ["provider"] = "material",
-            ["setName"] = manifestSetName,
-            ["package"] = string.IsNullOrWhiteSpace(source) ? "material-symbols" : source,
-            ["style"] = string.IsNullOrWhiteSpace(style) ? "rounded" : style,
-            ["weight"] = Math.Max(1, NumericText.Int32(weight, 400)),
-            ["fillMode"] = "filled",
-        };
-    }
-
-    private static JsonObject IconSetDefinitionFromName(string name)
-    {
-        var lower = name.ToLowerInvariant();
-        if (lower.Contains("lucide") || lower.Contains("lucida"))
-        {
-            return new JsonObject
-            {
-                ["provider"] = "lucide",
-                ["setName"] = name,
-                ["package"] = "lucide-static",
-                ["stroke"] = 2,
-                ["fillMode"] = "stroke",
-            };
-        }
-
-        var style = lower.Contains("outlined") ? "outlined" : lower.Contains("sharp") ? "sharp" : "rounded";
-        var weightMatch = Regex.Match(lower, "(100|200|300|400|500|600|700)");
-        return new JsonObject
-        {
-            ["provider"] = "material",
-            ["setName"] = name,
-            ["package"] = "@material-symbols/svg-400",
-            ["style"] = style,
-            ["weight"] = weightMatch.Success ? int.Parse(weightMatch.Value) : 400,
-            ["fillMode"] = "filled",
-        };
-    }
+    private static JsonObject IconSetDefinition(IconThemeRecord row) =>
+        (JsonObject)JsonPath.RequiredObject(IconThemeImportDocument.ValidateMetadata(row.MetadataJson), "iconSet", row.Id).DeepClone();
 
     [GeneratedRegex("^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)*$")]
     private static partial Regex ValidIconTokenRegex();

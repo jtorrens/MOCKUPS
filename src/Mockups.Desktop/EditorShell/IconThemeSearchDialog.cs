@@ -203,7 +203,7 @@ internal sealed class IconThemeSearchDialog
                     ("token", result.Token),
                     ("written", result.WrittenFileCount),
                     ("themes", result.RefreshResult.ThemeCount),
-                    ("common", result.RefreshResult.CommonTokenCount));
+                    ("tokens", result.RefreshResult.TokenCount));
                 EditorModalWindowScope.Close(dialog);
                 await _showInfo("Generate complete", $"Saved “{result.Token}” in {result.WrittenFileCount} set(s). {result.CopiedFileCount} explicit copy/copies for collections without an equivalent.");
                 _reloadAndSelect(node);

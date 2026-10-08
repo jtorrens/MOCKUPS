@@ -214,12 +214,13 @@ internal sealed partial class SqliteResourceOwner
             tokenSets.Add(tokens.Select(pair => pair.Key).ToHashSet(StringComparer.Ordinal));
             files.Add(ResourceAssetCleanupPlan.StoredPath(Path.Combine(row.AssetRoot, file)), System.Text.Encoding.UTF8.GetBytes(source.Svg));
         }
+        var missing = rows.Sum(row => IconThemeTokens(mappings[row.Id]).Count(item =>
+            !files.ContainsKey(ResourceAssetCleanupPlan.StoredPath(Path.Combine(row.AssetRoot, item.File)))
+            && !File.Exists(Path.Combine(IconThemeAssetDirectory(row.AssetRoot), item.File))));
         AssetCleanup.Write(connection, $"Import icon · {token}", _systemAssets.Root, files, transaction =>
         {
             foreach (var (id, mapping) in mappings) _iconThemeRepository.UpdateMapping(connection, transaction, id, mapping);
         });
-        var common = tokenSets[0].ToHashSet(StringComparer.Ordinal);
-        foreach (var set in tokenSets.Skip(1)) common.IntersectWith(set);
-        return new IconThemeRefreshResult(rows.Count, common.Count, tokenSets.SelectMany(set => set).Distinct().Count() - common.Count);
+        return new IconThemeRefreshResult(rows.Count, tokenSets.SelectMany(set => set).Distinct(StringComparer.Ordinal).Count(), missing);
     }
 }

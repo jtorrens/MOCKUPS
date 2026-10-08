@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Threading.Tasks;
@@ -9,6 +10,30 @@ internal sealed class EditorResourceCleanupWorkflow(
     Window owner, IResourceAssetCleanupStore store, EditorOperationCoordinator operations,
     Func<bool> isDark, IEditorShellMessageSink messages)
 {
+    private bool _disposed;
+    private bool _observing;
+
+    public void Observe()
+    {
+        if (_observing) throw new InvalidOperationException("Resource recovery observation is already attached.");
+        _observing = true;
+        store.RecoveryPending += OnRecoveryPending;
+        owner.Closed += OnClosed;
+    }
+
+    private void OnClosed(object? sender, EventArgs args)
+    {
+        _disposed = true;
+        store.RecoveryPending -= OnRecoveryPending;
+        owner.Closed -= OnClosed;
+    }
+
+    private void OnRecoveryPending(ResourceAssetCleanupItem item) => Dispatcher.UIThread.Post(() =>
+    {
+        if (!_disposed) messages.Warning("Resource recovery pending",
+            $"{item.Label}: {item.RecoveryAction} Review Settings → Review resource cleanup.");
+    }, DispatcherPriority.Background);
+
     public async Task Show()
     {
         var dialogs = new EditorDialogService(owner, isDark());

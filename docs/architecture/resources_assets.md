@@ -208,6 +208,25 @@ with the owning font and path identified.
 
 ## Icon Themes
 
+Discovery/refresh is non-destructive. A collection directory carries one
+`manifest.json` import document with `schemaVersion: 1`, stable `id`, explicit
+`name`, complete `mapping` and `metadata` containing the provider `iconSet`.
+The shared document contract validates the input without inferring provider,
+style, weight, token identity or file references from names. Existing records
+retain their SQLite-authored mapping, name and metadata; the manifest is only
+an initial import snapshot, not a second live authority. Its exact id permits
+an unambiguous directory relocation. Duplicate ids/names/paths and malformed
+manifests fail the refresh before committing any records. No current reader
+accepts the retired provider-report manifest format.
+
+Refresh never computes a common filesystem intersection or invents `token.svg`
+references. Missing directories and SVGs remain authored mappings and are
+reported as unavailable, preserving the existing red-square Preview behavior.
+Unlisted files are not implicitly imported. New tokens enter through explicit
+token import, and deleting tokens remains a separate operation. New collection
+imports supply their complete explicit mapping in the manifest; discovery does
+not rewrite other collections to make their token sets match.
+
 An Icon Theme owns one global current mapping document plus metadata. Every
 token maps explicitly to one asset under `assets/system/icon-themes`. The full
 set catalog is shared by every Production: stable Icon Theme ids and token ids
@@ -283,8 +302,9 @@ source through the shared cleanup outbox in that same transaction. A failed
 retirement remains in Settings for explicit retry. Empty directories are
 preserved. The stable id is retained on rename and new on duplicate; mappings
 and explicit provider metadata are preserved, with only name fields changed.
-An optional manifest must be valid when present; malformed content fails before
-any write. Invalid directory names and occupied or overlapping destinations
+A required identity manifest must be valid and match the source id before any
+write. Rename and duplication export a current import snapshot from SQLite;
+duplication assigns its new id to that snapshot. Invalid directory names and occupied or overlapping destinations
 fail explicitly. Case-only aliases require a distinct intermediate name; they
 are never implemented with an unjournaled temporary move.
 
@@ -322,6 +342,12 @@ an unavailable root remains pending rather than being treated as completion.
 The repository owns SQL, the resource service owns file policy, and a narrow
 cleanup port exposes pending jobs and explicit retries to the editor. The shell
 only wires the shared settings action.
+
+All resource file operations share the same pending-recovery notification, not
+delete-only warnings. A committed change with pending cleanup is a warning,
+not a failed save; an uncommitted write explicitly reports pending restoration.
+The workflow queues UI notices independently of persistence and detaches at
+window close. Its Settings action remains the only explicit retry route.
 
 A behavior or Preview change that alters icons, fonts, media, wallpaper or
 seeded Theme/Component data commits every required asset and the parity

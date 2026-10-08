@@ -66,10 +66,8 @@ internal sealed class IconThemeRepository : IIconThemeRepository
             """
             INSERT INTO icon_themes (id, name, asset_root, mapping_json, metadata_json)
             VALUES ($id, $name, $assetRoot, $mappingJson, $metadataJson)
-            ON CONFLICT(name) DO UPDATE SET
-              asset_root = excluded.asset_root,
-              mapping_json = excluded.mapping_json,
-              metadata_json = excluded.metadata_json
+            ON CONFLICT(id) DO UPDATE SET
+              asset_root = excluded.asset_root
             """,
             ("$id", id),
             ("$name", name),
@@ -157,7 +155,7 @@ internal sealed class IconThemeRepository : IIconThemeRepository
             SqliteCommandExecutor.ReadString(reader, 3),
             SqliteCommandExecutor.ReadString(reader, 4));
         JsonPath.ParseRequiredObject(record.MappingJson, $"Icon Theme '{record.Id}' mapping_json");
-        JsonPath.ParseRequiredObject(record.MetadataJson, $"Icon Theme '{record.Id}' metadata_json");
+        IconThemeImportDocument.ValidateMetadata(record.MetadataJson);
         return record;
     }
 }

@@ -9,6 +9,21 @@ internal sealed class ResourceAssetCleanupService(
     Func<SqliteConnection, ResourceAssetCleanupPlan, bool> isReferenced) : IResourceAssetCleanupStore
 {
     private readonly ResourceAssetCleanupRepository _repository = new(context);
+    public event Action<ResourceAssetCleanupItem>? RecoveryPending;
+
+    private void ReportPending(ResourceAssetCleanupItem item)
+    {
+        if (RecoveryPending is not { } subscribers) return;
+        foreach (Action<ResourceAssetCleanupItem> subscriber in subscribers.GetInvocationList())
+        {
+            try { subscriber(item); }
+            catch (Exception exception)
+            {
+                // Observer failure cannot change the result of a durable write.
+                System.Diagnostics.Trace.TraceError("Resource recovery observer failed: {0}", exception);
+            }
+        }
+    }
 
     internal void TransferDirectory(SqliteConnection connection, string label, string root,
         string source, string destination, bool retireSource,
@@ -185,6 +200,9 @@ internal sealed class ResourceAssetCleanupService(
         {
             try { _repository.FailedWrite(connection, plan.Id, exception.Message); }
             catch (SqliteException) { }
+            ReportPending(new(plan.Id, plan.Label, string.Join(Environment.NewLine, plan.Paths), exception.Message,
+                plan.Committed ? "The write was committed; recovery-data cleanup remains pending."
+                    : "The write was not committed; restoration of the original files remains pending."));
             return false;
         }
     }
@@ -206,6 +224,8 @@ internal sealed class ResourceAssetCleanupService(
             // Do not turn a committed record deletion into a false failure result.
             try { _repository.Failed(connection, plan.Id, exception.Message); }
             catch (SqliteException) { }
+            ReportPending(new(plan.Id, plan.Label, ResourceAssetCleanupPlan.ContainedPath(plan.Root, plan.Target), exception.Message,
+                "The resource change was committed; cleanup of retired files remains pending."));
             return false;
         }
     }

@@ -127,6 +127,8 @@ var tests = new (string Name, Action Run)[]
     ("Resource write recovery is explicit durable and preserves external edits", ResourceWriteRecoveryIsSafe),
     ("Resource directory transfers share rollback and retirement for fonts and icons", ResourceDirectoryTransfersAreRecoverable),
     ("Icon Theme rename and duplication preserve identities metadata and files", IconThemeTransfersPreserveContract),
+    ("Icon Theme refresh preserves authored records and imports by exact identity", IconThemeRefreshPreservesAuthoredRecords),
+    ("Resource pending recovery has one lifetime-bound UI notification", ResourceRecoveryNotificationIsShared),
     ("Production Font file documents reject filtered or inferred values", ProductionFontFileDocumentsAreStrict),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFocusedContract),
     ("generated fill SVG previews preserve their filled geometry", GeneratedFillSvgPreviewsPreserveGeometry),
@@ -13961,6 +13963,148 @@ static void ThemeRepositoryPreservesFocusedContract()
     }
 }
 
+static void IconThemeRefreshPreservesAuthoredRecords()
+{
+    var root = Path.Combine(OperatingSystem.IsMacOS() ? "/private/tmp" : Path.GetTempPath(), $"mockups-icon-refresh-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var path = Path.Combine(root, "project.sqlite");
+        File.Copy(ParityDatabasePath(), path);
+        var database = new SqliteProjectTestContext(path);
+        var context = database.Context;
+        using var connection = context.OpenConnection();
+        var system = Path.Combine(root, "system");
+        var resources = new SqliteResourceOwner(context, database.Production.ProjectEpisodeRepository,
+            database.Production.ModuleInstanceThemeContextService, new SystemAssetPathResolver(system));
+        var repository = resources.IconThemeRepository;
+        var rows = repository.QueryAll(connection);
+        foreach (var row in rows)
+        {
+            var directory = Path.Combine(system, row.AssetRoot);
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(Path.Combine(directory, "manifest.json"), new IconThemeImportDocument(
+                row.Id, row.Name, row.MappingJson, row.MetadataJson).ToJson());
+        }
+        // Exercise both providers, with explicit files unrelated to token names.
+        foreach (var row in rows.Where(r => r.Name is "lucide-basic" or "material-rounded-basic"))
+        {
+            var mapping = JsonPath.ParseRequiredObject(row.MappingJson, "test");
+            var token = mapping["tokens"]!.AsObject().First();
+            token.Value!["file"] = "custom-file.svg";
+            repository.UpdateMapping(connection, row.Id, mapping.ToJsonString());
+            File.WriteAllText(Path.Combine(system, row.AssetRoot, "custom-file.svg"), "svg");
+            File.WriteAllText(Path.Combine(system, row.AssetRoot, "unlisted.svg"), "unlisted");
+        }
+        rows = repository.QueryAll(connection);
+        var result = resources.RefreshIconThemeSetsForTheme(rows[0].Id);
+        True(result.MissingFileCount > 0);
+        SequenceEqual(rows, repository.QueryAll(connection));
+
+        var selected = rows[0];
+        var directoryPath = Path.Combine(system, selected.AssetRoot);
+        var moved = Path.Combine(system, "icon-themes", "renamed-externally");
+        Directory.Move(directoryPath, moved);
+        // An import snapshot can be older than SQLite; it is not an override.
+        var stale = new IconThemeImportDocument(selected.Id, "Not the authored name",
+            "{\"schemaVersion\":1,\"tokens\":{},\"categories\":{}}", selected.MetadataJson);
+        File.WriteAllText(Path.Combine(moved, "manifest.json"), stale.ToJson());
+        resources.RefreshIconThemeSetsForTheme(selected.Id);
+        Equal(selected with { AssetRoot = "icon-themes/renamed-externally" }, repository.Get(connection, selected.Id));
+        var offline = Path.Combine(root, "offline");
+        Directory.Move(moved, offline);
+        rows = repository.QueryAll(connection);
+        resources.RefreshIconThemeSetsForTheme(selected.Id);
+        SequenceEqual(rows, repository.QueryAll(connection));
+        Directory.Move(offline, moved);
+
+        var addedPath = Path.Combine(system, "icon-themes", "new-directory");
+        Directory.CreateDirectory(addedPath);
+        var added = new IconThemeImportDocument("explicit-new-id", "Explicit collection", selected.MappingJson, selected.MetadataJson);
+        File.WriteAllText(Path.Combine(addedPath, "manifest.json"), added.ToJson());
+        context.ExecuteScript(connection, "CREATE TRIGGER reject_discovery BEFORE INSERT ON icon_themes WHEN NEW.id='explicit-new-id' BEGIN SELECT RAISE(ABORT,'injected discovery failure'); END;");
+        Throws<SqliteException>(() => resources.RefreshIconThemeSetsForTheme(selected.Id));
+        SequenceEqual(rows, repository.QueryAll(connection));
+        context.ExecuteScript(connection, "DROP TRIGGER reject_discovery;");
+        resources.RefreshIconThemeSetsForTheme(selected.Id);
+        Equal(added.MappingJson, repository.Get(connection, added.Id).MappingJson);
+        Equal(added.MetadataJson, repository.Get(connection, added.Id).MetadataJson);
+        rows = repository.QueryAll(connection);
+        File.WriteAllText(Path.Combine(addedPath, "manifest.json"), stale.ToJson());
+        Throws<InvalidOperationException>(() => resources.RefreshIconThemeSetsForTheme(selected.Id));
+        SequenceEqual(rows, repository.QueryAll(connection));
+        File.WriteAllText(Path.Combine(addedPath, "manifest.json"), "{\"name\":\"legacy\"}");
+        Throws<InvalidOperationException>(() => resources.RefreshIconThemeSetsForTheme(selected.Id));
+        SequenceEqual(rows, repository.QueryAll(connection));
+        File.WriteAllText(Path.Combine(addedPath, "manifest.json"), added.ToJson());
+        var link = Path.Combine(system, "icon-themes", "linked");
+        Directory.CreateSymbolicLink(link, addedPath);
+        Throws<IOException>(() => resources.RefreshIconThemeSetsForTheme(selected.Id));
+        SequenceEqual(rows, repository.QueryAll(connection));
+        Throws<InvalidOperationException>(() => IconTokenRules.Tokens("{}"));
+        Throws<InvalidOperationException>(() => IconThemeImportDocument.ValidateMetadata("{\"iconSet\":{\"provider\":\"unknown\"}}"));
+    }
+    finally { SqliteConnection.ClearAllPools(); Directory.Delete(root, true); }
+}
+
+static void ResourceRecoveryNotificationIsShared()
+{
+    var root = Path.Combine(OperatingSystem.IsMacOS() ? "/private/tmp" : Path.GetTempPath(), $"mockups-resource-notice-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var path = Path.Combine(root, "project.sqlite");
+        File.Copy(ParityDatabasePath(), path);
+        var context = new SqliteProjectContext(path);
+        using var connection = context.OpenConnection();
+        var service = new ResourceAssetCleanupService(context, (_, _) => true);
+        var notices = new List<ResourceAssetCleanupItem>();
+        service.RecoveryPending += _ => throw new InvalidOperationException("Broken observer");
+        service.RecoveryPending += notices.Add;
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = new Window();
+            var messages = new RecordingMessageSink();
+            using var operations = new EditorOperationCoordinator();
+            var workflow = new EditorResourceCleanupWorkflow(window, service, operations, () => true, messages);
+            workflow.Observe();
+            window.Show();
+            foreach (var extension in new[] { "ttf", "svg" })
+            {
+                var file = "notice." + extension;
+                File.WriteAllText(Path.Combine(root, file), "original");
+                var plan = ResourceAssetCleanupPlan.Capture(extension, root, file, false);
+                Equal(1, Task.Run(() => service.Commit(connection, [plan], _ => { })).GetAwaiter().GetResult().PendingCleanupCount);
+            }
+            Dispatcher.UIThread.RunJobs();
+            Equal(2, messages.Warnings.Count);
+            True(messages.Warnings.All(text => text.Contains("committed", StringComparison.Ordinal)));
+            context.ExecuteScript(connection, "CREATE TRIGGER retain_notice BEFORE DELETE ON resource_asset_writes BEGIN SELECT RAISE(ABORT,'retain recovery'); END;");
+            Task.Run(() => service.Write(connection, "Saved import", root, new Dictionary<string, byte[]> { ["import.svg"] = [1] }, _ => { })).GetAwaiter().GetResult();
+            Dispatcher.UIThread.RunJobs();
+            Equal(3, messages.Warnings.Count);
+            True(File.Exists(Path.Combine(root, "import.svg")));
+            context.ExecuteScript(connection, "DROP TRIGGER retain_notice;");
+            Throws<IOException>(() => service.Write(connection, "Failed import", root,
+                new Dictionary<string, byte[]> { ["failed.svg"] = [1] }, _ =>
+                {
+                    File.WriteAllText(Path.Combine(root, "failed.svg"), "external edit");
+                    throw new InvalidOperationException("injected SQL failure");
+                }));
+            Dispatcher.UIThread.RunJobs();
+            Equal(4, messages.Warnings.Count);
+            True(messages.Warnings[3].Contains("not committed", StringComparison.Ordinal));
+            window.Close();
+            service.Retry(notices[0].Id);
+            Dispatcher.UIThread.RunJobs();
+            Equal(4, messages.Warnings.Count);
+            Equal(5, notices.Count);
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally { SqliteConnection.ClearAllPools(); Directory.Delete(root, true); }
+}
+
 static void ResourceDirectoryTransfersAreRecoverable()
 {
     var root = Path.Combine(OperatingSystem.IsMacOS() ? "/private/tmp" : Path.GetTempPath(), $"mockups-resource-transfer-{Guid.NewGuid():N}");
@@ -14060,7 +14204,6 @@ static void IconThemeTransfersPreserveContract()
         var system = Path.Combine(root, "system");
         var directory = Path.Combine(system, "icon-themes", "Original");
         Directory.CreateDirectory(Path.Combine(directory, "empty"));
-        File.WriteAllText(Path.Combine(directory, "manifest.json"), "{\"name\":\"Original\",\"custom\":true}");
         File.WriteAllText(Path.Combine(directory, "probe.svg"), "svg contents");
         var resources = new SqliteResourceOwner(context, database.Production.ProjectEpisodeRepository,
             database.Production.ModuleInstanceThemeContextService, new SystemAssetPathResolver(system));
@@ -14068,6 +14211,8 @@ static void IconThemeTransfersPreserveContract()
         var metadata = JsonPath.ParseRequiredObject(original.MetadataJson, "test");
         metadata["custom"] = "preserved";
         var source = resources.IconThemeRepository.CreateDuplicate(connection, original.Id, "transfer_probe", "Original", "icon-themes/Original", metadata.ToJsonString());
+        File.WriteAllText(Path.Combine(directory, "manifest.json"), new IconThemeImportDocument(
+            source.Id, source.Name, source.MappingJson, source.MetadataJson).ToJson());
         var expectedIconSet = JsonPath.RequiredObject(metadata, "iconSet", "test").DeepClone().AsObject();
         context.ExecuteScript(connection, "CREATE TRIGGER reject_transfer BEFORE UPDATE OF asset_root ON icon_themes BEGIN SELECT RAISE(ABORT,'rename failed'); END;");
         Throws<Microsoft.Data.Sqlite.SqliteException>(() => resources.RenameIconTheme(connection, source, "Renamed"));
@@ -14183,7 +14328,9 @@ static void ResourceImportsRestoreFilesAndMetadata()
             True(resources.GetIconThemeTokens(row.Id).Any(t => t.Token == "import_probe"));
             Equal(svg, File.ReadAllText(Path.Combine(system, row.AssetRoot, "import_probe.svg")));
             var mapping = JsonPath.ParseRequiredObject(resources.GetIconThemeSettings(row.Id).MappingJson, "test");
-            var refreshed = IconTokenRules.BuildMapping(mapping.ToJsonString(), ["import_probe"]);
+            var imported = IconThemeImportDocument.Read(new IconThemeImportDocument(
+                row.Id, row.Name, mapping.ToJsonString(), row.MetadataJson).ToJson());
+            var refreshed = JsonPath.ParseRequiredObject(imported.MappingJson, "test");
             Equal(mapping["tokens"]!["import_probe"]!["sources"]!.ToJsonString(), refreshed["tokens"]!["import_probe"]!["sources"]!.ToJsonString());
             Equal(true, refreshed["tokens"]!["import_probe"]!["copied"]!.GetValue<bool>());
         }
