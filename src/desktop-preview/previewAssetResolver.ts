@@ -26,7 +26,12 @@ interface ResolvedImageAsset {
 }
 
 const videoFrameCache = new Map<string, ResolvedImageAsset>();
-const videoDurationCache = new Map<string, number>();
+interface VideoFrameTimeline {
+  readonly numerator: number;
+  readonly denominator: number;
+  readonly timestamps: readonly number[];
+}
+const videoTimelineCache = new Map<string, VideoFrameTimeline>();
 const videoIdentityByPath = new Map<string, string>();
 const maxVideoFrameCacheEntries = 240;
 const emojiRasterCache = new Map<string, { uri: string; width: number; height: number }>();
@@ -183,25 +188,26 @@ function localMediaFrameUri(fullPath: string, timeSeconds: number): ResolvedImag
 
 function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImageAsset {
   const assetIdentity = currentVideoAssetIdentity(fullPath);
-  const normalizedTime = Math.max(0, Number.isFinite(timeSeconds) ? timeSeconds : 0);
-  const duration = videoDurationSeconds(fullPath, assetIdentity);
-  const effectiveTime =
-    duration > 0 ? Math.min(normalizedTime, Math.max(0, duration - 0.001)) : normalizedTime;
-  const cacheKey = `${assetIdentity}#${effectiveTime.toFixed(3)}`;
+  if (!Number.isFinite(timeSeconds)) throw new Error("Video time must be finite");
+  const normalizedTime = Math.max(0, timeSeconds);
+  const timeline = videoFrameTimeline(fullPath, assetIdentity);
+  const timestamp = videoTimestampAtTime(timeline, normalizedTime);
+  const effectiveTime = (timestamp - timeline.timestamps[0]!) * timeline.numerator / timeline.denominator;
+  const cacheKey = `${assetIdentity}#video-frame-v2:${timestamp}`;
   const cached = videoFrameCache.get(cacheKey);
   if (cached) {
     debugVideoFrame("cache-hit", {
       source: fullPath,
       requested: normalizedTime,
       effective: effectiveTime,
-      duration,
+      timestamp,
       uriChars: cached.uri.length,
     });
     return cached;
   }
 
   try {
-    const framePath = cachedVideoFramePath(assetIdentity, effectiveTime);
+    const framePath = cachedVideoFramePath(cacheKey);
     const hadFrame = existingNonEmptyFile(framePath);
     if (!existingNonEmptyFile(framePath)) {
       mkdirSync(path.dirname(framePath), { recursive: true });
@@ -211,10 +217,17 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImage
           "-hide_banner",
           "-loglevel",
           "error",
+          "-seek_timestamp",
+          "1",
           "-ss",
-          effectiveTime.toFixed(3),
+          videoSeekTime(timeline, timestamp),
           "-i",
           fullPath,
+          "-map",
+          "0:v:0",
+          "-an",
+          "-sn",
+          "-dn",
           "-frames:v",
           "1",
           "-q:v",
@@ -233,7 +246,7 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImage
         source: fullPath,
         requested: normalizedTime,
         effective: effectiveTime,
-        duration,
+        timestamp,
         framePath,
       });
       return unavailableMedia(
@@ -248,7 +261,7 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImage
         source: fullPath,
         requested: normalizedTime,
         effective: effectiveTime,
-        duration,
+        timestamp,
         framePath,
         bytes: fileSize(framePath),
       });
@@ -263,7 +276,7 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImage
       source: fullPath,
       requested: normalizedTime,
       effective: effectiveTime,
-      duration,
+      timestamp,
       framePath,
       bytes: fileSize(framePath),
       uriChars: frame.uri.length,
@@ -275,7 +288,7 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImage
       source: fullPath,
       requested: normalizedTime,
       effective: effectiveTime,
-      duration,
+      timestamp,
       error: message,
     });
     return unavailableMedia(
@@ -286,40 +299,60 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImage
 }
 
 
-function videoDurationSeconds(fullPath: string, assetIdentity: string) {
-  const cached = videoDurationCache.get(assetIdentity);
+function videoFrameTimeline(fullPath: string, assetIdentity: string): VideoFrameTimeline {
+  const cached = videoTimelineCache.get(assetIdentity);
   if (cached !== undefined) return cached;
-
-  try {
-    const output = execFileSync(
-      ffprobeExecutable(),
-      [
-        "-v",
-        "error",
-        "-show_entries",
-        "format=duration",
-        "-of",
-        "default=noprint_wrappers=1:nokey=1",
-        fullPath,
-      ],
-      {
-        encoding: "utf8",
-        maxBuffer: 1024 * 1024,
-        timeout: 5000,
-      },
-    );
-    const duration = Number.parseFloat(output.trim());
-    const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0;
-    videoDurationCache.set(assetIdentity, safeDuration);
-    return safeDuration;
-  } catch {
-    videoDurationCache.set(assetIdentity, 0);
-    return 0;
+  // Decode the selected video timeline once. Container/audio duration and nominal FPS
+  // cannot identify actual display frames (in particular for VFR and the final frame).
+  const output = execFileSync(ffprobeExecutable(), [
+    "-v", "error", "-select_streams", "v:0",
+    "-show_entries", "stream=time_base:frame=best_effort_timestamp", "-of", "json", fullPath,
+  ], { encoding: "utf8", maxBuffer: 32 * 1024 * 1024, timeout: 30000 });
+  const document = parseObject(output, "Video frame timeline");
+  if (!Array.isArray(document.streams) || document.streams.length !== 1
+    || !Array.isArray(document.frames) || document.frames.length === 0) {
+    throw new Error("Video requires one selected stream and a nonempty frame timeline");
   }
+  const timeBase = requiredString(document.streams[0], "time_base", "Video time base");
+  if (!/^\d+\/\d+$/.test(timeBase)) throw new Error("Invalid video time base");
+  const [numerator, denominator] = timeBase.split("/").map(Number) as [number, number];
+  if (![numerator, denominator].every(value => Number.isSafeInteger(value) && value > 0))
+    throw new Error("Invalid video time base");
+  const timestamps = document.frames.map((frame, index) => {
+    const timestamp = requiredNumberValue(frame?.best_effort_timestamp, `Video frame ${index} timestamp`);
+    if (!Number.isSafeInteger(timestamp)) throw new Error("Invalid video frame timestamp");
+    return timestamp;
+  });
+  if (timestamps.some((timestamp, index) => index > 0 && timestamp <= timestamps[index - 1]!))
+    throw new Error("Video frame timestamps must increase strictly");
+  const timeline = Object.freeze({ numerator, denominator, timestamps: Object.freeze(timestamps) });
+  videoTimelineCache.set(assetIdentity, timeline);
+  return timeline;
 }
 
-function cachedVideoFramePath(assetIdentity: string, timeSeconds: number) {
-  const key = `${assetIdentity}#${timeSeconds.toFixed(3)}`;
+function videoTimestampAtTime(timeline: VideoFrameTimeline, timeSeconds: number) {
+  const { timestamps, numerator, denominator } = timeline;
+  let low = 0;
+  let high = timestamps.length;
+  while (low + 1 < high) {
+    const middle = Math.floor((low + high) / 2);
+    const start = (timestamps[middle]! - timestamps[0]!) * numerator / denominator;
+    if (start <= timeSeconds) low = middle;
+    else high = middle;
+  }
+  return timestamps[low]!;
+}
+
+function videoSeekTime(timeline: VideoFrameTimeline, timestamp: number) {
+  // FFmpeg seeks in microseconds. Round down in the exact time base, never past
+  // the selected frame. Absolute timestamps also keep container/audio origins out.
+  const ticks = BigInt(timestamp) * BigInt(timeline.numerator) * 1000000n;
+  const divisor = BigInt(timeline.denominator);
+  const microseconds = ticks / divisor - (ticks < 0n && ticks % divisor !== 0n ? 1n : 0n);
+  return (Number(microseconds) / 1000000).toFixed(6);
+}
+
+function cachedVideoFramePath(key: string) {
   const hash = createHash("sha1").update(key).digest("hex");
   return path.join(os.tmpdir(), "mockups-video-frames", `${hash}.jpg`);
 }
@@ -330,7 +363,7 @@ function currentVideoAssetIdentity(fullPath: string) {
   const identity = `${normalizedPath}|${stats.size}|${stats.mtimeMs}|${stats.ctimeMs}`;
   const previousIdentity = videoIdentityByPath.get(normalizedPath);
   if (previousIdentity && previousIdentity !== identity) {
-    videoDurationCache.delete(previousIdentity);
+    videoTimelineCache.delete(previousIdentity);
     for (const key of videoFrameCache.keys()) {
       if (key.startsWith(`${previousIdentity}#`)) videoFrameCache.delete(key);
     }

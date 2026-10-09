@@ -66,8 +66,20 @@ resolves relative paths only against the exact Project root and absolute paths
 at their authored location. It never searches the working directory or removes
 a duplicated root prefix. Missing media paints `Media ausente`; an extraction or
 read failure paints `Error al leer media`, with a nonblocking diagnostic. A video
-frame cache is keyed by asset identity and exact requested time; extraction
-failure cannot reuse a frame from another time. Media and image wallpaper use
+frame cache is keyed by asset identity and the exact selected video timestamp;
+extraction failure cannot reuse a frame from another time. The shared video
+asset owner indexes the display timestamps and time base of stream `v:0` once
+per file revision. Media time starts at that stream's first display frame and
+selects the frame whose display interval contains it. Before the beginning it
+holds the first frame; at and beyond the end it holds the actual last frame.
+This selection is independent of request order, earlier cache contents,
+container/audio duration and nominal frame rate. Audio is not decoded or used
+to determine video time. Variable-rate, fractional-rate and nonzero-origin
+videos follow the same path. Extraction seeks the selected absolute timestamp
+without rounding past it; old time-rounded cache entries are not reused.
+Missing/invalid frame metadata fails with the same nonblocking read notice,
+never a guessed duration. A genuine black source frame remains black.
+Media and image wallpaper use
 the same notice primitive. Empty or unavailable Gallery directories produce a
 notice, not another directory's contents. These notices remain in exports.
 
