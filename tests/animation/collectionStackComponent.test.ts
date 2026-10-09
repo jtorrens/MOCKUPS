@@ -8,9 +8,10 @@ import type { CollectionStackDesignContract } from "../../src/desktop-preview/co
 import { resolveCollectionStackComponent } from "../../src/desktop-preview/collectionStackComponentResolver.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { withAuthoringTarget } from "../../src/desktop-preview/previewAuthoringTarget.js";
+import { prepareRuntimePreviewPayload } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
 import type { RenderableBox, RenderableNode } from "../../src/visual/renderable/types.js";
 
-const payload: DesignPreviewPayload = {
+const payload: DesignPreviewPayload = prepareRuntimePreviewPayload({
   kind: "componentClass",
   componentType: "collectionStack",
   componentBaseConfigsJson: "{}",
@@ -40,7 +41,7 @@ const payload: DesignPreviewPayload = {
       transitions: { slide: { durationMs: 240, delayMs: 0, easing: "linear", intensity: 1 } },
     },
   }),
-};
+});
 
 const items = ["first", "second"].map((id) => ({
   id,

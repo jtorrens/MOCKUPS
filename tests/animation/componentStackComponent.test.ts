@@ -7,6 +7,7 @@ import {
   componentVariantConfig,
   embeddedComponentConfig,
   mergeComponentDefaults,
+  prepareRuntimePreviewPayload,
 } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { withAuthoringTarget } from "../../src/desktop-preview/previewAuthoringTarget.js";
@@ -156,7 +157,7 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
   const references = alternatives
     .map((item) => item.variantReference)
     .filter((value): value is string => typeof value === "string" && value.length > 0);
-  return {
+  return prepareRuntimePreviewPayload({
     kind: "moduleInstance",
     componentType: "componentStack",
     componentBaseConfigsJson: JSON.stringify({
@@ -200,7 +201,7 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
         },
       },
     }),
-  };
+  });
 }
 
 function resolveComponentStackComponent(source: DesignPreviewPayload) {

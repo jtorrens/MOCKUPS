@@ -730,8 +730,11 @@ test("structured collection lifecycle has one generic source owner", () => {
     .sort();
   assert.deepEqual(
     atomicPersistenceCallers,
-    [productionMutationOwner],
-    "a structured collection persistence mutation must write content and animation together",
+    [
+      productionMutationOwner,
+      "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.ScreenWrites.cs",
+    ],
+    "only the Production mutation and shared Screen transaction owner may persist content and animation together",
   );
 });
 

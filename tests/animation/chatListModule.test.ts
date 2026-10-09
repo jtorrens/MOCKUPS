@@ -5,6 +5,7 @@ import Database from "better-sqlite3";
 
 import { chatListModuleToRenderable } from "../../src/desktop-preview/chatListModuleRenderable.js";
 import { resolveChatListModule } from "../../src/desktop-preview/chatListModuleResolver.js";
+import { prepareRuntimePreviewPayload } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 import type { RenderableNode } from "../../src/visual/renderable/types.js";
 import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
@@ -40,14 +41,14 @@ function fixture() {
     const runtime = JSON.parse(list.designPreviewJson) as Record<string, unknown>;
     runtime.componentType = "module.core.chatList";
     runtime.animationTimeline = persistedRuntime.animationTimeline;
-    return {
+    return prepareRuntimePreviewPayload({
       ...list,
       kind: "module" as const,
       componentType: "module.core.chatList",
       configJson: JSON.stringify(defaultVariant.config),
       designPreviewJson: JSON.stringify(runtime),
       runtimeContractJson: JSON.stringify(runtime),
-    };
+    });
   } finally {
     database.close();
   }

@@ -630,7 +630,8 @@ static void DesignPreviewSessionConsumesPreparedValues()
 {
     var sessionType = typeof(ComponentPreviewInputSession);
     True(sessionType.GetConstructors().SelectMany(constructor => constructor.GetParameters())
-        .All(parameter => typeof(Delegate).IsAssignableFrom(parameter.ParameterType)));
+        .All(parameter => typeof(Delegate).IsAssignableFrom(parameter.ParameterType)
+            || parameter.ParameterType == typeof(PreviewPlaybackState)));
     var visited = new HashSet<Type>();
     void RequireNoPersistenceCapability(Type type)
     {
@@ -4405,7 +4406,7 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
             JsonPath.RequiredArray(iosRuntime, "avatarRuntime", "Incoming Call Runtime"),
             "Incoming Call Avatar Runtime")
         .Single();
-    Equal("avatar", JsonPath.RequiredString(avatarRuntime, "id", "Incoming Call Avatar Runtime"));
+    Equal("item_afd797ad7e5c4a18a05929b2cb883d29", JsonPath.RequiredString(avatarRuntime, "id", "Incoming Call Avatar Runtime"));
     var avatarInputs = JsonPath.RequiredObject(
         avatarRuntime,
         "runtimeInputs",
@@ -4423,7 +4424,7 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
             JsonPath.RequiredArray(iosRuntime, "iconRowRuntime", "Incoming Call Runtime"),
             "Incoming Call Icon Row Runtime")
         .Single();
-    Equal("iconRow", JsonPath.RequiredString(iconRowRuntime, "id", "Incoming Call Icon Row Runtime"));
+    Equal("item_759f71d5c6374b3bae6f071434d56958", JsonPath.RequiredString(iconRowRuntime, "id", "Incoming Call Icon Row Runtime"));
     var buttonInputs = JsonPath.RequiredArray(
         JsonPath.RequiredObject(iconRowRuntime, "runtimeInputs", "Incoming Call Icon Row Runtime"),
         "buttonInputs",
@@ -4908,13 +4909,14 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  (typeof(EditorFieldPostCommitEffects), "ApplyAsync"),
              })
     {
-        var method = writerType.GetMethod(
-            methodName,
+        var methods = writerType.GetMethods(
             BindingFlags.Instance
             | BindingFlags.Public
-            | BindingFlags.NonPublic);
-        True(method is not null);
-        True(typeof(Task).IsAssignableFrom(method!.ReturnType));
+            | BindingFlags.NonPublic)
+            .Where(method => method.Name == methodName)
+            .ToArray();
+        True(methods.Length > 0);
+        True(methods.All(method => typeof(Task).IsAssignableFrom(method.ReturnType)));
     }
 
     True(typeof(RuntimeInputInstanceDocumentStore).GetMethod(
@@ -5391,7 +5393,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
         using var session = HeadlessUnitTestSession.StartNew(
             typeof(HeadlessTestApplication));
         session.Dispatch(
-            () =>
+            async () =>
             {
                 var window = CreateTestWindow(temporary);
                 window.Width = PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth;
@@ -5418,21 +5420,17 @@ static void FlatVariantOverridesUseRestoreSemantics()
                     EditorNodeSelectionState.EditorNodeForSelection(
                         variant);
 
-                var baseline = content.PrepareOverridesAsync(
+                var baseline = await content.PrepareOverridesAsync(
                         layoutNode,
-                        variant)
-                    .GetAwaiter()
-                    .GetResult();
+                        variant);
                 database.UpdateComponentVariantField(
                     variant,
                     "component.notification.padding",
                     "theme.spacing.xl|theme.spacing.l");
                 var afterDirectVariantField =
-                    content.PrepareOverridesAsync(
+                    await content.PrepareOverridesAsync(
                             layoutNode,
-                            variant)
-                        .GetAwaiter()
-                        .GetResult();
+                            variant);
                 Equal(
                     baseline.Count,
                     afterDirectVariantField.Count);
@@ -5447,11 +5445,9 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         "component.surface.backgroundColorToken",
                         "theme.colors.card");
                 var afterLocalOverride =
-                    content.PrepareOverridesAsync(
+                    await content.PrepareOverridesAsync(
                             layoutNode,
-                            variant)
-                        .GetAwaiter()
-                        .GetResult();
+                            variant);
                 Equal(
                     baseline.Count + 1,
                     afterLocalOverride.Count);
@@ -5490,12 +5486,10 @@ static void FlatVariantOverridesUseRestoreSemantics()
                     iconRowVariant,
                     "component.iconRow.items",
                     iconSlots.ToJsonString());
-                var iconProjection = content.PrepareOverridesAsync(
+                var iconProjection = await content.PrepareOverridesAsync(
                         EditorNodeSelectionState
                             .EditorNodeForSelection(iconRowVariant),
-                        iconRowVariant)
-                    .GetAwaiter()
-                    .GetResult();
+                        iconRowVariant);
                 True(iconProjection.Groups.Any((group) =>
                     group.PathLabel.Contains(
                         "Button Decline",
@@ -5536,12 +5530,10 @@ static void FlatVariantOverridesUseRestoreSemantics()
                     contentRowVariant,
                     "component.contentRow.slots",
                     contentSlots.ToJsonString());
-                var contentRowProjection = content.PrepareOverridesAsync(
+                var contentRowProjection = await content.PrepareOverridesAsync(
                         EditorNodeSelectionState.EditorNodeForSelection(
                             contentRowVariant),
-                        contentRowVariant)
-                    .GetAwaiter()
-                    .GetResult();
+                        contentRowVariant);
                 True(contentRowProjection.Groups.Any((group) =>
                     group.PathLabel.Contains("Label", StringComparison.Ordinal)
                     && group.OverrideFieldIds.Contains(
@@ -5555,13 +5547,11 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         == "component.listItem"
                     && node.Name == "Calls");
                 var listItemProjection =
-                    content.PrepareOverridesAsync(
+                    await content.PrepareOverridesAsync(
                             EditorNodeSelectionState
                                 .EditorNodeForSelection(
                                     listItemVariant),
-                            listItemVariant)
-                        .GetAwaiter()
-                        .GetResult();
+                            listItemVariant);
 
                 window.Show();
                 var shell = Required(
@@ -5853,13 +5843,11 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         TimeSpan.FromSeconds(15)))
                 {
                     var currentProjection =
-                        content.PrepareOverridesAsync(
+                        await content.PrepareOverridesAsync(
                                 EditorNodeSelectionState
                                     .EditorNodeForSelection(
                                         listItemVariant),
-                                listItemVariant)
-                            .GetAwaiter()
-                            .GetResult();
+                                listItemVariant);
                     var priorFields = listItemProjection.Groups
                         .SelectMany((group) =>
                             group.OverrideFieldIds)
@@ -5874,13 +5862,11 @@ static void FlatVariantOverridesUseRestoreSemantics()
 
                 Equal(
                     listItemProjection.Count - 1,
-                    content.PrepareOverridesAsync(
+                    (await content.PrepareOverridesAsync(
                             EditorNodeSelectionState
                                 .EditorNodeForSelection(
                                     listItemVariant),
-                            listItemVariant)
-                        .GetAwaiter()
-                        .GetResult()
+                            listItemVariant))
                         .Count);
                 window.Close();
             },
@@ -6753,7 +6739,9 @@ static void EditorViewStateSurvivesRealNavigation()
                     window.Measure(size);
                     window.Arrange(new Rect(size));
                     Dispatcher.UIThread.RunJobs();
-                    if (editorContent.Cards.All((card) =>
+                    if (!Required(window.FindControl<EditorLoadingScrim>("EditorSelectionLoadingScrim")).IsVisible
+                        && editorContent.Cards.Count > 0
+                        && editorContent.Cards.All((card) =>
                             card.SessionStateId != "editor:loading"))
                     {
                         return;
@@ -9070,7 +9058,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             Equal("true", RequiredField(listSurface, "present").Value);
             Equal(1, ActionButtons(listSurface, "Play Presence").Count);
             Equal(1, ActionButtons(listSurface, "Restore Presence").Count);
-            Equal("list_item_diana_set_a", RequiredField(listSurface, "activeSet").Value);
+            Equal("item_1609efa0d71143019f382726743fa66a", RequiredField(listSurface, "activeSet").Value);
             Equal("normal", RequiredField(listSurface, "state").Value);
             Equal(0, listSurface.GetVisualDescendants()
                 .OfType<DictionaryFieldControl>()
@@ -11163,13 +11151,13 @@ static void ConversationPreviewTargetsExactIconRowItems()
             "data-preview-authoring-focus-field-id=\"component.iconRow.items\"",
             StringComparison.Ordinal));
         True(html.Contains(
-            "data-preview-authoring-focus-item-id=\"button_attachment\"",
+            "data-preview-authoring-focus-item-id=\"item_8e31a1df26d1409f884c6f1de8128a10\"",
             StringComparison.Ordinal));
         True(html.Contains(
             "data-preview-authoring-slot-field-ids=\"[&quot;module.core.chat.headerRightIconRow.editor&quot;]\"",
             StringComparison.Ordinal));
         True(html.Contains(
-            "data-preview-authoring-focus-item-id=\"button_001\"",
+            "data-preview-authoring-focus-item-id=\"item_dd466805c6484b728e4b02264b463518\"",
             StringComparison.Ordinal));
     }
     finally
@@ -16768,7 +16756,7 @@ static void AppModuleRepositoryPreservesFocusedContract()
         preview["repositoryTest"] = true;
         repository.UpdateModuleDesignPreview(module.Id, preview.ToJsonString());
         Equal(preview.ToJsonString(), database.GetModuleSettings(module.Id).DesignPreviewJson);
-        database.UpdateModuleDesignPreviewJson(module.Id, module.DesignPreviewJson);
+        repository.UpdateModuleDesignPreview(module.Id, module.DesignPreviewJson);
 
         var renamedApp = database.RenameDirectNode(appNode, "Repository App");
         Equal("Repository App", repository.GetApp(app.Id).Name);
@@ -16822,7 +16810,7 @@ static void ComponentClassRepositoryPreservesFocusedContract()
         preview["repositoryTest"] = true;
         repository.UpdateDesignPreview(original.Id, preview.ToJsonString());
         Equal(preview.ToJsonString(), database.GetComponentClassSettings(original.Id).DesignPreviewJson);
-        database.UpdateComponentClassDesignPreviewJson(original.Id, original.DesignPreviewJson);
+        repository.UpdateDesignPreview(original.Id, original.DesignPreviewJson);
 
         var config = JsonPath.ParseRequiredObject(original.ConfigJson, $"Component class '{original.Id}' config_json");
         config["repositoryTest"] = true;
@@ -16986,7 +16974,9 @@ static void ModuleInstanceRepositoryPreservesFocusedContract()
                 duplicateName,
                 repository.NextSortOrder(connection, original.ShotId));
             Equal(original.ModuleId, duplicate.ModuleId);
-            Equal(original.ContentJson, duplicate.ContentJson);
+            True(JsonNode.DeepEquals(
+                JsonNode.Parse(original.ContentJson),
+                JsonNode.Parse(duplicate.ContentJson)));
             repository.Delete(connection, duplicate.Id);
             Throws<InvalidOperationException>(() => repository.Get(connection, duplicate.Id));
         }
@@ -22305,12 +22295,12 @@ static void ModuleVariantsAreExplicit()
         {
             connection.Open();
             using var command = connection.CreateCommand();
-            command.CommandText = "UPDATE module_instances SET content_json = json_set(content_json, '$.orphan', 'remove me') WHERE id = $id";
+            command.CommandText = "UPDATE module_instances SET content_json = json_set(content_json, '$.orphan', 'remove me'), animation_json = $animation WHERE id = $id";
             command.Parameters.AddWithValue("$id", screen.Id);
+            command.Parameters.AddWithValue("$animation",
+                "{\"schemaVersion\":2,\"tracks\":[{\"id\":\"orphan-track\",\"fieldId\":\"orphan\",\"keyframes\":[{\"id\":\"orphan-kf\",\"frame\":0,\"value\":true,\"interpolation\":\"hold\",\"enabled\":true}]}]}");
             Equal(1, command.ExecuteNonQuery());
         }
-        database.UpdateModuleInstanceAnimationJson(screen.Id,
-            "{\"schemaVersion\":2,\"tracks\":[{\"id\":\"orphan-track\",\"fieldId\":\"orphan\",\"keyframes\":[{\"id\":\"orphan-kf\",\"frame\":0,\"value\":true,\"interpolation\":\"hold\",\"enabled\":true}]}]}");
         database.UpdateModuleInstanceVariant(screen.Id, android.Id);
         Equal(android.Id, database.GetModuleInstanceVariantReference(screen.Id));
         Equal("dark", JsonNode.Parse(database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson)?["appearanceMode"]?.GetValue<string>());
@@ -25934,6 +25924,8 @@ static void AnimatableFieldVocabularyIsConstrained()
         "badgeContentPaletteColor",
         "iconColorToken",
         "textColorToken",
+        "surfaceTintPaletteColor",
+        "surfaceTintAmount",
     };
     foreach (var message in JsonPath.RequiredArray(
                  preview,
@@ -27758,8 +27750,10 @@ static void KeypadSeedOpensAndRenders()
             database.ProjectPaths,
             () => { });
         inputSession.UpdateForPayload(payload, ProjectId(settings));
-        inputSession.SetExternalInputValue("activeKey", "5");
-        inputSession.SetExternalInputValue("pushedKey", "5");
+        var keyId = keypadConfig["keys"]!.AsArray().OfType<JsonObject>()
+            .Single(key => key["value"]?.GetValue<string>() == "5")["id"]!.GetValue<string>();
+        inputSession.SetExternalInputValue("activeKey", keyId);
+        inputSession.SetExternalInputValue("pushedKey", keyId);
         var resolvedPayload = inputSession.ApplyInputs(payload, "light", ProjectId(settings));
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
@@ -28092,11 +28086,15 @@ static void SocialPostComposesHeaderRows()
         "module.core.socialPost.header.item_d2a1bd7aeb5f49c49501136b62bc4389",
         "module.core.socialPost.footer",
         "module.core.socialPost.footer.item_9df0890d96604176aca0bb0a6e7889e2",
-        "module.core.socialPost.footer.item_1729c03bec80498bb124f253df1c1709",
     })
     {
-        True(html.Contains($"data-renderable-id=\"{renderableId}\"", StringComparison.Ordinal));
+        True(html.Contains($"data-renderable-id=\"{renderableId}\"", StringComparison.Ordinal),
+            $"Missing renderable '{renderableId}'.");
     }
+    // The second footer row has no visible content in this fixture.
+    True(!html.Contains(
+        "data-renderable-id=\"module.core.socialPost.footer.item_1729c03bec80498bb124f253df1c1709\"",
+        StringComparison.Ordinal));
 
     static void AssertContentRowBoundary(JsonObject row, string owner)
     {
