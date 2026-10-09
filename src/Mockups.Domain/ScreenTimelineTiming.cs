@@ -7,6 +7,31 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 public static class ScreenTimelineTiming
 {
+    public static ScreenTimelineFrame ResolveFrame(
+        int shotFrame,
+        int shotDurationFrames,
+        int screenStartFrame,
+        int actionDurationFrames,
+        int transitionFrameCount,
+        int actionDelayFrames,
+        bool clampToScreen)
+    {
+        var extent = EffectiveDurationFrames(actionDurationFrames, transitionFrameCount, actionDelayFrames);
+        var screenFrame = shotFrame - screenStartFrame;
+        if (clampToScreen) screenFrame = Math.Clamp(screenFrame, 0, extent - 1);
+        var actionStart = transitionFrameCount + actionDelayFrames;
+        var actionEnd = actionStart + actionDurationFrames;
+        var phase = shotFrame < 0 || shotFrame >= shotDurationFrames
+            ? "content"
+            : screenFrame < transitionFrameCount ? "enter"
+            : screenFrame >= actionEnd ? "exit" : "content";
+        return new ScreenTimelineFrame(
+            screenFrame,
+            Math.Clamp(screenFrame - actionStart, 0, actionDurationFrames - 1),
+            phase,
+            phase == "enter" ? screenFrame : phase == "exit" ? screenFrame - actionEnd : 0);
+    }
+
     public static int EffectiveTransitionDurationFrames(
         string motionJson,
         int configuredDurationFrames)
@@ -89,3 +114,5 @@ public static class ScreenTimelineTiming
                 latestAuthoredEnd));
     }
 }
+
+public sealed record ScreenTimelineFrame(int ScreenFrame, int ActionFrame, string Phase, int PhaseElapsedFrames);

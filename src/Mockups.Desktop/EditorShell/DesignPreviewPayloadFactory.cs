@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -149,18 +150,10 @@ internal static class DesignPreviewPayloadFactory
             return null;
         }
 
-        var contextNode = node.Kind == ProjectTreeNodeKind.Shot
-            ? dataSource.ActiveShotScreenId(node.Id, timelineFrame) is { Length: > 0 } screenId
-                ? new ProjectTreeNode(
-                    ProjectTreeNodeKind.ModuleInstance,
-                    screenId,
-                    screenId,
-                    "",
-                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance))
-                : null
-            : node;
-        if (contextNode is null) return null;
-        var theme = dataSource.LoadThemeContext(contextNode, themeId);
+        if (node.Kind is ProjectTreeNodeKind.ModuleInstance or ProjectTreeNodeKind.Shot)
+            return PrepareProduction(dataSource, node, themeId, themeMode, timelineFrame, timelineFrame,
+                CancellationToken.None).AtFrame(timelineFrame);
+        var theme = dataSource.LoadThemeContext(node, themeId);
         if (theme is null) return null;
         var payload = node.Kind switch
         {
@@ -168,40 +161,48 @@ internal static class DesignPreviewPayloadFactory
             ProjectTreeNodeKind.ComponentVariant => FromComponentSource(dataSource, dataSource.LoadComponentVariant(node), themeMode, theme),
             ProjectTreeNodeKind.Module => FromModuleSource(dataSource, dataSource.LoadModule(node), themeMode, theme),
             ProjectTreeNodeKind.ModuleVariant => FromModuleSource(dataSource, dataSource.LoadModuleVariant(node), themeMode, theme),
-            ProjectTreeNodeKind.ModuleInstance =>
-                FromModuleInstanceAtShotFrame(
-                    dataSource,
-                    node.Id,
-                    theme.DeviceId,
-                    themeMode,
-                    theme,
-                    timelineFrame,
-                    respectAuthoredAppearance: false),
-            ProjectTreeNodeKind.Shot => FromShot(
-                dataSource,
-                node,
-                theme.DeviceId,
-                themeMode,
-                (screenId) => dataSource.LoadThemeContext(
-                    ScreenNode(screenId),
-                    themeId)
-                    ?? throw new InvalidOperationException(
-                        $"Screen '{screenId}' has no Preview Theme context."),
-                timelineFrame,
-                respectAuthoredAppearance: false),
             _ => null,
         };
-        return payload is null
-            ? null
-            : payload with
-            {
-                OwnerId = node.Id,
-                ThemeStatusBarVariantReference = theme.StatusBarVariantReference,
-                ThemeNavigationBarVariantReference = theme.NavigationBarVariantReference,
-                LocalFrame = node.Kind is ProjectTreeNodeKind.ModuleInstance or ProjectTreeNodeKind.Shot
-                    ? payload.LocalFrame
-                    : Math.Max(0, timelineFrame),
-            };
+        return payload is null ? null : payload with
+        {
+            OwnerId = node.Id,
+            ThemeStatusBarVariantReference = theme.StatusBarVariantReference,
+            ThemeNavigationBarVariantReference = theme.NavigationBarVariantReference,
+            LocalFrame = Math.Max(0, timelineFrame),
+        };
+    }
+
+    public static PreparedProductionPreview PrepareProduction(
+        DesignPreviewPayloadDataSource dataSource,
+        ProjectTreeNode node,
+        string? themeId,
+        string themeMode,
+        int startFrame,
+        int endFrame,
+        CancellationToken cancellationToken) =>
+        PrepareProduction(dataSource, node, themeMode, startFrame, endFrame,
+            screenId => dataSource.LoadThemeContext(ScreenNode(screenId), themeId)
+                ?? throw new InvalidOperationException($"Screen '{screenId}' has no Preview Theme context."),
+            respectAuthoredAppearance: false, cancellationToken);
+
+    public static PreparedProductionPreview PrepareProductionRender(
+        DesignPreviewPayloadDataSource dataSource,
+        ProjectTreeNode shot,
+        string themeStrategy,
+        string themeId,
+        string deviceId,
+        string requestedThemeMode,
+        int startFrame,
+        int endFrame,
+        CancellationToken cancellationToken)
+    {
+        if (shot.Kind != ProjectTreeNodeKind.Shot)
+            throw new InvalidOperationException("A Production render payload requires a Shot.");
+        return PrepareProduction(dataSource, shot,
+            ModuleAppearanceModeContract.RequireResolved(requestedThemeMode, $"Shot '{shot.Id}' render appearance"),
+            startFrame, endFrame,
+            screenId => dataSource.LoadProductionRenderThemeContext(shot, screenId, themeStrategy, themeId, deviceId),
+            respectAuthoredAppearance: true, cancellationToken);
     }
 
     public static DesignPreviewPayload? CreateProductionRender(
@@ -211,49 +212,50 @@ internal static class DesignPreviewPayloadFactory
         string themeId,
         string deviceId,
         string requestedThemeMode,
-        int shotFrame)
+        int shotFrame) =>
+        PrepareProductionRender(dataSource, shot, themeStrategy, themeId, deviceId, requestedThemeMode,
+            shotFrame, shotFrame, CancellationToken.None).AtFrame(shotFrame);
+
+    private static PreparedProductionPreview PrepareProduction(
+        DesignPreviewPayloadDataSource dataSource,
+        ProjectTreeNode node,
+        string themeMode,
+        int startFrame,
+        int endFrame,
+        Func<string, DesignPreviewThemeContext> themeForScreen,
+        bool respectAuthoredAppearance,
+        CancellationToken cancellationToken)
     {
-        if (shot.Kind != ProjectTreeNodeKind.Shot)
+        cancellationToken.ThrowIfCancellationRequested();
+        var isScreen = node.Kind == ProjectTreeNodeKind.ModuleInstance;
+        if (!isScreen && node.Kind != ProjectTreeNodeKind.Shot)
+            throw new InvalidOperationException("Production preparation requires an exact Shot or Screen.");
+        var shotId = dataSource.ShotIdFor(node);
+        var shot = dataSource.LoadShotSettings(shotId);
+        var slots = dataSource.LoadShotSlots(shotId);
+        var selected = isScreen ? new[] { slots.Single(slot => slot.Id == node.Id) }
+            : slots.Where(slot => Math.Max(0, startFrame) < slot.StartFrame + slot.EffectiveDurationFrames
+                && Math.Min(shot.DurationFrames - 1, Math.Max(startFrame, endFrame)) >= slot.StartFrame).ToArray();
+        var screens = new List<DesignPreviewPayload>();
+        foreach (var slot in selected)
         {
-            throw new InvalidOperationException(
-                "A Production render payload requires a Shot.");
+            cancellationToken.ThrowIfCancellationRequested();
+            var theme = themeForScreen(slot.Id);
+            var owner = FromModuleInstance(dataSource, slot.Id, theme.DeviceId, themeMode, theme,
+                0, respectAuthoredAppearance) with
+            {
+                OwnerId = slot.Id,
+                ThemeStatusBarVariantReference = theme.StatusBarVariantReference,
+                ThemeNavigationBarVariantReference = theme.NavigationBarVariantReference,
+                ScreenTiming = new ScreenTimingPayload(0, slot.TransitionFrameCount, slot.ActionDelayFrames,
+                    slot.ActionDurationFrames, slot.StartFrame, shot.DurationFrames, slot.TransitionJson),
+            };
+            var preview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
+            preview.Remove("actions");
+            screens.Add(owner with { DesignPreviewJson = preview.ToJsonString() });
         }
-        var screenId = dataSource.ActiveShotScreenId(
-            shot.Id,
-            shotFrame);
-        if (string.IsNullOrWhiteSpace(screenId)) return null;
-        var payload = FromShot(
-            dataSource,
-            shot,
-            deviceId,
-            ModuleAppearanceModeContract.RequireResolved(
-                requestedThemeMode,
-                $"Shot '{shot.Id}' render appearance"),
-            (candidateScreenId) =>
-                dataSource.LoadProductionRenderThemeContext(
-                    shot,
-                    candidateScreenId,
-                    themeStrategy,
-                    themeId,
-                    deviceId),
-            shotFrame,
-            respectAuthoredAppearance: true)
-            ?? throw new InvalidOperationException(
-                $"Shot '{shot.Name}' did not resolve its active Screen '{screenId}'.");
-        var theme = dataSource.LoadProductionRenderThemeContext(
-            shot,
-            screenId,
-            themeStrategy,
-            themeId,
-            deviceId);
-        return payload with
-        {
-            OwnerId = shot.Id,
-            ThemeStatusBarVariantReference =
-                theme.StatusBarVariantReference,
-            ThemeNavigationBarVariantReference =
-                theme.NavigationBarVariantReference,
-        };
+        cancellationToken.ThrowIfCancellationRequested();
+        return new PreparedProductionPreview(node.Id, isScreen, shot.DurationFrames, screens);
     }
 
     private static DesignPreviewPayload FromModuleInstance(
@@ -330,213 +332,6 @@ internal static class DesignPreviewPayloadFactory
             instance.FrameRate,
             LocalFrame: Math.Max(0, screenFrame ?? 0),
             ProjectId: instance.ProjectId);
-    }
-
-    private static DesignPreviewPayload
-        FromModuleInstanceAtShotFrame(
-            DesignPreviewPayloadDataSource dataSource,
-            string moduleInstanceId,
-            string deviceId,
-            string themeMode,
-            DesignPreviewThemeContext theme,
-            int shotFrame,
-            bool respectAuthoredAppearance)
-    {
-        var range =
-            dataSource.ModuleInstanceScreenRange(
-                moduleInstanceId);
-        var source = dataSource.LoadModuleInstance(moduleInstanceId);
-        var shot = dataSource.LoadShotSettings(source.ShotId);
-        var slot = dataSource.LoadShotSlots(source.ShotId)
-            .Single((candidate) => candidate.Id == moduleInstanceId);
-        var screenFrame =
-            Math.Clamp(
-                shotFrame
-                - range.StartFrame,
-                0,
-                range.EffectiveDurationFrames - 1);
-        var actionFrame =
-            Math.Clamp(
-                screenFrame
-                - range.ActionStartFrame,
-                0,
-                range.ActionDurationFrames - 1);
-        var owner = FromModuleInstance(
-            dataSource,
-            moduleInstanceId,
-            deviceId,
-            themeMode,
-            theme,
-            actionFrame,
-            respectAuthoredAppearance)
-            with
-            {
-                ScreenTiming =
-                    new ScreenTimingPayload(
-                        screenFrame,
-                        range.TransitionFrameCount,
-                        range.ActionDelayFrames,
-                        range.ActionDurationFrames,
-                        range.StartFrame,
-                        shot.DurationFrames,
-                        slot.TransitionJson),
-                OwnerId = moduleInstanceId,
-            };
-        var phase = ScreenTransitionPhase(
-            range.StartFrame,
-            range.TransitionFrameCount,
-            range.ActionEndFrame,
-            shotFrame,
-            shot.DurationFrames);
-        if (phase == "content")
-        {
-            return owner;
-        }
-        var elapsedFrames = phase == "enter"
-            ? screenFrame
-            : screenFrame - range.ActionEndFrame;
-        return owner with
-        {
-            Kind = "screenTransition",
-            ScreenTransition = new ScreenTransitionPayload(
-                [new ScreenTransitionLayerPayload(
-                    owner,
-                    slot.TransitionJson,
-                    phase,
-                    elapsedFrames * 1000.0 / Math.Max(1, owner.FrameRate))],
-                range.TransitionFrameCount),
-        };
-    }
-
-    private static DesignPreviewPayload? FromShot(
-        DesignPreviewPayloadDataSource dataSource,
-        ProjectTreeNode shotNode,
-        string deviceId,
-        string themeMode,
-        Func<string, DesignPreviewThemeContext> themeForScreen,
-        int shotFrame,
-        bool respectAuthoredAppearance)
-    {
-        var shot = dataSource.LoadShotSettings(shotNode.Id);
-        if (shotFrame < 0 || shotFrame >= shot.DurationFrames) return null;
-        var slots = dataSource.LoadShotSlots(shotNode.Id);
-        if (slots.Count == 0) return null;
-        var active = slots
-            .Where((slot) =>
-                shotFrame >= slot.StartFrame
-                && shotFrame < slot.StartFrame + slot.EffectiveDurationFrames)
-            .ToArray();
-        if (active.Length == 0) return null;
-        var layers = active
-            .Reverse()
-            .Select((slot) => CreateScreenLayer(
-                dataSource,
-                slot,
-                deviceId,
-                themeMode,
-                themeForScreen(slot.Id),
-                shotFrame,
-                shot.DurationFrames,
-                respectAuthoredAppearance))
-            .ToArray();
-        var top = layers[^1].Owner;
-        if (layers.Length == 1
-            && layers[0].Phase == "content")
-        {
-            return top;
-        }
-        return top with
-        {
-            Kind = "screenTransition",
-            ScreenTransition = new ScreenTransitionPayload(
-                layers,
-                active[0].TransitionFrameCount),
-        };
-    }
-
-    private static ScreenTransitionLayerPayload CreateScreenLayer(
-        DesignPreviewPayloadDataSource dataSource,
-        DesignPreviewShotSlot slot,
-        string deviceId,
-        string themeMode,
-        DesignPreviewThemeContext theme,
-        int shotFrame,
-        int shotDurationFrames,
-        bool respectAuthoredAppearance)
-    {
-        var screenFrame = shotFrame - slot.StartFrame;
-        var actionStart = slot.TransitionFrameCount + slot.ActionDelayFrames;
-        var actionEnd = actionStart + slot.ActionDurationFrames;
-        var phase = ScreenTransitionPhase(
-            slot.StartFrame,
-            slot.TransitionFrameCount,
-            actionEnd,
-            shotFrame,
-            shotDurationFrames);
-        var elapsedFrames = phase switch
-        {
-            "enter" => screenFrame,
-            "exit" => screenFrame - actionEnd,
-            _ => 0,
-        };
-        var actionFrame = Math.Clamp(
-            screenFrame - actionStart,
-            0,
-            slot.ActionDurationFrames - 1);
-        var owner = FromModuleInstance(
-            dataSource,
-            slot.Id,
-            deviceId,
-            themeMode,
-            theme,
-            actionFrame,
-            respectAuthoredAppearance);
-        var shotPreview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
-        shotPreview.Remove("actions");
-        owner = owner with
-        {
-            Name = slot.Name,
-            DesignPreviewJson = shotPreview.ToJsonString(),
-            ThemeStatusBarVariantReference = theme.StatusBarVariantReference,
-            ThemeNavigationBarVariantReference = theme.NavigationBarVariantReference,
-            ScreenTiming = new ScreenTimingPayload(
-                screenFrame,
-                slot.TransitionFrameCount,
-                slot.ActionDelayFrames,
-                slot.ActionDurationFrames,
-                slot.StartFrame,
-                shotDurationFrames,
-                slot.TransitionJson),
-            OwnerId = slot.Id,
-        };
-        return new ScreenTransitionLayerPayload(
-            owner,
-            slot.TransitionJson,
-            phase,
-            elapsedFrames * 1000.0 / Math.Max(1, owner.FrameRate));
-    }
-
-    private static string ScreenTransitionPhase(
-        int screenStartFrame,
-        int transitionFrameCount,
-        int actionEndFrame,
-        int shotFrame,
-        int shotDurationFrames)
-    {
-        if (shotFrame < 0 || shotFrame >= shotDurationFrames)
-        {
-            return "content";
-        }
-        var screenFrame = shotFrame - screenStartFrame;
-        if (screenFrame < transitionFrameCount)
-        {
-            return "enter";
-        }
-        if (screenFrame >= actionEndFrame)
-        {
-            return "exit";
-        }
-        return "content";
     }
 
     private static ProjectTreeNode ScreenNode(string screenId) =>

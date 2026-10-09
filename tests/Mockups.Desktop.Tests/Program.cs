@@ -177,6 +177,8 @@ var tests = new (string Name, Action Run)[]
     ("Shot Screen tracks resolve independent lanes gaps and overlap priority", ShotScreenTracksResolveIndependentLanes),
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
     ("Production playback prepares gaps and multiple Screen boundaries", ProductionPlaybackPreparesGapsAndMultipleScreens),
+    ("Production frame evaluation and signatures never reread persistence", ProductionPreparationReadsOncePerScreen),
+    ("Production frame timing preserves action delay and Motion boundaries", ProductionFrameTimingPreservesBoundaries),
     ("Shot Play prepares transparent frames before starting its clock", ShotPlayPreparesTransparentFramesBeforeClock),
     ("committed Shot playback preserves multiple Screens and transparent frames", () => CommittedShotPlaybackPreservesFrames(committedDatabasePath)),
     ("Conversation Play messages advances the root Module owner frame", ConversationPlayMessagesAdvancesRootOwnerFrame),
@@ -21273,6 +21275,90 @@ static void ShotPlayPreparesTransparentFramesBeforeClock()
     finally { File.Delete(temporary); }
 }
 
+static void ProductionPreparationReadsOncePerScreen()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-preparation-reads-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var shot = Descendants(database.LoadProjectTree()).Single(node => node.Id == "shot_001");
+        var calls = new Dictionary<string, int>(StringComparer.Ordinal);
+        var inputs = PreviewReadCounter.Wrap<IPreviewInputRepository>(database.PreviewInputs, calls);
+        var timeline = PreviewReadCounter.Wrap<IModuleInstanceTimelineStore>(database.Production, calls);
+        var themes = PreviewReadCounter.Wrap<IModuleInstanceThemeTokenQuery>(database.Resources, calls);
+        var actors = PreviewReadCounter.Wrap<IActorPreviewRepository>(database.Resources, calls);
+        var preparer = new ProductionPreviewPayloadPreparer(
+            new DesignPreviewPayloadDataSource(inputs, timeline, themes, actors, database.ProjectPaths),
+            new ProductionPreviewRuntimeResolver(actors, database.ProjectPaths));
+        var last = database.GetShotSettings(shot.Id).DurationFrames - 1;
+        var sequence = preparer.PrepareSequence(shot, null, "light", 0, last, CancellationToken.None);
+        Equal(2, sequence.Screens.Count);
+        var counts = JsonSerializer.Serialize(calls);
+        True(calls.Values.Sum() > 0);
+        var signature = sequence.ContentSignature();
+        var frames = sequence.Frames(0, last, CancellationToken.None);
+        Equal(last + 1, frames.Count);
+        for (var frame = last; frame >= 0; frame--)
+            Equal(JsonSerializer.Serialize(frames[frame]), JsonSerializer.Serialize(sequence.AtFrame(frame)));
+        Equal(signature, sequence.ContentSignature());
+        Equal(counts, JsonSerializer.Serialize(calls), "Frames and signature must not read any persistence port.");
+        True(sequence.AtFrame(-1) is null);
+        True(sequence.AtFrame(last + 1) is null);
+
+        // Increasing the interval inside the same Screen does not increase preparation reads.
+        var screen = shot.Children.First(node => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        calls.Clear();
+        preparer.PrepareFrames(screen, null, "light", 0, 0, CancellationToken.None);
+        counts = JsonSerializer.Serialize(calls);
+        calls.Clear();
+        preparer.PrepareFrames(screen, null, "light", 0, 80, CancellationToken.None);
+        Equal(counts, JsonSerializer.Serialize(calls));
+
+        calls.Clear();
+        var render = preparer.PrepareRenderSequence(shot, RenderThemeStrategy.Screen, "",
+            sequence.Screens[0].DeviceId, "light", 0, last, CancellationToken.None);
+        counts = JsonSerializer.Serialize(calls);
+        Equal(2, render.Screens.Count);
+        render.Frames(0, last, CancellationToken.None);
+        render.ContentSignature();
+        Equal(counts, JsonSerializer.Serialize(calls));
+
+        // Every new execution sees current authoring, while an in-flight sequence remains coherent.
+        database.UpdateModuleInstanceField(screen.Id, "moduleInstance.startFrame", "7");
+        var refreshed = preparer.PrepareSequence(shot, null, "light", 0,
+            database.GetShotSettings(shot.Id).DurationFrames - 1, CancellationToken.None);
+        True(signature != refreshed.ContentSignature());
+        Equal(signature, sequence.ContentSignature());
+        Equal(7, refreshed.Screens.Single(owner => owner.OwnerId == screen.Id).ScreenTiming!.ScreenStartFrame);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        Throws<OperationCanceledException>(() => sequence.Frames(0, last, cancellation.Token));
+        Throws<OperationCanceledException>(() => preparer.PrepareSequence(shot, null, "light", 0, last, cancellation.Token));
+    }
+    finally { File.Delete(temporary); }
+}
+
+static void ProductionFrameTimingPreservesBoundaries()
+{
+    // Screen starts at 10: enter 10..12, delay 13..14, action 15..18, exit 19..21.
+    foreach (var item in new[]
+    {
+        (10, 0, 0, "enter", 0), (12, 2, 0, "enter", 2),
+        (13, 3, 0, "content", 0), (14, 4, 0, "content", 0),
+        (15, 5, 0, "content", 0), (18, 8, 3, "content", 0),
+        (19, 9, 3, "exit", 0), (21, 11, 3, "exit", 2),
+    })
+    {
+        var state = ScreenTimelineTiming.ResolveFrame(item.Item1, 30, 10, 4, 3, 2, false);
+        Equal(new ScreenTimelineFrame(item.Item2, item.Item3, item.Item4, item.Item5), state);
+    }
+    Equal(new ScreenTimelineFrame(0, 0, "content", 0),
+        ScreenTimelineTiming.ResolveFrame(-1, 30, 10, 4, 3, 2, true));
+    Equal(new ScreenTimelineFrame(11, 3, "content", 0),
+        ScreenTimelineTiming.ResolveFrame(30, 30, 10, 4, 3, 2, true));
+}
+
 static void ProductionPlaybackPreparesGapsAndMultipleScreens()
 {
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-shot-playback-{Guid.NewGuid():N}.sqlite");
@@ -21366,6 +21452,14 @@ static void CommittedShotPlaybackPreservesFrames(string source)
         foreach (var shot in shots)
         {
             var snapshot = catalog.Shot(shot.Id);
+            var preparationStart = Math.Max(0, snapshot.DurationFrames - 81);
+            var preparationWatch = Stopwatch.StartNew();
+            var preparedSequence = preparer.PrepareSequence(shot, null, "light", preparationStart,
+                snapshot.DurationFrames - 1, CancellationToken.None);
+            var measuredFrames = preparedSequence.Frames(preparationStart,
+                snapshot.DurationFrames - 1, CancellationToken.None);
+            preparedSequence.ContentSignature();
+            Console.WriteLine($"PREPARATION {shot.Name}: {measuredFrames.Count} frames, {preparedSequence.Screens.Count} Screens, {preparationWatch.Elapsed.TotalMilliseconds:F1} ms");
             var boundaries = snapshot.Screens.SelectMany(screen => new[]
             {
                 screen.StartFrame, screen.StartFrame + screen.DurationFrames

@@ -288,22 +288,6 @@ internal sealed class DesignPreviewPayloadDataSource
     public ShotSettings LoadShotSettings(string shotId) =>
         _timeline.GetTimelineShotSettings(shotId);
 
-    public string ActiveShotScreenId(string shotId, int shotFrame) =>
-        ProductionScreenPlaybackState.ActiveScreenId(
-            ModuleInstanceTimeline.ScreenRanges(_timelineDataSource, shotId)
-                .Select((range) => new ProductionScreenFrameRange(
-                    range.ScreenId,
-                    range.StartFrame,
-                    range.EffectiveDurationFrames))
-                .ToArray(),
-            shotFrame);
-
-    public ScreenTimelineRange ModuleInstanceScreenRange(
-        string moduleInstanceId) =>
-        ModuleInstanceTimeline.ScreenRange(
-            _timelineDataSource,
-            moduleInstanceId);
-
     public JsonObject CreateActorPreview(
         string actorId,
         string themeMode,
@@ -413,7 +397,7 @@ internal sealed class DesignPreviewPayloadDataSource
         return (shot, _actorDataSource.LoadContext(shot.OwnerActorId));
     }
 
-    private string ShotIdFor(ProjectTreeNode node) =>
+    public string ShotIdFor(ProjectTreeNode node) =>
         node.Kind == ProjectTreeNodeKind.Shot
             ? node.Id
             : _timeline.GetModuleInstanceSettings(node.Id).ShotId;

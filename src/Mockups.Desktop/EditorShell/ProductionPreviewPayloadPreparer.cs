@@ -1,374 +1,60 @@
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Nodes;
 using System.Threading;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ProductionPreviewPayloadPreparer
 {
-    private readonly DesignPreviewPayloadDataSource
-        _payloads;
-    private readonly ProductionPreviewRuntimeResolver
-        _runtime;
+    private readonly DesignPreviewPayloadDataSource _payloads;
+    private readonly ProductionPreviewRuntimeResolver _runtime;
 
-    public ProductionPreviewPayloadPreparer(
-        DesignPreviewPayloadDataSource payloads,
-        ProductionPreviewRuntimeResolver runtime)
+    public ProductionPreviewPayloadPreparer(DesignPreviewPayloadDataSource payloads, ProductionPreviewRuntimeResolver runtime)
     {
         _payloads = payloads;
         _runtime = runtime;
     }
 
-    public DesignPreviewPayload PrepareRequired(
-        ProjectTreeNode node,
-        string? themeId,
-        string themeMode,
-        int shotFrame)
+    public DesignPreviewPayload PrepareRequired(ProjectTreeNode node, string? themeId, string themeMode, int shotFrame) =>
+        Prepare(node, themeId, themeMode, shotFrame, CancellationToken.None)
+        ?? throw new InvalidOperationException($"Production Preview frame {shotFrame} for '{node.Id}' has no complete payload.");
+
+    public DesignPreviewPayload? Prepare(ProjectTreeNode node, string? themeId, string themeMode,
+        int shotFrame, CancellationToken cancellationToken)
     {
-        return
-            Prepare(
-                node,
-                themeId,
-                themeMode,
-                shotFrame,
-                CancellationToken.None)
-            ?? throw new InvalidOperationException(
-                $"Production Preview frame {shotFrame} for '{node.Id}' has no complete payload.");
+        cancellationToken.ThrowIfCancellationRequested();
+        if (node.Kind is ProjectTreeNodeKind.Shot or ProjectTreeNodeKind.ModuleInstance)
+            return PrepareSequence(node, themeId, themeMode, shotFrame, shotFrame, cancellationToken).AtFrame(shotFrame);
+        var payload = DesignPreviewPayloadFactory.Create(_payloads, node, themeId, themeMode, shotFrame);
+        cancellationToken.ThrowIfCancellationRequested();
+        return payload is null ? null : _runtime.Resolve(payload, themeMode);
     }
 
-    public DesignPreviewPayload? Prepare(
-        ProjectTreeNode node,
-        string? themeId,
-        string themeMode,
-        int shotFrame,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken
-            .ThrowIfCancellationRequested();
-        var payload =
-            DesignPreviewPayloadFactory.Create(
-                _payloads,
-                node,
-                themeId,
-                themeMode,
-                shotFrame);
-        cancellationToken
-            .ThrowIfCancellationRequested();
-        if (payload is null)
-        {
-            return null;
-        }
+    public PreparedProductionPreview PrepareSequence(ProjectTreeNode node, string? themeId, string themeMode,
+        int startFrame, int endFrame, CancellationToken cancellationToken) =>
+        ResolveScreens(DesignPreviewPayloadFactory.PrepareProduction(_payloads, node, themeId, themeMode,
+            startFrame, endFrame, cancellationToken), themeMode, cancellationToken);
 
-        var resolved =
-            _runtime.Resolve(
-                payload,
-                themeMode);
-        cancellationToken
-            .ThrowIfCancellationRequested();
-        return resolved;
-    }
+    public PreparedProductionPreview PrepareRenderSequence(ProjectTreeNode shot, string themeStrategy, string themeId,
+        string deviceId, string themeMode, int startFrame, int endFrame, CancellationToken cancellationToken) =>
+        ResolveScreens(DesignPreviewPayloadFactory.PrepareProductionRender(_payloads, shot, themeStrategy, themeId,
+            deviceId, themeMode, startFrame, endFrame, cancellationToken), themeMode, cancellationToken);
 
-    public DesignPreviewPayload? PrepareRender(
-        ProjectTreeNode shot,
-        string themeStrategy,
-        string themeId,
-        string deviceId,
-        string themeMode,
-        int shotFrame)
-    {
-        var payload = DesignPreviewPayloadFactory.CreateProductionRender(
-            _payloads,
-            shot,
-            themeStrategy,
-            themeId,
-            deviceId,
-            themeMode,
-            shotFrame);
-        return payload is null
-            ? null
-            : _runtime.Resolve(payload, themeMode);
-    }
-
-    public IReadOnlyList<DesignPreviewPayload?>
-        PrepareFrames(
-            ProjectTreeNode node,
-            string? themeId,
-            string themeMode,
-            int startFrame,
-            int endFrame,
-            CancellationToken cancellationToken)
-    {
-        var lastFrame =
-            Math.Max(startFrame, endFrame);
-        return node.Kind switch
-        {
-            ProjectTreeNodeKind.ModuleInstance =>
-                PrepareModuleInstanceFrames(
-                    node,
-                    themeId,
-                    themeMode,
-                    startFrame,
-                    lastFrame,
-                    cancellationToken),
-            ProjectTreeNodeKind.Shot =>
-                PrepareShotFrames(
-                    node,
-                    themeId,
-                    themeMode,
-                    startFrame,
-                    lastFrame,
-                    cancellationToken),
-            _ => PrepareIndependentFrames(
-                node,
-                themeId,
-                themeMode,
-                startFrame,
-                lastFrame,
-                cancellationToken),
-        };
-    }
-
-    private IReadOnlyList<DesignPreviewPayload>
-        PrepareModuleInstanceFrames(
-            ProjectTreeNode node,
-            string? themeId,
-            string themeMode,
-            int startFrame,
-            int lastFrame,
-            CancellationToken cancellationToken)
-    {
-        cancellationToken
-            .ThrowIfCancellationRequested();
-        var template =
-            Prepare(
-                node,
-                themeId,
-                themeMode,
-                startFrame,
-                cancellationToken)
-            ?? throw MissingPayload(
-                node,
-                startFrame);
-        var firstLocalFrame =
-            template.ScreenTiming?.ScreenFrame
-            ?? template.LocalFrame;
-        var frames =
-            new List<DesignPreviewPayload>(
-                lastFrame - startFrame + 1);
-        for (var frame = startFrame;
-             frame <= lastFrame;
-             frame++)
-        {
-            cancellationToken
-                .ThrowIfCancellationRequested();
-            frames.Add(
-                AtLocalFrame(
-                    template,
-                    firstLocalFrame
-                    + frame - startFrame));
-        }
-
-        return frames;
-    }
-
-    private IReadOnlyList<DesignPreviewPayload?>
-        PrepareShotFrames(
-            ProjectTreeNode node,
-            string? themeId,
-            string themeMode,
-            int startFrame,
-            int lastFrame,
-            CancellationToken cancellationToken)
-    {
-        var slots =
-            _payloads.LoadShotSlots(
-                node.Id);
-        if (slots.Count == 0)
-        {
-            throw MissingPayload(
-                node,
-                startFrame);
-        }
-
-        var frames = new List<DesignPreviewPayload?>(
-            lastFrame - startFrame + 1);
-        for (var frame = startFrame;
-             frame <= lastFrame;
-             frame++)
+    private PreparedProductionPreview ResolveScreens(PreparedProductionPreview sequence, string themeMode,
+        CancellationToken cancellationToken) =>
+        sequence.MapScreens(screen =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            frames.Add(
-                Prepare(
-                    node,
-                    themeId,
-                    themeMode,
-                    frame,
-                    cancellationToken));
-        }
+            var resolved = _runtime.Resolve(screen, themeMode);
+            cancellationToken.ThrowIfCancellationRequested();
+            return resolved;
+        });
 
-        return frames;
-    }
-
-    private IReadOnlyList<DesignPreviewPayload>
-        PrepareIndependentFrames(
-            ProjectTreeNode node,
-            string? themeId,
-            string themeMode,
-            int startFrame,
-            int lastFrame,
-            CancellationToken cancellationToken)
-    {
-        var frames =
-            new List<DesignPreviewPayload>(
-                lastFrame - startFrame + 1);
-        for (var frame = startFrame;
-             frame <= lastFrame;
-             frame++)
-        {
-            cancellationToken
-                .ThrowIfCancellationRequested();
-            frames.Add(
-                Prepare(
-                    node,
-                    themeId,
-                    themeMode,
-                    frame,
-                    cancellationToken)
-                ?? throw MissingPayload(
-                    node,
-                    frame));
-        }
-
-        return frames;
-    }
-
-    private static DesignPreviewPayload AtLocalFrame(
-        DesignPreviewPayload template,
-        int localFrame)
-    {
-        var frame =
-            Math.Max(
-                0,
-                localFrame);
-        if (template.ScreenTiming
-            is { } timing)
-        {
-            var baseIncoming =
-                DesignPreviewPayloadLayers.PrimaryOwner(template)
-                with
-                {
-                    ScreenTiming = null,
-                    ScreenTransition = null,
-                };
-            var actionFrame =
-                Math.Clamp(
-                    frame
-                    - timing.ActionStartFrame,
-                    0,
-                    timing.ActionDurationFrames - 1);
-            var incoming =
-                AtLocalFrame(
-                    baseIncoming,
-                    actionFrame);
-            var shotFrame = timing.ScreenStartFrame + frame;
-            var phase = shotFrame < 0 || shotFrame >= timing.ShotDurationFrames
-                ? "content"
-                : frame < timing.TransitionFrameCount
-                    ? "enter"
-                    : frame >= timing.ActionStartFrame + timing.ActionDurationFrames
-                        ? "exit"
-                        : "content";
-            var preparedOwner = incoming with
-            {
-                Name = template.Name,
-                OwnerId = template.OwnerId,
-                ScreenTiming = timing with { ScreenFrame = frame },
-            };
-            if (phase == "content") return preparedOwner;
-            var elapsedFrames = phase == "enter"
-                ? frame
-                : frame - timing.ActionStartFrame - timing.ActionDurationFrames;
-            return preparedOwner with
-            {
-                Kind = "screenTransition",
-                ScreenTransition = new ScreenTransitionPayload(
-                    [new ScreenTransitionLayerPayload(
-                        Owner: preparedOwner with
-                        {
-                            ScreenTiming = null,
-                            ScreenTransition = null,
-                        },
-                        MotionJson: timing.TransitionMotionJson,
-                        Phase: phase,
-                        PhaseTimeMilliseconds: elapsedFrames
-                            * 1000.0
-                            / Math.Max(1, preparedOwner.FrameRate))],
-                    timing.TransitionFrameCount),
-            };
-        }
-
-        var preview =
-            WithTimelineFrame(
-                template.DesignPreviewJson,
-                frame,
-                "Production Preview frame");
-        var runtimeContract =
-            WithTimelineFrame(
-                template.RuntimeContractJson,
-                frame,
-                "Production Runtime contract frame");
-        var instance =
-            JsonPath.ParseRequiredObject(
-                template.InstanceJson,
-                "Production Preview instance");
-        var context =
-            JsonPath.RequiredObject(
-                instance,
-                "context",
-                "Production Preview instance");
-        context["screenFrame"] =
-            frame;
-        return template with
-        {
-            DesignPreviewJson =
-                preview.ToJsonString(),
-            RuntimeContractJson =
-                runtimeContract.ToJsonString(),
-            InstanceJson =
-                instance.ToJsonString(),
-            LocalFrame =
-                frame,
-        };
-    }
-
-    private static JsonObject WithTimelineFrame(
-        string json,
-        int frame,
-        string owner)
-    {
-        var document =
-            JsonPath.ParseRequiredObject(
-                json,
-                owner);
-        if (document["timelineFrameJsonKey"]
-                ?.GetValue<string>()
-            is { Length: > 0 } key)
-        {
-            document[key] =
-                frame;
-        }
-
-        return document;
-    }
-
-    private static InvalidOperationException MissingPayload(
-        ProjectTreeNode node,
-        int frame) =>
-        new(
-            $"Production Preview frame {frame} for '{node.Id}' has no complete payload.");
+    public IReadOnlyList<DesignPreviewPayload?> PrepareFrames(ProjectTreeNode node, string? themeId,
+        string themeMode, int startFrame, int endFrame, CancellationToken cancellationToken) =>
+        PrepareSequence(node, themeId, themeMode, startFrame, endFrame, cancellationToken)
+            .Frames(startFrame, endFrame, cancellationToken);
 }
 
 internal sealed record PreparedProductionPlayback(

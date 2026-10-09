@@ -3598,11 +3598,16 @@ internal sealed class EditorPreviewController : IDisposable
         {
             ShowPreviewLoading("Preparing playback…");
             await YieldPreviewPreparationAsync(cancellation.Token);
-            var requestSignature = await ShotPlaybackRequestSignatureAsync(
+            var preparation = await BuildShotPlaybackFramesAsync(
                 payloadNode,
                 _shotPreviewFrame,
                 navigationRange.EndFrame,
                 cancellation.Token);
+            var requestSignature = ShotPlaybackRequestSignature(
+                payloadNode,
+                _shotPreviewFrame,
+                navigationRange.EndFrame,
+                preparation.ContentSignature);
             cancellation.Token.ThrowIfCancellationRequested();
             var prepared = _preparedShotPlayback;
             var reuse = PreparedPlaybackReusePolicy.Decide(
@@ -3635,11 +3640,7 @@ internal sealed class EditorPreviewController : IDisposable
                 else
                 {
                     InvalidatePreparedShotPlayback();
-                    frames = await BuildShotPlaybackFramesAsync(
-                        payloadNode,
-                        _shotPreviewFrame,
-                        navigationRange.EndFrame,
-                        cancellation.Token);
+                    frames = preparation.Frames;
                 }
 
                 _pendingPlaybackFramesOverride = frames;
@@ -3723,7 +3724,7 @@ internal sealed class EditorPreviewController : IDisposable
         AdvanceShotPlayback();
     }
 
-    private async Task<IReadOnlyList<DesignPreviewPayload?>> BuildShotPlaybackFramesAsync(
+    private async Task<(string ContentSignature, IReadOnlyList<DesignPreviewPayload?> Frames)> BuildShotPlaybackFramesAsync(
         ProjectTreeNode payloadNode,
         int startFrame,
         int endFrame,
@@ -3733,58 +3734,39 @@ internal sealed class EditorPreviewController : IDisposable
         var themeMode = _selectedMode;
         var stopwatch =
             Stopwatch.StartNew();
-        var frames =
+        var preparation =
             await _operations.ExecuteAsync(
-            () => _productionPayloadPreparer
-                .PrepareFrames(
+            () =>
+            {
+                var sequence = _productionPayloadPreparer.PrepareSequence(
                     payloadNode,
                     themeId,
                     themeMode,
                     startFrame,
                     endFrame,
-                    cancellationToken),
+                    cancellationToken);
+                return (ContentSignature: sequence.ContentSignature(),
+                    Frames: sequence.Frames(startFrame, endFrame, cancellationToken));
+            },
             cancellationToken);
         PreviewDebugLog.Write(
             "preview.playback.payloads.prepared",
             ("kind", payloadNode.Kind),
             ("id", payloadNode.Id),
-            ("frames", frames.Count),
+            ("frames", preparation.Frames.Count),
             ("ms", stopwatch.Elapsed.TotalMilliseconds));
-        return frames;
+        return preparation;
     }
 
-    private async Task<string> ShotPlaybackRequestSignatureAsync(
+    private string ShotPlaybackRequestSignature(
         ProjectTreeNode payloadNode,
         int startFrame,
         int endFrame,
-        CancellationToken cancellationToken)
+        string contentSignature)
     {
-        var signatureFrames =
-            ShotPlaybackSignatureFrames(
-                payloadNode,
-                startFrame,
-                endFrame);
-        var themeId = _selectedThemeId;
-        var themeMode = _selectedMode;
-        var payloadFingerprints =
-            await _operations.ExecuteAsync(
-                () => signatureFrames
-                    .Select((frame) =>
-                        $"{frame}\u001e"
-                        + PlaybackPayloadFingerprint(
-                            _productionPayloadPreparer
-                                .Prepare(
-                                    payloadNode,
-                                    themeId,
-                                    themeMode,
-                                    frame,
-                                    cancellationToken)))
-                    .ToList(),
-                cancellationToken);
-
         var signatureJson = JsonSerializer.Serialize(new
         {
-            Version = 1,
+            Version = 2,
             NodeKind = payloadNode.Kind.ToString(),
             NodeId = payloadNode.Id,
             StartFrame = startFrame,
@@ -3798,41 +3780,9 @@ internal sealed class EditorPreviewController : IDisposable
             ShowDesignMarks = _showDesignMarks,
             ShowCanonicalFrame = _showCanonicalFrame,
             ShellIsDark = _isDark(),
-            Payloads = payloadFingerprints,
+            Content = contentSignature,
         });
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(signatureJson)));
-    }
-
-    private IReadOnlyList<int> ShotPlaybackSignatureFrames(
-        ProjectTreeNode payloadNode,
-        int startFrame,
-        int endFrame)
-    {
-        if (payloadNode.Kind == ProjectTreeNodeKind.ModuleInstance)
-        {
-            return [startFrame];
-        }
-
-        var shotId = ProductionShotId();
-        var frames = new List<int>();
-        foreach (var screen in PreparedProductionSession()
-                     .Shot(shotId)
-                     .Screens)
-        {
-            var screenEnd =
-                screen.StartFrame
-                + screen.DurationFrames - 1;
-            if (screenEnd < startFrame
-                || screen.StartFrame > endFrame)
-            {
-                continue;
-            }
-            frames.Add(
-                Math.Max(
-                    startFrame,
-                    screen.StartFrame));
-        }
-        return frames.Count > 0 ? frames : [startFrame];
     }
 
     private static string PlaybackPayloadFingerprint(DesignPreviewPayload? payload)

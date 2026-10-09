@@ -715,8 +715,16 @@ reuse rule: the controller retains prepared frames only while their
 cryptographic request signature still matches the resolved payload, action and
 Preview setup. Completion leaves the final frame visible without discarding
 that reusable preparation. Escape cancels both preparation and playback.
-Production playback payload and signature frames are created and runtime-
-resolved on the session operation worker. The visual controller captures the
+Production payloads are loaded and runtime-resolved once per participating
+Screen on the session operation worker into `PreparedProductionPreview`. This
+request-scoped value document has no persistence capability. Static Preview,
+Screen Play, multi-Screen Shot Play and job-start Render use its same frame
+evaluation path. `ScreenTimelineTiming` owns action frames, delays and Motion
+phases; the prepared document only projects that state into its Screen layers.
+The playback signature hashes those complete prepared Screen documents, not a
+second set of sampled payload reads. A new Render execution always prepares a
+new document from current authoring; no document is persisted in a queue item.
+The visual controller captures the
 request inputs, awaits the immutable frame list and never reads persistence
 while iterating playback frames. Each playback tick selects its exact payload
 from that prepared list by stable owner identity and absolute frame; it does
@@ -730,8 +738,11 @@ Transparent frames use the common empty surface document and participate in
 normal presentation acknowledgement, scrubbing and exact-range replay.
 Preparation closes the static payload once per exact Screen and derives
 only that Screen's frame-owned fields for its remaining frames; it does not
-repeat Theme, Actor, resource or document reads for every tick. Cancellation
-is checked between preparation frames.
+repeat Theme, Actor, resource or document reads for every frame, including
+during initial preparation. Cancellation is checked between Screens and frames.
+Focused port-counting tests enforce that frame evaluation and signature
+generation perform zero persistence calls and that increasing the requested
+frame count for the same Screen does not increase preparation reads.
 The prepared Production playback remains valid until an owning authored input
 or Preview visual setup changes explicitly. Play, pause, frame stepping,
 selection changes and playhead movement do not validate it by rebuilding
