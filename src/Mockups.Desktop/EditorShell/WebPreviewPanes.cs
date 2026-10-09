@@ -1759,25 +1759,6 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
                     return sequence;
                   }
 
-                  const currentLayer = scaleLayer.firstElementChild;
-                  const currentRoot = currentLayer?.hasAttribute("data-renderable-id")
-                    ? currentLayer
-                    : currentLayer?.querySelector("[data-renderable-id]");
-                  const nextRoot = nextLayer.firstElementChild;
-                  if (currentLayer
-                    && currentRoot
-                    && nextRoot
-                    && syncElement(currentRoot, nextRoot)) {
-                    calculatePreviewFit();
-                    recordPatchEvent("commit", {
-                      patch: sequence,
-                      mode: "morph",
-                      images: currentRoot.querySelectorAll("img").length,
-                      ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
-                    });
-                    return sequence;
-                  }
-
                   hydratePreviewAssets(nextLayer);
                   scaleLayer.insertBefore(nextLayer, previewRasterDeck);
 
@@ -1808,6 +1789,22 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
                         ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
                       });
                       nextLayer.remove();
+                      return;
+                    }
+
+                    const currentLayer = [...scaleLayer.children].find(child =>
+                      child !== nextLayer && child !== previewRasterDeck && child.style.opacity !== "0");
+                    const currentRoot = currentLayer?.hasAttribute("data-renderable-id")
+                      ? currentLayer
+                      : currentLayer?.querySelector("[data-renderable-id]");
+                    const nextRoot = nextLayer.firstElementChild;
+                    if (currentRoot && nextRoot && syncElement(currentRoot, nextRoot)) {
+                      nextLayer.remove();
+                      calculatePreviewFit();
+                      recordPatchEvent("commit", {
+                        patch: sequence, mode: "morph", images: images.length,
+                        ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
+                      });
                       return;
                     }
 

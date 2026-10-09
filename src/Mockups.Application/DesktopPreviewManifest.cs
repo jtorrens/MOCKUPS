@@ -42,6 +42,25 @@ public static class DesktopPreviewManifest
 
     public static IReadOnlyDictionary<string, DesktopPreviewModuleManifestEntry> Modules => Current.Value.Modules;
 
+    public static IReadOnlyCollection<string> RequiredComponentTypes(IEnumerable<string> owners)
+    {
+        var required = new SortedSet<string>(StringComparer.Ordinal);
+        var pending = new Queue<string>(owners);
+        while (pending.TryDequeue(out var owner))
+        {
+            if (Modules.TryGetValue(owner, out var module))
+            {
+                foreach (var embedded in module.Embeds) pending.Enqueue(embedded);
+                continue;
+            }
+            if (!Components.TryGetValue(owner, out var component))
+                throw new InvalidOperationException($"Preview owner '{owner}' is not declared in the manifest.");
+            if (!required.Add(owner)) continue;
+            foreach (var embedded in component.Embeds) pending.Enqueue(embedded);
+        }
+        return required;
+    }
+
     public static DesktopPreviewComponentCategory ComponentCategory(string componentType)
     {
         if (!Components.TryGetValue(componentType, out var entry))

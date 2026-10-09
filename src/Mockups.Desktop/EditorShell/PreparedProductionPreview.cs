@@ -1,5 +1,6 @@
 using Mockups.DesktopEditorShell.Common;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -56,13 +57,30 @@ internal sealed class PreparedProductionPreview
 
     public IReadOnlyList<DesignPreviewPayload?> Frames(int startFrame, int endFrame, CancellationToken cancellationToken)
     {
-        var frames = new List<DesignPreviewPayload?>(Math.Max(startFrame, endFrame) - startFrame + 1);
-        for (var frame = startFrame; frame <= Math.Max(startFrame, endFrame); frame++)
+        cancellationToken.ThrowIfCancellationRequested();
+        return new FrameInterval(this, startFrame, checked(Math.Max(startFrame, endFrame) - startFrame + 1), cancellationToken);
+    }
+
+    // The interval owns no duplicate frame documents. Opening a Screen evaluates
+    // only its requested frame; Play/export enumerate through the same projection.
+    private sealed class FrameInterval(PreparedProductionPreview sequence, int start, int count,
+        CancellationToken cancellationToken) : IReadOnlyList<DesignPreviewPayload?>
+    {
+        public int Count => count;
+        public DesignPreviewPayload? this[int index]
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            frames.Add(AtFrame(frame));
+            get
+            {
+                if ((uint)index >= (uint)count) throw new ArgumentOutOfRangeException(nameof(index));
+                cancellationToken.ThrowIfCancellationRequested();
+                return sequence.AtFrame(checked(start + index));
+            }
         }
-        return frames.AsReadOnly();
+        public IEnumerator<DesignPreviewPayload?> GetEnumerator()
+        {
+            for (var index = 0; index < count; index++) yield return this[index];
+        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
     private static bool Contains(ScreenTimingPayload timing, int frame) =>

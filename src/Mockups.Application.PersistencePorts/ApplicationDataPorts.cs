@@ -197,7 +197,7 @@ public interface IPreviewInputRepository
     ComponentClassSettings GetComponentVariantSettings(
         EditorShell.ProjectTreeNode variantNode);
     JsonObject GetComponentVariantRuntimeContract(string variantReference);
-    string GetComponentClassBaseConfigsJson(string projectId);
+    string GetComponentClassBaseConfigsJson(string projectId, IReadOnlyCollection<string> componentTypes);
     string ValidateComponentVariantReferencesForPreview(
         string projectId,
         string configJson);

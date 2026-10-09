@@ -236,16 +236,19 @@ internal static class DesignPreviewPayloadFactory
         var selected = isScreen ? new[] { slots.Single(slot => slot.Id == node.Id) }
             : slots.Where(slot => Math.Max(0, startFrame) < slot.StartFrame + slot.EffectiveDurationFrames
                 && Math.Min(shot.DurationFrames - 1, Math.Max(startFrame, endFrame)) >= slot.StartFrame).ToArray();
-        var componentBaseConfigs = dataSource.LoadComponentBaseConfigs(shot.ProjectId);
+        var sources = selected.ToDictionary(slot => slot.Id, slot => dataSource.LoadModuleInstance(slot.Id));
+        cancellationToken.ThrowIfCancellationRequested();
+        var componentBaseConfigs = sources.Values.Select(source => source.RecordClassId)
+            .Distinct(StringComparer.Ordinal).ToDictionary(owner => owner,
+                owner => dataSource.LoadComponentBaseConfigs(shot.ProjectId, [owner]), StringComparer.Ordinal);
         var screens = new List<DesignPreviewPayload>();
         foreach (var slot in selected)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var theme = themeForScreen(slot.Id);
-            var owner = FromModuleInstance(dataSource, slot.Id, theme.DeviceId, themeMode, theme,
-                0, respectAuthoredAppearance, componentBaseConfigs) with
+            var owner = FromModuleInstance(dataSource, slot.Id, sources[slot.Id], theme.DeviceId, themeMode, theme,
+                0, respectAuthoredAppearance, componentBaseConfigs[sources[slot.Id].RecordClassId]) with
             {
-                ComponentBaseConfigsJson = componentBaseConfigs,
                 OwnerId = slot.Id,
                 ThemeStatusBarVariantReference = theme.StatusBarVariantReference,
                 ThemeNavigationBarVariantReference = theme.NavigationBarVariantReference,
@@ -263,6 +266,7 @@ internal static class DesignPreviewPayloadFactory
     private static DesignPreviewPayload FromModuleInstance(
         DesignPreviewPayloadDataSource dataSource,
         string moduleInstanceId,
+        DesignPreviewModuleInstanceSource instance,
         string deviceId,
         string themeMode,
         DesignPreviewThemeContext theme,
@@ -270,7 +274,6 @@ internal static class DesignPreviewPayloadFactory
         bool respectAuthoredAppearance,
         string componentBaseConfigsJson)
     {
-        var instance = dataSource.LoadModuleInstance(moduleInstanceId, componentBaseConfigsJson);
         var effectiveThemeMode = ResolveEffectiveThemeMode(
             instance.ConfigJson,
             themeMode,
@@ -328,7 +331,7 @@ internal static class DesignPreviewPayloadFactory
             runtimePreviewJson,
             runtimeContractJson,
             effectiveThemeMode,
-            instance.ComponentBaseConfigsJson,
+            componentBaseConfigsJson,
             instance.AppConfigJson,
             instanceJson.ToJsonString(),
             deviceId,

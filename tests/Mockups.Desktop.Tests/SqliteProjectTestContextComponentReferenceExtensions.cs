@@ -36,8 +36,8 @@ internal static class SqliteProjectTestContextComponentReferenceExtensions
 
     internal static string GetComponentClassBaseConfigsJson(
         this SqliteProjectTestContext engine,
-        string projectId) =>
-        engine.Design.GetComponentClassBaseConfigsJson(projectId);
+        string projectId, IReadOnlyCollection<string> componentTypes) =>
+        engine.Design.GetComponentClassBaseConfigsJson(projectId, componentTypes);
 
     internal static string ValidateComponentVariantReferencesForPreview(
         this SqliteProjectTestContext engine,

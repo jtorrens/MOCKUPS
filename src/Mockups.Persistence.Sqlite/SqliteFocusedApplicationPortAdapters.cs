@@ -410,8 +410,8 @@ internal sealed class SqlitePreviewInputPort(
         string variantReference) =>
         design.GetComponentVariantRuntimeContract(variantReference);
 
-    public string GetComponentClassBaseConfigsJson(string projectId) =>
-        design.GetComponentClassBaseConfigsJson(projectId);
+    public string GetComponentClassBaseConfigsJson(string projectId, IReadOnlyCollection<string> componentTypes) =>
+        design.GetComponentClassBaseConfigsJson(projectId, componentTypes);
 
     public string ValidateComponentVariantReferencesForPreview(
         string projectId,
@@ -652,8 +652,8 @@ internal sealed class SqliteRenderSnapshotPort(
         ProjectTreeNode variantNode) =>
         preview.GetComponentVariantSettings(variantNode);
 
-    public string GetComponentClassBaseConfigsJson(string projectId) =>
-        preview.GetComponentClassBaseConfigsJson(projectId);
+    public string GetComponentClassBaseConfigsJson(string projectId, IReadOnlyCollection<string> componentTypes) =>
+        preview.GetComponentClassBaseConfigsJson(projectId, componentTypes);
 
     public string ValidateComponentVariantReferencesForPreview(
         string projectId,

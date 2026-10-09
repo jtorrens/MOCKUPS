@@ -186,15 +186,18 @@ internal sealed partial class SqliteDesignOwner
         return "";
     }
 
-    public string GetComponentClassBaseConfigsJson(string projectId)
+    public string GetComponentClassBaseConfigsJson(string projectId, IReadOnlyCollection<string> componentTypes)
     {
         using var connection = OpenConnection();
         var configs = new JsonObject();
         var variants = new JsonObject();
         var variantTypes = new JsonObject();
         var inputDefaults = new JsonObject();
-        foreach (var row in _componentClassRepository
-                     .QueryAll(connection))
+        var rows = _componentClassRepository.QueryAll(connection);
+        foreach (var type in componentTypes)
+            if (!rows.Any(row => row.ComponentType == type))
+                throw new InvalidOperationException($"Requested Preview Component type '{type}' has no current class.");
+        foreach (var row in rows.Where(row => componentTypes.Contains(row.ComponentType)))
         {
             AddComponentVariantConfigs(connection, variants, row);
             foreach (var variant in RequiredComponentClassVariants(row))

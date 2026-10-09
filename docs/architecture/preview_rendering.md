@@ -725,7 +725,7 @@ The playback signature hashes those complete prepared Screen documents, not a
 second set of sampled payload reads. A new Render execution always prepares a
 new document from current authoring; no document is persisted in a queue item.
 The visual controller captures the
-request inputs, awaits the immutable frame list and never reads persistence
+request inputs, awaits the immutable frame interval and never reads persistence
 while iterating playback frames. Each playback tick selects its exact payload
 from that prepared list by stable owner identity and absolute frame; it does
 not submit a second payload-preparation operation that a later tick could
@@ -743,6 +743,13 @@ during initial preparation. Cancellation is checked between Screens and frames.
 Focused port-counting tests enforce that frame evaluation and signature
 generation perform zero persistence calls and that increasing the requested
 frame count for the same Screen does not increase preparation reads.
+The interval evaluates frame documents on demand, without allocating a document
+for every frame before presenting the selected frame. Component catalogs contain
+only the transitive embedded dependencies declared by the owner's Preview
+manifest entry. One preparation reuses the catalog for Screens of the same
+Module; a Screen's catalog is independent of the other Screens in the interval.
+All Variants of each required Component remain available. Focused tests compare
+scoped catalogs and rendered output against the complete catalog.
 The prepared Production playback remains valid until an owning authored input
 or Preview visual setup changes explicitly. Play, pause, frame stepping,
 selection changes and playhead movement do not validate it by rebuilding
@@ -762,7 +769,11 @@ increments the owner revision, cancels pending presentation work, removes the
 resident document immediately and shows `Preparando preview…`. A result from the
 previous owner cannot publish, including a playback or raster result. Moving the
 playhead within the same owner keeps the resident frame until the replacement
-frame has rendered and committed. Resident DOM patches already recalculate the
+frame has rendered and committed. The WebView stages and decodes replacement
+images before mutating the resident DOM, including its fast morph path. A stale
+staged layer never commits. Browser regression tests exercise the real generated
+document with delayed image responses and compare painted pixels through owner
+changes, re-entry and transparent frames. Resident DOM patches already recalculate the
 viewport, so they do not run the full document reflow polling loop; that loop is
 reserved for a newly loaded Preview shell. Preparation logs record queue and
 payload time separately so slow persistence reads remain distinguishable from

@@ -44,7 +44,6 @@ internal sealed record DesignPreviewModuleInstanceSource(
     string RecordClassId,
     string ConfigJson,
     string RuntimePreviewJson,
-    string ComponentBaseConfigsJson,
     string AppConfigJson,
     string AnimationJson,
     int FrameRate);
@@ -234,9 +233,7 @@ internal sealed class DesignPreviewPayloadDataSource
             ProjectAncestor(node).Id);
     }
 
-    public DesignPreviewModuleInstanceSource LoadModuleInstance(
-        string moduleInstanceId,
-        string componentBaseConfigsJson)
+    public DesignPreviewModuleInstanceSource LoadModuleInstance(string moduleInstanceId)
     {
         var instance = _timeline.GetModuleInstanceSettings(moduleInstanceId);
         var module =
@@ -250,14 +247,13 @@ internal sealed class DesignPreviewPayloadDataSource
             module.RecordClassId,
             module.ConfigJson,
             _timeline.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
-            componentBaseConfigsJson,
             app.ConfigJson,
             instance.AnimationJson,
             shot.Fps);
     }
 
-    public string LoadComponentBaseConfigs(string projectId) =>
-        _database.GetComponentClassBaseConfigsJson(projectId);
+    public string LoadComponentBaseConfigs(string projectId, IEnumerable<string> owners) =>
+        _database.GetComponentClassBaseConfigsJson(projectId, DesktopPreviewManifest.RequiredComponentTypes(owners));
 
     public IReadOnlyList<DesignPreviewShotSlot> LoadShotSlots(string shotId)
     {
@@ -342,7 +338,7 @@ internal sealed class DesignPreviewPayloadDataSource
             settings.ComponentType,
             _database.ValidateComponentVariantReferencesForPreview(projectId, settings.ConfigJson),
             settings.DesignPreviewJson,
-            _database.GetComponentClassBaseConfigsJson(projectId));
+            LoadComponentBaseConfigs(projectId, [settings.ComponentType]));
     }
 
     private DesignPreviewModuleSource ModuleSource(
@@ -357,7 +353,7 @@ internal sealed class DesignPreviewPayloadDataSource
             settings.RecordClassId,
             settings.ConfigJson,
             settings.DesignPreviewJson,
-            _database.GetComponentClassBaseConfigsJson(projectId),
+            LoadComponentBaseConfigs(projectId, [settings.RecordClassId]),
             _database.GetModuleAppSettings(moduleId).ConfigJson);
     }
 

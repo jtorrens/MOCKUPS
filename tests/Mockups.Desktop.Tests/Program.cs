@@ -178,6 +178,7 @@ var tests = new (string Name, Action Run)[]
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
     ("Production playback prepares gaps and multiple Screen boundaries", ProductionPlaybackPreparesGapsAndMultipleScreens),
     ("Production frame evaluation and signatures never reread persistence", ProductionPreparationReadsOncePerScreen),
+    ("Preview dependency catalogs preserve required Variants and rendered output", PreviewDependencyCatalogsPreserveOutput),
     ("Production frame timing preserves action delay and Motion boundaries", ProductionFrameTimingPreservesBoundaries),
     ("Shot Play prepares transparent frames before starting its clock", ShotPlayPreparesTransparentFramesBeforeClock),
     ("committed Shot playback preserves multiple Screens and transparent frames", () => CommittedShotPlaybackPreservesFrames(committedDatabasePath)),
@@ -242,6 +243,7 @@ var tests = new (string Name, Action Run)[]
     ("obsolete Preview authoring preparation cannot replace the latest selection", ObsoletePreviewAuthoringPreparationCannotCommit),
     ("obsolete interactive Preview render results are discarded", ObsoleteInteractivePreviewRenderResultsAreDiscarded),
     ("Preview owner changes clear presentation without clearing same-owner frames", PreviewOwnerChangesClearPresentation),
+    ("Preview browser retains same-owner pixels and rejects delayed previous owners", WebPreviewBrowserChecks.Run),
     ("resident Preview shell rejects changed device geometry", ResidentPreviewShellRejectsChangedDeviceGeometry),
     ("WebView script results normalize macOS and Windows encodings", WebViewScriptResultsNormalizePlatformEncodings),
     ("Preview element identification stays on the generic renderable boundary", PreviewElementIdentificationUsesRenderableIdentity),
@@ -21319,6 +21321,49 @@ static void ShotPlayPreparesTransparentFramesBeforeClock()
     finally { File.Delete(temporary); }
 }
 
+static void PreviewDependencyCatalogsPreserveOutput()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    const string projectId = "project_foqn_s2";
+    var watch = Stopwatch.StartNew();
+    var full = database.PreviewInputs.GetComponentClassBaseConfigsJson(projectId,
+        DesktopPreviewManifest.Components.Keys.ToArray());
+    Console.WriteLine($"CATALOG all: {watch.Elapsed.TotalMilliseconds:F1} ms, {full.Length} characters");
+    var all = JsonNode.Parse(full)!.AsObject();
+    foreach (var owner in new[] { "label", "button", "module.core.videoCall", "module.core.chat" })
+    {
+        var required = DesktopPreviewManifest.RequiredComponentTypes([owner]);
+        watch.Restart();
+        var scopedJson = database.PreviewInputs.GetComponentClassBaseConfigsJson(projectId, required);
+        Console.WriteLine($"CATALOG {owner}: {watch.Elapsed.TotalMilliseconds:F1} ms, {required.Count} types, {scopedJson.Length} characters");
+        var scoped = JsonNode.Parse(scopedJson)!.AsObject();
+        Equal(required.Count + 3, scoped.Count);
+        foreach (var type in required) True(JsonNode.DeepEquals(all[type], scoped[type]));
+        foreach (var variant in all["variantTypes"]!.AsObject())
+        {
+            var included = required.Contains(variant.Value!.GetValue<string>());
+            foreach (var dictionary in new[] { "variants", "variantTypes", "inputDefaults" })
+            {
+                Equal(included, scoped[dictionary]!.AsObject().ContainsKey(variant.Key));
+                if (included) True(JsonNode.DeepEquals(all[dictionary]![variant.Key], scoped[dictionary]![variant.Key]));
+            }
+        }
+    }
+    Throws<InvalidOperationException>(() => DesktopPreviewManifest.RequiredComponentTypes(["unknown-owner"]));
+    Throws<InvalidOperationException>(() => database.PreviewInputs.GetComponentClassBaseConfigsJson(projectId, ["unknown-type"]));
+    var screen = CanonicalProjectNodes(database).First(node => node.Kind == ProjectTreeNodeKind.ModuleInstance
+        && database.GetModuleInstanceVariantSettings(node.Id).RecordClassId == "module.core.videoCall");
+    var preparer = new ProductionPreviewPayloadPreparer(
+        new DesignPreviewPayloadDataSource(database.PreviewInputs, database.Production, database.Resources,
+            database.Resources, database.ProjectPaths),
+        new ProductionPreviewRuntimeResolver(database.Resources, database.ProjectPaths));
+    var payload = preparer.PrepareRequired(screen, null, "light", 0);
+    var metrics = database.GetDevicePreviewMetrics(payload.DeviceId);
+    var fullPayload = DesignPreviewPayloadLayers.MapOwners(payload, owner => owner with { ComponentBaseConfigsJson = full });
+    Equal(WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, fullPayload).GetAwaiter().GetResult(),
+        WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload).GetAwaiter().GetResult());
+}
+
 static void ProductionPreparationReadsOncePerScreen()
 {
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-preparation-reads-{Guid.NewGuid():N}.sqlite");
@@ -21346,6 +21391,14 @@ static void ProductionPreparationReadsOncePerScreen()
         var signature = sequence.ContentSignature();
         var frames = sequence.Frames(0, last, CancellationToken.None);
         Equal(last + 1, frames.Count);
+        // A very long interval must not allocate a document for every frame.
+        var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+        var longInterval = sequence.Frames(0, 1_000_000, CancellationToken.None);
+        True(GC.GetAllocatedBytesForCurrentThread() - allocatedBefore < 4096);
+        Equal(1_000_001, longInterval.Count);
+        Equal(JsonSerializer.Serialize(sequence.AtFrame(0)), JsonSerializer.Serialize(longInterval[0]));
+        Throws<ArgumentOutOfRangeException>(() => _ = longInterval[-1]);
+        Throws<ArgumentOutOfRangeException>(() => _ = longInterval[longInterval.Count]);
         for (var frame = last; frame >= 0; frame--)
             Equal(JsonSerializer.Serialize(frames[frame]), JsonSerializer.Serialize(sequence.AtFrame(frame)));
         Equal(signature, sequence.ContentSignature());

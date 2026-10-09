@@ -3750,8 +3750,15 @@ internal sealed class EditorPreviewController : IDisposable
         if (_preparedShotPlayback is { } prepared && prepared.Covers(payloadNode, startFrame, endFrame))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return (prepared.ContentSignature, prepared.Frames
-                .Skip(startFrame - prepared.StartFrame).Take(endFrame - startFrame + 1).ToArray());
+            return await _operations.ExecuteAsync(() =>
+                (prepared.ContentSignature, (IReadOnlyList<DesignPreviewPayload?>)Enumerable
+                    .Range(startFrame - prepared.StartFrame, endFrame - startFrame + 1)
+                    .Select(index =>
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        return prepared.Frames[index];
+                    }).ToArray()),
+                cancellationToken);
         }
         var themeId = _selectedThemeId;
         var themeMode = _selectedMode;
