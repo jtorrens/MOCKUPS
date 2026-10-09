@@ -174,7 +174,9 @@ layout, renderable construction or fallback presentation.
 For every manifest entry, concrete behavior has one executable owner chain:
 
 - the contract owns required inputs and accepted current shapes;
-- the resolver owns validation, semantic resolution, defaults and timing state;
+- the resolver owns validation, semantic interpretation and timing state of
+  already prepared values; value-source selection belongs only to the shared
+  Runtime Preview boundary;
 - the renderable owns composition and final generic geometry;
 - `embeds` owns the permitted concrete child dependencies;
 - focused characterization tests own the observable examples and edge cases.
@@ -214,8 +216,9 @@ Modules own their Screen composition through the same boundary. Common helpers
 do not import concrete Component owners. A parent may import an embedded child
 only when that dependency is declared and the parent explicitly owns the slot.
 
-Component-specific layout, defaults, behavior and animation remain in the
-owner. If a change appears to require branching on a Component type in a
+Component-specific layout, behavior and resolved temporal state remain in the
+owner. Definition defaults are prepared at the shared document boundary, never
+recovered by a concrete resolver. If a change appears to require branching on a Component type in a
 generic bridge or renderer, the responsibility belongs in the owner or a
 parameterized generic primitive.
 

@@ -9,6 +9,47 @@ import {
 
 const repositoryRoot = path.resolve(".");
 
+test("build graph changes cannot be consumed by a source or test directory first", () => {
+  for (const file of [
+    "src/Mockups.Application/Mockups.Application.csproj",
+    "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
+    "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
+    "tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj",
+    "Directory.Build.props",
+    "Directory.Build.targets",
+  ]) {
+    const ids = planScopedValidation(repositoryRoot, [file]).map(step => step.id);
+    assert.ok(ids.includes("desktop-compile"), file);
+    assert.ok(ids.includes("architecture"), file);
+  }
+});
+
+test("shared Application contracts select their real Desktop consumers", () => {
+  for (const file of [
+    "src/Mockups.Application/RuntimePreviewDocumentContract.cs",
+    "src/Mockups.Application/StructuredCollectionMutation.cs",
+    "src/Mockups.Application/EditorWorkspace.cs",
+  ]) {
+    const ids = planScopedValidation(repositoryRoot, [file]).map(step => step.id);
+    for (const id of ["application", "desktop-core", "desktop-ui"]) {
+      assert.ok(ids.includes(id), `${file}: missing ${id}`);
+    }
+  }
+});
+
+test("shared editor controllers and changed Desktop tests retain isolated UI coverage", () => {
+  for (const file of [
+    "src/Mockups.Desktop/EditorShell/EditorContentPreparationService.cs",
+    "src/Mockups.Desktop/EditorShell/ProductionPreviewSessionDataSource.cs",
+    "tests/Mockups.Desktop.Tests/Program.cs",
+    "tests/Mockups.Desktop.Tests/webPreviewBrowserChecks.mjs",
+  ]) {
+    const ids = planScopedValidation(repositoryRoot, [file]).map(step => step.id);
+    assert.ok(ids.includes("desktop-core"), file);
+    assert.ok(ids.includes("desktop-ui"), file);
+  }
+});
+
 test("an unclassified path stops instead of selecting the full repository suite", () => {
   assert.throws(
     () => planScopedValidation(

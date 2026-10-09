@@ -61,7 +61,7 @@ SQLite current project data
         │       └── generic web renderer
         │
         └── workstation-local Render Queue
-                ├── immutable Shot frame snapshot
+                ├── live Shot plan → execution-local current frame snapshot
                 ├── sequential recoverable jobs
                 ├── clean Production raster frames
                 └── MOV or image-sequence output
@@ -110,13 +110,13 @@ animation timing or component layout rules.
 
 ### Render Queue
 
-The visible editor creates a complete immutable snapshot by streaming resolved
-frame documents into a content-addressed local store. It never accumulates the
-complete Shot in memory. A local sequential worker uses the raster Preview
-pipeline to request one stored frame at a time and encode it without reading
-current authored data again. Queue persistence, progress, frame storage and
-last route choice are local workstation state, outside the portable Project
-database.
+Enqueue stores only live Shot plans. At each execution or retry, the preparation
+owner reads current authoring under the shared operation gate and streams its
+resolved frames and assets into a unique temporary content-addressed store.
+The raster worker consumes that coherent revision one frame at a time; it never
+opens the Project database. The store is deleted after that execution. Queue
+plans, progress and last route choice are workstation state outside the portable
+Project database. No frame snapshot survives as authority for a later run.
 
 Production exposes that owner through a permanent Render Queue section. Shot
 rows open a separate batch-creation modal; the central queue panel monitors

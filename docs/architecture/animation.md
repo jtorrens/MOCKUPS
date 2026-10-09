@@ -362,7 +362,7 @@ frame.
 
 An animatable text field whose completion references a `BehaviorTiming` field
 uses that standard action while no parameter track exists. Activating its track
-converts the action to an equivalent explicit pair: protected frame zero stores
+converts the action to an equivalent explicit pair: editable frame zero stores
 empty text with `hold`, and the resolved completion frame stores the full text
 with `writeOn`. The track then becomes the single timing owner and the referenced
 duration field is disabled until the track is removed. This conversion changes

@@ -632,16 +632,16 @@ the JSON is disconnected; offline state cannot create or refresh associations.
 
 Snapshot preparation writes one resolved frame document at a time and never
 retains the complete Shot frame set in memory. Fonts, media and repeated frame
-documents are written once by content hash and may be shared by both children
-of a batch. The queue JSON does not embed their binary payloads.
+documents are written once by content hash within that execution. Each child
+prepares its own current revision; a batch does not share an authored snapshot
+between children. The queue JSON does not embed their binary payloads.
 
-A worker never reopens the Project database to execute an existing job. It
-streams the ordered manifest, reads only the current document and registers
-each referenced asset once in its persistent raster process. The absolute
-production root and local snapshot-store paths are workstation state and are
-never copied into the portable Project. Interrupted active jobs with a complete
-snapshot return to Pending on the next application start; incomplete
-preparation fails explicitly and its orphaned local files are removed.
+The raster worker has no Project database capability. The job-start preparation
+owner reads current data for every execution and retry, then the worker streams
+that execution's ordered manifest and registers each referenced asset once.
+The absolute production root and temporary store paths never enter the portable
+Project. Interrupted active jobs return to Pending without automatic execution;
+their next launch prepares current data again, never reuses an earlier snapshot.
 
 Manual render planning derives the technical identity and route from the
 Project contract, Episode code and stable Shot number. Managed render planning
@@ -701,9 +701,12 @@ source. Later tree reads remain candidates until this complete catalog and its
 visual-context snapshot succeed. The candidate tree, catalog and selection are
 then committed as one revision; a failed, canceled or obsolete preparation
 leaves every prior snapshot current.
-Production playback captures its request and creates every resolved payload
-frame through the session operation worker. Frame iteration and runtime record
-resolution do not execute from timer or visual callbacks.
+Production preparation captures its request and closes the participating Screen
+documents through the session operation worker. Runtime record resolution never
+runs from timer or visual callbacks. The persistence-free prepared interval
+projects frames on demand; opening a Screen does not allocate every frame first.
+Bulk Play preparation runs on the operation worker, while exact frame lookup
+performs no persistence read.
 Interactive Production refresh also captures one exact request and prepares its
 resolved payload, renderability state and history label on that worker. The
 visual controller commits only the preparation whose cancellation owner and

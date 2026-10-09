@@ -163,16 +163,17 @@ Actor and media Test Values resolve only through the System Preview fixture
 catalog installed in App Support. They never store a Production Actor id or a
 Project media path. Media file and media-directory Test Values use bounded
 fixture selectors instead of filesystem browsers. Production payloads reject
-System Preview actor ids. They may carry a `system-preview://` media reference
-only when the effective Production Runtime boundary has selected that exact
-Design `defaultValue` for an empty or unavailable authored media value.
+System Preview actor ids and do not carry the Design fixture media root.
+Production preserves its authored media value, even when empty or unavailable;
+the resource boundary paints the nonblocking notice declared in
+`resources_assets.md`, never a substituted Design default.
 
 Runtime Inputs remain product inputs. The Design Preview surface does not
 create a separate input contract and does not own Component-specific behavior.
 
 ## Definition development
 
-Creating an Atom, Component Class or Module is a strict scaffolding workflow.
+Creating an Atom, Component Class or new Module implementation is a strict scaffolding workflow.
 The workflow must generate and validate the complete owner set in one coherent
 revision:
 
@@ -185,6 +186,7 @@ revision:
 7. migration or seed update when persisted data changes;
 8. architecture, contract and Preview validation.
 
-Normal application UI does not offer Add or Delete for these definition types.
+Normal application UI does not create new implementation types. The declared
+App template capability above creates Module records, not implementations.
 No step may be inferred from a name, type, sibling, hierarchy position or
 manifest order.

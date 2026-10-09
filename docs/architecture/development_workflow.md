@@ -58,21 +58,18 @@ strict and reject an unprepared document instead of repairing it.
 
 ## Validation during implementation
 
-Use `npm run test:changed` during the edit loop and
-`npm run test:revision` when the coherent revision is ready. The scoped
-validator maps changed paths to their semantic test owners and reports the
-selected command and reason. It stops on an unclassified path; contributors
-must identify that path's owner and add focused coverage rather than silently
-running the complete repository suite.
+Local agent iteration is compile-only unless the user explicitly authorizes
+tests. A boundary change, handoff, merge or push is not test authorization.
+When authorized, select the narrowest applicable checks. `test:changed -- --list`
+and `test:revision -- --list` inspect the existing ownership plan without running
+its tests; executing that plan requires authorization for its selected scope.
+Unclassified paths stop selection and require an explicit validation owner.
 
-`npm test` remains the explicit complete integration and publication gate. It
-is not the fallback for an incomplete validation map and is not the normal
-final step for a local revision. It runs when the revision affects a shared
-Preview boundary, manifest or registry, persistence schema or parity data,
-generated scaffolding, a cross-owner integration or phase handoff, and when
-merging or publishing a version. It also runs when complete validation is
-requested explicitly. Exact Application, Desktop and Preview-owner selectors
-are documented in `validation.md`.
+`npm test` is the complete repository gate for CI or an explicitly requested
+complete local run, never a fallback for an incomplete map. Record the checks
+actually executed and any remaining coverage rather than claiming a full gate
+from a compilation or focused run. Exact selectors and the maintained
+contract-to-test coverage map belong to `validation.md`.
 
 ## Central package versions
 
@@ -417,9 +414,10 @@ For each coherent phase:
    canonical workstation database, and run `npm run
    desktop:update:checkpoint`; abort the migration if Backup Hub cannot accept
    the protected pre-migration package;
-8. run exact owner checks and the shared architecture guard while iterating;
-9. after the intended revision stops changing, run `npm run test:revision` and
-   every check it selects for the exact revision scope;
+8. compile the affected code; run exact owner tests and the shared architecture
+   guard only when authorized;
+9. inspect the revision's validation plan, execute the authorized checks and
+   report unexecuted coverage explicitly;
 10. inspect the final diff, including parity artifacts;
 11. create a local commit;
 12. run `npm run desktop:update:end`; it validates exact canonical/snapshot
@@ -430,15 +428,12 @@ For each coherent phase:
    desktop application when UI review is applicable;
 14. push only when the user asks.
 
-Focused Preview files and exact or filtered desktop test names are iteration
-tools, not substitutes for the scope-selected revision gate. A manifest,
-shared resolver helper, generic renderer, persistence contract, schema,
-scaffold generator or parity change expands immediately to its owning suite
-and requires `npm test` before handoff. The same complete gate is required for
-a cross-owner integration, phase handoff, merge or publication. A completed
-gate remains valid while the source, contracts, generated artifacts, assets
-and staged parity database are unchanged; do not rerun it merely to reproduce
-the same result.
+Focused Preview files and exact or filtered Desktop names provide bounded
+behavioral evidence, not proof of every application contract. A changed shared
+owner expands the relevant coverage plan, but does not expand authorization.
+Compiler/graph guards, behavioral tests and manual checks must be reported
+separately. A completed check remains valid while its relevant sources,
+contracts, artifacts, assets and parity data are unchanged.
 
 The Desktop and development scaffolds author only the canonical workstation
 database. On macOS it is `~/Library/Application Support/MOCKUPS/mockups.sqlite`.

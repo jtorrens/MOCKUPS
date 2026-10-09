@@ -389,14 +389,12 @@ written to both the item's effective value and its embedded Runtime definition
 default where that definition travels with the item. Media inputs are never a
 creation requirement. Cancelling the form creates nothing.
 
-Production preserves the authored media value, including an empty or currently
-unavailable path. When preparing the effective Runtime document, an empty or
-unavailable image, media-file or media-directory value resolves to that exact
-field's declared Design `defaultValue`. The same rule applies to structured
-items, nested Runtime contracts and media-valued animation keyframes. This is
-an effective-document projection only: it never repairs or rewrites persisted
-Production content. Actor fixture isolation remains strict; media fixture
-references are permitted only as the declared Design fallback.
+Production preserves the exact authored media value, including empty or
+unavailable paths in structured items, nested Runtime contracts and animation
+keyframes. Shared resource preparation paints `Media ausente` for absence and
+`Error al leer media` for read/extraction failure, identically in Preview and
+export. Neither path substitutes a Design default, another root or an older
+video frame. Actor fixture isolation remains strict.
 
 The first Preview tab is an authoring host, not a Preview-owned data store.
 

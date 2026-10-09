@@ -122,7 +122,6 @@ export function checkDocumentationContracts({
     "materialization never edits the manifest, registry or database",
     "Integration rejects missing assets",
     "Module contract planning",
-    "run `npm run test:revision` and",
   ]) {
     assertDocumentContains(
       "docs/architecture/development_workflow.md",
@@ -132,7 +131,8 @@ export function checkDocumentationContracts({
   }
   for (const [document, requiredTerm] of [
     ["AGENTS.md", "Do not run test suites during iteration or final handoff unless the user"],
-    ["docs/architecture/validation.md", "check is a complete validation for that revision scope."],
+    ["docs/architecture/validation.md", "Tests require explicit user"],
+    ["docs/architecture/development_workflow.md", "Local agent iteration is compile-only unless the user explicitly authorizes"],
   ] as const) {
     assertDocumentContains(
       document,
@@ -140,6 +140,15 @@ export function checkDocumentationContracts({
       `${document} must keep validation proportional to revision scope`,
     );
   }
+  // Bounded prose regressions, not a substitute for executable behavior guards.
+  // These exact retired claims previously coexisted with the opposite contract.
+  const retiredClaims = [
+    ["snapshot-at-enqueue", "The visible editor creates a complete immutable snapshot"],
+    ["Design media substitution", "Design `defaultValue` for an empty or unavailable authored media value"],
+    ["Actor-derived Screen Theme", "Screen → Shot → Shot owner Actor → Actor default Theme"],
+    ["automatic complete gate", "and requires `npm test` before handoff"],
+    ["protected frame-zero keyframe", "protected frame-zero keyframe"],
+  ] as const;
   for (const activeMarkdownPath of [
     "AGENTS.md",
     "docs/README.md",
@@ -149,6 +158,12 @@ export function checkDocumentationContracts({
     ),
   ]) {
     const source = readText(activeMarkdownPath);
+    const normalized = source.replace(/\s+/gu, " ");
+    for (const [contract, retiredClaim] of retiredClaims) {
+      if (normalized.includes(retiredClaim)) {
+        addViolation(activeMarkdownPath, `retired documentation contract: ${contract}`);
+      }
+    }
     for (const match of source.matchAll(/\]\(([^)]+)\)/g)) {
       const target = match[1] ?? "";
       if (target.includes("docs/old") || target.includes("../old")) {

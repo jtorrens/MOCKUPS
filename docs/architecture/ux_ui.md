@@ -413,19 +413,19 @@ The modal paints its loading state before draft preparation and output-path
 inspection. Database reads and filesystem probes remain cancellable and run
 outside the UI thread; initial control population triggers one proposal pass.
 
-Confirming the modal closes it immediately and creates visible `PREPARING`
-Light/Dark children. Preparation uses the stable determinate job bar and shows
-the exact Screen, prepared frames and remaining frames without presenting
-those source frames as rendered output. Canceling either child during this
-atomic preparation cancels the complete batch; once preparation finishes, the
-children are independent queue jobs.
+Confirming the modal creates independent `PENDING` Light/Dark live plans without
+preparing frames. **Render pending** captures the exact pending set and launches
+those children sequentially. Each child enters `PREPARING` only at its own
+execution start and reads the latest authored data. Its stable determinate bar
+shows the exact Screen, prepared and remaining frames, not rendered output.
+Cancellation affects that child; jobs enqueued later wait for another launch.
 
 Production also exposes a permanent **Render Queue** section alongside
 Episodes and Production Data. Its central panel remains accessible with an
 empty queue or without a configured local Production Output root. It groups Light/Dark children by batch
 and shows phase, frame progress, errors and final output. Pending or active
-work can be canceled; failed or canceled jobs retain a retry snapshot while
-available; completed work can reveal its output; terminal history can be
+work can be canceled; retry creates a pending live plan and reads current data
+at execution, without retaining a prior snapshot; completed work can reveal its output; terminal history can be
 cleared. Each job row and progress control remains mounted while values change;
 render progress is monotonic and cannot visually restart on every frame.
 Pause lets the active job finish and prevents the next pending job from
@@ -568,9 +568,9 @@ mutation.
 Declared `RecordReference` Overrides use this same action and standard
 inherited controls. Their metadata declares the referenced class, sparse local
 document and exact field set; shell and shared editor services never route by a
-concrete field, record or owner pair. In the Shot Device row, changing the
-selected Device keeps the Shot-local values; each field's Restore action
-removes only that local value. The Shot and Device editors contain no
+concrete field, record or owner pair. Screen Device Overrides retain their
+Screen-local non-geometric values when the Shot Device changes; each field's
+Restore removes only that local value. The Screen and Device editors contain no
 override-specific controls or branches.
 
 Component and Module Variant editors also expose a flat `Overrides (N)` peer
@@ -639,9 +639,9 @@ distinguished with compact amber diamonds; keyframes from other tracks remain
 small circles and the current-frame marker is blue. These tracks always share
 the exact temporal owner: a Screen field uses the Screen ruler, while fields in
 one collection item use that item's local ruler from its first appearance.
-Different collection items never share a lane. Protected origin markers use a
-vector outline instead of a filled marker; labels never depend on Unicode glyph
-coverage.
+Different collection items never share a lane. Every authored keyframe,
+including frame zero, is editable and filled; labels never depend on Unicode
+glyph coverage.
 
 The Shot General card exposes the shared boundary Transition through the
 registered Motion control used by Components and its exact Duration through the

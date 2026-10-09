@@ -20,19 +20,52 @@ reorder, delayed confirmation, failed edit/Restore, deleted items and replaced
 Variant/Theme references. Real shared controls must restore without emitting a
 second save event, and flat Overrides must consume that same owner path.
 
+### Contract-to-test coverage map
+
+This is a navigation map to executable owners, not a claim that every possible
+violation is detectable. Update the relevant row when a contract changes; extend
+the existing owner rather than creating a second guard or validation route.
+
+| Contract | Executable evidence | Required breach or observable result |
+| --- | --- | --- |
+| Assembly and Preview ownership | [compiled graph guards](../../tests/architecture/dotnetProjectBoundaries.test.ts), [Preview graph guards](../../tests/architecture/previewModuleBoundaries.test.ts) | Forbidden dependency edges and negative compiler consumers fail; registries only route prepared documents. |
+| One effective property document | [Runtime preparation](../../tests/animation/runtimePreviewDocumentContract.test.ts) | Animation > Runtime > Override > Variant, including false/zero/empty; undeclared or missing required inputs fail; two concrete owners share the contract. |
+| Stable collection identities and time | [collection projection](../../tests/animation/runtimeCollectionProjection.test.ts), [owner timeline](../../tests/animation/runtimeOwnerTimeline.test.ts) | All declared item fields survive projection; movement/re-entry preserves local keyframes and distinct parent-owned presence. |
+| Exact Production context | [Desktop integration registry](../../tests/Mockups.Desktop.Tests/Program.cs), `Shot Device and Screen Theme resolve independently across Production` | Changing Actor/Device cannot substitute a Screen's authored Theme. |
+| Persistence-free frames and multi-Screen Shots | Same Desktop registry: `Production frame evaluation and signatures never reread persistence`, `Production playback prepares gaps and multiple Screen boundaries`, `Preview dependency catalogs preserve required Variants and rendered output` | Prepared frames/signatures do no further reads; lazy ranges, gaps, overlaps and scoped dependencies retain correct output. |
+| Preview presentation lifetime | [real browser pixel regression](../../tests/Mockups.Desktop.Tests/webPreviewBrowserChecks.mjs), Desktop registry's owner-change and obsolete-result checks | Same owner retains resident pixels until ready; departure clears; stale work cannot publish; re-entry, morph and transparent frames work. Three disposable HTML mutations must fail the exact intended assertion. |
+| Current data at Render execution | Desktop registry, `Render execution captures current data through the shared operation boundary` | An edit after planning appears in the next execution; a queued edit waits for the shared preparation gate and appears on the following execution. |
+| Missing resources never substitute another source | [resource and identity regressions](../../tests/animation/architectureAuditContracts.test.ts) | Missing icons paint a red square at authored size; media cannot search another root or reuse an older successful video frame after extraction fails. |
+| Atomic authoring and propagation | Desktop registry's Theme duration, Component Variant and Override promotion tests | Injected write failures leave all affected documents and durations unchanged, on temporary database copies. |
+| Active rules and test selection | [documentation controls](../../tests/tooling/architectureValidationContracts.test.ts), [scope selection](../../tests/tooling/scopedValidation.test.ts) | Current schema and canonical index agree; exact known retired claims are rejected; build graphs and isolated UI consumers cannot be omitted by an earlier directory match. |
+
+Text checks enforce bounded documentation and metadata contracts only. They do
+not establish behavior or replace compiler/graph, integration or pixel tests.
+Negative controls require the intended diagnostic; unrelated exceptions,
+timeouts, missing dependencies and compilation failures do not count as proof.
+They operate on disposable fixtures, never canonical data or production switches.
+The Chromium pixel test does not prove native WKWebView/Windows WebView behavior.
+Manual platform checks, external codecs and another workstation remain separate
+evidence; do not claim them from a headless or single-machine run.
+
 ## Standard checks
 
-The normal final gate for one coherent local revision is:
+Local agent validation is compile-only by default. Tests require explicit user
+authorization, including at handoff, merge or push. When authorized, use the
+narrowest applicable suite. To inspect the proposed revision scope without
+executing tests:
 
 ```text
-npm run test:revision
+npm run test:revision -- --list
 ```
 
 It derives the exact required checks from the changed semantic owners and
 fails when any path has no declared validation owner. Passing every selected
-check is a complete validation for that revision scope.
+check covers that declared revision scope; it does not prove unselected behavior.
+Run the plan only when its scope is authorized. A focused run, compilation,
+manual review and complete gate are different evidence and must be reported as such.
 
-The complete repository validation is:
+CI and explicitly requested complete local validation use:
 
 ```text
 npm test
@@ -178,7 +211,7 @@ It includes:
   breadcrumbs while their authoring identity resolves to the current canonical
   project tree;
 - headless Avalonia List Item/List authoring surfaces, including Variant
-  selection, numeric active-set and state Runtime values, shared List item
+  selection, stable-ID active-set and state Runtime values, shared List item
   dimensions, General plus promoted Content Set sections, compact Avatar/Label/
   Icon Row rows, ordinal-only List item navigation, exact nested child Runtime
   contracts, absence of duplicated child dimensions, collection add/duplicate/
@@ -221,8 +254,8 @@ It includes:
   labels, explicit Play/Pause transport glyph contrast, and an always-openable
   Shot add action;
 - explicit Conversation text tracks retaining Keyboard and Text Input Bar
-  presence for the outgoing write interval, plus positive message Out values
-  extending calculated Screen duration without changing serial arrival;
+  presence for the outgoing write interval, plus message Out values preserving
+  independent Screen duration and serial arrival;
 - Conversation Screen-instance positioning conversion preserving every current
   message In in both relative-delay and Screen-local-start modes, with timeline
   movement writing only the active representation;
@@ -276,7 +309,7 @@ previous local build. On Linux, the workflow installs Xvfb and WebKitGTK 4.1,
 then runs the same gate on a virtual display so tests can construct the real
 `MainWindow` and its native Preview WebView.
 
-Use focused checks while iterating:
+Available focused checks (execute only within the authorized test scope):
 
 ```text
 npm run test:changed
@@ -353,10 +386,8 @@ implicitly. A path without a declared validation owner stops immediately,
 prints every unclassified path and requires the route plus its focused checks
 to be added before validation continues. This makes validation ownership an
 explicit current contract instead of hiding a missing classification behind
-the slow complete suite. The complete suite remains deliberate and is required
-for shared Preview boundaries, manifest or registry changes, persistence
-schema or parity data, generated scaffolding, cross-owner integrations, phase
-handoffs, merges and publication, or when explicitly requested.
+the slow complete suite. Shared boundaries expand the proposed coverage, not
+the authorization. The complete suite runs in CI or when explicitly requested.
 
 An exact Application or Desktop name, Preview owner or filter that does not
 exist, an unknown selector or a filter that matches nothing fails explicitly.
@@ -372,11 +403,14 @@ Validation scope follows the changed owner:
   characterization files and only that manifest owner;
 - a shared Preview helper, boundary, registry, renderer or bridge runs the
   complete Preview suite and manifest-wide render;
-- an Application or Domain change runs Application tests and the compiled
-  consumer;
+- an Application or Domain change selects Application tests plus Desktop core
+  and isolated UI consumers of those shared contracts;
 - a local Desktop behavior runs Desktop core coverage, adding native UI only
-  for shared visual-tree or XAML surfaces; exact declared regressions replace
+  for shared visual-tree, EditorShell controller or XAML surfaces; changes to
+  the shared Desktop test assembly also retain its isolated UI group. Exact declared regressions replace
   the broad group when the owner has a stable mapping;
+- project and MSBuild files select compilation and architecture guards before
+  source-directory classification can consume them;
 - persistence, parity data and referenced assets add read-only database
   validation;
 - scaffolding, tooling and architecture paths run only their focused
@@ -706,7 +740,8 @@ Variants with their initial scaffold values.
 
 ## Manual UI validation
 
-For any editor or Preview change, exercise at least:
+Choose relevant checks for the changed contracts and report which were actually
+exercised. This checklist is not a claim that every item ran:
 
 1. Design selection, Variant change and class navigation;
 2. temporary Test Values, Play, Restore and Escape;
@@ -728,7 +763,7 @@ For any editor or Preview change, exercise at least:
 14. Shot Render action on a pre-association Shot, Actor loaded before routing,
     automatic route proposal, Shot Device and exact per-Screen Theme/visual overrides,
     Light/Dark/Both naming,
-    manual job-start folder creation, managed missing-folder rejection, queue
+    safe manual and managed job-start folder creation, missing-root rejection, queue
     progress, cancel/retry/pause and output
     reveal.
 15. Shot reference Browse, missing/out-of-range `Sin media`, Set In, muted and
@@ -772,9 +807,9 @@ scale, tool versions, command results and any screenshots or exact failures.
 
 A revision is ready for review only when:
 
-- every check selected by `npm run test:revision` passes;
-- `npm test` also passes when the revision crosses a complete-gate boundary
-  declared above;
+- affected code compiles and every authorized check actually run passes;
+- selected but unexecuted tests, untested platforms and manual-review gaps are
+  reported explicitly; full validation is claimed only after `npm test` passes;
 - `git diff --check` passes;
 - no unintended code, database or asset changes remain;
 - required parity files are included;

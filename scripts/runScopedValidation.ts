@@ -181,6 +181,14 @@ export function planScopedValidation(
       architectureRetired = true;
       continue;
     }
+    // Build edges must be checked before a source-directory owner consumes them.
+    if (file.endsWith(".csproj")
+      || file.endsWith(".props")
+      || file.endsWith(".targets")) {
+      desktopCompile = true;
+      architectureBoundaries = true;
+      continue;
+    }
     if (file === "scripts/validation/checkDocumentationContracts.ts") {
       architectureContracts = true;
       architecturePipeline = true;
@@ -266,6 +274,7 @@ export function planScopedValidation(
     if (file.startsWith("tests/Mockups.Desktop.Tests/")) {
       desktopCompile = true;
       desktopCore = true;
+      desktopUi = true;
       continue;
     }
     if (file.startsWith("src/desktop-preview/")) {
@@ -290,6 +299,10 @@ export function planScopedValidation(
       || file.startsWith("src/Mockups.Domain/")) {
       application = true;
       desktopCompile = true;
+      // Application contracts are consumed by both prepared Preview sessions
+      // and isolated editor controls, not just the Application test assembly.
+      desktopCore = true;
+      desktopUi = true;
       if (file.startsWith("src/Mockups.Application.PersistencePorts/")) {
         architectureBoundaries = true;
       }
@@ -301,6 +314,7 @@ export function planScopedValidation(
       desktopCore = true;
       if (file.endsWith(".axaml")
         || file.includes("/MainWindow.")
+        || file.includes("/EditorShell/")
         || file.includes("/Common/")) {
         desktopUi = true;
       }
@@ -382,16 +396,6 @@ export function planScopedValidation(
       tooling = true;
       architecturePipeline = true;
       typecheck = true;
-      continue;
-    }
-    if (file.endsWith(".csproj")
-      || file === "Directory.Build.props"
-      || file === "Directory.Build.targets"
-      || file === "Directory.Packages.props"
-      || file.endsWith(".props")
-      || file.endsWith(".targets")) {
-      desktopCompile = true;
-      architectureBoundaries = true;
       continue;
     }
     if (file.startsWith("scripts/")) {

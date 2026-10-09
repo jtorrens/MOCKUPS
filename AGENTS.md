@@ -160,15 +160,17 @@ only to workstation-local Render Queue jobs.
 
 ## Hard rule: definitions use complete development scaffolding
 
-App and Module definitions expose Rename only. Creating, duplicating or deleting
-an Atom, Component Class, App or Module is an explicit development workflow that
-supplies its complete identity, manifest route, current row, Default Variant,
+App and Module definitions expose Rename by default. An App may declare
+`moduleCreation.templateModuleId`; only that capability enables dictionary-backed
+creation of another Module record sharing the complete template implementation.
+Creating a new Atom, Component Class, App or Module implementation is a
+development workflow that supplies its complete identity, manifest route, current row, Default Variant,
 dictionary contract, resolver, renderable, editor metadata, fixture, migration
 and validation.
 
-Module Variants are authored data. They may be created by cloning the active
-complete Variant, duplicated and renamed. Delete is allowed only when a Variant
-is unused, unlocked and not protected. The protected Default Variant may be
+Module Variants are authored data. Add clones the protected Default Variant;
+Duplicate clones the selected complete Variant. They may be renamed. Delete is
+allowed only when a Variant is unused, unlocked and not protected. The protected Default Variant may be
 renamed and cannot be deleted.
 
 ## Hard rule: editable fields go through the dictionary
@@ -363,16 +365,39 @@ helper or renderer, move the rule to the owning resolver or a parameterized
 generic primitive.
 
 Run `npm run check:architecture` before closing a Preview or Component phase.
+Execution follows the explicit test-authorization policy below; if not authorized,
+report that check as pending rather than silently running it or claiming it passed.
+
+Production preparation closes current authored inputs once per participating
+Screen into a persistence-free document. Static Preview, Screen/Shot Play and
+job-start Render use the same frame projection, including multi-Screen overlaps
+and transparent gaps. Frame lookup and signatures never reread persistence.
+Dependency catalogs follow the manifest's declared closure; a Screen's catalog
+does not depend on which other Screens share a requested interval.
+
+A Preview owner change immediately discards the departing presentation and
+shows the shared loading surface. Same-owner frame changes retain the resident
+frame until replacement assets are ready. Obsolete successes and errors cannot
+publish across either request or owner revisions. DOM morph and replacement
+must obey the same readiness contract.
+
+Render Queue persists live plans, never authored frame or asset snapshots.
+Every execution and retry prepares current data under the shared operation
+gate. The resulting coherent snapshot exists only for that execution; it is
+not a reusable authoring source for a later run.
 
 ## Hard rule: Production context is exact
 
 A Screen requires:
 
 ```text
-Screen → Shot → Shot owner Actor → Actor default Theme
+Screen → Shot → explicit owner Actor → effective Device (Shot override or Actor default)
+Screen → exact authored same-Project Theme + sparse non-geometric Device Overrides
 ```
 
 Do not infer context from App, Module, Variant, name, type, order or position.
+Actor default Theme seeds a new Screen once; it never supplies an existing
+Screen's Theme during Preview or Render.
 Shot creation requires an explicit Actor; the editor never offers an empty
 owner. A Shot Actor can later be changed to another same-Project Actor.
 
@@ -510,6 +535,17 @@ does request tests, select the narrowest applicable suite unless they explicitly
 request the complete battery.
 
 ## Delivery
+
+For every changed architectural contract, update its one canonical document and
+the existing validation selection owner in the same revision. Link the rule to
+an actual compiler/graph guard and/or behavioral regression in the coverage map
+in `docs/architecture/validation.md`. A list of passing tests is not evidence
+that those tests detect a breach: exercise bounded negative controls where
+practical, using disposable fixtures and requiring the intended diagnostic.
+Do not mutate canonical authoring data or add production test switches. Real UI
+publication, multi-owner behavior and rendered pixels cannot be replaced by
+callback-only tests or implementation-text assertions. Test selection must not
+silently omit isolated UI cases when their shared owner changes.
 
 After every implemented update, report:
 

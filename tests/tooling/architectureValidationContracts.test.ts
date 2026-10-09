@@ -45,6 +45,31 @@ function documentationViolations(root: string) {
   return context.violations;
 }
 
+test("documentation guards detect reintroduced retired claims with the intended diagnostic", () => {
+  const root = documentationFixture();
+  try {
+    assert.deepEqual(documentationViolations(root), []);
+    const documentPath = path.join(root, "docs/architecture/validation.md");
+    const current = readFileSync(documentPath, "utf8");
+    for (const [claim, diagnostic] of [
+      ["The visible editor creates a complete\nimmutable snapshot", "snapshot-at-enqueue"],
+      ["Design `defaultValue` for an empty or unavailable authored media value", "Design media substitution"],
+      ["Screen → Shot → Shot owner Actor → Actor default Theme", "Actor-derived Screen Theme"],
+      ["and requires `npm test` before handoff", "automatic complete gate"],
+      ["a protected frame-zero keyframe", "protected frame-zero keyframe"],
+    ]) {
+      writeFileSync(documentPath, `${current}\n${claim}\n`, "utf8");
+      assert.deepEqual(documentationViolations(root), [
+        `docs/architecture/validation.md: retired documentation contract: ${diagnostic}`,
+      ]);
+    }
+    writeFileSync(documentPath, current, "utf8");
+    assert.deepEqual(documentationViolations(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("documentation validation binds the normative schema version to executable schema", () => {
   const root = documentationFixture();
   try {
