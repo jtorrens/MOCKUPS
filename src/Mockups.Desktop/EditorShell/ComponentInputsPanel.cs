@@ -18,6 +18,7 @@ internal sealed class ComponentPreviewInputSession
     public event Action<bool>? PlaybackBusyChanged;
     private readonly Action _refreshPreview;
     private readonly Action _refreshPlaybackFrame;
+    private readonly PreviewPlaybackState _playbackState;
     private readonly Func<ComponentPreviewActionDefinition, Task<bool>>? _preparePlaybackFrames;
     private readonly DispatcherTimer _playbackTimer;
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
@@ -76,7 +77,7 @@ internal sealed class ComponentPreviewInputSession
     {
         if (!_presentEveryPlaybackFrame || !_awaitingPlaybackPresentation) return;
         _awaitingPlaybackPresentation = false;
-        if (_stopAfterPlaybackPresentation)
+        if (_stopAfterPlaybackPresentation && !_playbackState.IsLooping)
         {
             _stopAfterPlaybackPresentation = false;
             var activeAction = ActiveAction();
@@ -87,14 +88,17 @@ internal sealed class ComponentPreviewInputSession
             RefreshCompletedPlayback(activeAction);
             return;
         }
+        _stopAfterPlaybackPresentation = false;
         SyncPlaybackTimer();
     }
 
     public ComponentPreviewInputSession(
+        PreviewPlaybackState playbackState,
         Action refreshPreview,
         Action refreshPlaybackFrame,
         Func<ComponentPreviewActionDefinition, Task<bool>>? preparePlaybackFrames = null)
     {
+        _playbackState = playbackState;
         _refreshPreview = refreshPreview;
         _refreshPlaybackFrame = refreshPlaybackFrame;
         _preparePlaybackFrames = preparePlaybackFrames;
@@ -784,17 +788,21 @@ internal sealed class ComponentPreviewInputSession
             _playbackStartedTimestamp = Stopwatch.GetTimestamp();
         }
         var elapsed = Stopwatch.GetElapsedTime(_playbackStartedTimestamp).TotalSeconds;
-        var current = _presentEveryPlaybackFrame
-            ? NextPlaybackFrameSeconds(activeAction)
-            : NormalizedPlaybackSeconds(activeAction, _playbackStartedAtSeconds + elapsed);
+        var requestedFrame = _presentEveryPlaybackFrame
+            ? (long)CurrentPlaybackFrame(activeAction) + 1
+            : (long)Math.Floor((_playbackStartedAtSeconds + elapsed) * _playbackFrameRate + 0.0001);
+        var position = PreviewPlaybackTiming.ResolveFrame(
+            requestedFrame, 0, DurationFrames(activeAction), _playbackState.IsLooping);
+        if (!_presentEveryPlaybackFrame && position.WrappedFrames > 0)
+            _playbackStartedTimestamp += (long)Math.Round(
+                position.WrappedFrames * (double)Stopwatch.Frequency / _playbackFrameRate);
+        var current = position.Frame == DurationFrames(activeAction)
+            ? DurationSeconds(activeAction)
+            : position.Frame / (double)_playbackFrameRate;
         _playbackSecondsByActionKey[ActionTimeKey(activeAction)] = current;
         _values[ActionTimeKey(activeAction)] = PlaybackTimeStorageValue(activeAction, current);
         var currentFrame = CurrentPlaybackFrame(activeAction);
-        var completesPlayback = current >= DurationSeconds(activeAction);
-        if (_presentEveryPlaybackFrame && completesPlayback)
-        {
-            _stopAfterPlaybackPresentation = true;
-        }
+        var completesPlayback = position.Completed;
         PreviewDebugLog.Write(
             "preview.playback.tick",
             ("scope", _scopeKey),
@@ -809,6 +817,7 @@ internal sealed class ComponentPreviewInputSession
             _lastPlaybackRefreshFrame = currentFrame;
             if (_presentEveryPlaybackFrame)
             {
+                _stopAfterPlaybackPresentation = completesPlayback;
                 _awaitingPlaybackPresentation = true;
                 _playbackTimer.Stop();
             }
@@ -817,7 +826,7 @@ internal sealed class ComponentPreviewInputSession
 
         if (completesPlayback)
         {
-            if (_presentEveryPlaybackFrame)
+            if (_presentEveryPlaybackFrame && _awaitingPlaybackPresentation)
             {
                 return;
             }
@@ -867,11 +876,6 @@ internal sealed class ComponentPreviewInputSession
                 : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
                     ? stored / 1000.0
                 : stored);
-    }
-
-    private double NextPlaybackFrameSeconds(ComponentPreviewActionDefinition action)
-    {
-        return NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action) + 1.0 / Math.Max(1, _playbackFrameRate));
     }
 
     private double DurationSeconds(ComponentPreviewActionDefinition action) =>

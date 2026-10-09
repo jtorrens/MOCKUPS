@@ -718,6 +718,14 @@ reuse rule: the controller retains prepared frames only while their
 cryptographic request signature still matches the resolved payload, action and
 Preview setup. Completion leaves the final frame visible without discarding
 that reusable preparation. Escape cancels both preparation and playback.
+Production Play prepares the complete navigation scope, including frames before
+the current playhead. The session Loop toggle can therefore be changed while
+playing without preparing a new sequence at the boundary. Wrapping selects the
+exact prepared first frame through the normal presentation path; it neither
+invalidates the cache nor performs persistence reads. Both endpoints belong to
+each cycle. Design Every-frame playback acknowledges its last frame before
+advancing to the first; real-time clocks retain their subframe clock remainder
+when wrapping and use the same shared inclusive range policy.
 Production payloads are loaded and runtime-resolved once per participating
 Screen on the session operation worker into `PreparedProductionPreview`. This
 request-scoped value document has no persistence capability. Static Preview,

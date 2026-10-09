@@ -350,6 +350,8 @@ var tests = new (string Name, Action Run)[]
     ("Backup Hub fresh restore keeps its applied result when cleanup promotion fails", () => BackupHubIntegrationTests.FreshRestoreCleanupFailureKeepsDecision(ParityDatabasePath())),
     ("initial animatable field vocabulary is constrained", AnimatableFieldVocabularyIsConstrained),
     ("playback state publishes play, busy and frame changes", PlaybackStatePublishesChanges),
+    ("Preview Loop includes both endpoints of every scope", PreviewLoopIncludesScopeEndpoints),
+    ("Preview Loop shares controls and repeats prepared Design actions", PreviewLoopSharesControlsAndDesignActions),
     ("shared slider behavior maps Wacom Pen drag in every direction", SharedSliderBehaviorMapsPenDrag),
     ("Runtime action controls reactivate after playback and visual-tree reattachment", RuntimeActionControlsReactivateAfterPlaybackAndReattachment),
     ("Preview preparation cancellation retains only the latest operation", PreviewPreparationCancellationRetainsLatestOperation),
@@ -644,7 +646,7 @@ static void DesignPreviewSessionConsumesPreparedValues()
     var theme = nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme);
     var visualThread = Environment.CurrentManagedThreadId;
     using var operations = new EditorOperationCoordinator();
-    var session = new ComponentPreviewInputSession(() => { }, () => { });
+    var session = new ComponentPreviewInputSession(new PreviewPlaybackState(), () => { }, () => { });
     var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext,
         database.Resources, database.ProjectPaths);
     foreach (var id in new[] { "component_project_foqn_s2_list", "component_project_foqn_s2_list_item" })
@@ -875,7 +877,7 @@ static void DesignPlaybackOwnerIsolation(bool resetOther)
             var before = SHA256.HashData(File.ReadAllBytes(temporary));
             TaskCompletionSource<bool>? pendingFrames = null;
             var refreshes = 0;
-            var session = new ComponentPreviewInputSession(() => refreshes++, () => { }, _ => pendingFrames?.Task ?? Task.FromResult(true))
+            var session = new ComponentPreviewInputSession(new PreviewPlaybackState(), () => refreshes++, () => { }, _ => pendingFrames?.Task ?? Task.FromResult(true))
                 { PresentEveryPlaybackFrame = true };
             var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
             var advance = Required(typeof(ComponentPreviewInputSession).GetMethod("AdvancePlaybackFrame", BindingFlags.Instance | BindingFlags.NonPublic));
@@ -987,7 +989,7 @@ static void DesignTargetEditsRetirePendingPlayback()
     var owner = nodes.Single(node => node.Id == "component_project_foqn_s2_media::variant::default");
     var payload = Required(CreatePreviewPayload(database, owner, nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme).Id));
     var completion = new TaskCompletionSource<bool>();
-    var session = new ComponentPreviewInputSession(() => { }, () => { }, _ => completion.Task);
+    var session = new ComponentPreviewInputSession(new PreviewPlaybackState(), () => { }, () => { }, _ => completion.Task);
     var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
     PreparedDesignPreviewInputs Prepare()
     {
@@ -1034,7 +1036,7 @@ static void DesignActionTargetsPreserveAuthoring()
     {
         var owner = nodes.Single(node => node.Id == id + "::variant::default");
         var payload = Required(CreatePreviewPayload(database, owner, nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme).Id));
-        var session = new ComponentPreviewInputSession(() => { }, () => { });
+        var session = new ComponentPreviewInputSession(new PreviewPlaybackState(), () => { }, () => { });
         var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
         PreparedDesignPreviewInputs Prepare()
         {
@@ -9813,7 +9815,7 @@ static void RuntimeScalarEffectsPublishTogether()
     payload = payload with { ConfigJson = "{}", RuntimeContractJson = contract.ToJsonString(), DesignPreviewJson = contract.ToJsonString() };
     var publications = new List<ComponentPreviewTransientState>();
     ComponentPreviewInputSession? session = null;
-    session = new ComponentPreviewInputSession(() => publications.Add(session!.CaptureTransientState(owner, false)), () => { });
+    session = new ComponentPreviewInputSession(new PreviewPlaybackState(), () => publications.Add(session!.CaptureTransientState(owner, false)), () => { });
     var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
     var prepared = preparer.UpdateValue(payload, session.CaptureTransientState(owner, false), "absolute", "false");
     Equal(2, prepared.Collections.Count);
@@ -9870,7 +9872,7 @@ static void DesignNestedMutationsPreserveRoot()
          "groups":[{"id":"group-a","children":[{"id":"child-a","enabled":true}]},{"id":"group-b","children":[{"id":"child-b","enabled":false}]}]}
         """);
     payload = payload with { ConfigJson = "{}", RuntimeContractJson = preview.ToJsonString(), DesignPreviewJson = preview.ToJsonString() };
-    var session = new ComponentPreviewInputSession(() => { }, () => { });
+    var session = new ComponentPreviewInputSession(new PreviewPlaybackState(), () => { }, () => { });
     var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
     var address = new StructuredCollectionAddress("groups", [new("groups", "group-a")], "children");
     var duplicate = preparer.MutateCollection(payload, session.CaptureTransientState(payload),
@@ -14577,7 +14579,7 @@ static void DesignPreparationPreservesEmptyScalars()
         ],"collections":[],"nullable":null,"text":"","number":0,"flag":false}
         """);
     var payload = source with { ConfigJson = "{}", RuntimeContractJson = runtime.ToJsonString(), DesignPreviewJson = runtime.ToJsonString() };
-    var session = new ComponentPreviewInputSession(() => { }, () => { });
+    var session = new ComponentPreviewInputSession(new PreviewPlaybackState(), () => { }, () => { });
     var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
     var prepared = preparer.Prepare(payload, session.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId);
     session.ApplyPrepared(prepared);
@@ -14614,7 +14616,7 @@ static void DesignUneditedValuesFollowCurrentDefaults()
             var other = owner.Kind == ProjectTreeNodeKind.ModuleVariant
                 ? database.DuplicateModuleVariant(owner, "Live defaults fixture")
                 : database.DuplicateComponentVariant(owner, "Live defaults fixture");
-            var session = new ComponentPreviewInputSession(() => { }, () => { });
+            var session = new ComponentPreviewInputSession(new PreviewPlaybackState(), () => { }, () => { });
             var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
             PreparedDesignPreviewInputs Prepare(ProjectTreeNode node)
             {
@@ -14698,7 +14700,7 @@ static void DesignActionMembershipPreservesSessionValues()
         contract[key] = new JsonArray(new JsonObject { ["id"] = key + "-a", ["present"] = true });
     }
     payload = payload with { ConfigJson = "{}", RuntimeContractJson = contract.ToJsonString(), DesignPreviewJson = contract.ToJsonString() };
-    var session = new ComponentPreviewInputSession(() => { }, () => { });
+    var session = new ComponentPreviewInputSession(new PreviewPlaybackState(), () => { }, () => { });
     var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
     PreparedDesignPreviewInputs Prepare()
     {
@@ -14790,7 +14792,7 @@ static void DesignDefaultsAcknowledgeWithinGate()
             var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, Object(source.ConfigJson));
             var input = inputs.Single(input => input.JsonKey == key);
             DesignPreviewTestValues.SetValue(preview, input, confirmed);
-            var inputSession = new ComponentPreviewInputSession(() => { }, () => { });
+            var inputSession = new ComponentPreviewInputSession(new PreviewPlaybackState(), () => { }, () => { });
             inputSession.SetOwnerOverrideValue(owner, key, confirmed, isCollection: false);
             inputSession.SetOwnerOverrideValue(other, "itemWidth", "413", isCollection: false);
             var captured = inputSession.CaptureTransientState(owner, false).SavedValues(inputs, []);
@@ -21374,6 +21376,27 @@ static void ShotPlayPreparesTransparentFramesBeforeClock()
                     True((bool)Required(present.Invoke(controller, null)),
                         "Transparent and rendered frames must both be consumed from the prepared sequence.");
                 }
+                // Exercise the real Production clock after starting mid-scope.
+                // A wrap must retain the prepared owner and include leading gaps.
+                var advance = Required(typeof(EditorPreviewController).GetMethod("AdvanceShotPlayback",
+                    BindingFlags.Instance | BindingFlags.NonPublic));
+                var snapshot = Required(Field("_productionSessionSnapshot").GetValue(controller) as ProductionPreviewSessionSnapshot);
+                var shotState = snapshot.Shot("shot_001");
+                var cached = Field("_preparedShotPlayback").GetValue(controller);
+                controller.PlaybackState.SetLooping(true);
+                Field("_shotPlaybackStartFrame").SetValue(controller, 4);
+                var requested = shotState.DurationFrames;
+                Field("_shotPlaybackStartedTimestamp").SetValue(controller,
+                    Stopwatch.GetTimestamp() - (long)((requested - 4 + 0.1) * Stopwatch.Frequency / shotState.FrameRate));
+                advance.Invoke(controller, null);
+                Equal(0, controller.ProductionShotFrame());
+                True(ReferenceEquals(cached, Field("_preparedShotPlayback").GetValue(controller)));
+                True((bool)Required(present.Invoke(controller, null)));
+                controller.PlaybackState.SetLooping(false);
+                // Rebased time must remain at the start of this cycle, not jump
+                // straight to the end because a previous cycle elapsed.
+                advance.Invoke(controller, null);
+                True(controller.ProductionShotFrame() < shotState.DurationFrames - 1);
             }
             finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
         }, CancellationToken.None).GetAwaiter().GetResult();
@@ -22423,6 +22446,7 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "Preview Loop shares controls and repeats prepared Design actions",
     "Design defaults preserve later scalar and editable collection changes",
     "Design defaults preserve later scalar and fixed collection changes",
     "Media Design actions consume queued edits and retain exact ownership",
@@ -26017,6 +26041,109 @@ static void PlaybackStatePublishesChanges()
     True(state.IsBusy);
     state.SetPlaying(false);
     Equal(4, changes);
+    True(!state.IsLooping);
+    state.SetLooping(true);
+    state.SetLooping(true);
+    Equal(5, changes);
+    True(state.IsLooping);
+    True(!new PreviewPlaybackState().IsLooping);
+}
+
+static void PreviewLoopIncludesScopeEndpoints()
+{
+    foreach (var (first, last) in new[] { (0, 80), (25, 106), (-12, 30), (0, 0), (7, 7) })
+    {
+        var length = (long)last - first + 1;
+        var end = PreviewPlaybackTiming.ResolveFrame(last, first, last, true);
+        Equal(last, end.Frame);
+        True(!end.Completed);
+        Equal(0L, end.WrappedFrames);
+        var wrap = PreviewPlaybackTiming.ResolveFrame((long)last + 1, first, last, true);
+        Equal(first, wrap.Frame);
+        Equal(length, wrap.WrappedFrames);
+        True(!wrap.Completed);
+        var repeated = PreviewPlaybackTiming.ResolveFrame(first + length * 100, first, last, true);
+        Equal(first, repeated.Frame);
+        Equal(length * 100, repeated.WrappedFrames);
+        var stopped = PreviewPlaybackTiming.ResolveFrame((long)last + 1, first, last, false);
+        Equal(last, stopped.Frame);
+        True(stopped.Completed);
+    }
+}
+
+static void PreviewLoopSharesControlsAndDesignActions()
+{
+    using var ui = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+    ui.Dispatch(() =>
+    {
+        var state = new PreviewPlaybackState();
+        var first = EditorTimelineTransport.CreateLoopButton(state);
+        var second = EditorTimelineTransport.CreateLoopButton(state);
+        var panel = new StackPanel { Children = { first, second } };
+        var window = new Window { Content = panel };
+        window.Show();
+        try
+        {
+            True(first.IsChecked == false && second.IsChecked == false);
+            first.IsChecked = true;
+            first.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            True(state.IsLooping && second.IsChecked == true);
+            panel.Children.Remove(second);
+            state.SetLooping(false);
+            panel.Children.Add(second);
+            True(second.IsChecked == false);
+
+            var database = new SqliteProjectTestContext(ParityDatabasePath());
+            var nodes = CanonicalProjectNodes(database);
+            var theme = nodes.First(node => node.Kind == ProjectTreeNodeKind.Theme);
+            foreach (var (id, actionId) in new[]
+            {
+                ("component_project_foqn_s2_media", "fullScreen"),
+                ("component_project_foqn_s2_incoming_call_notification", "togglePresent"),
+            })
+            {
+                var preparedCount = 0;
+                var stopped = 0;
+                var input = new ComponentPreviewInputSession(state, () => { }, () => { },
+                    _ => { preparedCount++; return Task.FromResult(true); }) { PresentEveryPlaybackFrame = true };
+                var owner = nodes.Single(node => node.Id == id + "::variant::default");
+                var payload = Required(CreatePreviewPayload(database, owner, theme.Id));
+                var preparer = new DesignPreviewInputPreparer(database.Design, database.DictionaryContext, database.Resources, database.ProjectPaths);
+                input.ApplyPrepared(preparer.Prepare(payload, input.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId));
+                input.PlaybackStopped += _ => stopped++;
+                var advance = Required(typeof(ComponentPreviewInputSession).GetMethod("AdvancePlaybackFrame", BindingFlags.Instance | BindingFlags.NonPublic));
+                void Tick() { input.NotifyPlaybackFramePresented(); advance.Invoke(input, null); }
+                try
+                {
+                    state.SetLooping(true);
+                    True(input.TriggerAction(actionId));
+                    var end = input.MaximumActionFrame(actionId);
+                    for (var cycle = 0; cycle < 3; cycle++)
+                    {
+                        for (var frame = 1; frame <= end; frame++)
+                        {
+                            Tick();
+                            Equal(frame, input.CurrentActionFrame(actionId));
+                        }
+                        True(input.IsPlaybackActive);
+                        Tick();
+                        Equal(0, input.CurrentActionFrame(actionId));
+                    }
+                    Equal(1, preparedCount);
+                    Equal(0, stopped);
+                    state.SetLooping(false);
+                    for (var frame = 1; frame <= end; frame++) Tick();
+                    input.NotifyPlaybackFramePresented();
+                    True(!input.IsPlaybackActive);
+                    Equal(end, input.CurrentActionFrame(actionId));
+                    Equal(1, preparedCount);
+                    True(stopped > 0);
+                }
+                finally { input.StopActivePlayback(); }
+            }
+        }
+        finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
+    }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
 static void SharedSliderBehaviorMapsPenDrag()

@@ -158,6 +158,11 @@ It includes:
   cancellation, byte-for-byte read-only persistence and exact owner/frame
   lookup and covered-range reuse from the resulting immutable playback
   snapshot without signature recomputation;
+- Preview Loop contract coverage: inclusive positive, signed and single-frame
+  ranges; session-only shared toggle publication and visual reattachment;
+  repeated prepared Design actions across distinct Component owners, without
+  recapturing origins or preparing frames each cycle, and normal completion
+  after disabling Loop;
 - Shot playback with leading, intermediate and trailing alpha-zero gaps,
   complete empty intervals, contiguous Screens and overlapping Screen layers;
   prepared null frames remain successful exact-owner lookups, HTML/raster share

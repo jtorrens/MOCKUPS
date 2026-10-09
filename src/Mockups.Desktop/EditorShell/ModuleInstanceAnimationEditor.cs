@@ -670,6 +670,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 playbackButton,
                 nextFrameButton,
                 lastFrameButton,
+                EditorTimelineTransport.CreateLoopButton(_playbackState),
                 EditorTimelineTransport.CreateSeparator(EditorSukiWindowTheme.IsDark(null)),
                 frameCounter,
             },

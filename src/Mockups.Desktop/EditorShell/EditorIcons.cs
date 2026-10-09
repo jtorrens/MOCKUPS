@@ -28,6 +28,7 @@ internal static class EditorIcons
     public const string Refresh = "refresh";
     public const string Play = "play";
     public const string Pause = "pause";
+    public const string Loop = "loop";
     public const string Folder = "folder";
     public const string Back = "back";
     public const string Forward = "forward";
@@ -336,6 +337,7 @@ internal static class EditorIcons
             Open => "components/Open referenced record.svg",
             Play => "components/Play.svg",
             Pause => "components/Pause.svg",
+            Loop => "components/Loop.svg",
             Folder => "components/Folder.svg",
             Back => "system_arrow_left.svg",
             Forward => "system_arrow_right.svg",

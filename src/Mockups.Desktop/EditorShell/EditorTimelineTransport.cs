@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Controls.Shapes;
@@ -9,6 +10,28 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class EditorTimelineTransport
 {
+    public static ToggleButton CreateLoopButton(PreviewPlaybackState state)
+    {
+        var button = new ToggleButton
+        {
+            Content = EditorIcons.Create(EditorIcons.Loop, 16),
+            Width = 34,
+            Height = 30,
+            Padding = new Thickness(0),
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+        };
+        EditorAccessibility.Describe(button, "Loop Preview", "Repeat the current Preview scope; session only");
+        button.Click += (_, _) => state.SetLooping(button.IsChecked == true);
+        PreviewPlaybackStateBinding.Attach(button, state, () =>
+        {
+            button.IsChecked = state.IsLooping;
+            button.Background = state.IsLooping ? EditorSukiWindowTheme.AccentBrush() : Brushes.Transparent;
+            ToolTip.SetTip(button, state.IsLooping ? "Loop Preview: on" : "Loop Preview: off");
+        });
+        return button;
+    }
+
     public static Button CreateNavigationButton(Control icon, string accessibleName, double width = 34)
     {
         var button = new Button

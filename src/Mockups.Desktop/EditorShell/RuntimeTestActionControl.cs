@@ -70,7 +70,7 @@ internal sealed class RuntimeTestActionControl : Border
         var hasTargetOptions = targetOptions is { Count: > 0 };
         var layout = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"),
             ColumnSpacing = 6,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -185,6 +185,9 @@ internal sealed class RuntimeTestActionControl : Border
         };
         Grid.SetColumn(_nextFrameButton, 6);
         layout.Children.Add(_nextFrameButton);
+        var loopButton = EditorTimelineTransport.CreateLoopButton(_playbackState);
+        Grid.SetColumn(loopButton, 7);
+        layout.Children.Add(loopButton);
 
         _frameSlider = EditorSliderBehavior.Configure(new Slider
         {

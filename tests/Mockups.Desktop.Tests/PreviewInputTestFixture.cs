@@ -22,7 +22,7 @@ internal static class PreviewInputTestFixture
         Action refreshPreview,
         Func<ComponentPreviewActionDefinition, Task<bool>>? preparePlaybackFrames = null)
     {
-        var session = new ComponentPreviewInputSession(refreshPreview, refreshPreview, preparePlaybackFrames);
+        var session = new ComponentPreviewInputSession(new PreviewPlaybackState(), refreshPreview, refreshPreview, preparePlaybackFrames);
         Bind(session, componentPreview, dictionary, actors, projectPaths);
         return session;
     }

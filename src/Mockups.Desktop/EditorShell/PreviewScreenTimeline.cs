@@ -1026,6 +1026,7 @@ internal sealed class PreviewScreenTimelineController : IDisposable
         _updateShotScreenField = updateShotScreenField;
         _refreshProductionAuthoring = refreshProductionAuthoring;
         _surface = new PreviewScreenTimelineSurface(
+            playbackState,
             SetFrame,
             StepFrame,
             TogglePlayback,
@@ -1168,6 +1169,7 @@ internal sealed class PreviewScreenTimelineController : IDisposable
 
 internal sealed class PreviewScreenTimelineSurface : Border
 {
+    private readonly PreviewPlaybackState _playbackState;
     private const double LabelWidth = 126;
     private const double WheelZoomStep = 0.08;
     private readonly Action<int> _setFrame;
@@ -1215,6 +1217,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
     private PreviewScreenTimelineLane? _generalLane;
 
     public PreviewScreenTimelineSurface(
+        PreviewPlaybackState playbackState,
         Action<int> setFrame,
         Action<int> stepFrame,
         Action togglePlayback,
@@ -1225,6 +1228,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _setFrame = setFrame;
         _stepFrame = stepFrame;
         _togglePlayback = togglePlayback;
+        _playbackState = playbackState;
         _canToggleReferenceVideo = canToggleReferenceVideo;
         _referenceVideoToolTip = referenceVideoToolTip;
         _toggleReferenceVideo = toggleReferenceVideo;
@@ -2136,6 +2140,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
                 playButton,
                 next,
                 end,
+                EditorTimelineTransport.CreateLoopButton(_playbackState),
                 new Border { Width = 6 },
                 frameText,
             },

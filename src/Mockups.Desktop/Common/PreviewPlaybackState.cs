@@ -8,6 +8,14 @@ internal sealed class PreviewPlaybackState
 
     public bool IsBusy { get; private set; }
     public bool IsPlaying { get; private set; }
+    public bool IsLooping { get; private set; }
+
+    public void SetLooping(bool isLooping)
+    {
+        if (IsLooping == isLooping) return;
+        IsLooping = isLooping;
+        Changed?.Invoke();
+    }
 
     public void SetBusy(bool isBusy)
     {

@@ -376,6 +376,16 @@ retain their own declared contracts; they do not stretch parameter keyframes.
 
 ## Action transport
 
+Loop belongs only to the shared Preview playback session, starts disabled and
+is never serialized into action, Screen, Shot or Render documents. Both Design
+and Production clocks consume `PreviewPlaybackTiming.ResolveFrame` for inclusive
+range completion/repetition. Loop repeats the complete active action, Screen or
+Shot range, including all Shot Screens and transparent gaps, even when Play
+starts in the middle. It retains the original action origin and prepared frames;
+it does not execute a new action or capture a new origin on each cycle. Disabling
+Loop finishes the current cycle normally. Pause, frame navigation, Restore and
+owner changes retain their existing stop/cancellation semantics.
+
 Design transport requests retain the exact owner and declared action id.
 Preparation and command application share the Runtime-edit operation queue;
 pending earlier edits publish before an action captures its origin. Requests
@@ -383,7 +393,7 @@ from superseded owners are canceled rather than redirected to the active owner.
 This ordering boundary does not hold the queue while generating or playing frames.
 
 A finite Runtime action captures one temporary origin before its first Play.
-Completion leaves the visible result and playhead at the final frame, returns
+With Loop disabled, completion leaves the visible result and playhead at the final frame, returns
 the transport to idle and enables Play again. Repeated Play first restores that
 same captured origin internally and then executes the same initial-to-final
 action; it does not reinterpret a toggle from the previous final value.

@@ -379,7 +379,14 @@ to the Component Variant or local Override that owns their appearance. A
 cross-workspace destination switches the editor workspace only after Preview
 has retained the original context with its session lock.
 
-When a finite action completes, its final frame remains visible and Play
+The shared Preview transport exposes one Loop toggle with a visible checked
+accent state and an accessible name. All Design action, Screen Timeline,
+keyframe and Shot transports observe the same `PreviewPlaybackState`; changing
+visual hosts does not fork that state. Loop starts off in each session and
+repeats the complete current Preview scope, not a selected lane or only the
+remaining frames after Play. It does not affect exports or authored data.
+
+When a finite action completes with Loop off, its final frame remains visible and Play
 becomes available again. Play repeats the same initial-to-final action without
 repreparing unchanged frames. Restore returns to the captured initial state.
 Moving the authoring surface between visual hosts does not leave either

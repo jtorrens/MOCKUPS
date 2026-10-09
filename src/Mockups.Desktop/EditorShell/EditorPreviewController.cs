@@ -561,7 +561,7 @@ internal sealed class EditorPreviewController : IDisposable
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
         _designInputPreparer = new DesignPreviewInputPreparer(componentPreview, dictionary, actors, projectPaths);
-        _designInputsPanel = new ComponentPreviewInputSession(Refresh, RefreshDesignPlaybackFrame, PreparePlaybackFramesAsync);
+        _designInputsPanel = new ComponentPreviewInputSession(PlaybackState, Refresh, RefreshDesignPlaybackFrame, PreparePlaybackFramesAsync);
         _designPreviewPane.FrameStatusChanged += OnDesignPreviewFrameStatusChanged;
         _designPreviewPane.ContextActionRequested += targetId =>
         {
@@ -1009,6 +1009,7 @@ internal sealed class EditorPreviewController : IDisposable
                         _shotNextKeyframeButton,
                         _shotNextSlotButton,
                         _shotAbsoluteEndButton),
+                    EditorTimelineTransport.CreateLoopButton(PlaybackState),
                 },
             },
         };
@@ -3597,7 +3598,7 @@ internal sealed class EditorPreviewController : IDisposable
         if (_shotPreviewFrame >= navigationRange.EndFrame) _shotPreviewFrame = navigationRange.StartFrame;
         if (CanReusePreparedShotPlayback(
                 payloadNode,
-                _shotPreviewFrame,
+                navigationRange.StartFrame,
                 navigationRange.EndFrame))
         {
             PreviewDebugLog.Write(
@@ -3623,12 +3624,12 @@ internal sealed class EditorPreviewController : IDisposable
             await YieldPreviewPreparationAsync(cancellation.Token);
             var preparation = await BuildShotPlaybackFramesAsync(
                 payloadNode,
-                _shotPreviewFrame,
+                navigationRange.StartFrame,
                 navigationRange.EndFrame,
                 cancellation.Token);
             var requestSignature = ShotPlaybackRequestSignature(
                 payloadNode,
-                _shotPreviewFrame,
+                navigationRange.StartFrame,
                 navigationRange.EndFrame,
                 preparation.ContentSignature);
             cancellation.Token.ThrowIfCancellationRequested();
@@ -3677,7 +3678,7 @@ internal sealed class EditorPreviewController : IDisposable
                         requestSignature,
                         payloadNode.Kind,
                         payloadNode.Id,
-                        _shotPreviewFrame,
+                        navigationRange.StartFrame,
                         frames,
                         preparation.ContentSignature);
                 }
@@ -3873,25 +3874,25 @@ internal sealed class EditorPreviewController : IDisposable
             return;
         }
         var elapsed = Stopwatch.GetElapsedTime(_shotPlaybackStartedTimestamp).TotalSeconds;
-        var next =
+        var frameRate = Math.Max(1, PreparedProductionSession().Shot(shotId).FrameRate);
+        var requestedFrame =
             _shotPlaybackStartFrame
-            + (int)Math.Floor(
-                elapsed
-                * Math.Max(
-                    1,
-                    PreparedProductionSession()
-                        .Shot(shotId)
-                        .FrameRate));
-        var last = NavigationFrameRange().EndFrame;
-        if (next >= last)
+            + (long)Math.Floor(elapsed * frameRate);
+        var range = NavigationFrameRange();
+        var position = PreviewPlaybackTiming.ResolveFrame(
+            requestedFrame, range.StartFrame, range.EndFrame, PlaybackState.IsLooping);
+        if (position.WrappedFrames > 0)
+            _shotPlaybackStartedTimestamp += (long)Math.Round(
+                position.WrappedFrames * (double)Stopwatch.Frequency / frameRate);
+        if (position.Completed)
         {
-            _shotPreviewFrame = last;
+            _shotPreviewFrame = position.Frame;
             StopShotPlayback();
             Refresh();
             return;
         }
-        if (next == _shotPreviewFrame) return;
-        _shotPreviewFrame = next;
+        if (position.Frame == _shotPreviewFrame) return;
+        _shotPreviewFrame = position.Frame;
         PlaybackState.NotifyFrameChanged();
         Refresh();
     }
