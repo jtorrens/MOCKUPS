@@ -236,14 +236,16 @@ internal static class DesignPreviewPayloadFactory
         var selected = isScreen ? new[] { slots.Single(slot => slot.Id == node.Id) }
             : slots.Where(slot => Math.Max(0, startFrame) < slot.StartFrame + slot.EffectiveDurationFrames
                 && Math.Min(shot.DurationFrames - 1, Math.Max(startFrame, endFrame)) >= slot.StartFrame).ToArray();
+        var componentBaseConfigs = dataSource.LoadComponentBaseConfigs(shot.ProjectId);
         var screens = new List<DesignPreviewPayload>();
         foreach (var slot in selected)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var theme = themeForScreen(slot.Id);
             var owner = FromModuleInstance(dataSource, slot.Id, theme.DeviceId, themeMode, theme,
-                0, respectAuthoredAppearance) with
+                0, respectAuthoredAppearance, componentBaseConfigs) with
             {
+                ComponentBaseConfigsJson = componentBaseConfigs,
                 OwnerId = slot.Id,
                 ThemeStatusBarVariantReference = theme.StatusBarVariantReference,
                 ThemeNavigationBarVariantReference = theme.NavigationBarVariantReference,
@@ -265,9 +267,10 @@ internal static class DesignPreviewPayloadFactory
         string themeMode,
         DesignPreviewThemeContext theme,
         int? screenFrame,
-        bool respectAuthoredAppearance)
+        bool respectAuthoredAppearance,
+        string componentBaseConfigsJson)
     {
-        var instance = dataSource.LoadModuleInstance(moduleInstanceId);
+        var instance = dataSource.LoadModuleInstance(moduleInstanceId, componentBaseConfigsJson);
         var effectiveThemeMode = ResolveEffectiveThemeMode(
             instance.ConfigJson,
             themeMode,

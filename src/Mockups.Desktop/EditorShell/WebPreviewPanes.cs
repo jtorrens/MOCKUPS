@@ -39,6 +39,8 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
     private bool _modalWebViewWasVisible;
     private bool _modalOccluded;
     private bool _nativeRasterBitmapIsBuffered;
+    private readonly EditorLoadingScrim _contextLoading = new();
+    protected bool IsContextPreparing => _contextLoading.IsVisible;
     private readonly object _rasterBufferGate = new();
     private readonly Dictionary<string, Bitmap> _rasterBuffer = new(StringComparer.Ordinal);
     private IReadOnlyList<string> _rasterPlaybackPaths = Array.Empty<string>();
@@ -60,6 +62,23 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
         Children.Add(WebView);
         Children.Add(_nativeRasterFrame);
         Children.Add(_modalSnapshotFrame);
+        Children.Add(_contextLoading);
+    }
+
+    protected void BeginPresentationContext()
+    {
+        // Native WebView airspace cannot be covered by an Avalonia sibling.
+        // Keep its resident document, but remove every previous presentation.
+        WebView.IsVisible = false;
+        _nativeRasterFrame.IsVisible = false;
+        ClearModalSnapshot();
+        _contextLoading.Show("Preparando preview…", null, takeFocus: false);
+    }
+
+    protected void CompletePresentationContext()
+    {
+        _contextLoading.Hide();
+        WebView.IsVisible = !_modalOccluded && !_nativeRasterFrame.IsVisible;
     }
 
     public string NativeHostLifecycleState()
@@ -135,7 +154,7 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
             return;
         }
 
-        WebView.IsVisible = _modalWebViewWasVisible;
+        WebView.IsVisible = _modalWebViewWasVisible && !IsContextPreparing;
         _modalOccluded = false;
         ClearModalSnapshot();
     }
@@ -171,7 +190,7 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
     public void HideRasterFrame()
     {
         _nativeRasterFrame.IsVisible = false;
-        WebView.IsVisible = true;
+        WebView.IsVisible = !IsContextPreparing;
     }
 
     public void PlayRasterFrames(IReadOnlyList<string> rasterIds)
@@ -294,7 +313,7 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
     {
         for (var attempt = 0; attempt < 40; attempt++)
         {
-            await Task.Delay(25);
+            if (attempt > 0) await Task.Delay(25);
             try
             {
                 var result = await WebView.InvokeScript("""
@@ -325,7 +344,8 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
         PreviewDebugLog.Write("preview.webview.reflow", ("result", "unavailable"));
     }
 
-    protected async Task<bool> ReplacePreviewBodyAsync(string bodyContent, bool waitForCommit = false)
+    protected async Task<bool> ReplacePreviewBodyAsync(string bodyContent, bool waitForCommit = false,
+        Func<bool>? isCurrent = null)
     {
         var stopwatch = Stopwatch.StartNew();
         var assetKeys = PreviewAssetRegistry.Keys(bodyContent);
@@ -344,6 +364,7 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
                 ? missingArray.Select((node) => node?.GetValue<string>() ?? "").Where((key) => key.Length > 0).ToHashSet(StringComparer.Ordinal)
                 : assetKeys.ToHashSet(StringComparer.Ordinal);
             await RegisterPreviewAssetsAsync(assetKeys.Where(missingKeys.Contains));
+            if (isCurrent is not null && !isCurrent()) return false;
             var result = await WebView.InvokeScript($$"""
                 (() => {
                   if (typeof window.mockupsSetPreviewBody !== "function") return false;
@@ -1267,6 +1288,14 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
                   });
                 };
                 let previewBodyPatchSequence = 0;
+                window.mockupsDiscardPreviewBody = () => {
+                  ++previewBodyPatchSequence;
+                  for (const child of [...scaleLayer.children]) {
+                    if (child !== previewRasterDeck) child.remove();
+                  }
+                  window.mockupsResetPreviewElementInspector?.();
+                  return true;
+                };
                 window.mockupsPreviewPatchEvents = [];
                 const previewPatchStatuses = new Map();
                 window.mockupsPreviewPatchStatus = (patch) => previewPatchStatuses.get(patch) ?? "";
@@ -2016,6 +2045,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     private bool _hasResidentDocument;
     private DesignPreviewShellIdentity? _residentShellIdentity;
     private long _latestUpdateSequence;
+    private string? _presentationOwnerId;
+    private long _ownerRevision;
     private bool _isRendering;
     public event Action<DesignPreviewFrameStatus>? FrameStatusChanged;
     public event Action<string>? ContextActionRequested;
@@ -2112,22 +2143,29 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             && applied;
     }
 
-    public void BeginContextUpdate(string message)
+    public void BeginContextUpdate(string ownerId)
     {
+        if (string.Equals(_presentationOwnerId, ownerId, StringComparison.Ordinal)) return;
+        _presentationOwnerId = ownerId;
+        Interlocked.Increment(ref _ownerRevision);
         Interlocked.Increment(ref _latestUpdateSequence);
+        _pendingUpdate = null;
+        _lastRenderedUpdate = null;
+        Interlocked.Increment(ref _referenceUpdateVersion);
+        BeginPresentationContext();
         if (!_hasResidentDocument)
         {
             return;
         }
 
-        var messageJson = JsonSerializer.Serialize(message);
         _ = WebView.InvokeScript($$"""
             (() => {
+              window.mockupsDiscardPreviewBody?.();
               if (typeof window.mockupsSetNonRenderablePreviewState === "function") {
                 window.mockupsSetNonRenderablePreviewState("", "", "", "");
               }
               return typeof window.mockupsSetContextualPreviewState === "function"
-                ? window.mockupsSetContextualPreviewState("loading", "Actualizando preview", {{messageJson}})
+                ? window.mockupsSetContextualPreviewState("", "", "")
                 : false;
             })();
             """);
@@ -2136,6 +2174,13 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     public static IReadOnlyList<string> ImageSourcesForPreload(string html)
     {
         return PreviewImageSources(PreviewHtmlParts.Split(html).BodyHtml).ToList();
+    }
+
+    public void ShowPreparedRasterFrame(string ownerId, string rasterId)
+    {
+        BeginContextUpdate(ownerId);
+        ShowRasterFrame(rasterId);
+        CompletePresentationContext();
     }
 
     public async Task<bool> PrewarmFrameAsync(
@@ -2151,13 +2196,17 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         }
 
         var stopwatch = Stopwatch.StartNew();
+        var ownerRevision = Volatile.Read(ref _ownerRevision);
         var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
             metrics,
             showDesignMarks,
             payload);
         var htmlParts = PreviewHtmlParts.Split(bodyContent);
+        if (ownerRevision != Volatile.Read(ref _ownerRevision)) return false;
         var committed = await ReplacePreviewFontStylesAsync(htmlParts.FontStyleHtml)
-            && await ReplacePreviewBodyAsync(htmlParts.BodyHtml, waitForCommit: true);
+            && ownerRevision == Volatile.Read(ref _ownerRevision)
+            && await ReplacePreviewBodyAsync(htmlParts.BodyHtml, waitForCommit: true,
+                isCurrent: () => ownerRevision == Volatile.Read(ref _ownerRevision));
         PreviewDebugLog.Write(
             "preview.webview.prewarm-frame",
             ("component", payload.ComponentType),
@@ -2184,8 +2233,10 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         bool isPlaybackUpdate,
         IEditorShellMessageSink messages)
     {
+        if (payload is not null) BeginContextUpdate(payload.OwnerId);
         var nextUpdate = new DesignPreviewUpdate(
             Interlocked.Increment(ref _latestUpdateSequence),
+            Volatile.Read(ref _ownerRevision),
             metrics,
             isDark,
             themeName,
@@ -2246,6 +2297,10 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
     private async Task RenderUpdateAsync(DesignPreviewUpdate update)
     {
+        bool IsCurrent() => !ShouldDiscardRenderedUpdate(update.Sequence,
+            Volatile.Read(ref _latestUpdateSequence), update.IsPlaybackUpdate,
+            update.OwnerRevision, Volatile.Read(ref _ownerRevision));
+        if (!IsCurrent()) return;
         var stopwatch = Stopwatch.StartNew();
         var reference = PreviewReferenceOverlay.Resolve(
             update.Reference,
@@ -2261,6 +2316,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             {
                 await ShowResidentNonRenderableStateAsync(update.ContextState);
             }
+            if (!IsCurrent()) return;
+            CompletePresentationContext();
             PreviewDebugLog.Write(
                 "preview.context-state",
                 ("kind", "non-renderable"),
@@ -2272,6 +2329,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         {
             await HideResidentNonRenderableStateAsync();
         }
+        if (!IsCurrent()) return;
         if (update.Payload is null
             && update.ContextState.Kind != PreviewContextStateKind.Transparent)
         {
@@ -2292,6 +2350,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 reference: reference));
             RememberResidentShell(update.ShellIdentity);
             _lastRenderedUpdate = update;
+            CompletePresentationContext();
             PreviewDebugLog.Write(
                 "preview.webview.update",
                 ("route", "full-load"),
@@ -2337,10 +2396,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 "Preview unavailable. See Messages.");
         }
 
-        if (ShouldDiscardRenderedUpdate(
-                update.Sequence,
-                Volatile.Read(ref _latestUpdateSequence),
-                update.IsPlaybackUpdate))
+        if (!IsCurrent())
         {
             PreviewDebugLog.Write(
                 "preview.webview.update",
@@ -2384,6 +2440,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 "The first result could not be generated. Check Messages and try again.",
                 "Reintentar",
                 "__preview_retry__"), update);
+            CompletePresentationContext();
             return;
         }
 
@@ -2404,8 +2461,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 StringComparison.Ordinal);
             var fontsCommitted = !fontsChanged
                 || await ReplacePreviewFontStylesAsync(htmlParts.FontStyleHtml);
-            if (!update.IsPlaybackUpdate
-                && update.Sequence != Volatile.Read(ref _latestUpdateSequence))
+            if (!IsCurrent())
             {
                 PreviewDebugLog.Write(
                     "preview.webview.update",
@@ -2417,15 +2473,21 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 return;
             }
             var bodyCommitted = fontsCommitted
-                && await ReplacePreviewBodyAsync(htmlParts.BodyHtml, waitForCommit: !isAnimationOnlyUpdate);
+                && await ReplacePreviewBodyAsync(htmlParts.BodyHtml,
+                    waitForCommit: !isAnimationOnlyUpdate, isCurrent: IsCurrent);
+            if (!IsCurrent()) return;
             if (bodyCommitted)
             {
-                await EnsurePreviewViewportLayoutAsync();
+                // The resident patch already calculates layout. Reflow polling is
+                // only needed after navigating to a new document.
                 HideResidentContextState();
                 await HideResidentNonRenderableStateAsync();
+                if (!IsCurrent()) return;
                 await UpdateReferenceOverlayAsync(reference);
+                if (!IsCurrent()) return;
                 _lastRenderedUpdate = update;
                 _lastRenderedFontStyleHtml = htmlParts.FontStyleHtml;
+                CompletePresentationContext();
                 PreviewDebugLog.Write(
                     "preview.webview.update",
                     ("route", "dom-patch"),
@@ -2450,6 +2512,14 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 "error",
                 "Preview no actualizado",
                 "The last valid result is being retained. Check Messages for details.");
+            if (IsContextPreparing)
+            {
+                await ShowResidentNonRenderableStateAsync(new PreviewContextState(
+                    PreviewContextStateKind.Error, "Preview no disponible", "No se pudo preparar el nuevo propietario.",
+                    "Reintentar", "__preview_retry__"));
+                if (!IsCurrent()) return;
+                CompletePresentationContext();
+            }
             PreviewDebugLog.Write(
                 "preview.webview.update",
                 ("route", "retain-last-good"),
@@ -2465,6 +2535,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             return;
         }
 
+        var initialDocument = !_hasResidentDocument;
         LoadHtml(DeviceHtml(
             update.Metrics,
             update.IsDark,
@@ -2482,15 +2553,17 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         await EnsurePreviewViewportLayoutAsync();
         _hasResidentDocument = true;
         _residentShellIdentity = update.ShellIdentity;
+        if (!IsCurrent()) return;
         _lastRenderedUpdate = update;
         _lastRenderedFontStyleHtml = htmlParts.FontStyleHtml;
+        CompletePresentationContext();
         PreviewDebugLog.Write(
             "preview.webview.update",
             ("route", "full-load"),
             ("component", update.Payload?.ComponentType),
             ("name", update.Payload?.Name),
             ("animationOnly", isAnimationOnlyUpdate),
-            ("reason", _lastRenderedUpdate is null ? "initial-document" : "incompatible-shell"),
+            ("reason", initialDocument ? "initial-document" : "incompatible-shell"),
             ("renderError", renderError is not null),
             ("ms", stopwatch.Elapsed.TotalMilliseconds),
             ("bodyChars", htmlParts.BodyHtml.Length),
@@ -2505,9 +2578,12 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     internal static bool ShouldDiscardRenderedUpdate(
         long sequence,
         long latestSequence,
-        bool isPlaybackUpdate)
+        bool isPlaybackUpdate,
+        long ownerRevision = 0,
+        long latestOwnerRevision = 0)
     {
-        return !isPlaybackUpdate && sequence != latestSequence;
+        return ownerRevision != latestOwnerRevision
+            || (!isPlaybackUpdate && sequence != latestSequence);
     }
 
     private void LoadContextState(PreviewContextState state, DesignPreviewUpdate update)
@@ -2520,7 +2596,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             update.ScaleMode,
             "Design preview",
             showDesignMarks: false,
-            showDeviceFrame: false,
+            showDeviceFrame: update.ShowDeviceFrame,
             showTransparencyGrid: update.ShowTransparencyGrid,
             showAlphaOnly: update.ShowAlphaOnly,
             bodyContent: "",
@@ -2528,10 +2604,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 update.Reference,
                 _projectPaths),
             initialContextState: state));
-        RememberResidentShell(update.ShellIdentity with
-        {
-            ShowDeviceFrame = false,
-        });
+        RememberResidentShell(update.ShellIdentity);
     }
 
     internal static bool CanPatchResidentShell(
@@ -2666,6 +2739,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
     private sealed record DesignPreviewUpdate(
         long Sequence,
+        long OwnerRevision,
         DevicePreviewMetrics Metrics,
         bool IsDark,
         string ThemeName,

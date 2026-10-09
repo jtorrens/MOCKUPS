@@ -757,6 +757,16 @@ cancels the previous preparation, and only the still-current immutable payload
 may update the Preview host or Production history. Production playback consumes
 the already prepared first frame for setup and never constructs an additional
 payload on the visual thread.
+The Preview host has two presentation lifetimes. A Shot or Screen owner change
+increments the owner revision, cancels pending presentation work, removes the
+resident document immediately and shows `Preparando preview…`. A result from the
+previous owner cannot publish, including a playback or raster result. Moving the
+playhead within the same owner keeps the resident frame until the replacement
+frame has rendered and committed. Resident DOM patches already recalculate the
+viewport, so they do not run the full document reflow polling loop; that loop is
+reserved for a newly loaded Preview shell. Preparation logs record queue and
+payload time separately so slow persistence reads remain distinguishable from
+WebView presentation.
 Closing the editor disposes the Preview session owner: Design and Production
 preparation, ahead preload, playback timing, frame-cache reservations and the
 external rasterizer lifetime are canceled or released before the window

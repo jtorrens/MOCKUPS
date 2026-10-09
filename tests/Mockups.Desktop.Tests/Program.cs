@@ -241,6 +241,7 @@ var tests = new (string Name, Action Run)[]
     ("failed Preview preparation keeps the prior tree catalog and selection", FailedPreviewPreparationKeepsPriorSession),
     ("obsolete Preview authoring preparation cannot replace the latest selection", ObsoletePreviewAuthoringPreparationCannotCommit),
     ("obsolete interactive Preview render results are discarded", ObsoleteInteractivePreviewRenderResultsAreDiscarded),
+    ("Preview owner changes clear presentation without clearing same-owner frames", PreviewOwnerChangesClearPresentation),
     ("resident Preview shell rejects changed device geometry", ResidentPreviewShellRejectsChangedDeviceGeometry),
     ("WebView script results normalize macOS and Windows encodings", WebViewScriptResultsNormalizePlatformEncodings),
     ("Preview element identification stays on the generic renderable boundary", PreviewElementIdentificationUsesRenderableIdentity),
@@ -10527,6 +10528,49 @@ static void ObsoleteInteractivePreviewRenderResultsAreDiscarded()
         sequence: 4,
         latestSequence: 5,
         isPlaybackUpdate: true));
+    foreach (var playback in new[] { false, true })
+        True(DesignWebPreviewPane.ShouldDiscardRenderedUpdate(4, 4, playback, 1, 2));
+}
+
+static void PreviewOwnerChangesClearPresentation()
+{
+    using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        var database = new SqliteProjectTestContext(ParityDatabasePath());
+        var pane = new DesignWebPreviewPane(database.ProjectPaths);
+        var view = pane.Children[0];
+        var loading = pane.Children.OfType<EditorLoadingScrim>().Single();
+        long revision = (long)Required(typeof(DesignWebPreviewPane)
+            .GetField("_ownerRevision", BindingFlags.Instance | BindingFlags.NonPublic)!).GetValue(pane)!;
+        pane.BeginContextUpdate("shot-a");
+        True(loading.IsVisible);
+        True(!view.IsVisible);
+        True(loading.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Preparando preview…"));
+        revision = (long)Required(typeof(DesignWebPreviewPane)
+            .GetField("_ownerRevision", BindingFlags.Instance | BindingFlags.NonPublic)!).GetValue(pane)!;
+        pane.BeginContextUpdate("shot-a");
+        Equal(revision, (long)Required(typeof(DesignWebPreviewPane)
+            .GetField("_ownerRevision", BindingFlags.Instance | BindingFlags.NonPublic)!).GetValue(pane)!);
+        // A successfully presented frame releases the native cover. Re-entering
+        // the same owner must neither clear it nor create another generation.
+        Required(typeof(WebPreviewPane).GetMethod("CompletePresentationContext",
+            BindingFlags.Instance | BindingFlags.NonPublic)).Invoke(pane, null);
+        pane.BeginContextUpdate("shot-a");
+        True(!loading.IsVisible);
+        True(view.IsVisible);
+        foreach (var owner in new[] { "screen-a", "screen-b", "shot-b", "shot-a" })
+        {
+            pane.BeginContextUpdate(owner);
+            True(loading.IsVisible);
+            True(!view.IsVisible);
+            var currentRevision = (long)Required(typeof(DesignWebPreviewPane)
+                .GetField("_ownerRevision", BindingFlags.Instance | BindingFlags.NonPublic)!).GetValue(pane)!;
+            True(currentRevision > revision);
+            True(DesignWebPreviewPane.ShouldDiscardRenderedUpdate(1, 1, true, revision, currentRevision));
+            revision = currentRevision;
+        }
+    }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
 static void ResidentPreviewShellRejectsChangedDeviceGeometry()
@@ -21258,7 +21302,7 @@ static void ShotPlayPreparesTransparentFramesBeforeClock()
                     new ProductionPreviewRuntimeResolver(database.Resources, database.ProjectPaths));
                 var frames = preparer.PrepareFrames(shot, null, "light", 0, 4, CancellationToken.None);
                 Field("_preparedShotPlayback").SetValue(controller,
-                    new PreparedProductionPlayback("prepared", shot.Kind, shot.Id, 0, frames));
+                    new PreparedProductionPlayback("prepared", shot.Kind, shot.Id, 0, frames, "content"));
                 var present = Required(typeof(EditorPreviewController).GetMethod("TryRenderPreparedProductionFrame",
                     BindingFlags.Instance | BindingFlags.NonPublic));
                 foreach (var frame in new[] { 0, 3, 1, 4 })
@@ -21284,16 +21328,19 @@ static void ProductionPreparationReadsOncePerScreen()
         var database = new SqliteProjectTestContext(temporary);
         var shot = Descendants(database.LoadProjectTree()).Single(node => node.Id == "shot_001");
         var calls = new Dictionary<string, int>(StringComparer.Ordinal);
-        var inputs = PreviewReadCounter.Wrap<IPreviewInputRepository>(database.PreviewInputs, calls);
-        var timeline = PreviewReadCounter.Wrap<IModuleInstanceTimelineStore>(database.Production, calls);
-        var themes = PreviewReadCounter.Wrap<IModuleInstanceThemeTokenQuery>(database.Resources, calls);
-        var actors = PreviewReadCounter.Wrap<IActorPreviewRepository>(database.Resources, calls);
+        var milliseconds = new Dictionary<string, double>(StringComparer.Ordinal);
+        var inputs = PreviewReadCounter.Wrap<IPreviewInputRepository>(database.PreviewInputs, calls, milliseconds);
+        var timeline = PreviewReadCounter.Wrap<IModuleInstanceTimelineStore>(database.Production, calls, milliseconds);
+        var themes = PreviewReadCounter.Wrap<IModuleInstanceThemeTokenQuery>(database.Resources, calls, milliseconds);
+        var actors = PreviewReadCounter.Wrap<IActorPreviewRepository>(database.Resources, calls, milliseconds);
         var preparer = new ProductionPreviewPayloadPreparer(
             new DesignPreviewPayloadDataSource(inputs, timeline, themes, actors, database.ProjectPaths),
             new ProductionPreviewRuntimeResolver(actors, database.ProjectPaths));
         var last = database.GetShotSettings(shot.Id).DurationFrames - 1;
         var sequence = preparer.PrepareSequence(shot, null, "light", 0, last, CancellationToken.None);
         Equal(2, sequence.Screens.Count);
+        foreach (var timing in milliseconds.OrderByDescending(pair => pair.Value).Take(8))
+            Console.WriteLine($"PREPARE PORT {timing.Key}: {calls[timing.Key]} calls, {timing.Value:F1} ms");
         var counts = JsonSerializer.Serialize(calls);
         True(calls.Values.Sum() > 0);
         var signature = sequence.ContentSignature();
@@ -21401,7 +21448,7 @@ static void ProductionPlaybackPreparesGapsAndMultipleScreens()
                 }).GetAwaiter().GetResult();
                 True(worker != caller);
                 Equal(end - start + 1, frames.Count);
-                var prepared = new PreparedProductionPlayback("test", shot.Kind, shot.Id, start, frames);
+                var prepared = new PreparedProductionPlayback("test", shot.Kind, shot.Id, start, frames, "content");
                 True(prepared.Covers(shot, start, end));
                 for (var frame = start; frame <= end; frame++)
                 {
@@ -21509,7 +21556,7 @@ static void ProductionPlaybackSelectsPreparedOwnerFrames()
             screen.Kind,
             screen.Id,
             10,
-            frames);
+            frames, "content");
 
     True(prepared.TryGetFrame(
         screen,

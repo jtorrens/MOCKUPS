@@ -234,7 +234,9 @@ internal sealed class DesignPreviewPayloadDataSource
             ProjectAncestor(node).Id);
     }
 
-    public DesignPreviewModuleInstanceSource LoadModuleInstance(string moduleInstanceId)
+    public DesignPreviewModuleInstanceSource LoadModuleInstance(
+        string moduleInstanceId,
+        string componentBaseConfigsJson)
     {
         var instance = _timeline.GetModuleInstanceSettings(moduleInstanceId);
         var module =
@@ -248,11 +250,14 @@ internal sealed class DesignPreviewPayloadDataSource
             module.RecordClassId,
             module.ConfigJson,
             _timeline.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
-            _database.GetComponentClassBaseConfigsJson(shot.ProjectId),
+            componentBaseConfigsJson,
             app.ConfigJson,
             instance.AnimationJson,
             shot.Fps);
     }
+
+    public string LoadComponentBaseConfigs(string projectId) =>
+        _database.GetComponentClassBaseConfigsJson(projectId);
 
     public IReadOnlyList<DesignPreviewShotSlot> LoadShotSlots(string shotId)
     {

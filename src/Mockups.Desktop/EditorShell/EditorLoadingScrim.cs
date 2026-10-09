@@ -80,13 +80,13 @@ internal sealed class EditorLoadingScrim : Border
         };
     }
 
-    public void Show(string message, Action? cancel)
+    public void Show(string message, Action? cancel, bool takeFocus = true)
     {
         SetMessage(message);
         _cancel = cancel;
         _cancelText.IsVisible = cancel is not null;
         IsVisible = true;
-        Focus();
+        if (takeFocus) Focus();
     }
 
     public void SetMessage(string message)

@@ -1700,7 +1700,7 @@ internal sealed class EditorPreviewController : IDisposable
             return;
         }
 
-        _designPreviewPane.BeginContextUpdate(selected.Name);
+        _designPreviewPane.BeginContextUpdate(selected.Id);
         PreviewDebugLog.Write(
             "preview.selection-transition.begin",
             ("workspace", _workspace),
@@ -1849,6 +1849,7 @@ internal sealed class EditorPreviewController : IDisposable
         var revision =
             Volatile.Read(
                 ref _selectionRefreshGeneration);
+        var refreshWatch = Stopwatch.StartNew();
         try
         {
             if (TryRenderPreparedProductionFrame())
@@ -1869,6 +1870,7 @@ internal sealed class EditorPreviewController : IDisposable
                 _selectedMode;
             var shotFrame =
                 _shotPreviewFrame;
+            var range = NavigationFrameRange();
             var selected =
                 _selectedNode();
             _designInputsPanel.ClearPreparedContext();
@@ -1876,16 +1878,15 @@ internal sealed class EditorPreviewController : IDisposable
                 await _operations.ExecuteAsync(
                     () =>
                     {
-                        var payload =
-                            node is null
-                                ? null
-                                : _productionPayloadPreparer
-                                    .Prepare(
-                                        node,
-                                        themeId,
-                                        themeMode,
-                                        shotFrame,
-                                        cancellationToken);
+                        var queueMilliseconds = refreshWatch.Elapsed.TotalMilliseconds;
+                        var payloadWatch = Stopwatch.StartNew();
+                        var sequence = node is null ? null : _productionPayloadPreparer.PrepareSequence(
+                            node, themeId, themeMode, range.StartFrame, range.EndFrame, cancellationToken);
+                        var frames = sequence?.Frames(range.StartFrame, range.EndFrame, cancellationToken);
+                        var payload = sequence?.AtFrame(shotFrame);
+                        PreviewDebugLog.Write("preview.production.prepare",
+                            ("owner", node?.Id), ("frame", shotFrame),
+                            ("queueMs", queueMilliseconds), ("payloadMs", payloadWatch.Elapsed.TotalMilliseconds));
                         var contextState =
                             invalidProductionContext
                             ?? (payload is null
@@ -1901,11 +1902,14 @@ internal sealed class EditorPreviewController : IDisposable
                                     .Renderable);
                         return (
                             Payload: payload,
+                            Frames: frames,
+                            ContentSignature: sequence?.ContentSignature(),
                             ContextState:
                                 contextState);
                     },
                     cancellationToken);
             if (_disposed
+                || cancellationToken.IsCancellationRequested
                 || !_productionPayloadPreparation
                     .IsCurrent(preparation)
                 || revision
@@ -1913,6 +1917,14 @@ internal sealed class EditorPreviewController : IDisposable
                         ref _selectionRefreshGeneration))
             {
                 return;
+            }
+
+            if (node is not null && prepared.Frames is not null && prepared.ContentSignature is not null)
+            {
+                InvalidatePreparedShotPlayback();
+                _preparedShotPlayback = new PreparedProductionPlayback(
+                    ShotPlaybackRequestSignature(node, range.StartFrame, range.EndFrame, prepared.ContentSignature),
+                    node.Kind, node.Id, range.StartFrame, prepared.Frames, prepared.ContentSignature);
             }
 
             CommitProductionPreviewContext(
@@ -1931,6 +1943,7 @@ internal sealed class EditorPreviewController : IDisposable
         {
             if (_productionPayloadPreparation
                     .IsCurrent(preparation)
+                && !cancellationToken.IsCancellationRequested
                 && revision
                     == Volatile.Read(
                         ref _selectionRefreshGeneration))
@@ -1938,6 +1951,9 @@ internal sealed class EditorPreviewController : IDisposable
                 _messages.Error(
                     "Preview",
                     exception);
+                RenderStaticPreview(null, new PreviewContextState(PreviewContextStateKind.Error,
+                    "Preview no disponible", "No se pudo preparar este propietario. Consulta Messages.",
+                    "Reintentar", "__preview_retry__"), null);
             }
         }
         finally
@@ -2050,8 +2066,8 @@ internal sealed class EditorPreviewController : IDisposable
                 PlaybackFrameKey(designPayload),
                 out var rasterPath))
         {
-            _designPreviewPane.ShowRasterFrame(
-                rasterPath);
+            _designPreviewPane.ShowPreparedRasterFrame(
+                ProductionPayloadNode()?.Id ?? designPayload!.OwnerId, rasterPath);
             RecordAndUpdatePlaybackStatus(
                 new DesignWebPreviewPane
                     .DesignPreviewFrameStatus(
@@ -3655,7 +3671,8 @@ internal sealed class EditorPreviewController : IDisposable
                         payloadNode.Kind,
                         payloadNode.Id,
                         _shotPreviewFrame,
-                        frames);
+                        frames,
+                        preparation.ContentSignature);
                 }
             }
         }
@@ -3730,6 +3747,12 @@ internal sealed class EditorPreviewController : IDisposable
         int endFrame,
         CancellationToken cancellationToken)
     {
+        if (_preparedShotPlayback is { } prepared && prepared.Covers(payloadNode, startFrame, endFrame))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return (prepared.ContentSignature, prepared.Frames
+                .Skip(startFrame - prepared.StartFrame).Take(endFrame - startFrame + 1).ToArray());
+        }
         var themeId = _selectedThemeId;
         var themeMode = _selectedMode;
         var stopwatch =

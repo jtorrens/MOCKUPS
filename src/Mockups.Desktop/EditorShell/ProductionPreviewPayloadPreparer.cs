@@ -62,7 +62,8 @@ internal sealed record PreparedProductionPlayback(
     ProjectTreeNodeKind NodeKind,
     string NodeId,
     int StartFrame,
-    IReadOnlyList<DesignPreviewPayload?> Frames)
+    IReadOnlyList<DesignPreviewPayload?> Frames,
+    string ContentSignature)
 {
     public bool Covers(
         ProjectTreeNode node,
