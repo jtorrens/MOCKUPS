@@ -767,11 +767,14 @@ cancels the previous preparation, and only the still-current immutable payload
 may update the Preview host or Production history. Production playback consumes
 the already prepared first frame for setup and never constructs an additional
 payload on the visual thread.
-The Preview host has two presentation lifetimes. A Shot or Screen owner change
+The Preview host has two presentation lifetimes. A Design, Shot or Screen owner change
 increments the owner revision, cancels pending presentation work, removes the
 resident document immediately and shows `Preparando preview…`. A result from the
-previous owner cannot publish, including a playback or raster result. Moving the
-playhead within the same owner keeps the resident frame until the replacement
+previous owner cannot publish, including a playback or raster result. Changing
+Design selection starts that cue before its payload is prepared. A fixed Preview
+retains its own owner and does not clear when another editor is selected. A failed
+Design preparation leaves the loading state through the shared error surface.
+Moving the playhead within the same owner keeps the resident frame until the replacement
 frame has rendered and committed. The WebView stages and decodes replacement
 images before mutating the resident DOM, including its fast morph path. A stale
 staged layer never commits. Browser regression tests exercise the real generated

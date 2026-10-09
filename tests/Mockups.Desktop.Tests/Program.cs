@@ -6075,23 +6075,84 @@ static void RapidVisualSelectionCommitsLatestPreparedEditor()
                     ?? throw new InvalidOperationException(
                         "Missing prepared editor content owner.");
 
+                var loading = Required(window.FindControl<EditorLoadingScrim>("EditorSelectionLoadingScrim"));
+                var navigation = Required(window.FindControl<Panel>("NavigationCardsPanel"));
+                var production = Required(window.FindControl<Button>("ProductionWorkspaceButton"));
+                var preview = Required(typeof(MainWindow).GetField("_previewController",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
+                var operations = Required(typeof(EditorPreviewController).GetField("_operations",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(preview) as EditorOperationCoordinator);
+                void Wait(Func<bool> condition) => True(SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return condition();
+                }, TimeSpan.FromSeconds(15)), "Selection loading did not reach its expected state.");
+                void AssertLoading(string destination)
+                {
+                    True(loading.IsVisible);
+                    True(loading.GetLogicalDescendants().OfType<TextBlock>()
+                        .Any(text => text.Text == $"Loading {destination}…"));
+                    True(!loading.GetVisualAncestors().OfType<ScrollViewer>().Any());
+                    True(navigation.IsEffectivelyEnabled && production.IsEffectivelyEnabled);
+                }
+
                 True((bool)selectNode.Invoke(window, [first.Id])!);
-                True((bool)selectNode.Invoke(window, [latest.Id])!);
-                var committed = SpinWait.SpinUntil(
-                    () =>
-                    {
-                        Dispatcher.UIThread.RunJobs();
-                        return content.CommittedOwnerId.Equals(
-                            latest.Id,
-                            StringComparison.Ordinal);
-                    },
-                    TimeSpan.FromSeconds(10));
-                True(committed);
+                Wait(() => content.CommittedOwnerId == first.Id && !loading.IsVisible);
+                var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var blocker = operations.ExecuteAsync(async _ =>
+                {
+                    entered.SetResult(true);
+                    await release.Task;
+                    return true;
+                });
+                try
+                {
+                    Wait(() => entered.Task.IsCompleted);
+                    // Use the real workspace action. Its pending context must
+                    // be acknowledged before the preparation queue can run.
+                    production.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    AssertLoading("Production");
+                    Equal(EditorWorkspace.Design, WindowSession(window).Workspace);
+                    Dispatcher.UIThread.RunJobs();
+                    True(loading.Bounds.Width > 0 && loading.Bounds.Height > 0);
+
+                    // A newer record selection retires the workspace request.
+                    True((bool)selectNode.Invoke(window, [first.Id])!);
+                    AssertLoading(first.Name);
+                    Required(window.FindControl<Button>("DesignWorkspaceButton"))
+                        .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    AssertLoading(first.Name);
+                    True((bool)selectNode.Invoke(window, [latest.Id])!);
+                    AssertLoading(latest.Name);
+                    Dispatcher.UIThread.RunJobs();
+                    AssertLoading(latest.Name);
+                }
+                finally { release.TrySetResult(true); }
+                Wait(() => blocker.IsCompleted && content.CommittedOwnerId == latest.Id && !loading.IsVisible);
+                blocker.GetAwaiter().GetResult();
                 Equal(latest.Id, WindowSession(window).SelectedNode?.Id);
                 Equal(latest.Id, content.CommittedOwnerId);
+                Equal(EditorWorkspace.Design, WindowSession(window).Workspace);
+
+                // Failure is injected into a disposable database, after startup.
+                // It must replace loading with the existing preparation error UI.
+                using (var connection = new SqliteConnection($"Data Source={temporary}"))
+                {
+                    connection.Open();
+                    using var command = connection.CreateCommand();
+                    command.CommandText = "UPDATE editor_layouts SET layout_json = '[]' WHERE record_class_id = $id";
+                    command.Parameters.AddWithValue("$id", first.RecordClassId);
+                    Equal(1, command.ExecuteNonQuery());
+                }
+                True((bool)selectNode.Invoke(window, [first.Id])!);
+                AssertLoading(first.Name);
+                Wait(() => !loading.IsVisible && content.Cards.Any(card =>
+                    card.SessionStateId == "editor:preparation-error"));
+                True(navigation.IsEffectivelyEnabled);
                 window.Close();
             },
-            CancellationToken.None);
+            CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
     {

@@ -12,6 +12,7 @@ internal sealed class EditorLoadingScrim : Border
     private readonly TextBlock _messageText;
     private readonly TextBlock _cancelText;
     private Action? _cancel;
+    private long _presentationRevision;
 
     public EditorLoadingScrim()
     {
@@ -82,6 +83,7 @@ internal sealed class EditorLoadingScrim : Border
 
     public void Show(string message, Action? cancel, bool takeFocus = true)
     {
+        ++_presentationRevision;
         SetMessage(message);
         _cancel = cancel;
         _cancelText.IsVisible = cancel is not null;
@@ -96,7 +98,23 @@ internal sealed class EditorLoadingScrim : Border
 
     public void Hide()
     {
+        ++_presentationRevision;
         IsVisible = false;
         _cancel = null;
+    }
+
+    public IDisposable BeginScope(string message)
+    {
+        Show(message, cancel: null, takeFocus: false);
+        return new PresentationScope(this, _presentationRevision);
+    }
+
+    private sealed class PresentationScope(EditorLoadingScrim owner, long revision) : IDisposable
+    {
+        public void Dispose()
+        {
+            // A completed or canceled request cannot dismiss a newer cue.
+            if (owner._presentationRevision == revision) owner.Hide();
+        }
     }
 }

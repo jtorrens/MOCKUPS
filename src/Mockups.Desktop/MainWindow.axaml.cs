@@ -496,6 +496,7 @@ public partial class MainWindow : SukiWindow
             EditorOverridesPanel,
             EditorScrollViewer,
             EditorOverridesScrollViewer,
+            EditorSelectionLoadingScrim,
             _activeFieldControls,
             inlinePreviews,
             layoutCards,
@@ -871,18 +872,20 @@ public partial class MainWindow : SukiWindow
         }
         else
         {
+            IDisposable? loading = null;
             if (!preserveCurrentContentWhilePreparing
                 || !_editorContent.CommittedOwnerId.Equals(
                     node.Id,
                     StringComparison.Ordinal))
             {
-                _editorContent.ShowLoading();
+                loading = _editorContent.ShowLoading(editorNode.Name);
             }
             _ = PrepareRootEditorAsync(
                 editorNode,
                 node,
                 transition.Current.Revision,
-                restoreState);
+                restoreState,
+                loading);
         }
         RefreshPreviewForSelection(
             transition,
@@ -955,8 +958,10 @@ public partial class MainWindow : SukiWindow
         ProjectTreeNode layoutNode,
         ProjectTreeNode dataNode,
         long revision,
-        EditorViewState? restoreState)
+        EditorViewState? restoreState,
+        IDisposable? loading)
     {
+        using var loadingScope = loading;
         try
         {
             var prepared = await _editorContent.PrepareRootAsync(
@@ -1332,10 +1337,11 @@ public partial class MainWindow : SukiWindow
         var embedded = transition.Current.EmbeddedEditor
             ?? throw new InvalidOperationException(
                 "The embedded editor transition did not retain its context.");
-        _editorContent.ShowLoading();
+        var loading = _editorContent.ShowLoading(embedded.OwnerNode.Name);
         _ = PrepareEmbeddedEditorAsync(
             embedded,
-            transition.Current.Revision);
+            transition.Current.Revision,
+            loading: loading);
         _editorHeader.SetEmbeddedTitle(
             embedded,
             EditorPreparedHeader.Loading(
@@ -1347,8 +1353,10 @@ public partial class MainWindow : SukiWindow
     private async Task PrepareEmbeddedEditorAsync(
         EditorEmbeddedContext context,
         long revision,
-        EditorViewState? restoreState = null)
+        EditorViewState? restoreState = null,
+        IDisposable? loading = null)
     {
+        using var loadingScope = loading;
         try
         {
             var prepared = await _editorContent.PrepareEmbeddedAsync(
@@ -1687,10 +1695,11 @@ public partial class MainWindow : SukiWindow
             node);
         _previewController
             .BeginSelectionTransition();
-        _editorContent.ShowLoading();
+        var loading = _editorContent.ShowLoading(embedded.OwnerNode.Name);
         _ = PrepareEmbeddedEditorAsync(
             embedded,
-            transition.Current.Revision);
+            transition.Current.Revision,
+            loading: loading);
         RefreshPreviewForSelection(
             transition,
             node);
@@ -1944,9 +1953,10 @@ public partial class MainWindow : SukiWindow
         EditorSessionTransition? transition;
         try
         {
-            transition =
-                await _treePreviewTransitions.SwitchWorkspaceAsync(
-                    workspace);
+            var preparation = _treePreviewTransitions.SwitchWorkspaceAsync(workspace);
+            using var loading = preparation.IsCompleted ? null
+                : _editorContent.BeginNavigationLoading(EditorWorkspaceNavigation.Title(workspace));
+            transition = await preparation;
         }
         catch (Exception exception)
         {

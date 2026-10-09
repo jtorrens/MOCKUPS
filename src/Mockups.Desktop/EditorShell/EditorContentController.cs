@@ -21,6 +21,7 @@ internal sealed class EditorContentController : IDisposable
     private readonly Panel _flatOverrideHost;
     private readonly Control _editorViewport;
     private readonly Control _overrideViewport;
+    private readonly EditorLoadingScrim _loading;
     private readonly Dictionary<string, bool> _overrideModeByLayout =
         new(StringComparer.Ordinal);
     private readonly Func<ProjectTreeNode, IReadOnlyList<InstantEditorCard>?>
@@ -36,6 +37,7 @@ internal sealed class EditorContentController : IDisposable
         Panel flatOverrideHost,
         Control editorViewport,
         Control overrideViewport,
+        EditorLoadingScrim loading,
         EditorActiveFieldControls activeFieldControls,
         IEditorInlinePreviewController inlinePreviews,
         EditorLayoutCardFactory layoutCards,
@@ -48,6 +50,7 @@ internal sealed class EditorContentController : IDisposable
         _flatOverrideHost = flatOverrideHost;
         _editorViewport = editorViewport;
         _overrideViewport = overrideViewport;
+        _loading = loading;
         _activeFieldControls = activeFieldControls;
         _inlinePreviews = inlinePreviews;
         _layoutCards = layoutCards;
@@ -82,36 +85,22 @@ internal sealed class EditorContentController : IDisposable
         ResetRegistries();
         _cardHost.Replace(specialCards, resetExpansion: false);
         CommittedOwnerId = dataNode.Id;
+        _loading.Hide();
     }
 
-    public void ShowLoading()
+    public IDisposable BeginNavigationLoading(string destination)
     {
+        return _loading.BeginScope($"Loading {destination}…");
+    }
+
+    public IDisposable ShowLoading(string destination)
+    {
+        var loading = BeginNavigationLoading(destination);
         HidePeerViews();
         ResetRegistries();
         CommittedOwnerId = "";
-        _cardHost.Replace(
-        [
-            new InstantEditorCard(
-                EditorCardHeader.Create(
-                    "Editor",
-                    "Preparing data",
-                    EditorIcons.Create(
-                        EditorIcons.Structure,
-                        18)),
-                new Border
-                {
-                    Padding = EditorUiDensity.CardThickness(10),
-                    Child = new TextBlock
-                    {
-                        Text = "Loading editor data…",
-                        Opacity = 0.72,
-                    },
-                },
-                isExpanded: true)
-            {
-                SessionStateId = "editor:loading",
-            },
-        ], resetExpansion: false);
+        _cardHost.Replace([], resetExpansion: false);
+        return loading;
     }
 
     public void ShowPreparationError(string message)
@@ -273,7 +262,11 @@ internal sealed class EditorContentController : IDisposable
     public void CancelPreparation() =>
         _preparation.Cancel();
 
-    public void Dispose() => _preparation.Dispose();
+    public void Dispose()
+    {
+        _preparation.Dispose();
+        _loading.Hide();
+    }
 
     internal static string OwnerLayoutRecordClassId(ProjectTreeNode ownerNode) =>
         ownerNode.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant

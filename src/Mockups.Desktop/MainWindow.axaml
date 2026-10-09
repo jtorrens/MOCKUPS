@@ -142,6 +142,7 @@
                     Margin="10"
                     MinWidth="260">
                 <suki:GlassCard>
+                    <Grid>
                     <DockPanel>
                     <Border DockPanel.Dock="Top"
                             Padding="22,16">
@@ -191,6 +192,8 @@
                         </ScrollViewer>
                     </Grid>
                     </DockPanel>
+                    <editor:EditorLoadingScrim x:Name="EditorSelectionLoadingScrim" />
+                    </Grid>
                 </suki:GlassCard>
             </Border>
 

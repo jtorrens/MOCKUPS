@@ -101,6 +101,17 @@ Navigation is rebuilt only when its complete presentation changed. Loading
 surfaces are reserved for transitions that do not already present that exact
 owner.
 
+A navigation request acknowledges the click immediately with the shared loading
+scrim and the requested destination. The editor cue is outside both scrolling
+viewports, covers the departing editor's controls, and does not take focus or
+block navigation and workspace buttons. It is visible while a workspace's tree
+and Preview context are preparing, not only after they commit. Root and embedded
+editor preparation use the same scrim instead of a loading card inside the scroll.
+Loading scopes are revisioned presentation state: an obsolete completion or
+cancellation cannot dismiss a newer request's cue. Success removes its cue;
+failure removes it and reports the existing preparation error. A no-op workspace
+click does not cancel an editor preparation already in progress.
+
 Component and Module headers expose compact Back and Forward actions after the
 Variant actions. They traverse the exact sequence of Design editor visits,
 including the selected Variant and embedded breadcrumb context. Navigation

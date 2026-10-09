@@ -1694,8 +1694,10 @@ internal sealed class EditorPreviewController : IDisposable
         CancelPlaybackPreparation();
         _productionPayloadPreparation.Cancel();
         _designPayloadPreparation.Cancel();
-        if (PreviewWorkspace() != EditorWorkspace.Production
-            || ProductionContextNode() is not { } selected)
+        var selected = PreviewWorkspace() == EditorWorkspace.Production
+            ? ProductionContextNode()
+            : DesignPreviewNodeForSelection();
+        if (selected is null)
         {
             return;
         }
@@ -1761,7 +1763,9 @@ internal sealed class EditorPreviewController : IDisposable
         catch (Exception exception)
         {
             if (!_disposed && !operation.Token.IsCancellationRequested && _designPayloadPreparation.IsCurrent(operation))
-                _messages.Error("Preview", exception);
+            {
+                ShowPreparationError(exception);
+            }
         }
         finally { _designPayloadPreparation.Complete(operation); }
     }
@@ -1948,12 +1952,7 @@ internal sealed class EditorPreviewController : IDisposable
                     == Volatile.Read(
                         ref _selectionRefreshGeneration))
             {
-                _messages.Error(
-                    "Preview",
-                    exception);
-                RenderStaticPreview(null, new PreviewContextState(PreviewContextStateKind.Error,
-                    "Preview no disponible", "No se pudo preparar este propietario. Consulta Messages.",
-                    "Reintentar", "__preview_retry__"), null);
+                ShowPreparationError(exception);
             }
         }
         finally
@@ -1986,6 +1985,14 @@ internal sealed class EditorPreviewController : IDisposable
             payload is null ? PreviewContextState.Transparent : PreviewContextState.Renderable,
             null);
         return true;
+    }
+
+    private void ShowPreparationError(Exception exception)
+    {
+        _messages.Error("Preview", exception);
+        RenderStaticPreview(null, new PreviewContextState(PreviewContextStateKind.Error,
+            "Preview no disponible", "No se pudo preparar este propietario. Consulta Messages.",
+            "Reintentar", PreviewRetryTargetId), null);
     }
 
     private void CommitProductionPreviewContext(
