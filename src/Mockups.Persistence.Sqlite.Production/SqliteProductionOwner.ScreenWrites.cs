@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.EditorShell;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -11,7 +12,20 @@ internal sealed partial class SqliteProductionOwner
         CommitScreenWrite(connection, transaction =>
         {
             var instance = _moduleInstanceRepository.Get(connection, id);
-            return (prepare(transaction, instance), (IReadOnlyList<string>)[instance.ShotId]);
+            var runtime = PrepareModuleInstanceRuntimeDocument(connection, id,
+                ParseJsonObject(instance.ContentJson));
+            instance = instance with
+            {
+                ContentJson = RuntimeInputDocumentContract.CreateContentForContract(runtime, runtime).ToJsonString(),
+            };
+            var result = prepare(transaction, instance);
+            var candidate = _moduleInstanceRepository.Get(connection, id);
+            var prepared = PrepareModuleInstanceRuntimeDocument(connection, id,
+                ParseJsonObject(candidate.ContentJson));
+            _moduleInstanceRepository.UpdateContentAndAnimation(connection, id,
+                RuntimeInputDocumentContract.CreateContentForContract(prepared, prepared).ToJsonString(),
+                candidate.AnimationJson, transaction);
+            return (result, (IReadOnlyList<string>)[instance.ShotId]);
         });
 
     // The mutation prepares its candidate inside the transaction. No candidate is

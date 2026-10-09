@@ -211,7 +211,7 @@ public static class StructuredCollectionItemIdentity
             foreach (var item in (owner[field.JsonKey] as JsonArray)?.OfType<JsonObject>() ?? [])
             {
                 var previous = item["id"]?.GetValue<string>() ?? "";
-                var next = $"{nested.Id}_{Guid.NewGuid():N}";
+                var next = RuntimeCollectionDocumentContract.CreateItemId();
                 item["id"] = next;
                 if (!string.IsNullOrWhiteSpace(previous))
                 {
@@ -292,7 +292,7 @@ public static class StructuredCollectionItemIdentity
         foreach (var item in (owner[collection.JsonKey] as JsonArray)?.OfType<JsonObject>() ?? [])
         {
             var previous = item["id"]?.GetValue<string>() ?? "";
-            var next = $"{collection.Id}_{Guid.NewGuid():N}";
+            var next = RuntimeCollectionDocumentContract.CreateItemId();
             item["id"] = next;
             if (!string.IsNullOrWhiteSpace(previous))
             {

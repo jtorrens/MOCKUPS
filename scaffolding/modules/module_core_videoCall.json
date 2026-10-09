@@ -59,7 +59,7 @@
       "headerRowGapToken": "theme.spacing.s",
       "headerRows": [
         {
-          "id": "row1",
+          "id": "item_690ab7d988ef466c8d6b20406ef2e024",
           "label": "Row 1",
           "visible": true,
           "rowSlot": {
@@ -71,7 +71,7 @@
                 "showSeparator": false,
                 "slots": [
                   {
-                    "id": "row1_slot1",
+                    "id": "item_d703140004a540299cd4f6b31e1dd754",
                     "kind": "avatar",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -92,7 +92,7 @@
                     }
                   },
                   {
-                    "id": "row1_slot2",
+                    "id": "item_e68fb7f9294f4c0a864560ac9c0c3591",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -109,7 +109,7 @@
                     }
                   },
                   {
-                    "id": "row1_slot3",
+                    "id": "item_f1f6224987ed4109858c88a9d2a8edd5",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -126,7 +126,7 @@
                     }
                   },
                   {
-                    "id": "row1_slot4",
+                    "id": "item_40a23b9da0e14edda5c3107e36160861",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -143,7 +143,7 @@
                     }
                   },
                   {
-                    "id": "row1_slot5",
+                    "id": "item_99091298943c42ae88565f1cfe8e2135",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -165,7 +165,7 @@
           }
         },
         {
-          "id": "row2",
+          "id": "item_d2a1bd7aeb5f49c49501136b62bc4389",
           "label": "Row 2",
           "visible": true,
           "rowSlot": {
@@ -177,7 +177,7 @@
                 "showSeparator": true,
                 "slots": [
                   {
-                    "id": "row2_slot1",
+                    "id": "item_93403f58daa5461ebd97f6500c310a18",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -194,7 +194,7 @@
                     }
                   },
                   {
-                    "id": "row2_slot2",
+                    "id": "item_b4419610a41f47d9a9ec85989f6e285f",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -211,7 +211,7 @@
                     }
                   },
                   {
-                    "id": "row2_slot3",
+                    "id": "item_5247adbf5f9f4bf59935d1be38fd72db",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -228,7 +228,7 @@
                     }
                   },
                   {
-                    "id": "row2_slot4",
+                    "id": "item_67a972293b584262b4b8e942d49ac44e",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -245,7 +245,7 @@
                     }
                   },
                   {
-                    "id": "row2_slot5",
+                    "id": "item_0c8add96f6a341b49d5bae5de8783365",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -283,7 +283,7 @@
       "footerRowGapToken": "theme.spacing.s",
       "footerRows": [
         {
-          "id": "footerRow1",
+          "id": "item_9df0890d96604176aca0bb0a6e7889e2",
           "label": "Row 1",
           "visible": true,
           "rowSlot": {
@@ -295,7 +295,7 @@
                 "showSeparator": false,
                 "slots": [
                   {
-                    "id": "footerRow1_slot1",
+                    "id": "item_3a5f8a29b07b43f6a589286bd1463ce7",
                     "kind": "avatar",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -316,7 +316,7 @@
                     }
                   },
                   {
-                    "id": "footerRow1_slot2",
+                    "id": "item_5e50e44e80724c6e920f7acf97311125",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -333,7 +333,7 @@
                     }
                   },
                   {
-                    "id": "footerRow1_slot3",
+                    "id": "item_21bcc88049a242f08301248deef83e16",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -350,7 +350,7 @@
                     }
                   },
                   {
-                    "id": "footerRow1_slot4",
+                    "id": "item_836067d4bcc645cca099c2967a9a2cc0",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -367,7 +367,7 @@
                     }
                   },
                   {
-                    "id": "footerRow1_slot5",
+                    "id": "item_2b2df52efb084e53ba43840ab1e661c4",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -389,7 +389,7 @@
           }
         },
         {
-          "id": "footerRow2",
+          "id": "item_1729c03bec80498bb124f253df1c1709",
           "label": "Row 2",
           "visible": true,
           "rowSlot": {
@@ -401,7 +401,7 @@
                 "showSeparator": true,
                 "slots": [
                   {
-                    "id": "footerRow2_slot1",
+                    "id": "item_e2066917e7204c6f8243f986db7aab65",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -418,7 +418,7 @@
                     }
                   },
                   {
-                    "id": "footerRow2_slot2",
+                    "id": "item_ae6039ebf04340e7aad16f9b28287a2c",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -435,7 +435,7 @@
                     }
                   },
                   {
-                    "id": "footerRow2_slot3",
+                    "id": "item_cf299db22f8647d98a069e3bd0af6d78",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -452,7 +452,7 @@
                     }
                   },
                   {
-                    "id": "footerRow2_slot4",
+                    "id": "item_158e39bf056d42dcaf3978a577a439b9",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -469,7 +469,7 @@
                     }
                   },
                   {
-                    "id": "footerRow2_slot5",
+                    "id": "item_a8188689baf84fb9856701a1b2588206",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -577,8 +577,14 @@
             "surfaceSlot": {
               "variantReference": "component_project_foqn_s2_surface::variant::default",
               "overrides": {
-                "style": { "cornerRadiusToken": "theme.radii.full" },
-                "surface": { "backgroundColorToken": "theme.colors.background", "backgroundAlpha": 0.6, "borderAlpha": 0 }
+                "style": {
+                  "cornerRadiusToken": "theme.radii.full"
+                },
+                "surface": {
+                  "backgroundColorToken": "theme.colors.background",
+                  "backgroundAlpha": 0.6,
+                  "borderAlpha": 0
+                }
               }
             }
           }
@@ -637,7 +643,7 @@
       },
       "mainRows": [
         {
-          "id": "mainRow1",
+          "id": "item_8313f23337934e96888a6dc2757f8514",
           "label": "Top",
           "visible": true,
           "rowSlot": {
@@ -649,7 +655,7 @@
                 "showSeparator": false,
                 "slots": [
                   {
-                    "id": "mainRow1_slot1",
+                    "id": "item_14739e3e1d35478395aebcedee6d4862",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -670,7 +676,7 @@
                     }
                   },
                   {
-                    "id": "mainRow1_slot2",
+                    "id": "item_a254d35f3da04f95b1338345be966c64",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -687,7 +693,7 @@
                     }
                   },
                   {
-                    "id": "mainRow1_slot3",
+                    "id": "item_86aa97e70311418fbe15a580932e769c",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -704,7 +710,7 @@
                     }
                   },
                   {
-                    "id": "mainRow1_slot4",
+                    "id": "item_4152715783f04acf90cf463f63d4d65c",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -721,7 +727,7 @@
                     }
                   },
                   {
-                    "id": "mainRow1_slot5",
+                    "id": "item_9966feea96974bf4b9cd9cde8c10007f",
                     "kind": "icon",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -747,7 +753,7 @@
           }
         },
         {
-          "id": "mainRow2",
+          "id": "item_29f0dbd15fd34b1a85890be5c6777312",
           "label": "Center",
           "visible": true,
           "rowSlot": {
@@ -759,7 +765,7 @@
                 "showSeparator": false,
                 "slots": [
                   {
-                    "id": "mainRow2_slot1",
+                    "id": "item_12c7de3cf1d748c8a53d835a4f3f07fb",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -780,7 +786,7 @@
                     }
                   },
                   {
-                    "id": "mainRow2_slot2",
+                    "id": "item_136ff139d93d4a589008ae4605d9ea65",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -797,7 +803,7 @@
                     }
                   },
                   {
-                    "id": "mainRow2_slot3",
+                    "id": "item_a4b736462bd744198f81f7a388373e2f",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -814,7 +820,7 @@
                     }
                   },
                   {
-                    "id": "mainRow2_slot4",
+                    "id": "item_bf3c2f704491463289ec1c748e8ba78a",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -831,7 +837,7 @@
                     }
                   },
                   {
-                    "id": "mainRow2_slot5",
+                    "id": "item_d276012f4eb24e15b9a72fbb597bad3d",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -853,7 +859,7 @@
           }
         },
         {
-          "id": "mainRow3",
+          "id": "item_9da03395fe2749f3bad029e13f8bb975",
           "label": "Bottom",
           "visible": true,
           "rowSlot": {
@@ -865,7 +871,7 @@
                 "showSeparator": false,
                 "slots": [
                   {
-                    "id": "mainRow3_slot1",
+                    "id": "item_d7c381baa4784385905df5c4010c8c9d",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -886,7 +892,7 @@
                     }
                   },
                   {
-                    "id": "mainRow3_slot2",
+                    "id": "item_10b65a64f63e43f1aecc3b80faa083e9",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -903,7 +909,7 @@
                     }
                   },
                   {
-                    "id": "mainRow3_slot3",
+                    "id": "item_ebcab50e0a56481a94c1513c21742176",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -920,7 +926,7 @@
                     }
                   },
                   {
-                    "id": "mainRow3_slot4",
+                    "id": "item_12658bebc988410d90ff7e60e42b621e",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -937,7 +943,7 @@
                     }
                   },
                   {
-                    "id": "mainRow3_slot5",
+                    "id": "item_47fbe3a616e24b7396ef10e11eb57e17",
                     "kind": "icon",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1649,7 +1655,7 @@
     "actions": [],
     "participants": [
       {
-        "id": "participant_alex",
+        "id": "item_dcece1c33c7f4666990f42d0693ba78b",
         "present": true,
         "actorId": "actor_alex",
         "showActorName": false,
@@ -1662,7 +1668,7 @@
         "role": "main"
       },
       {
-        "id": "participant_asia",
+        "id": "item_aab184dea3b5442195575fcfcf3e93eb",
         "present": true,
         "actorId": "actor_alex_b",
         "showActorName": true,
@@ -1675,7 +1681,7 @@
         "role": "grid"
       },
       {
-        "id": "participant_jon",
+        "id": "item_fc87ff9895fb4f42bf4ee130e64b6096",
         "present": true,
         "actorId": "actor_0cfce0abbaf84639b9fe20fcf5626c98",
         "showActorName": true,
@@ -1688,7 +1694,7 @@
         "role": "grid"
       },
       {
-        "id": "participant_sam",
+        "id": "item_3aec7f59229746848c48eeda95957af0",
         "present": true,
         "actorId": "actor_sam",
         "showActorName": true,
@@ -1710,10 +1716,12 @@
     },
     "videoCallHeaderRows": [
       {
-        "id": "row1",
+        "id": "item_690ab7d988ef466c8d6b20406ef2e024",
+        "label": "Row 1",
         "slotInputs": [
           {
-            "id": "row1_slot1",
+            "id": "item_d703140004a540299cd4f6b31e1dd754",
+            "kind": "avatar",
             "actorId": "actor_alex",
             "label": "Alex Q",
             "sublabel": "@alexq · 2 min",
@@ -1721,7 +1729,8 @@
             "pressed": false
           },
           {
-            "id": "row1_slot2",
+            "id": "item_e68fb7f9294f4c0a864560ac9c0c3591",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "250",
             "sublabel": "Publicaciones",
@@ -1729,7 +1738,8 @@
             "pressed": false
           },
           {
-            "id": "row1_slot3",
+            "id": "item_f1f6224987ed4109858c88a9d2a8edd5",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "135",
             "sublabel": "Seguidores",
@@ -1737,7 +1747,8 @@
             "pressed": false
           },
           {
-            "id": "row1_slot4",
+            "id": "item_40a23b9da0e14edda5c3107e36160861",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "54",
             "sublabel": "Siguiendo",
@@ -1745,7 +1756,8 @@
             "pressed": false
           },
           {
-            "id": "row1_slot5",
+            "id": "item_99091298943c42ae88565f1cfe8e2135",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1755,10 +1767,12 @@
         ]
       },
       {
-        "id": "row2",
+        "id": "item_d2a1bd7aeb5f49c49501136b62bc4389",
+        "label": "Row 2",
         "slotInputs": [
           {
-            "id": "row2_slot1",
+            "id": "item_93403f58daa5461ebd97f6500c310a18",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "#FOQN",
             "sublabel": "",
@@ -1766,7 +1780,8 @@
             "pressed": false
           },
           {
-            "id": "row2_slot2",
+            "id": "item_b4419610a41f47d9a9ec85989f6e285f",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "#ASDF",
             "sublabel": "",
@@ -1774,7 +1789,8 @@
             "pressed": false
           },
           {
-            "id": "row2_slot3",
+            "id": "item_5247adbf5f9f4bf59935d1be38fd72db",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1782,7 +1798,8 @@
             "pressed": false
           },
           {
-            "id": "row2_slot4",
+            "id": "item_67a972293b584262b4b8e942d49ac44e",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1790,7 +1807,8 @@
             "pressed": false
           },
           {
-            "id": "row2_slot5",
+            "id": "item_0c8add96f6a341b49d5bae5de8783365",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1802,10 +1820,12 @@
     ],
     "videoCallFooterRows": [
       {
-        "id": "footerRow1",
+        "id": "item_9df0890d96604176aca0bb0a6e7889e2",
+        "label": "Row 1",
         "slotInputs": [
           {
-            "id": "footerRow1_slot1",
+            "id": "item_3a5f8a29b07b43f6a589286bd1463ce7",
+            "kind": "avatar",
             "actorId": "actor_alex",
             "label": "Alex Q",
             "sublabel": "@alexq · 2 min",
@@ -1813,7 +1833,8 @@
             "pressed": false
           },
           {
-            "id": "footerRow1_slot2",
+            "id": "item_5e50e44e80724c6e920f7acf97311125",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "250",
             "sublabel": "Publicaciones",
@@ -1821,7 +1842,8 @@
             "pressed": false
           },
           {
-            "id": "footerRow1_slot3",
+            "id": "item_21bcc88049a242f08301248deef83e16",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "135",
             "sublabel": "Seguidores",
@@ -1829,7 +1851,8 @@
             "pressed": false
           },
           {
-            "id": "footerRow1_slot4",
+            "id": "item_836067d4bcc645cca099c2967a9a2cc0",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "54",
             "sublabel": "Siguiendo",
@@ -1837,7 +1860,8 @@
             "pressed": false
           },
           {
-            "id": "footerRow1_slot5",
+            "id": "item_2b2df52efb084e53ba43840ab1e661c4",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1847,10 +1871,12 @@
         ]
       },
       {
-        "id": "footerRow2",
+        "id": "item_1729c03bec80498bb124f253df1c1709",
+        "label": "Row 2",
         "slotInputs": [
           {
-            "id": "footerRow2_slot1",
+            "id": "item_e2066917e7204c6f8243f986db7aab65",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "#FOQN",
             "sublabel": "",
@@ -1858,7 +1884,8 @@
             "pressed": false
           },
           {
-            "id": "footerRow2_slot2",
+            "id": "item_ae6039ebf04340e7aad16f9b28287a2c",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "#ASDF",
             "sublabel": "",
@@ -1866,7 +1893,8 @@
             "pressed": false
           },
           {
-            "id": "footerRow2_slot3",
+            "id": "item_cf299db22f8647d98a069e3bd0af6d78",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1874,7 +1902,8 @@
             "pressed": false
           },
           {
-            "id": "footerRow2_slot4",
+            "id": "item_158e39bf056d42dcaf3978a577a439b9",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1882,7 +1911,8 @@
             "pressed": false
           },
           {
-            "id": "footerRow2_slot5",
+            "id": "item_a8188689baf84fb9856701a1b2588206",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1894,10 +1924,12 @@
     ],
     "videoCallMainRows": [
       {
-        "id": "mainRow1",
+        "id": "item_8313f23337934e96888a6dc2757f8514",
+        "label": "Top",
         "slotInputs": [
           {
-            "id": "mainRow1_slot1",
+            "id": "item_14739e3e1d35478395aebcedee6d4862",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1905,7 +1937,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow1_slot2",
+            "id": "item_a254d35f3da04f95b1338345be966c64",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1913,7 +1946,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow1_slot3",
+            "id": "item_86aa97e70311418fbe15a580932e769c",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1921,7 +1955,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow1_slot4",
+            "id": "item_4152715783f04acf90cf463f63d4d65c",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1929,7 +1964,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow1_slot5",
+            "id": "item_9966feea96974bf4b9cd9cde8c10007f",
+            "kind": "icon",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1939,10 +1975,12 @@
         ]
       },
       {
-        "id": "mainRow2",
+        "id": "item_29f0dbd15fd34b1a85890be5c6777312",
+        "label": "Center",
         "slotInputs": [
           {
-            "id": "mainRow2_slot1",
+            "id": "item_12c7de3cf1d748c8a53d835a4f3f07fb",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1950,7 +1988,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow2_slot2",
+            "id": "item_136ff139d93d4a589008ae4605d9ea65",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1958,7 +1997,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow2_slot3",
+            "id": "item_a4b736462bd744198f81f7a388373e2f",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1966,7 +2006,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow2_slot4",
+            "id": "item_bf3c2f704491463289ec1c748e8ba78a",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1974,7 +2015,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow2_slot5",
+            "id": "item_d276012f4eb24e15b9a72fbb597bad3d",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -1984,10 +2026,12 @@
         ]
       },
       {
-        "id": "mainRow3",
+        "id": "item_9da03395fe2749f3bad029e13f8bb975",
+        "label": "Bottom",
         "slotInputs": [
           {
-            "id": "mainRow3_slot1",
+            "id": "item_d7c381baa4784385905df5c4010c8c9d",
+            "kind": "label",
             "actorId": "actor_alex",
             "label": "Alex Q",
             "sublabel": "",
@@ -1995,7 +2039,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow3_slot2",
+            "id": "item_10b65a64f63e43f1aecc3b80faa083e9",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -2003,7 +2048,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow3_slot3",
+            "id": "item_ebcab50e0a56481a94c1513c21742176",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -2011,7 +2057,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow3_slot4",
+            "id": "item_12658bebc988410d90ff7e60e42b621e",
+            "kind": "none",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -2019,7 +2066,8 @@
             "pressed": false
           },
           {
-            "id": "mainRow3_slot5",
+            "id": "item_47fbe3a616e24b7396ef10e11eb57e17",
+            "kind": "icon",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
@@ -2056,7 +2104,7 @@
         "headerRowGapToken": "theme.spacing.s",
         "headerRows": [
           {
-            "id": "row1",
+            "id": "item_690ab7d988ef466c8d6b20406ef2e024",
             "label": "Row 1",
             "visible": true,
             "rowSlot": {
@@ -2068,7 +2116,7 @@
                   "showSeparator": false,
                   "slots": [
                     {
-                      "id": "row1_slot1",
+                      "id": "item_d703140004a540299cd4f6b31e1dd754",
                       "kind": "avatar",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2089,7 +2137,7 @@
                       }
                     },
                     {
-                      "id": "row1_slot2",
+                      "id": "item_e68fb7f9294f4c0a864560ac9c0c3591",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2106,7 +2154,7 @@
                       }
                     },
                     {
-                      "id": "row1_slot3",
+                      "id": "item_f1f6224987ed4109858c88a9d2a8edd5",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2123,7 +2171,7 @@
                       }
                     },
                     {
-                      "id": "row1_slot4",
+                      "id": "item_40a23b9da0e14edda5c3107e36160861",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2140,7 +2188,7 @@
                       }
                     },
                     {
-                      "id": "row1_slot5",
+                      "id": "item_99091298943c42ae88565f1cfe8e2135",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2162,7 +2210,7 @@
             }
           },
           {
-            "id": "row2",
+            "id": "item_d2a1bd7aeb5f49c49501136b62bc4389",
             "label": "Row 2",
             "visible": true,
             "rowSlot": {
@@ -2174,7 +2222,7 @@
                   "showSeparator": true,
                   "slots": [
                     {
-                      "id": "row2_slot1",
+                      "id": "item_93403f58daa5461ebd97f6500c310a18",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2191,7 +2239,7 @@
                       }
                     },
                     {
-                      "id": "row2_slot2",
+                      "id": "item_b4419610a41f47d9a9ec85989f6e285f",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2208,7 +2256,7 @@
                       }
                     },
                     {
-                      "id": "row2_slot3",
+                      "id": "item_5247adbf5f9f4bf59935d1be38fd72db",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2225,7 +2273,7 @@
                       }
                     },
                     {
-                      "id": "row2_slot4",
+                      "id": "item_67a972293b584262b4b8e942d49ac44e",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2242,7 +2290,7 @@
                       }
                     },
                     {
-                      "id": "row2_slot5",
+                      "id": "item_0c8add96f6a341b49d5bae5de8783365",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2280,7 +2328,7 @@
         "footerRowGapToken": "theme.spacing.s",
         "footerRows": [
           {
-            "id": "footerRow1",
+            "id": "item_9df0890d96604176aca0bb0a6e7889e2",
             "label": "Row 1",
             "visible": true,
             "rowSlot": {
@@ -2292,7 +2340,7 @@
                   "showSeparator": false,
                   "slots": [
                     {
-                      "id": "footerRow1_slot1",
+                      "id": "item_3a5f8a29b07b43f6a589286bd1463ce7",
                       "kind": "avatar",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2313,7 +2361,7 @@
                       }
                     },
                     {
-                      "id": "footerRow1_slot2",
+                      "id": "item_5e50e44e80724c6e920f7acf97311125",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2330,7 +2378,7 @@
                       }
                     },
                     {
-                      "id": "footerRow1_slot3",
+                      "id": "item_21bcc88049a242f08301248deef83e16",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2347,7 +2395,7 @@
                       }
                     },
                     {
-                      "id": "footerRow1_slot4",
+                      "id": "item_836067d4bcc645cca099c2967a9a2cc0",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2364,7 +2412,7 @@
                       }
                     },
                     {
-                      "id": "footerRow1_slot5",
+                      "id": "item_2b2df52efb084e53ba43840ab1e661c4",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2386,7 +2434,7 @@
             }
           },
           {
-            "id": "footerRow2",
+            "id": "item_1729c03bec80498bb124f253df1c1709",
             "label": "Row 2",
             "visible": true,
             "rowSlot": {
@@ -2398,7 +2446,7 @@
                   "showSeparator": true,
                   "slots": [
                     {
-                      "id": "footerRow2_slot1",
+                      "id": "item_e2066917e7204c6f8243f986db7aab65",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2415,7 +2463,7 @@
                       }
                     },
                     {
-                      "id": "footerRow2_slot2",
+                      "id": "item_ae6039ebf04340e7aad16f9b28287a2c",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2432,7 +2480,7 @@
                       }
                     },
                     {
-                      "id": "footerRow2_slot3",
+                      "id": "item_cf299db22f8647d98a069e3bd0af6d78",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2449,7 +2497,7 @@
                       }
                     },
                     {
-                      "id": "footerRow2_slot4",
+                      "id": "item_158e39bf056d42dcaf3978a577a439b9",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2466,7 +2514,7 @@
                       }
                     },
                     {
-                      "id": "footerRow2_slot5",
+                      "id": "item_a8188689baf84fb9856701a1b2588206",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2574,8 +2622,14 @@
               "surfaceSlot": {
                 "variantReference": "component_project_foqn_s2_surface::variant::default",
                 "overrides": {
-                  "style": { "cornerRadiusToken": "theme.radii.full" },
-                  "surface": { "backgroundColorToken": "theme.colors.background", "backgroundAlpha": 0.6, "borderAlpha": 0 }
+                  "style": {
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.background",
+                    "backgroundAlpha": 0.6,
+                    "borderAlpha": 0
+                  }
                 }
               }
             }
@@ -2634,7 +2688,7 @@
         },
         "mainRows": [
           {
-            "id": "mainRow1",
+            "id": "item_8313f23337934e96888a6dc2757f8514",
             "label": "Top",
             "visible": true,
             "rowSlot": {
@@ -2646,7 +2700,7 @@
                   "showSeparator": false,
                   "slots": [
                     {
-                      "id": "mainRow1_slot1",
+                      "id": "item_14739e3e1d35478395aebcedee6d4862",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2667,7 +2721,7 @@
                       }
                     },
                     {
-                      "id": "mainRow1_slot2",
+                      "id": "item_a254d35f3da04f95b1338345be966c64",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2684,7 +2738,7 @@
                       }
                     },
                     {
-                      "id": "mainRow1_slot3",
+                      "id": "item_86aa97e70311418fbe15a580932e769c",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2701,7 +2755,7 @@
                       }
                     },
                     {
-                      "id": "mainRow1_slot4",
+                      "id": "item_4152715783f04acf90cf463f63d4d65c",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2718,7 +2772,7 @@
                       }
                     },
                     {
-                      "id": "mainRow1_slot5",
+                      "id": "item_9966feea96974bf4b9cd9cde8c10007f",
                       "kind": "icon",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2744,7 +2798,7 @@
             }
           },
           {
-            "id": "mainRow2",
+            "id": "item_29f0dbd15fd34b1a85890be5c6777312",
             "label": "Center",
             "visible": true,
             "rowSlot": {
@@ -2756,7 +2810,7 @@
                   "showSeparator": false,
                   "slots": [
                     {
-                      "id": "mainRow2_slot1",
+                      "id": "item_12c7de3cf1d748c8a53d835a4f3f07fb",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2777,7 +2831,7 @@
                       }
                     },
                     {
-                      "id": "mainRow2_slot2",
+                      "id": "item_136ff139d93d4a589008ae4605d9ea65",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2794,7 +2848,7 @@
                       }
                     },
                     {
-                      "id": "mainRow2_slot3",
+                      "id": "item_a4b736462bd744198f81f7a388373e2f",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2811,7 +2865,7 @@
                       }
                     },
                     {
-                      "id": "mainRow2_slot4",
+                      "id": "item_bf3c2f704491463289ec1c748e8ba78a",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2828,7 +2882,7 @@
                       }
                     },
                     {
-                      "id": "mainRow2_slot5",
+                      "id": "item_d276012f4eb24e15b9a72fbb597bad3d",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2850,7 +2904,7 @@
             }
           },
           {
-            "id": "mainRow3",
+            "id": "item_9da03395fe2749f3bad029e13f8bb975",
             "label": "Bottom",
             "visible": true,
             "rowSlot": {
@@ -2862,7 +2916,7 @@
                   "showSeparator": false,
                   "slots": [
                     {
-                      "id": "mainRow3_slot1",
+                      "id": "item_d7c381baa4784385905df5c4010c8c9d",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2883,7 +2937,7 @@
                       }
                     },
                     {
-                      "id": "mainRow3_slot2",
+                      "id": "item_10b65a64f63e43f1aecc3b80faa083e9",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2900,7 +2954,7 @@
                       }
                     },
                     {
-                      "id": "mainRow3_slot3",
+                      "id": "item_ebcab50e0a56481a94c1513c21742176",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2917,7 +2971,7 @@
                       }
                     },
                     {
-                      "id": "mainRow3_slot4",
+                      "id": "item_12658bebc988410d90ff7e60e42b621e",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2934,7 +2988,7 @@
                       }
                     },
                     {
-                      "id": "mainRow3_slot5",
+                      "id": "item_47fbe3a616e24b7396ef10e11eb57e17",
                       "kind": "icon",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -3355,7 +3409,7 @@
         "videoCall",
         "headerRows"
       ],
-      "defaultValue": "[{\"id\":\"row1\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"row2\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
+      "defaultValue": "[{\"id\":\"item_690ab7d988ef466c8d6b20406ef2e024\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"item_d2a1bd7aeb5f49c49501136b62bc4389\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -3772,7 +3826,7 @@
         "videoCall",
         "footerRows"
       ],
-      "defaultValue": "[{\"id\":\"footerRow1\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"footerRow2\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
+      "defaultValue": "[{\"id\":\"item_9df0890d96604176aca0bb0a6e7889e2\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"item_1729c03bec80498bb124f253df1c1709\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -4256,7 +4310,7 @@
         "videoCall",
         "mainRows"
       ],
-      "defaultValue": "[{\"id\":\"mainRow1\",\"label\":\"Top\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"icon\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{\"button\":{\"iconToken\":\"status_wifi\"}}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"mainRow2\",\"label\":\"Center\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"mainRow3\",\"label\":\"Bottom\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"icon\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{\"button\":{\"iconToken\":\"media_mic\"}}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
+      "defaultValue": "[{\"id\":\"item_8313f23337934e96888a6dc2757f8514\",\"label\":\"Top\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"icon\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{\"button\":{\"iconToken\":\"status_wifi\"}}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"item_29f0dbd15fd34b1a85890be5c6777312\",\"label\":\"Center\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"item_9da03395fe2749f3bad029e13f8bb975\",\"label\":\"Bottom\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"icon\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{\"button\":{\"iconToken\":\"media_mic\"}}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -4775,12 +4829,30 @@
       "defaultValue": "{\"durationMs\":240,\"easing\":\"ease-out\"}",
       "isEditable": true,
       "options": [
-        { "value": "linear", "label": "Linear" },
-        { "value": "ease-in", "label": "Ease in" },
-        { "value": "ease-out", "label": "Ease out" },
-        { "value": "ease", "label": "Ease" },
-        { "value": "spring", "label": "Spring" },
-        { "value": "bounce", "label": "Bounce" }
+        {
+          "value": "linear",
+          "label": "Linear"
+        },
+        {
+          "value": "ease-in",
+          "label": "Ease in"
+        },
+        {
+          "value": "ease-out",
+          "label": "Ease out"
+        },
+        {
+          "value": "ease",
+          "label": "Ease"
+        },
+        {
+          "value": "spring",
+          "label": "Spring"
+        },
+        {
+          "value": "bounce",
+          "label": "Bounce"
+        }
       ],
       "optionSource": "None",
       "pairLabels": null,

@@ -47,7 +47,7 @@
     },
     "items": [
       {
-        "id": "back",
+        "id": "item_5e782c55ec7445c09ef57ddf19e11838",
         "label": "Back",
         "kind": "generatedBack",
         "zone": "left",
@@ -56,7 +56,7 @@
         "textSizeToken": "theme.typography.sizes.s"
       },
       {
-        "id": "home",
+        "id": "item_e2810d6d658644c19c8cf3ab5827f623",
         "label": "Home",
         "kind": "generatedHome",
         "zone": "center",
@@ -65,7 +65,7 @@
         "textSizeToken": "theme.typography.sizes.s"
       },
       {
-        "id": "recents",
+        "id": "item_11382f478c5c411897bf5cec00f81326",
         "label": "Recents",
         "kind": "generatedRecents",
         "zone": "right",
@@ -101,7 +101,7 @@
       },
       "items": [
         {
-          "id": "back",
+          "id": "item_5e782c55ec7445c09ef57ddf19e11838",
           "label": "Back",
           "kind": "generatedBack",
           "zone": "left",
@@ -110,7 +110,7 @@
           "textSizeToken": "theme.typography.sizes.s"
         },
         {
-          "id": "home",
+          "id": "item_e2810d6d658644c19c8cf3ab5827f623",
           "label": "Home",
           "kind": "generatedHome",
           "zone": "center",
@@ -119,7 +119,7 @@
           "textSizeToken": "theme.typography.sizes.s"
         },
         {
-          "id": "recents",
+          "id": "item_11382f478c5c411897bf5cec00f81326",
           "label": "Recents",
           "kind": "generatedRecents",
           "zone": "right",
@@ -157,7 +157,7 @@
         },
         "items": [
           {
-            "id": "back",
+            "id": "item_5e782c55ec7445c09ef57ddf19e11838",
             "label": "Back",
             "kind": "generatedBack",
             "zone": "left",
@@ -166,7 +166,7 @@
             "textSizeToken": "theme.typography.sizes.s"
           },
           {
-            "id": "home",
+            "id": "item_e2810d6d658644c19c8cf3ab5827f623",
             "label": "Home",
             "kind": "generatedHome",
             "zone": "center",
@@ -175,7 +175,7 @@
             "textSizeToken": "theme.typography.sizes.s"
           },
           {
-            "id": "recents",
+            "id": "item_11382f478c5c411897bf5cec00f81326",
             "label": "Recents",
             "kind": "generatedRecents",
             "zone": "right",
@@ -212,7 +212,7 @@
         },
         "items": [
           {
-            "id": "back",
+            "id": "item_5e782c55ec7445c09ef57ddf19e11838",
             "label": "Back",
             "kind": "generatedBack",
             "zone": "left",
@@ -221,7 +221,7 @@
             "textSizeToken": "theme.typography.sizes.s"
           },
           {
-            "id": "home",
+            "id": "item_e2810d6d658644c19c8cf3ab5827f623",
             "label": "Home",
             "kind": "generatedHome",
             "zone": "center",
@@ -230,7 +230,7 @@
             "textSizeToken": "theme.typography.sizes.s"
           },
           {
-            "id": "recents",
+            "id": "item_11382f478c5c411897bf5cec00f81326",
             "label": "Recents",
             "kind": "generatedRecents",
             "zone": "right",

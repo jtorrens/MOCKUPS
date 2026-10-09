@@ -3,12 +3,12 @@ import { requiredBoolean, requiredRecord, requiredString } from "./componentReso
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { ModuleRow } from "./moduleRowSectionContract.js";
 
-export function requiredRuntimeRows(preview: Record<string, unknown>, key: string, idPrefix: string, ownerId: string, rowCount = 2): Record<string, unknown>[] {
-  return requiredIdentifiedRows(preview[key], key, idPrefix, ownerId, rowCount);
+export function requiredRuntimeRows(preview: Record<string, unknown>, key: string, ownerId: string, rowCount = 2): Record<string, unknown>[] {
+  return requiredIdentifiedRows(preview[key], key, ownerId, rowCount);
 }
 
-export function requiredRows(owner: Record<string, unknown>, key: string, idPrefix: string, ownerId: string, rowCount = 2): Record<string, unknown>[] {
-  return requiredIdentifiedRows(owner[key], key, idPrefix, ownerId, rowCount);
+export function requiredRows(owner: Record<string, unknown>, key: string, ownerId: string, rowCount = 2): Record<string, unknown>[] {
+  return requiredIdentifiedRows(owner[key], key, ownerId, rowCount);
 }
 
 export function resolveRow<TContent>(
@@ -24,11 +24,10 @@ export function resolveRow<TContent>(
 ): ModuleRow<TContent> {
   const id = requiredString(rowConfig, "id", `${ownerId}.${section}.row${row}.id`);
   const rowSlot = requiredRecord(rowConfig, "rowSlot", `${ownerId}.${section}.${id}.rowSlot`);
-  const config = rebaseNestedStableIds(
-    embeddedComponentConfig(componentBaseConfigs, rowSlot, componentType, `${ownerId}.${section}.${id}.rowSlot`),
-    id,
-  );
-  const runtime = rebaseNestedStableIds(runtimeRow, id);
+  if (requiredString(runtimeRow, "id", `${ownerId}.${section}.runtime.id`) !== id) {
+    throw new Error(`${ownerId}.${section} runtime must retain the exact ordered row identities`);
+  }
+  const config = embeddedComponentConfig(componentBaseConfigs, rowSlot, componentType, `${ownerId}.${section}.${id}.rowSlot`);
   return {
     id,
     visible: requiredBoolean(rowConfig, "visible", `${ownerId}.${section}.${id}.visible`),
@@ -36,47 +35,20 @@ export function resolveRow<TContent>(
       ...payload,
       componentType,
       configJson: JSON.stringify(config),
-      designPreviewJson: JSON.stringify({ slotInputs: runtime.slotInputs, viewportSize: "390|80" }),
+      designPreviewJson: JSON.stringify({ slotInputs: runtimeRow.slotInputs, viewportSize: "390|80" }),
     }),
   };
 }
 
-function rebaseNestedStableIds(value: Record<string, unknown>, ownerId: string): Record<string, unknown> {
-  const rebased = structuredClone(value);
-  visit(rebased, ownerId);
-  return rebased;
-
-  function visit(current: unknown, scopeId: string): void {
-    if (Array.isArray(current)) {
-      for (const item of current) {
-        let itemScopeId = scopeId;
-        if (item && typeof item === "object" && !Array.isArray(item)) {
-          const record = item as Record<string, unknown>;
-          const originalId = record.id;
-          if (typeof originalId === "string") {
-            const rebasedId = originalId.startsWith(`${scopeId}_`)
-              ? originalId
-              : `${scopeId}_${originalId}`;
-            record.id = rebasedId;
-            itemScopeId = rebasedId;
-          }
-        }
-        visit(item, itemScopeId);
-      }
-      return;
-    }
-    if (!current || typeof current !== "object") return;
-    for (const child of Object.values(current as Record<string, unknown>)) visit(child, scopeId);
-  }
-}
-
-function requiredIdentifiedRows(value: unknown, key: string, idPrefix: string, ownerId: string, rowCount: number) {
-  if (!Array.isArray(value) || value.length !== rowCount) throw new Error(`${ownerId} collection '${key}' must contain exactly ${rowCount} '${idPrefix}' rows`);
+function requiredIdentifiedRows(value: unknown, key: string, ownerId: string, rowCount: number) {
+  if (!Array.isArray(value) || value.length !== rowCount) throw new Error(`${ownerId} collection '${key}' must contain exactly ${rowCount} rows`);
+  const ids = new Set<string>();
   return value.map((item, index) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error(`${ownerId}.${key}[${index}] must be an object`);
     const row = item as Record<string, unknown>;
-    const expectedId = `${idPrefix}${index + 1}`;
-    if (requiredString(row, "id", `${ownerId}.${key}[${index}].id`) !== expectedId) throw new Error(`${ownerId}.${key}[${index}] must have id '${expectedId}'`);
+    const id = requiredString(row, "id", `${ownerId}.${key}[${index}].id`);
+    if (ids.has(id)) throw new Error(`${ownerId}.${key} contains duplicate stable id '${id}'`);
+    ids.add(id);
     return row;
   });
 }

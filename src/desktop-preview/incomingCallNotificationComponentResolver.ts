@@ -102,7 +102,7 @@ export function resolveIncomingCallNotificationComponent(
     ),
     avatar: resolveAvatarComponentFromRecords(
       avatarConfig,
-      exactChildRuntime(preview, "avatarRuntime", "avatar"),
+      exactChildRuntime(preview, "avatarRuntime"),
       bases,
       "component.incomingCallNotification.avatar",
     ),
@@ -113,7 +113,7 @@ export function resolveIncomingCallNotificationComponent(
     ),
     iconRow: resolveIconRowComponentFromRecords(
       iconRowConfig,
-      exactChildRuntime(preview, "iconRowRuntime", "iconRow"),
+      exactChildRuntime(preview, "iconRowRuntime"),
       bases,
       "component.incomingCallNotification.iconRow",
     ),
@@ -140,7 +140,6 @@ function componentSlotConfig(
 function exactChildRuntime(
   preview: Record<string, unknown>,
   collectionKey: string,
-  expectedId: string,
 ) {
   const items = requiredObjectArray(
     preview,
@@ -153,16 +152,11 @@ function exactChildRuntime(
     );
   }
   const item = items[0]!;
-  const id = requiredString(
+  requiredString(
     item,
     "id",
     `component.incomingCallNotification.runtime.${collectionKey}[0].id`,
   );
-  if (id !== expectedId) {
-    throw new Error(
-      `component.incomingCallNotification runtime '${collectionKey}' requires id '${expectedId}'`,
-    );
-  }
   return requiredRecord(
     item,
     "runtimeInputs",

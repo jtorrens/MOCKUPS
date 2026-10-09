@@ -130,7 +130,7 @@
                 "textSizeToken": "theme.typography.sizes.s",
                 "items": [
                   {
-                    "id": "primary",
+                    "id": "item_1413da8c17ab455ba222f2556744c6d9",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                     "iconToken": "system_check",
                     "text": "",
@@ -139,7 +139,7 @@
                     "buttonOverrides": {}
                   },
                   {
-                    "id": "secondary",
+                    "id": "item_57d14005afa44427a2e31b07d04e344e",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                     "iconToken": "system_check",
                     "text": "",
@@ -282,7 +282,7 @@
                   "textSizeToken": "theme.typography.sizes.s",
                   "items": [
                     {
-                      "id": "primary",
+                      "id": "item_1413da8c17ab455ba222f2556744c6d9",
                       "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                       "iconToken": "system_check",
                       "text": "",
@@ -291,7 +291,7 @@
                       "buttonOverrides": {}
                     },
                     {
-                      "id": "secondary",
+                      "id": "item_57d14005afa44427a2e31b07d04e344e",
                       "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                       "iconToken": "system_check",
                       "text": "",
@@ -436,7 +436,7 @@
                     "textSizeToken": "theme.typography.sizes.s",
                     "items": [
                       {
-                        "id": "primary",
+                        "id": "item_1413da8c17ab455ba222f2556744c6d9",
                         "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                         "iconToken": "system_check",
                         "text": "",
@@ -445,7 +445,7 @@
                         "buttonOverrides": {}
                       },
                       {
-                        "id": "secondary",
+                        "id": "item_57d14005afa44427a2e31b07d04e344e",
                         "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                         "iconToken": "system_check",
                         "text": "",
@@ -600,7 +600,7 @@
                     "textSizeToken": "theme.typography.sizes.s",
                     "items": [
                       {
-                        "id": "primary",
+                        "id": "item_1413da8c17ab455ba222f2556744c6d9",
                         "buttonVariantReference": "component_project_foqn_s2_button::variant::default",
                         "iconToken": "system_check",
                         "text": "",
@@ -615,7 +615,7 @@
                         }
                       },
                       {
-                        "id": "secondary",
+                        "id": "item_57d14005afa44427a2e31b07d04e344e",
                         "buttonVariantReference": "component_project_foqn_s2_button::variant::default",
                         "iconToken": "system_check",
                         "text": "",
@@ -729,7 +729,7 @@
         "jsonKey": "activeSet",
         "kind": "option",
         "valueKind": "OptionToken",
-        "defaultValue": "set_a",
+        "defaultValue": "item_b2719bad614d4728ae05ded8bb21ef0b",
         "minimum": 1,
         "maximum": 100,
         "increment": 1,
@@ -850,25 +850,25 @@
         "canEditStructure": false
       }
     ],
-    "activeSet": "set_a",
+    "activeSet": "item_b2719bad614d4728ae05ded8bb21ef0b",
     "width": 360,
     "height": 84,
     "state": "normal",
     "contentSets": [
       {
-        "id": "set_a"
+        "id": "item_b2719bad614d4728ae05ded8bb21ef0b"
       },
       {
-        "id": "set_b"
+        "id": "item_b48ad6ce0a004941ba07424365129b03"
       },
       {
-        "id": "set_c"
+        "id": "item_6e078b640a2b4e95a9d265af59262ece"
       }
     ],
     "avatarContent": [
       {
-        "id": "set_a_avatar",
-        "contentSetId": "set_a",
+        "id": "item_e7965d326d0d45ad855c148b3a0962bb",
+        "contentSetId": "item_b2719bad614d4728ae05ded8bb21ef0b",
         "runtimeInputs": {
           "componentType": "avatar",
           "sampleText": "Sample",
@@ -1139,8 +1139,8 @@
         }
       },
       {
-        "id": "set_b_avatar",
-        "contentSetId": "set_b",
+        "id": "item_87ce42b3ce1645cd9db80d04d2a48ef5",
+        "contentSetId": "item_b48ad6ce0a004941ba07424365129b03",
         "runtimeInputs": {
           "componentType": "avatar",
           "sampleText": "Sample",
@@ -1411,8 +1411,8 @@
         }
       },
       {
-        "id": "set_c_avatar",
-        "contentSetId": "set_c",
+        "id": "item_08e24d941e3041b9bc78851c9186b553",
+        "contentSetId": "item_6e078b640a2b4e95a9d265af59262ece",
         "runtimeInputs": {
           "componentType": "avatar",
           "sampleText": "Sample",
@@ -1685,8 +1685,8 @@
     ],
     "labelContent": [
       {
-        "id": "set_a_label",
-        "contentSetId": "set_a",
+        "id": "item_6c6bb9170c474a7cbcedea4e17fe7be4",
+        "contentSetId": "item_b2719bad614d4728ae05ded8bb21ef0b",
         "runtimeInputs": {
           "componentType": "label",
           "sampleText": "Diana",
@@ -1963,8 +1963,8 @@
         }
       },
       {
-        "id": "set_b_label",
-        "contentSetId": "set_b",
+        "id": "item_58e4b9794ce8466fb9e534186f7263b3",
+        "contentSetId": "item_b48ad6ce0a004941ba07424365129b03",
         "runtimeInputs": {
           "componentType": "label",
           "sampleText": "+34 848 983 160",
@@ -2241,8 +2241,8 @@
         }
       },
       {
-        "id": "set_c_label",
-        "contentSetId": "set_c",
+        "id": "item_f44ee37a7eea4e1fb0dad99bf8f54e3f",
+        "contentSetId": "item_6e078b640a2b4e95a9d265af59262ece",
         "runtimeInputs": {
           "componentType": "label",
           "sampleText": "Dave",
@@ -2521,8 +2521,8 @@
     ],
     "iconRowContent": [
       {
-        "id": "set_a_iconRow",
-        "contentSetId": "set_a",
+        "id": "item_b7721508a7f941279dd2b62bf681dfba",
+        "contentSetId": "item_b2719bad614d4728ae05ded8bb21ef0b",
         "runtimeInputs": {
           "componentType": "iconRow",
           "sampleText": "Sample",
@@ -3240,7 +3240,7 @@
           ],
           "buttonInputs": [
             {
-              "id": "primary",
+              "id": "item_1413da8c17ab455ba222f2556744c6d9",
               "sampleText": "",
               "iconToken": "nav_back",
               "iconSizeToken": "theme.iconSizes.m",
@@ -3260,7 +3260,7 @@
               "surfaceTintAmount": 0
             },
             {
-              "id": "secondary",
+              "id": "item_57d14005afa44427a2e31b07d04e344e",
               "sampleText": "",
               "iconToken": "phone_call",
               "iconSizeToken": "theme.iconSizes.m",
@@ -3283,8 +3283,8 @@
         }
       },
       {
-        "id": "set_b_iconRow",
-        "contentSetId": "set_b",
+        "id": "item_3ae16d6412a14478832dfddeb27e11ba",
+        "contentSetId": "item_b48ad6ce0a004941ba07424365129b03",
         "runtimeInputs": {
           "componentType": "iconRow",
           "sampleText": "Sample",
@@ -4002,7 +4002,7 @@
           ],
           "buttonInputs": [
             {
-              "id": "primary",
+              "id": "item_1413da8c17ab455ba222f2556744c6d9",
               "sampleText": "",
               "iconToken": "nav_forward",
               "iconSizeToken": "theme.iconSizes.m",
@@ -4022,7 +4022,7 @@
               "surfaceTintAmount": 0
             },
             {
-              "id": "secondary",
+              "id": "item_57d14005afa44427a2e31b07d04e344e",
               "sampleText": "",
               "iconToken": "phone_call",
               "iconSizeToken": "theme.iconSizes.m",
@@ -4045,8 +4045,8 @@
         }
       },
       {
-        "id": "set_c_iconRow",
-        "contentSetId": "set_c",
+        "id": "item_1f41fa93d6b94399818a40efc970a55a",
+        "contentSetId": "item_6e078b640a2b4e95a9d265af59262ece",
         "runtimeInputs": {
           "componentType": "iconRow",
           "sampleText": "Sample",
@@ -4764,7 +4764,7 @@
           ],
           "buttonInputs": [
             {
-              "id": "primary",
+              "id": "item_1413da8c17ab455ba222f2556744c6d9",
               "sampleText": "19:18",
               "iconToken": "system_check",
               "iconSizeToken": "theme.iconSizes.m",
@@ -4784,7 +4784,7 @@
               "surfaceTintAmount": 0
             },
             {
-              "id": "secondary",
+              "id": "item_57d14005afa44427a2e31b07d04e344e",
               "sampleText": "1",
               "iconToken": "system_check",
               "iconSizeToken": "theme.iconSizes.m",

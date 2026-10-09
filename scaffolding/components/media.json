@@ -375,7 +375,7 @@
                 "idleLeftIconRowInputs": {
                   "buttonInputs": [
                     {
-                      "id": "button_001",
+                      "id": "item_dd466805c6484b728e4b02264b463518",
                       "sampleText": "",
                       "iconToken": "media_fullscreen",
                       "iconSizeToken": "theme.iconSizes.m",
@@ -408,7 +408,7 @@
                     "iconRow": {
                       "items": [
                         {
-                          "id": "button_001",
+                          "id": "item_dd466805c6484b728e4b02264b463518",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                           "iconToken": "media_fullscreen",
                           "text": "",
@@ -441,7 +441,7 @@
                 "idleCenterIconRowInputs": {
                   "buttonInputs": [
                     {
-                      "id": "button_001",
+                      "id": "item_dd466805c6484b728e4b02264b463518",
                       "sampleText": "",
                       "iconToken": "media_play_fill",
                       "iconSizeToken": "theme.iconSizes.m",
@@ -471,7 +471,7 @@
                 "activeCenterIconRowInputs": {
                   "buttonInputs": [
                     {
-                      "id": "button_001",
+                      "id": "item_dd466805c6484b728e4b02264b463518",
                       "sampleText": "",
                       "iconToken": "media_pause",
                       "iconSizeToken": "theme.iconSizes.m",
@@ -509,7 +509,7 @@
                     "iconRow": {
                       "items": [
                         {
-                          "id": "button_001",
+                          "id": "item_dd466805c6484b728e4b02264b463518",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                           "iconToken": "media_play_fill",
                           "text": "",
@@ -543,7 +543,7 @@
                     "iconRow": {
                       "items": [
                         {
-                          "id": "button_001",
+                          "id": "item_dd466805c6484b728e4b02264b463518",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                           "iconToken": "media_pause",
                           "text": "",
@@ -565,7 +565,7 @@
                 "idleLeftIconRowInputs": {
                   "buttonInputs": [
                     {
-                      "id": "button_001",
+                      "id": "item_dd466805c6484b728e4b02264b463518",
                       "sampleText": "",
                       "iconToken": "media_video_fill",
                       "iconSizeToken": "theme.iconSizes.m",
@@ -598,7 +598,7 @@
                     "iconRow": {
                       "items": [
                         {
-                          "id": "button_001",
+                          "id": "item_dd466805c6484b728e4b02264b463518",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                           "iconToken": "media_video_fill",
                           "text": "",
@@ -778,7 +778,7 @@
                 "idleRightIconRowInputs": {
                   "buttonInputs": [
                     {
-                      "id": "button_001",
+                      "id": "item_dd466805c6484b728e4b02264b463518",
                       "sampleText": "",
                       "iconToken": "media_fullscreen",
                       "iconSizeToken": "theme.iconSizes.m",
@@ -827,7 +827,7 @@
                     "iconRow": {
                       "items": [
                         {
-                          "id": "button_001",
+                          "id": "item_dd466805c6484b728e4b02264b463518",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                           "iconToken": "media_fullscreen",
                           "text": "",
@@ -861,7 +861,7 @@
                 "activeCenterIconRowInputs": {
                   "buttonInputs": [
                     {
-                      "id": "button_001",
+                      "id": "item_dd466805c6484b728e4b02264b463518",
                       "sampleText": "",
                       "iconToken": "media_pause",
                       "iconSizeToken": "theme.iconSizes.m",
@@ -923,7 +923,7 @@
                     "iconRow": {
                       "items": [
                         {
-                          "id": "button_001",
+                          "id": "item_dd466805c6484b728e4b02264b463518",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                           "iconToken": "media_pause",
                           "text": "",
@@ -995,7 +995,7 @@
                 "idleRightIconRowInputs": {
                   "buttonInputs": [
                     {
-                      "id": "button_001",
+                      "id": "item_dd466805c6484b728e4b02264b463518",
                       "sampleText": "",
                       "iconToken": "media_fullscreen",
                       "iconSizeToken": "theme.iconSizes.m",
@@ -1041,7 +1041,7 @@
                     "iconRow": {
                       "items": [
                         {
-                          "id": "button_001",
+                          "id": "item_dd466805c6484b728e4b02264b463518",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                           "iconToken": "media_fullscreen",
                           "text": "",

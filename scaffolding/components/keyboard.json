@@ -148,7 +148,7 @@
                 "idleLeftIconRowInputs": {
                   "buttonInputs": [
                     {
-                      "id": "button_001",
+                      "id": "item_dd466805c6484b728e4b02264b463518",
                       "sampleText": "",
                       "iconToken": "app_language",
                       "iconSizeToken": "theme.iconSizes.m",
@@ -178,7 +178,7 @@
                     "iconRow": {
                       "items": [
                         {
-                          "id": "button_001",
+                          "id": "item_dd466805c6484b728e4b02264b463518",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                           "iconToken": "app_language",
                           "text": "",

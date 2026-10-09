@@ -6,6 +6,9 @@ namespace Mockups.DesktopEditorShell.Common;
 
 public static class RuntimeCollectionDocumentContract
 {
+    // Identity belongs to the item. Its collection supplies type and array order.
+    public static string CreateItemId() => $"item_{Guid.NewGuid():N}";
+
     public static void Validate(JsonArray items, string owner)
     {
         var ids = new HashSet<string>(StringComparer.Ordinal);

@@ -323,7 +323,7 @@ public static class StructuredCollectionMutationEngine
                 $"Structured collection '{definition.Id}' Add prototype must not contain an id.");
         }
         var item = mutation.Prototype.DeepClone().AsObject();
-        item["id"] = $"{definition.Id}_{Guid.NewGuid():N}";
+        item["id"] = RuntimeCollectionDocumentContract.CreateItemId();
         StructuredCollectionItemIdentity.RebaseNestedItems(item, definition, mappings);
         InsertBefore(collection, item, mutation.BeforeItemId, definition.Id);
         return item;
@@ -340,7 +340,7 @@ public static class StructuredCollectionMutationEngine
             ?? throw new InvalidOperationException(
                 $"Structured collection '{definition.Id}' item '{mutation.SourceItemId}' must be an object.");
         var duplicate = source.DeepClone().AsObject();
-        var duplicateId = $"{definition.Id}_{Guid.NewGuid():N}";
+        var duplicateId = RuntimeCollectionDocumentContract.CreateItemId();
         duplicate["id"] = duplicateId;
         RuntimeInputForwardingContract.RebaseIds(duplicate, mutation.SourceItemId, duplicateId);
         if (!mappings.TryAdd(mutation.SourceItemId, duplicateId))

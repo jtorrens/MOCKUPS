@@ -110,6 +110,12 @@ internal static class StructuredCollectionAnimationTests
             };
             var duplicate = StructuredCollectionMutationEngine.Apply(content, animation, definition,
                 new DuplicateStructuredCollectionItem(StructuredCollectionAddress.Root("items"), "message-a"));
+            Require(duplicate.SelectedItemId!.StartsWith("item_", StringComparison.Ordinal));
+            Require(Guid.TryParseExact(duplicate.SelectedItemId[5..], "N", out _));
+            var moved = StructuredCollectionMutationEngine.Apply(duplicate.Content, duplicate.Animation, definition,
+                new MoveStructuredCollectionItem(StructuredCollectionAddress.Root("items"), duplicate.SelectedItemId, "message-a"));
+            Require(moved.Content["items"]![0]!["id"]!.GetValue<string>() == duplicate.SelectedItemId);
+            Require(JsonNode.DeepEquals(moved.Animation, duplicate.Animation));
             var duplicatedValues = wrapped ? duplicate.Item!["runtime"]! : duplicate.Item!;
             Require(duplicatedValues["rows"]![0]!["id"]!.GetValue<string>() == "fixed-row");
             Require(!duplicate.IdentityChange.RebasedItemIds.ContainsKey("fixed-row"));

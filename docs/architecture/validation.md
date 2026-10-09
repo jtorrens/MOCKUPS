@@ -30,7 +30,7 @@ the existing owner rather than creating a second guard or validation route.
 | --- | --- | --- |
 | Assembly and Preview ownership | [compiled graph guards](../../tests/architecture/dotnetProjectBoundaries.test.ts), [Preview graph guards](../../tests/architecture/previewModuleBoundaries.test.ts) | Forbidden dependency edges and negative compiler consumers fail; registries only route prepared documents. |
 | One effective property document | [Runtime preparation](../../tests/animation/runtimePreviewDocumentContract.test.ts) | Animation > Runtime > Override > Variant, including false/zero/empty; undeclared or missing required inputs fail; two concrete owners share the contract. |
-| Stable collection identities and time | [collection projection](../../tests/animation/runtimeCollectionProjection.test.ts), [owner timeline](../../tests/animation/runtimeOwnerTimeline.test.ts) | All declared item fields survive projection; movement/re-entry preserves local keyframes and distinct parent-owned presence. |
+| Stable collection identities and time | [collection projection](../../tests/animation/runtimeCollectionProjection.test.ts), [nested mutation regression](../../tests/Mockups.Desktop.Tests/CollectionIdentityRegressionTests.cs), [owner timeline](../../tests/animation/runtimeOwnerTimeline.test.ts) | Opaque item identities and ordered arrays survive projection; mutations consume the prepared nested target graph, fixed boundaries retain identity, and movement preserves local keyframes. |
 | Exact Production context | [Desktop integration registry](../../tests/Mockups.Desktop.Tests/Program.cs), `Shot Device and Screen Theme resolve independently across Production` | Changing Actor/Device cannot substitute a Screen's authored Theme. |
 | Persistence-free frames and multi-Screen Shots | Same Desktop registry: `Production frame evaluation and signatures never reread persistence`, `Production playback prepares gaps and multiple Screen boundaries`, `Preview dependency catalogs preserve required Variants and rendered output` | Prepared frames/signatures do no further reads; lazy ranges, gaps, overlaps and scoped dependencies retain correct output. |
 | Preview presentation lifetime | [real browser pixel regression](../../tests/Mockups.Desktop.Tests/webPreviewBrowserChecks.mjs), Desktop registry's owner-change and obsolete-result checks | Same owner retains resident pixels until ready; departure clears; stale work cannot publish; re-entry, morph and transparent frames work. Three disposable HTML mutations must fail the exact intended assertion. |
@@ -826,3 +826,23 @@ A revision is ready for review only when:
   `/Applications/MOCKUPS Editor.app` and launched through `npm run
   desktop:launch:mac`; a development process or pre-existing bundle is not a
   delivery artifact.
+
+### Opaque collection identity coverage
+
+- `RuntimeCollectionDocumentContract.CreateItemId` feeds the common Add,
+  Duplicate and nested editable-item rebasing paths. Application regression
+  `collection animation preserves fixed boundaries and exact declared paths`
+  checks the opaque format, fixed-child identity, reorder stability and nested
+  track rebasing for both direct and Runtime-document-wrapped collections.
+- Desktop regression `collection mutations retain exact nested Variant
+  identities and animation targets` uses two Screens and one shared Icon Row
+  Variant. Its disposable negative control removes a nested persisted row while
+  leaving a valid effective animation target: the raw mutation must leave that
+  orphan, whereas the real shared persistence commit must duplicate, move and
+  delete with complete target ownership and reopen successfully.
+- Schema 28 retires the previous authored vocabulary through explicit
+  maintenance, guarded by `SqliteCurrentDatabaseValidator`'s exact version check.
+  Collection migration requires before/after rendered-pixel comparison, alongside
+  array-order and local-keyframe preservation; name substitution alone is not
+  visual validation. `scripts/runScopedValidation.ts` explicitly selects the
+  nested identity regression when the shared identity or Screen commit changes.

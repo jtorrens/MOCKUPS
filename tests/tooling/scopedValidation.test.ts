@@ -188,3 +188,18 @@ test("automatic discovery ignores only an unstaged workstation database", () => 
     files,
   );
 });
+
+
+test("collection identity owners retain nested persistence and isolated UI coverage", () => {
+  for (const file of [
+    "src/Mockups.Domain/RuntimeCollectionDocumentContract.cs",
+    "src/Mockups.Application/StructuredCollectionMutation.cs",
+    "src/Mockups.Application/StructuredCollectionItemIdentity.cs",
+    "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.ScreenWrites.cs",
+  ]) {
+    const steps = planScopedValidation(repositoryRoot, [file]);
+    assert.ok(steps.some(step => step.id === "desktop:collection-identities"
+      && step.args.includes("collection mutations retain exact nested Variant identities and animation targets")), file);
+    assert.ok(steps.some(step => step.id === "desktop-ui"), file);
+  }
+});

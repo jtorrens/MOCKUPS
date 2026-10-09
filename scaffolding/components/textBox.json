@@ -241,7 +241,7 @@
               "iconRow": {
                 "items": [
                   {
-                    "id": "button_95660b921b614784b6ba1955721adea1",
+                    "id": "item_958ba407635f452d82d19adffd8ed37a",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                     "iconToken": "media_mic",
                     "text": "",

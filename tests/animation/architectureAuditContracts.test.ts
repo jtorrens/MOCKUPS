@@ -25,7 +25,7 @@ test("Content Set references survive reorder and reject indices or stale identit
   values.contentSets.reverse();
   payload.designPreviewJson = JSON.stringify(values);
   const selected = resolveListItemComponent(payload);
-  assert.equal(selected.activeSet, "set_b");
+  assert.equal(selected.activeSet, "item_b48ad6ce0a004941ba07424365129b03");
   for (const invalid of [1, "2", "absent-id"]) {
     payload.designPreviewJson = JSON.stringify({ ...values, activeSet: invalid });
     assert.throws(() => resolveListItemComponent(payload));
@@ -60,7 +60,7 @@ test("Keypad selection uses only exact IDs and rejects duplicate IDs and semanti
 });
 
 test("the common root boundary resolves unrelated Component fields once and preserves the temporal envelope", () => {
-  for (const [type, key, value] of [["listItem", "activeSet", "set_b"], ["keypad", "pushedKey", "key_5"]] as const) {
+  for (const [type, key, value] of [["listItem", "activeSet", "item_b48ad6ce0a004941ba07424365129b03"], ["keypad", "pushedKey", "item_68a8845aad3d4249bcd954b4b597e75b"]] as const) {
     const payload = committedComponentFixture(type);
     payload.localFrame = 8;
     payload.instanceJson = JSON.stringify({ animation: { schemaVersion: 2, tracks: [{
@@ -93,7 +93,7 @@ test("Password maps its credential digit to the selected Keypad's identity befor
   const resolved = resolvePasswordComponent(payload);
   assert.equal(resolved.input.kind, "keypad");
   if (resolved.input.kind !== "keypad") throw new Error("Expected Keypad input");
-  assert.equal(resolved.input.component.keys.find(key => key.state === "pushed")?.id, "unique-key_1");
+  assert.equal(resolved.input.component.keys.find(key => key.state === "pushed")?.id, keypad.keys.find((key: { value: string }) => key.value === "1")?.id);
 });
 
 test("Surface Stack consumes only its declared slot boundary without accepting flattened substitutes", () => {

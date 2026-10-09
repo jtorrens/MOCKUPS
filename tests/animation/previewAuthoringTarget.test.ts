@@ -1,3 +1,4 @@
+import { prepareRuntimePreviewPayload } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -114,12 +115,13 @@ test("full Component Variant boundaries replace the authoring owner exactly", ()
 });
 
 test("generic embedded Variant payloads publish the exact child owner", () => {
-  const modulePayload = {
+  const modulePayload = prepareRuntimePreviewPayload({
+    kind: "module", configJson: "{}", designPreviewJson: "{}", runtimeContractJson: "{}", instanceJson: "{}",
     authoringOwnerId: "module_lock_screen::variant::default",
     authoringRecordClassId: "module.system.composition",
     authoringSlotFieldIds: ["invalid.previous.slot"],
     authoringFocusFieldId: "module.system.composition.stack",
-  } as DesignPreviewPayload;
+  } as DesignPreviewPayload);
   const child = embeddedVariantComponentPayload(
     modulePayload,
     "label",
@@ -157,7 +159,7 @@ test("structured authoring targets preserve the exact stable item id", () => {
     payload,
     "component.iconRow",
     "component.iconRow.items",
-    "button_attachment",
+    "item_8e31a1df26d1409f884c6f1de8128a10",
     () => ({
       id: "component.button.normal",
       type: "group",
@@ -165,7 +167,7 @@ test("structured authoring targets preserve the exact stable item id", () => {
   );
   assert.deepEqual(item.metadata?.authoringTarget, {
     focusFieldId: "component.iconRow.items",
-    focusItemId: "button_attachment",
+    focusItemId: "item_8e31a1df26d1409f884c6f1de8128a10",
     ownerId: "component_icon_row::variant::default",
     slotFieldIds: [],
   });
@@ -176,7 +178,7 @@ test("structured authoring targets preserve the exact stable item id", () => {
   ));
   assert.match(
     markup,
-    /data-preview-authoring-focus-item-id="button_attachment"/,
+    /data-preview-authoring-focus-item-id="item_8e31a1df26d1409f884c6f1de8128a10"/,
   );
 });
 

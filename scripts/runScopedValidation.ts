@@ -219,6 +219,20 @@ export function planScopedValidation(
       ));
       continue;
     }
+    if ([
+      "src/Mockups.Domain/RuntimeCollectionDocumentContract.cs",
+      "src/Mockups.Application/StructuredCollectionMutation.cs",
+      "src/Mockups.Application/StructuredCollectionItemIdentity.cs",
+      "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.ScreenWrites.cs",
+    ].includes(file)) {
+      desktopUi = true;
+      add(npmStep(
+        "desktop:collection-identities",
+        "test:focus:desktop",
+        "shared collection commits must preserve exact nested Variant identities and animation ownership",
+        ["--", "--exact", "collection mutations retain exact nested Variant identities and animation targets"],
+      ));
+    }
     if (file === "data/mockups.sqlite") {
       database = true;
       desktopCore = true;

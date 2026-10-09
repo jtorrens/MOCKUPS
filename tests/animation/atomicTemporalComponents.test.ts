@@ -142,7 +142,7 @@ test("Keyboard requires its complete prepared Runtime input", () => {
 test("Keypad resolves the exact pushed key and preserves all other key states", () => {
   const source = withInputDefaults(committedComponentFixture("keypad"));
   const resolved = resolveKeypadComponent(withValues(source, {
-    pushedKey: "key_5",
+    pushedKey: "item_68a8845aad3d4249bcd954b4b597e75b",
     pushTrigger: true,
     pushElapsedMs: 50,
   }));

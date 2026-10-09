@@ -48,7 +48,7 @@
       "showSeparator": false,
       "slots": [
         {
-          "id": "slot1",
+          "id": "item_34fbbdf4d78e41d997300e5627ffde3f",
           "kind": "none",
           "avatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -65,7 +65,7 @@
           }
         },
         {
-          "id": "slot2",
+          "id": "item_c3670a42984144e68ece92607ead97a2",
           "kind": "none",
           "avatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -82,7 +82,7 @@
           }
         },
         {
-          "id": "slot3",
+          "id": "item_aa53d0f618af429fbd0b40ab3ef8ad68",
           "kind": "none",
           "avatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -99,7 +99,7 @@
           }
         },
         {
-          "id": "slot4",
+          "id": "item_31fe810992dc4c6c81326cf488cffd1e",
           "kind": "none",
           "avatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -116,7 +116,7 @@
           }
         },
         {
-          "id": "slot5",
+          "id": "item_769bfa57115a4cfdaaea8cdf040a5284",
           "kind": "none",
           "avatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -155,7 +155,7 @@
         "showSeparator": false,
         "slots": [
           {
-            "id": "slot1",
+            "id": "item_34fbbdf4d78e41d997300e5627ffde3f",
             "kind": "none",
             "avatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -172,7 +172,7 @@
             }
           },
           {
-            "id": "slot2",
+            "id": "item_c3670a42984144e68ece92607ead97a2",
             "kind": "none",
             "avatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -189,7 +189,7 @@
             }
           },
           {
-            "id": "slot3",
+            "id": "item_aa53d0f618af429fbd0b40ab3ef8ad68",
             "kind": "none",
             "avatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -206,7 +206,7 @@
             }
           },
           {
-            "id": "slot4",
+            "id": "item_31fe810992dc4c6c81326cf488cffd1e",
             "kind": "none",
             "avatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -223,7 +223,7 @@
             }
           },
           {
-            "id": "slot5",
+            "id": "item_769bfa57115a4cfdaaea8cdf040a5284",
             "kind": "none",
             "avatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -505,7 +505,8 @@
     "viewportSize": "390|80",
     "slotInputs": [
       {
-        "id": "slot1",
+        "id": "item_34fbbdf4d78e41d997300e5627ffde3f",
+        "kind": "none",
         "actorId": "actor_alex",
         "label": "",
         "sublabel": "",
@@ -513,7 +514,8 @@
         "pressed": false
       },
       {
-        "id": "slot2",
+        "id": "item_c3670a42984144e68ece92607ead97a2",
+        "kind": "none",
         "actorId": "actor_alex",
         "label": "",
         "sublabel": "",
@@ -521,7 +523,8 @@
         "pressed": false
       },
       {
-        "id": "slot3",
+        "id": "item_aa53d0f618af429fbd0b40ab3ef8ad68",
+        "kind": "none",
         "actorId": "actor_alex",
         "label": "",
         "sublabel": "",
@@ -529,7 +532,8 @@
         "pressed": false
       },
       {
-        "id": "slot4",
+        "id": "item_31fe810992dc4c6c81326cf488cffd1e",
+        "kind": "none",
         "actorId": "actor_alex",
         "label": "",
         "sublabel": "",
@@ -537,7 +541,8 @@
         "pressed": false
       },
       {
-        "id": "slot5",
+        "id": "item_769bfa57115a4cfdaaea8cdf040a5284",
+        "kind": "none",
         "actorId": "actor_alex",
         "label": "",
         "sublabel": "",

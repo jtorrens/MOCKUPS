@@ -124,31 +124,22 @@ internal static class SocialPostModuleConfigContract
         JsonObject socialPost,
         string key,
         string owner,
-        int expectedCount = 2,
-        string? explicitIdPrefix = null)
+        int expectedCount = 2)
     {
         var rows = JsonPath.RequiredArray(socialPost, key, owner);
-        var idPrefix = explicitIdPrefix ?? (key.Equals("footerRows", StringComparison.Ordinal)
-            ? "footerRow"
-            : "row");
+        RuntimeCollectionDocumentContract.Validate(rows, $"{owner}.{key}");
         if (rows.Count != expectedCount)
         {
             throw new InvalidOperationException(
-                $"{owner}.{key} must contain exactly {expectedCount} '{idPrefix}' rows.");
+                $"{owner}.{key} must contain exactly {expectedCount} rows.");
         }
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
-            var rowId = $"{idPrefix}{rowIndex + 1}";
             var row = rows[rowIndex] as JsonObject
                 ?? throw new InvalidOperationException(
                     $"{owner}.{key}[{rowIndex}] must be an object.");
+            var rowId = JsonPath.RequiredString(row, "id", owner);
             RequireExactKeys(row, ["id", "label", "visible", "rowSlot"], $"{owner}.{key}.{rowId}");
-            if (!JsonPath.RequiredString(row, "id", owner)
-                    .Equals(rowId, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    $"{owner}.{key}[{rowIndex}] must have stable id '{rowId}'.");
-            }
             JsonPath.RequiredString(row, "label", owner);
             JsonPath.RequiredBoolean(row, "visible", owner);
             ValidateSlot(row, "rowSlot", $"{owner}.{key}.{rowId}");

@@ -67,7 +67,7 @@ internal static class VideoCallModuleConfigContract
             _ = JsonPath.RequiredObject(owner, key, context);
         SocialPostModuleConfigContract.ValidateRows(owner, "headerRows", $"{context}.videoCall");
         SocialPostModuleConfigContract.ValidateRows(owner, "footerRows", $"{context}.videoCall");
-        SocialPostModuleConfigContract.ValidateRows(owner, "mainRows", $"{context}.videoCall", 3, "mainRow");
+        SocialPostModuleConfigContract.ValidateRows(owner, "mainRows", $"{context}.videoCall", 3);
     }
 
     private static void RequireExactKeys(JsonObject value, IReadOnlyList<string> expected, string owner)

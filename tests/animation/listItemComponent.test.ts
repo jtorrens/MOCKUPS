@@ -25,7 +25,7 @@ test("List Item Calls and Chats Variants share fixed child slots with Variant-ow
     && calls.elements[2].component.orientation, "horizontal");
   assert.equal(chats.elements[2]?.componentType === "iconRow"
     && chats.elements[2].component.orientation, "vertical");
-  assert.equal(calls.activeSet, "set_a");
+  assert.equal(calls.activeSet, "item_b2719bad614d4728ae05ded8bb21ef0b");
   assert.deepEqual(calls.size, { width: 360, height: 84 });
 });
 
@@ -40,7 +40,7 @@ test("The common Runtime boundary animates Content Set IDs and current state ind
           id: "active-set",
           fieldId: "activeSet",
           targetId: "",
-          keyframes: [{ id: "active-set-10", frame: 10, value: "set_b", interpolation: "hold" }],
+          keyframes: [{ id: "active-set-10", frame: 10, value: "item_b48ad6ce0a004941ba07424365129b03", interpolation: "hold" }],
         },
         {
           id: "item-state",
@@ -53,7 +53,7 @@ test("The common Runtime boundary animates Content Set IDs and current state ind
   });
 
   const resolved = resolveListItemComponent(resolveRenderablePayload(source));
-  assert.equal(resolved.activeSet, "set_b");
+  assert.equal(resolved.activeSet, "item_b48ad6ce0a004941ba07424365129b03");
   assert.equal(resolved.state, "inactive");
   assert.equal(resolved.elementsOpacity, 0.45);
   assert.equal(
@@ -100,7 +100,7 @@ test("List Item consumes exact child Runtime fields instead of parent-owned copi
       runtimeInputs: { sampleText: string; textColorToken: string };
     }>;
   };
-  preview.activeSet = "set_b";
+  preview.activeSet = "item_b48ad6ce0a004941ba07424365129b03";
   preview.labelContent[1]!.runtimeInputs.sampleText = "Exact Label Runtime";
   preview.labelContent[1]!.runtimeInputs.textColorToken = "theme.colors.badge";
   source.designPreviewJson = JSON.stringify(preview);

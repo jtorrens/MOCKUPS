@@ -256,7 +256,7 @@ test("the committed Text Input Bar resolves its migrated structured Button item"
     );
     assert.equal(
       resolved.textBox.rightIconRow.items[0]?.id,
-      "button_attachment",
+      "item_8e31a1df26d1409f884c6f1de8128a10",
     );
     const renderable = textInputBarComponentToRenderable(
       authoringPayload,
@@ -278,10 +278,10 @@ test("the committed Text Input Bar resolves its migrated structured Button item"
       "component.iconRow.items",
     );
     const attachment = rightIconRow?.children?.find((child) =>
-      child.id.includes("button_attachment"));
+      child.id.includes("item_8e31a1df26d1409f884c6f1de8128a10"));
     assert.equal(
       attachment?.metadata?.authoringTarget?.focusItemId,
-      "button_attachment",
+      "item_8e31a1df26d1409f884c6f1de8128a10",
     );
   } finally {
     database.close();

@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `27` is the only current schema. Authored Production rows belong
+Schema version `28` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -952,3 +952,15 @@ workstation database frozen while the staged snapshot is validated.
 The disposable workspace receives explicit Project asset roots, preserving
 strict Project font, icon and media resolution without copying or mutating
 those assets.
+
+### Collection identity maintenance (schema 28)
+
+All current collection items use opaque `item_<32 lowercase hex digits>` ids.
+The explicit schema-28 maintenance updates Component and Module configurations,
+all complete Variants, Design fixtures, Screen content, declared item references,
+forwarded field identities and version-2 animation targets together. It preserves
+array order, authored values and local keyframe frames. Before renaming, Screen
+content is materialized through `RuntimePreviewDocumentContract` so persisted
+nested Runtime rows match their exact selected Variant. There are no old-name
+aliases or startup transformations. Existing databases require explicit scoped
+maintenance; the canonical workstation remains the only write authority.

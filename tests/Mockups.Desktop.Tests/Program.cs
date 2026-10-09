@@ -173,6 +173,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
     ("committed Production Screens render sampled frames without changing authored data", () => ProductionScreensRenderCommittedFramesReadOnly(committedDatabasePath, SingleArgumentValue(args, "--production-project"))),
+    ("collection mutations retain exact nested Variant identities and animation targets", () => CollectionIdentityRegressionTests.PreparedNestedTargetsSurviveMutations(committedDatabasePath)),
     ("Production Runtime commits discard transient Preview values", ProductionRuntimeCommitsDiscardTransientPreviewValues),
     ("Shot Screen tracks resolve independent lanes gaps and overlap priority", ShotScreenTracksResolveIndependentLanes),
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
@@ -1951,7 +1952,7 @@ static void RuntimeInputDefinitionReadersAreStrict()
                             {
                                 new JsonObject
                                 {
-                                    ["id"] = "button_001",
+                                    ["id"] = "item_dd466805c6484b728e4b02264b463518",
                                     ["enabled"] = true,
                                     ["pressed"] = false,
                                 },
@@ -1966,7 +1967,7 @@ static void RuntimeInputDefinitionReadersAreStrict()
         nestedPreview,
         new JsonObject(),
         nestedPreview);
-    var nestedPrefix = "iconRowRuntime.icon_row_001.buttonInputs.button_001";
+    var nestedPrefix = "iconRowRuntime.icon_row_001.buttonInputs.item_dd466805c6484b728e4b02264b463518";
     var enabledTarget = nestedTargets.Single((target) => target.FieldId == $"{nestedPrefix}.enabled");
     var pressedTarget = nestedTargets.Single((target) => target.FieldId == $"{nestedPrefix}.pressed");
     Equal("message_001", enabledTarget.TargetId);
@@ -3191,7 +3192,7 @@ static void DictionaryFreeFormInputsCommitOnlyOnConfirmation()
 static void FixedComponentCollectionBoundariesPreserveSequentialOverrides()
 {
     const string iconSlots = """
-        [{"id":"decline","buttonVariantReference":"component_project_foqn_s2_button::variant::default","iconToken":"phone_hangup","text":"Decline","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{"button":{"dimensionMode":"fixed","size":"112|48"}}}]
+        [{"id":"item_fa366894416f408bb7e839bf03b5403c","buttonVariantReference":"component_project_foqn_s2_button::variant::default","iconToken":"phone_hangup","text":"Decline","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{"button":{"dimensionMode":"fixed","size":"112|48"}}}]
         """;
     var definition = ComponentClassFieldCatalog
         .Get("component.iconRow.items")
@@ -4088,19 +4089,19 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
             invalidItemSizing,
             "Icon Row with invalid item sizing"));
     SequenceEqual(
-        ["button_001"],
+        ["item_dd466805c6484b728e4b02264b463518"],
         JsonPath.ObjectItems(
                 JsonPath.RequiredArray(defaultContract, "buttonInputs", "Default Icon Row Runtime"),
                 "Default Icon Row Runtime buttons")
             .Select((item) => JsonPath.RequiredString(item, "id", "Default Icon Row button")));
     SequenceEqual(
-        ["decline", "answer"],
+        ["item_fa366894416f408bb7e839bf03b5403c", "item_b850dd25802142bfbacbb210ee0fc690"],
         JsonPath.ObjectItems(
                 JsonPath.RequiredArray(iosContract, "buttonInputs", "iOS Icon Row Runtime"),
                 "iOS Icon Row Runtime buttons")
             .Select((item) => JsonPath.RequiredString(item, "id", "iOS Icon Row button")));
     SequenceEqual(
-        ["decline", "answer"],
+        ["item_fa366894416f408bb7e839bf03b5403c", "item_b850dd25802142bfbacbb210ee0fc690"],
         JsonPath.ObjectItems(
                 JsonPath.RequiredArray(androidContract, "buttonInputs", "Android Icon Row Runtime"),
                 "Android Icon Row Runtime buttons")
@@ -4130,7 +4131,7 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
     StructuredRuntimeCollectionProjection.Apply(preview, reorderedAndroid);
     buttons = JsonPath.RequiredArray(preview, "buttonInputs", "Reordered Icon Row Runtime");
     SequenceEqual(
-        ["answer", "decline"],
+        ["item_b850dd25802142bfbacbb210ee0fc690", "item_fa366894416f408bb7e839bf03b5403c"],
         buttons.OfType<JsonObject>().Select((item) => JsonPath.RequiredString(item, "id", "Reordered button")));
     True(buttons[0]?["pressed"]?.GetValue<bool>() == true);
 
@@ -4428,7 +4429,7 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
         "buttonInputs",
         "Incoming Call Icon Row Runtime");
     SequenceEqual(
-        ["decline", "answer"],
+        ["item_fa366894416f408bb7e839bf03b5403c", "item_b850dd25802142bfbacbb210ee0fc690"],
         buttonInputs.OfType<JsonObject>()
             .Select((item) => JsonPath.RequiredString(item, "id", "Incoming Call button")));
     True(buttonInputs.OfType<JsonObject>().All((item) =>
@@ -4470,7 +4471,7 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
             "Incoming Call default Icon Row Runtime")
         .Single();
     SequenceEqual(
-        ["button_001"],
+        ["item_dd466805c6484b728e4b02264b463518"],
         JsonPath.RequiredArray(
                 JsonPath.RequiredObject(defaultIconRow, "runtimeInputs", "Incoming Call default Icon Row Runtime"),
                 "buttonInputs",
@@ -4494,7 +4495,7 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
             "Incoming Call Android Icon Row Runtime")
         .Single();
     SequenceEqual(
-        ["decline", "answer"],
+        ["item_fa366894416f408bb7e839bf03b5403c", "item_b850dd25802142bfbacbb210ee0fc690"],
         JsonPath.RequiredArray(
                 JsonPath.RequiredObject(androidIconRow, "runtimeInputs", "Incoming Call Android Icon Row Runtime"),
                 "buttonInputs",
@@ -8916,7 +8917,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             AssertNoVariantSelector(contextHost);
             Equal("360", RequiredField(listItemSurface, "width").Value);
             Equal("84", RequiredField(listItemSurface, "height").Value);
-            Equal("set_a", RequiredField(listItemSurface, "activeSet").Value);
+            Equal("item_b2719bad614d4728ae05ded8bb21ef0b", RequiredField(listItemSurface, "activeSet").Value);
             Equal("normal", RequiredField(listItemSurface, "state").Value);
             var runtimeSectionLabels = listItemSurface.GetVisualDescendants()
                 .OfType<TextBlock>()
@@ -9306,7 +9307,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             SequenceEqual(
                 Enumerable.Range(1, listItems.Count + 1).Select((index) => $"Item {index}"),
                 addedItemLabels);
-            Equal("set_a", RequiredField(listSurface, "activeSet").Value);
+            Equal("item_b2719bad614d4728ae05ded8bb21ef0b", RequiredField(listSurface, "activeSet").Value);
             Equal("normal", RequiredField(listSurface, "state").Value);
             SequenceEqual(
                 ["Set 1", "Set 2", "Set 3"],
@@ -9332,7 +9333,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                     .Count((text) =>
                         text.Text?.StartsWith("Item ", StringComparison.Ordinal) == true
                         && int.TryParse(text.Text.AsSpan(5), out _)));
-            Equal("set_a", RequiredField(listSurface, "activeSet").Value);
+            Equal("item_b2719bad614d4728ae05ded8bb21ef0b", RequiredField(listSurface, "activeSet").Value);
             Equal("normal", RequiredField(listSurface, "state").Value);
             Equal(1, ActionButtons(listSurface, "Delete").Count);
             True(ActionButtons(listSurface, "Move up").Last().IsEnabled);
@@ -10813,7 +10814,7 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
         messages);
 
     var serialized =
-        """mockups-preview-authoring:{"ownerId":"component_bubble::variant::default","slotFieldIds":["component.bubble.textBox.editor","component.textBox.rightIconRow.editor"],"focusFieldId":"component.iconRow.items","focusItemId":"button_attachment"}""";
+        """mockups-preview-authoring:{"ownerId":"component_bubble::variant::default","slotFieldIds":["component.bubble.textBox.editor","component.textBox.rightIconRow.editor"],"focusFieldId":"component.iconRow.items","focusItemId":"item_8e31a1df26d1409f884c6f1de8128a10"}""";
     True(PreviewAuthoringNavigationMessage.TryParse(
         serialized,
         out var target));
@@ -10825,7 +10826,7 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
         ],
         target.SlotFieldIds);
     Equal("component.iconRow.items", target.FocusFieldId);
-    Equal("button_attachment", target.FocusItemId);
+    Equal("item_8e31a1df26d1409f884c6f1de8128a10", target.FocusItemId);
     True(navigator.Navigate(target));
     Equal(ownerId, opened?.OwnerNode.Id);
     SequenceEqual(
@@ -10834,7 +10835,7 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
             ?? []);
     Equal("component.iconRow", focus?.RecordClassId);
     Equal("component.iconRow.items", focus?.FieldId);
-    Equal("button_attachment", focus?.ItemId);
+    Equal("item_8e31a1df26d1409f884c6f1de8128a10", focus?.ItemId);
     Equal(EditorAuthoringFocusSurface.Editor, focus?.Surface);
 
     var runtimeSerialized =
@@ -10960,7 +10961,7 @@ static void PreviewAuthoringFocusRevealsExactCard()
             """
             [
               {"id":"button_other","buttonVariantReference":"component_button::variant::default","iconToken":"other","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{}},
-              {"id":"button_attachment","buttonVariantReference":"component_button::variant::default","iconToken":"chat_attach","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{}}
+              {"id":"item_8e31a1df26d1409f884c6f1de8128a10","buttonVariantReference":"component_button::variant::default","iconToken":"chat_attach","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{}}
             ]
             """,
             new DictionaryFieldServices(
@@ -10990,7 +10991,7 @@ static void PreviewAuthoringFocusRevealsExactCard()
             "component.iconRow",
             [slot.FieldId],
             "component.iconRow.items",
-            "button_attachment"));
+            "item_8e31a1df26d1409f884c6f1de8128a10"));
 
         True(focus.ApplyEmbedded(
             context,
@@ -11126,7 +11127,7 @@ static void ConversationPreviewTargetsExactIconRowItems()
             "items",
             "Conversation Preview right Icon Row Overrides");
         True(rightItems.Any((item) =>
-            item?["id"]?.GetValue<string>() == "button_001"));
+            item?["id"]?.GetValue<string>() == "item_dd466805c6484b728e4b02264b463518"));
         var rightInputs = JsonPath.RequiredObject(
             conversationConfig,
             "headerRightIconRowInputs",
@@ -11136,7 +11137,7 @@ static void ConversationPreviewTargetsExactIconRowItems()
             "buttonInputs",
             "Conversation Preview right Icon Row Inputs");
         var videoRuntime = runtimeItems.Single((item) =>
-            item?["id"]?.GetValue<string>() == "button_001");
+            item?["id"]?.GetValue<string>() == "item_dd466805c6484b728e4b02264b463518");
         Equal(
             "media_video",
             JsonPath.RequiredString(
@@ -11309,7 +11310,7 @@ static void EmbeddedStructuralRuntimeProjectionsRefreshPreviewValues()
             .OfType<JsonObject>()
             .Single();
         SequenceEqual(
-            ["decline", "answer"],
+            ["item_fa366894416f408bb7e839bf03b5403c", "item_b850dd25802142bfbacbb210ee0fc690"],
             JsonPath.RequiredArray(
                     JsonPath.RequiredObject(
                         effectiveIconRow,
@@ -27964,7 +27965,7 @@ static void SocialPostComposesHeaderRows()
         .OfType<JsonObject>()
         .ToList();
     Equal(2, rows.Count);
-    SequenceEqual(["row1", "row2"], rows.Select((row) => row["id"]?.GetValue<string>() ?? "").ToList());
+    SequenceEqual(["item_690ab7d988ef466c8d6b20406ef2e024", "item_d2a1bd7aeb5f49c49501136b62bc4389"], rows.Select((row) => row["id"]?.GetValue<string>() ?? "").ToList());
     foreach (var row in rows)
     {
         JsonPath.RequiredBoolean(row, "visible", "Social Post row config");
@@ -27974,7 +27975,7 @@ static void SocialPostComposesHeaderRows()
         .OfType<JsonObject>()
         .ToList();
     Equal(2, footerRows.Count);
-    SequenceEqual(["footerRow1", "footerRow2"], footerRows
+    SequenceEqual(["item_9df0890d96604176aca0bb0a6e7889e2", "item_1729c03bec80498bb124f253df1c1709"], footerRows
         .Select((row) => row["id"]?.GetValue<string>() ?? "")
         .ToList());
     foreach (var row in footerRows)
@@ -28053,7 +28054,7 @@ static void SocialPostComposesHeaderRows()
     var runtimeRows = JsonPath.RequiredArray(preview, "socialPostRows", "Social Post Runtime");
     Equal(2, runtimeRows.Count);
     SequenceEqual(
-        ["row1", "row2"],
+        ["item_690ab7d988ef466c8d6b20406ef2e024", "item_d2a1bd7aeb5f49c49501136b62bc4389"],
         runtimeRows.OfType<JsonObject>()
             .Select((row) => row["id"]?.GetValue<string>() ?? "")
             .ToList());
@@ -28063,7 +28064,7 @@ static void SocialPostComposesHeaderRows()
         "Social Post Runtime");
     Equal(2, runtimeFooterRows.Count);
     SequenceEqual(
-        ["footerRow1", "footerRow2"],
+        ["item_9df0890d96604176aca0bb0a6e7889e2", "item_1729c03bec80498bb124f253df1c1709"],
         runtimeFooterRows.OfType<JsonObject>()
             .Select((row) => row["id"]?.GetValue<string>() ?? "")
             .ToList());
@@ -28087,11 +28088,11 @@ static void SocialPostComposesHeaderRows()
     foreach (var renderableId in new[]
     {
         "module.core.socialPost.header",
-        "module.core.socialPost.header.row1",
-        "module.core.socialPost.header.row2",
+        "module.core.socialPost.header.item_690ab7d988ef466c8d6b20406ef2e024",
+        "module.core.socialPost.header.item_d2a1bd7aeb5f49c49501136b62bc4389",
         "module.core.socialPost.footer",
-        "module.core.socialPost.footer.footerRow1",
-        "module.core.socialPost.footer.footerRow2",
+        "module.core.socialPost.footer.item_9df0890d96604176aca0bb0a6e7889e2",
+        "module.core.socialPost.footer.item_1729c03bec80498bb124f253df1c1709",
     })
     {
         True(html.Contains($"data-renderable-id=\"{renderableId}\"", StringComparison.Ordinal));
@@ -28195,8 +28196,8 @@ static void SocialPostScreenCreationIsAtomic()
             Equal(2, rows.Count);
             SequenceEqual(
                 collectionKey.Equals("socialPostFooterRows", StringComparison.Ordinal)
-                    ? ["footerRow1", "footerRow2"]
-                    : ["row1", "row2"],
+                    ? ["item_9df0890d96604176aca0bb0a6e7889e2", "item_1729c03bec80498bb124f253df1c1709"]
+                    : ["item_690ab7d988ef466c8d6b20406ef2e024", "item_d2a1bd7aeb5f49c49501136b62bc4389"],
                 rows.Select((row) => row["id"]?.GetValue<string>() ?? "")
                     .ToList());
             foreach (var row in rows)
@@ -28222,14 +28223,14 @@ static void SocialPostScreenCreationIsAtomic()
                 shotSettings.OwnerActorId,
                 StringComparison.Ordinal));
         var runtimeRows = JsonPath.RequiredArray(content, "socialPostRows", "Social Post Screen content");
-        var runtimeRow = runtimeRows.OfType<JsonObject>().Single((row) => row["id"]?.GetValue<string>() == "row1");
+        var runtimeRow = runtimeRows.OfType<JsonObject>().Single((row) => row["id"]?.GetValue<string>() == "item_690ab7d988ef466c8d6b20406ef2e024");
         var slotInputs = JsonPath.RequiredArray(runtimeRow, "slotInputs", "Social Post row1").DeepClone();
-        var firstSlot = slotInputs.AsArray().OfType<JsonObject>().Single((slot) => slot["id"]?.GetValue<string>() == "row1_slot1");
+        var firstSlot = slotInputs.AsArray().OfType<JsonObject>().Single((slot) => slot["id"]?.GetValue<string>() == "item_d703140004a540299cd4f6b31e1dd754");
         firstSlot["actorId"] = socialActorId;
         database.UpdateModuleInstanceRuntimeCollectionValue(
             screen.Id,
             "socialPostRows",
-            "row1",
+            "item_690ab7d988ef466c8d6b20406ef2e024",
             "slotInputs",
             slotInputs);
         var payloadData = new DesignPreviewPayloadDataSource(
@@ -28256,12 +28257,12 @@ static void SocialPostScreenCreationIsAtomic()
                 "socialPostRows",
                 "Prepared Social Post Screen Runtime")
             .OfType<JsonObject>()
-            .Single((row) => row["id"]?.GetValue<string>() == "row1");
+            .Single((row) => row["id"]?.GetValue<string>() == "item_690ab7d988ef466c8d6b20406ef2e024");
         Equal(
             socialActorId,
             JsonPath.RequiredArray(preparedRow, "slotInputs", "Prepared Social Post row1")
                 .OfType<JsonObject>()
-                .Single((slot) => slot["id"]?.GetValue<string>() == "row1_slot1")["actor"]?
+                .Single((slot) => slot["id"]?.GetValue<string>() == "item_d703140004a540299cd4f6b31e1dd754")["actor"]?
                 .AsObject()["id"]?.GetValue<string>());
         True(!socialActorId.Equals(
             shotSettings.OwnerActorId,

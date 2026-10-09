@@ -141,12 +141,12 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     });
   const participants = allParticipants.filter((item) => item.present || item.presenceMotionKind === "exit");
   const participantReflow = resolveParticipantReflow(payload, owner, allParticipants, participants, screenFrame);
-  const headerRows = requiredRows(owner, "headerRows", "row", "module.core.videoCall");
-  const headerRuntimeRows = requiredRuntimeRows(preview, "videoCallHeaderRows", "row", "module.core.videoCall");
-  const footerRows = requiredRows(owner, "footerRows", "footerRow", "module.core.videoCall");
-  const footerRuntimeRows = requiredRuntimeRows(preview, "videoCallFooterRows", "footerRow", "module.core.videoCall");
-  const mainRows = requiredRows(owner, "mainRows", "mainRow", "module.core.videoCall", 3);
-  const mainRuntimeRows = requiredRuntimeRows(preview, "videoCallMainRows", "mainRow", "module.core.videoCall", 3);
+  const headerRows = requiredRows(owner, "headerRows", "module.core.videoCall");
+  const headerRuntimeRows = requiredRuntimeRows(preview, "videoCallHeaderRows", "module.core.videoCall");
+  const footerRows = requiredRows(owner, "footerRows", "module.core.videoCall");
+  const footerRuntimeRows = requiredRuntimeRows(preview, "videoCallFooterRows", "module.core.videoCall");
+  const mainRows = requiredRows(owner, "mainRows", "module.core.videoCall", 3);
+  const mainRuntimeRows = requiredRuntimeRows(preview, "videoCallMainRows", "module.core.videoCall", 3);
   const pipSize = requiredNumberPair(owner, "pipSize", "module.core.videoCall.pipSize");
   return {
     id: "module.core.videoCall",

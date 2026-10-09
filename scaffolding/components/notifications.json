@@ -201,7 +201,7 @@
     ],
     "items": [
       {
-        "id": "items_e966b1f6af4d46f789ad021d12a00f93",
+        "id": "item_d31008a57b9d4ebfb01dc0ae1bb998d4",
         "present": true,
         "actorId": "actor_alex",
         "displayMode": "summary",
@@ -211,7 +211,7 @@
         "detailSubtext": "Notification detail"
       },
       {
-        "id": "items_24ec872ab329481283bbae28a4630532",
+        "id": "item_e29ba029f52642b492ad3624775d88ac",
         "present": true,
         "actorId": "actor_alex",
         "displayMode": "summary",
@@ -221,7 +221,7 @@
         "detailSubtext": "Notification detail"
       },
       {
-        "id": "items_d50f6c9bb0bc4a7f9836cc8e4148d00a",
+        "id": "item_e1b288e018fe415e9b03f2fa85ea5371",
         "present": true,
         "actorId": "actor_alex_b",
         "displayMode": "summary",

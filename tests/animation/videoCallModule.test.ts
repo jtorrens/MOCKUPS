@@ -78,8 +78,8 @@ test("Video Call resolves free-form and empty participant connection text", () =
   const call = resolveVideoCallModule(edited);
   assert.equal(call.participants.length, 4);
   assert.equal(call.participants[0]?.statusLabel.text, "Sin señal");
-  assert.equal(call.participants.find(item => item.id === "participant_sam")?.statusLabel.text, "");
-  assert.equal(call.participants.find(item => item.id === "participant_jon")?.statusLabel.text, "Connection lost");
+  assert.equal(call.participants.find(item => item.id === "item_3aec7f59229746848c48eeda95957af0")?.statusLabel.text, "");
+  assert.equal(call.participants.find(item => item.id === "item_fc87ff9895fb4f42bf4ee130e64b6096")?.statusLabel.text, "Connection lost");
   const node = videoCallModuleToRenderable(edited);
   assert.equal(node.id, "module.core.videoCall");
   assert.ok((node.children?.length ?? 0) > 4);
@@ -97,8 +97,8 @@ test("Video Call derives each visible participant name from its Actor", () => {
   assert.equal(call.participants[0]?.showActorName, true);
   assert.equal(call.participants[1]?.showActorName, false);
   const node = videoCallModuleToRenderable(edited);
-  const visible = node.children?.find(child => child.id === "participant_alex");
-  const hidden = node.children?.find(child => child.id === "participant_asia");
+  const visible = node.children?.find(child => child.id === "item_dcece1c33c7f4666990f42d0693ba78b");
+  const hidden = node.children?.find(child => child.id === "item_aab184dea3b5442195575fcfcf3e93eb");
   const name = visible?.children?.find(child => child.id.includes(".name"));
   assert.ok(visible?.box && name?.box);
   assert.ok(Math.abs(
@@ -126,8 +126,8 @@ test("Video Call uses exactly one configured gap between percentage regions", ()
     configJson: JSON.stringify(config),
     designPreviewJson: JSON.stringify(preview),
   });
-  const main = node.children?.find(child => child.id === "participant_alex");
-  const grid = node.children?.find(child => child.id === "participant_asia");
+  const main = node.children?.find(child => child.id === "item_dcece1c33c7f4666990f42d0693ba78b");
+  const grid = node.children?.find(child => child.id === "item_aab184dea3b5442195575fcfcf3e93eb");
   assert.ok(main?.box && grid?.box);
   assert.equal(
     grid.box.y - (main.box.y + main.box.height),
@@ -145,7 +145,7 @@ test("Video Call linearly animates participant Media scale and offset", () => {
       tracks: [
         {
           fieldId: "mediaScale",
-          targetId: "participant_alex",
+          targetId: "item_dcece1c33c7f4666990f42d0693ba78b",
           keyframes: [
             { frame: 0, value: 1, interpolation: "hold" },
             { frame: 10, value: 2, interpolation: "linear" },
@@ -153,7 +153,7 @@ test("Video Call linearly animates participant Media scale and offset", () => {
         },
         {
           fieldId: "mediaOffset",
-          targetId: "participant_alex",
+          targetId: "item_dcece1c33c7f4666990f42d0693ba78b",
           keyframes: [
             { frame: 0, value: "0|0", interpolation: "hold" },
             { frame: 10, value: "20|-10", interpolation: "linear" },
@@ -163,7 +163,7 @@ test("Video Call linearly animates participant Media scale and offset", () => {
     },
   });
   const participant = resolveVideoCallModule(source).participants
-    .find(item => item.id === "participant_alex");
+    .find(item => item.id === "item_dcece1c33c7f4666990f42d0693ba78b");
   assert.equal(participant?.media.viewport.scale, 1.5);
   assert.equal(participant?.media.viewport.offsetX, 10);
   assert.equal(participant?.media.viewport.offsetY, -5);
@@ -191,7 +191,7 @@ test("Video Call enters a participant and reflows stable cards from their prior 
           schemaVersion: 2,
           tracks: [{
             fieldId: "present",
-            targetId: "participant_asia",
+            targetId: "item_aab184dea3b5442195575fcfcf3e93eb",
             keyframes: [
               { frame: 0, value: false, interpolation: "hold" },
               { frame: 10, value: true, interpolation: "hold" },
@@ -202,11 +202,11 @@ test("Video Call enters a participant and reflows stable cards from their prior 
     };
     const renderable = videoCallModuleToRenderable(payload);
     const enteringNode = renderable.children
-      ?.find(child => child.id === "participant_asia.motion");
+      ?.find(child => child.id === "item_aab184dea3b5442195575fcfcf3e93eb.motion");
     return {
       contract: resolveVideoCallModule(payload),
       main: renderable.children
-        ?.find(child => child.id === "participant_alex"),
+        ?.find(child => child.id === "item_dcece1c33c7f4666990f42d0693ba78b"),
       enteringBox: enteringNode?.children?.[0]?.box,
     };
   };
@@ -215,7 +215,7 @@ test("Video Call enters a participant and reflows stable cards from their prior 
   const start = at(10);
   const middle = at(12);
   const after = at(20);
-  const entering = start.contract.participants.find(item => item.id === "participant_asia");
+  const entering = start.contract.participants.find(item => item.id === "item_aab184dea3b5442195575fcfcf3e93eb");
   assert.equal(entering?.presenceMotionKind, "enter");
   assert.equal(start.contract.participantReflow?.progress, 0);
   assert.ok(middle.contract.participantReflow?.progress);
@@ -282,7 +282,7 @@ test("Video Call permits simultaneous participants with the same role", () => {
   const call = resolveVideoCallModule(duplicateMain);
   assert.deepEqual(call.participants.map(({ role }) => role), ["main", "main"]);
   const node = videoCallModuleToRenderable(duplicateMain);
-  assert.equal(node.children?.filter(child => child.id.startsWith("participant_")).length, 2);
+  assert.equal(node.children?.filter(child => preview.participants.some(item => child.id === item.id)).length, 2);
 });
 
 test("Video Call grid rows fill every row without reserving empty columns", () => {
@@ -299,7 +299,7 @@ test("Video Call grid rows fill every row without reserving empty columns", () =
     configJson: JSON.stringify(config),
     designPreviewJson: JSON.stringify(preview),
   });
-  const participants = node.children?.filter(child => child.id.startsWith("participant_")) ?? [];
+  const participants = node.children?.filter(child => preview.participants.some(item => child.id === item.id)) ?? [];
   assert.equal(participants.length, 3);
   assert.ok(participants.every(participant => participant.box));
   assert.equal(participants[0]!.box!.y, participants[1]!.box!.y);
@@ -324,7 +324,7 @@ test("Video Call percentage grid uses the stacked available body", () => {
   config.videoCall.showPip = false;
 
   const node = videoCallModuleToRenderable({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(preview) });
-  const participants = node.children?.filter(child => child.id.startsWith("participant_")) ?? [];
+  const participants = node.children?.filter(child => preview.participants.some(item => child.id === item.id)) ?? [];
   const footer = node.children?.find(child => child.id === "module.core.videoCall.footer");
   assert.equal(participants.length, 3);
   assert.ok(participants.every(participant => participant.box) && footer?.box);
@@ -346,7 +346,7 @@ test("Video Call percentage main expands through the complete body when there is
 
   const node = videoCallModuleToRenderable({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(preview) });
   const background = node.children?.find(child => child.id === "module.core.videoCall.background");
-  const participant = node.children?.find(child => child.id.startsWith("participant_"));
+  const participant = node.children?.find(child => preview.participants.some(item => child.id === item.id));
   assert.deepEqual(participant?.box, background?.box);
 });
 
@@ -368,7 +368,7 @@ test("Video Call fill mode gives main and grid roles the same tile geometry", ()
     ...source,
     configJson: JSON.stringify(config),
     designPreviewJson: JSON.stringify({ ...preview, participants }),
-  }).children?.filter(child => child.id.startsWith("participant_")).map(child => child.box);
+  }).children?.filter(child => preview.participants.some(item => child.id === item.id)).map(child => child.box);
   const before = render(preview.participants);
   preview.participants[0]!.role = "grid";
   preview.participants[1]!.role = "main";
@@ -403,7 +403,7 @@ test("Video Call centers row blocks and presents participants as one collection"
   const node = videoCallModuleToRenderable(source);
   const header = node.children?.find(child => child.id === "module.core.videoCall.header");
   assert.ok(header?.box);
-  const rows = header.children?.filter(child => child.id === "module.core.videoCall.header.row1" || child.id === "module.core.videoCall.header.row2") ?? [];
+  const rows = header.children?.filter(child => child.id === "module.core.videoCall.header.item_690ab7d988ef466c8d6b20406ef2e024" || child.id === "module.core.videoCall.header.item_d2a1bd7aeb5f49c49501136b62bc4389") ?? [];
   assert.equal(rows.length, 1);
   assert.ok(rows[0]?.box);
   const rowsCenter = rows[0]!.box!.y + rows[0]!.box!.height * 0.5;
@@ -424,8 +424,8 @@ test("Video Call excludes invisible rows while preserving the remaining row plac
 
   const node = videoCallModuleToRenderable(hidden);
   const header = node.children?.find(child => child.id === "module.core.videoCall.header");
-  const row1 = header?.children?.find(child => child.id === "module.core.videoCall.header.row1");
-  const row2 = header?.children?.find(child => child.id === "module.core.videoCall.header.row2");
+  const row1 = header?.children?.find(child => child.id === "module.core.videoCall.header.item_690ab7d988ef466c8d6b20406ef2e024");
+  const row2 = header?.children?.find(child => child.id === "module.core.videoCall.header.item_d2a1bd7aeb5f49c49501136b62bc4389");
   assert.ok(header?.box && row1?.box);
   assert.equal(row2, undefined);
   assert.equal(

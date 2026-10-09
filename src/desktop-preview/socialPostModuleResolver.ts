@@ -38,10 +38,10 @@ export function resolveSocialPostModule(
   const preview = resolvedFrame.preview;
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const themeTokens = parseObject(payload.themeTokensJson);
-  const rows = requiredRows(socialPost, "rows", "row", "module.core.socialPost");
-  const runtimeRows = requiredRuntimeRows(preview, "socialPostRows", "row", "module.core.socialPost");
-  const footerRows = requiredRows(socialPost, "footerRows", "footerRow", "module.core.socialPost");
-  const footerRuntimeRows = requiredRuntimeRows(preview, "socialPostFooterRows", "footerRow", "module.core.socialPost");
+  const rows = requiredRows(socialPost, "rows", "module.core.socialPost");
+  const runtimeRows = requiredRuntimeRows(preview, "socialPostRows", "module.core.socialPost");
+  const footerRows = requiredRows(socialPost, "footerRows", "module.core.socialPost");
+  const footerRuntimeRows = requiredRuntimeRows(preview, "socialPostFooterRows", "module.core.socialPost");
   const message = resolveMessage(
     socialPost,
     preview,

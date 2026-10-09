@@ -1021,11 +1021,11 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
   });
   const headerVideoButton = findNode(
     conversationModuleToRenderable(source),
-    "module.core.chat.header.right.button_001",
+    "module.core.chat.header.right.item_dd466805c6484b728e4b02264b463518",
   );
   assert.deepEqual(headerVideoButton?.metadata?.authoringTarget, {
     focusFieldId: "component.iconRow.items",
-    focusItemId: "button_001",
+    focusItemId: "item_dd466805c6484b728e4b02264b463518",
     ownerId: "module_core_chat::variant::default",
     slotFieldIds: ["module.core.chat.headerRightIconRow.editor"],
   });

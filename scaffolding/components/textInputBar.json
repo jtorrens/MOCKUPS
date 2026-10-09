@@ -105,7 +105,7 @@
                 "iconRow": {
                   "items": [
                     {
-                      "id": "button_attachment",
+                      "id": "item_8e31a1df26d1409f884c6f1de8128a10",
                       "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                       "iconToken": "chat_attach",
                       "text": "",
@@ -221,7 +221,7 @@
                   "iconRow": {
                     "items": [
                       {
-                        "id": "button_attachment",
+                        "id": "item_8e31a1df26d1409f884c6f1de8128a10",
                         "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                         "iconToken": "chat_attach",
                         "text": "",
@@ -342,7 +342,7 @@
                     "iconRow": {
                       "items": [
                         {
-                          "id": "button_attachment",
+                          "id": "item_8e31a1df26d1409f884c6f1de8128a10",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                           "iconToken": "chat_attach",
                           "text": "",
@@ -474,7 +474,7 @@
                     "iconRow": {
                       "items": [
                         {
-                          "id": "button_attachment",
+                          "id": "item_8e31a1df26d1409f884c6f1de8128a10",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                           "iconToken": "chat_attach",
                           "text": "",
@@ -821,7 +821,7 @@
         "textInput",
         "textBoxSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_textBox::variant::default_copy\",\"overrides\":{\"textBox\":{\"maxLines\":3,\"placeholder\":\"Message\",\"iconGap\":\"theme.spacing.s\",\"leftIconRowSlot\":{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[],\"gap\":\"theme.spacing.s\",\"orientation\":\"horizontal\"}}},\"rightIconRowSlot\":{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"button_attachment\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"iconToken\":\"chat_attach\",\"text\":\"\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"buttonOverrides\":{}}],\"gap\":\"theme.spacing.s\",\"orientation\":\"horizontal\"}}}}}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_textBox::variant::default_copy\",\"overrides\":{\"textBox\":{\"maxLines\":3,\"placeholder\":\"Message\",\"iconGap\":\"theme.spacing.s\",\"leftIconRowSlot\":{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[],\"gap\":\"theme.spacing.s\",\"orientation\":\"horizontal\"}}},\"rightIconRowSlot\":{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"item_8e31a1df26d1409f884c6f1de8128a10\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"iconToken\":\"chat_attach\",\"text\":\"\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"buttonOverrides\":{}}],\"gap\":\"theme.spacing.s\",\"orientation\":\"horizontal\"}}}}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,

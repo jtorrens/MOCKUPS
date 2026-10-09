@@ -1338,13 +1338,13 @@ static void ProjectedRuntimeCollectionsReconcileById()
     {
         new JsonObject
         {
-            ["id"] = "row1",
+            ["id"] = "item_690ab7d988ef466c8d6b20406ef2e024",
             ["label"] = "Row 1",
             ["slots"] = new JsonArray
             {
                 new JsonObject
                 {
-                    ["id"] = "slot1",
+                    ["id"] = "item_34fbbdf4d78e41d997300e5627ffde3f",
                     ["kind"] = "avatar",
                     ["actorId"] = "actor_alex",
                     ["actor"] = new JsonObject { ["name"] = "Alex" },

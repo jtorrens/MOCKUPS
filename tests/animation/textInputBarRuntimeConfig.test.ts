@@ -18,7 +18,7 @@ test("a parent Runtime value changes an Icon Bar glyph without changing its Vari
             iconBar: {
               activeRightIconRowInputs: {
                 buttonInputs: [{
-                  id: "button_001",
+                  id: "item_dd466805c6484b728e4b02264b463518",
                   enabled: true,
                   pressed: false,
                   sampleText: "",
@@ -36,7 +36,7 @@ test("a parent Runtime value changes an Icon Bar glyph without changing its Vari
                   textColorToken: "theme.colors.textPrimary",
                   $forwardedInputs: {
                     iconToken: {
-                      id: "forwarded.component.iconBar.activeRight.button_001.iconToken",
+                      id: "forwarded.component.iconBar.activeRight.item_dd466805c6484b728e4b02264b463518.iconToken",
                       jsonKey: forwardedIconKey,
                     },
                   },
@@ -55,7 +55,7 @@ test("a parent Runtime value changes an Icon Bar glyph without changing its Vari
       [forwardedIconKey]: "media_camera",
       inputs: [
         ...JSON.parse(fixture.designPreviewJson).inputs,
-        { id: "forwarded.component.iconBar.activeRight.button_001.iconToken", jsonKey: forwardedIconKey },
+        { id: "forwarded.component.iconBar.activeRight.item_dd466805c6484b728e4b02264b463518.iconToken", jsonKey: forwardedIconKey },
       ],
     }),
   };
@@ -75,7 +75,7 @@ test("a parent Runtime value changes an Icon Bar glyph without changing its Vari
 
   assert.deepEqual(
     resolved.iconBar.rows.right.items.map((item) => item.id),
-    ["button_001"],
+    ["item_dd466805c6484b728e4b02264b463518"],
   );
   assert.equal(resolved.iconBar.rows.right.items[0]!.button.iconToken, "media_camera");
 });

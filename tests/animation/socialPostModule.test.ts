@@ -108,7 +108,7 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
     "socialPostRows",
     "socialPostFooterRows",
   ]);
-  assert.deepEqual(contract.rows.map(({ id }) => id), ["row1", "row2"]);
+  assert.deepEqual(contract.rows.map(({ id }) => id), ["item_690ab7d988ef466c8d6b20406ef2e024", "item_d2a1bd7aeb5f49c49501136b62bc4389"]);
   assert.equal(contract.rows[0].content.slots[0].kind, "avatar");
   const headerAvatar = contract.rows[0].content.slots[0].content;
   assert.ok(headerAvatar && "actor" in headerAvatar);
@@ -141,7 +141,7 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(contract.mediaFullScreenTransition, false);
   assert.equal(contract.mediaMotionElapsedMs, 0);
   assert.equal(contract.showGallerySeparator, true);
-  assert.deepEqual(contract.footerRows.map(({ id }) => id), ["footerRow1", "footerRow2"]);
+  assert.deepEqual(contract.footerRows.map(({ id }) => id), ["item_9df0890d96604176aca0bb0a6e7889e2", "item_1729c03bec80498bb124f253df1c1709"]);
   const footerConfigRows = config.socialPost.footerRows as Array<{
     rowSlot: { overrides: { contentRow: { slots: Array<Record<string, unknown>> } } };
   }>;
@@ -362,7 +362,7 @@ test("Social Post resolves animated text and distributes non-empty Runtime row s
   assert.equal(animatedLabel.text, "#Tag");
   assert.ok(findNode(
     socialPostModuleToRenderable(source),
-    "component.contentRow.slot.row2_slot3",
+    "component.contentRow.slot.item_5247adbf5f9f4bf59935d1be38fd72db",
   ));
 });
 
@@ -373,8 +373,8 @@ test("Social Post renders its two header rows against one Surface", () => {
     socialPost: { headerHeight: number };
   };
   const header = requiredNode(node, "module.core.socialPost.header");
-  const row1 = requiredNode(node, "module.core.socialPost.header.row1");
-  const row2 = requiredNode(node, "module.core.socialPost.header.row2");
+  const row1 = requiredNode(node, "module.core.socialPost.header.item_690ab7d988ef466c8d6b20406ef2e024");
+  const row2 = requiredNode(node, "module.core.socialPost.header.item_d2a1bd7aeb5f49c49501136b62bc4389");
   const separator = requiredNode(row2, "component.contentRow.separator");
   assert.equal(node.id, "module.core.socialPost");
   assert.deepEqual(node.box, { x: 0, y: 0, width: 360, height: 720 });
@@ -424,8 +424,8 @@ test("Social Post excludes invisible rows from section measurement and gaps", ()
     configJson: JSON.stringify(config),
   });
   const header = requiredNode(node, "module.core.socialPost.header");
-  const row1 = requiredNode(node, "module.core.socialPost.header.row1");
-  assert.equal(findNode(header, "module.core.socialPost.header.row2"), undefined);
+  const row1 = requiredNode(node, "module.core.socialPost.header.item_690ab7d988ef466c8d6b20406ef2e024");
+  assert.equal(findNode(header, "module.core.socialPost.header.item_d2a1bd7aeb5f49c49501136b62bc4389"), undefined);
   assert.ok(header.box && row1.box);
   assert.equal(
     row1.box.y + row1.box.height * 0.5,
@@ -438,7 +438,7 @@ test("Social Post renders its non-empty footer rows above navigation", () => {
   const node = socialPostModuleToRenderable(source);
   const message = requiredNode(node, "module.core.socialPost.message");
   const footer = requiredNode(node, "module.core.socialPost.footer");
-  const row1 = requiredNode(node, "module.core.socialPost.footer.footerRow1");
+  const row1 = requiredNode(node, "module.core.socialPost.footer.item_9df0890d96604176aca0bb0a6e7889e2");
   const navigation = requiredNode(node, "navigation_bar");
   assert.ok(message.box);
   assert.ok(footer.box);
@@ -446,8 +446,8 @@ test("Social Post renders its non-empty footer rows above navigation", () => {
   assert.ok(navigation.box);
   assert.equal(message.box.y + message.box.height, footer.box.y);
   assert.equal(footer.box.y + footer.box.height, navigation.box.y);
-  assert.equal(findNode(footer, "module.core.socialPost.footer.footerRow2"), undefined);
-  assert.ok(findNode(footer, "component.contentRow.slot.footerRow1_slot1"));
+  assert.equal(findNode(footer, "module.core.socialPost.footer.item_1729c03bec80498bb124f253df1c1709"), undefined);
+  assert.ok(findNode(footer, "component.contentRow.slot.item_3a5f8a29b07b43f6a589286bd1463ce7"));
   assert.equal(footer.children?.[0]?.type, "surface");
   assert.equal(
     footer.children?.[0]?.box?.y! + footer.children?.[0]?.box?.height!,

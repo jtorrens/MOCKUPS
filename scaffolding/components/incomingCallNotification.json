@@ -511,7 +511,7 @@
     "presenceElapsedMs": 0,
     "avatarRuntime": [
       {
-        "id": "avatar",
+        "id": "item_afd797ad7e5c4a18a05929b2cb883d29",
         "runtimeInputs": {
           "componentType": "avatar",
           "sampleText": "Sample",
@@ -778,13 +778,14 @@
           "badgeSize": 20,
           "badgeBackgroundPaletteColor": "blue",
           "badgeContentPaletteColor": "gray_100",
-          "actorId": "actor_alex"
+          "actorId": "actor_alex",
+          "collections": []
         }
       }
     ],
     "iconRowRuntime": [
       {
-        "id": "iconRow",
+        "id": "item_759f71d5c6374b3bae6f071434d56958",
         "runtimeInputs": {
           "componentType": "iconRow",
           "sampleText": "Sample",
@@ -1515,7 +1516,7 @@
           ],
           "buttonInputs": [
             {
-              "id": "decline",
+              "id": "item_fa366894416f408bb7e839bf03b5403c",
               "sampleText": "Decline",
               "iconToken": "phone_hangup",
               "iconSizeToken": "theme.iconSizes.l",
@@ -1535,7 +1536,7 @@
               "surfaceTintAmount": 0
             },
             {
-              "id": "answer",
+              "id": "item_b850dd25802142bfbacbb210ee0fc690",
               "sampleText": "Answer",
               "iconToken": "phone_call",
               "iconSizeToken": "theme.iconSizes.l",
@@ -1554,7 +1555,8 @@
               "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
               "surfaceTintAmount": 0
             }
-          ]
+          ],
+          "collections": []
         }
       }
     ]

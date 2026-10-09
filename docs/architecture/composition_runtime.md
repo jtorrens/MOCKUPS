@@ -335,8 +335,8 @@ either child when its valid resolved size exceeds the available content area.
 
 Runtime exposes Avatar's exact Actor and internal Label subtext inputs plus
 Icon Row's exact Button Runtime rows. There is no separate notification Label
-or semantic action schema. Names such as decline and answer are stable authored
-Icon Row item ids, not branches in the notification resolver.
+or semantic action schema. Button meaning belongs to authored content and Variant configuration. Icon Row
+item ids are opaque identities, independent of labels and actions.
 
 ## List Item
 
@@ -518,3 +518,19 @@ head/connector/key path with:
 Edge handling and shape construction remain in the Keyboard owner. Common
 Preview helpers and the renderer receive only resolved generic geometry and
 style.
+
+### Collection identity and order
+
+`RuntimeCollectionDocumentContract.CreateItemId` is the only item-id generator:
+`item_<32 lowercase hex digits>`. The collection declares type; its JSON array
+stores order. Moving an item changes array position only. Duplicate creates new
+editable identities while retaining exact identities across fixed embedded
+boundaries. Neither Modules nor Preview prefix, infer or regenerate child ids.
+Fixed rows validate count and unique identity, never names derived from position.
+
+Every Screen authoring mutation starts from the same prepared Runtime document
+used by Preview, projected to stored authoring content. The shared Screen commit
+prepares and persists the resulting content again before validation and atomic
+publication. Collection deletion and duplication therefore see the complete
+nested animation target graph, including items supplied by the exact selected
+Variant. Readers remain read-only; concrete resolvers perform no reconciliation.
