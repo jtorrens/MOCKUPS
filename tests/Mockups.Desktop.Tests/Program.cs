@@ -26,6 +26,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Text.Json;
 
 if (args.Length == 2
     && args[0].Equals(
@@ -175,6 +176,9 @@ var tests = new (string Name, Action Run)[]
     ("Production Runtime commits discard transient Preview values", ProductionRuntimeCommitsDiscardTransientPreviewValues),
     ("Shot Screen tracks resolve independent lanes gaps and overlap priority", ShotScreenTracksResolveIndependentLanes),
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
+    ("Production playback prepares gaps and multiple Screen boundaries", ProductionPlaybackPreparesGapsAndMultipleScreens),
+    ("Shot Play prepares transparent frames before starting its clock", ShotPlayPreparesTransparentFramesBeforeClock),
+    ("committed Shot playback preserves multiple Screens and transparent frames", () => CommittedShotPlaybackPreservesFrames(committedDatabasePath)),
     ("Conversation Play messages advances the root Module owner frame", ConversationPlayMessagesAdvancesRootOwnerFrame),
     ("Preview Theme mode always follows the interactive selector", PreviewThemeModeHasOneStrictPayloadOwner),
     ("Production Preview mode context toggles Light and Dark", ProductionPreviewModeContextIsInteractive),
@@ -18019,8 +18023,7 @@ static void ProductionRenderUsesTransparencyForShotScreenGaps()
 
 static void TransparentShotFramesPreserveRasterSurfaceContract()
 {
-    var html = DesignWebPreviewPane.BuildTransparentRasterHtml(
-        new DevicePreviewMetrics(
+    var metrics = new DevicePreviewMetrics(
             "Device",
             64,
             96,
@@ -18033,7 +18036,11 @@ static void TransparentShotFramesPreserveRasterSurfaceContract()
             0,
             0,
             0,
-            DeviceModuleTransparencyOverride.Disabled));
+            DeviceModuleTransparencyOverride.Disabled);
+    var html = DesignWebPreviewPane.BuildTransparentRasterHtml(metrics);
+    Equal(html, DesignWebPreviewPane.BuildRasterHtmlAsync(metrics, null).GetAwaiter().GetResult());
+    Equal(WebDesignPreviewRenderer.TransparentBodyHtml,
+        WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, null).GetAwaiter().GetResult());
 
     True(
         html.Contains(
@@ -20945,14 +20952,14 @@ static void ProductionPayloadPreservesActorAndAnimation()
         SequenceEqual(
             new[] { 0, 1 },
             playbackFrames.Select(
-                (payload) => payload.LocalFrame));
+                (payload) => Required(payload).LocalFrame));
         EqualPreparedProductionPayload(
             preparer.PrepareRequired(
                 playbackScreen,
                 null,
                 "light",
                 1),
-            playbackFrames[1]);
+            Required(playbackFrames[1]));
 
         var playbackShot =
             Descendants(
@@ -20985,14 +20992,14 @@ static void ProductionPayloadPreservesActorAndAnimation()
                 null,
                 "light",
                 boundaryFrame - 1),
-            boundaryFrames[0]);
+            Required(boundaryFrames[0]));
         EqualPreparedProductionPayload(
             preparer.PrepareRequired(
                 playbackShot,
                 null,
                 "light",
                 boundaryFrame),
-            boundaryFrames[1]);
+            Required(boundaryFrames[1]));
         using (var cancellation =
                new CancellationTokenSource())
         {
@@ -21195,6 +21202,198 @@ static void ProductionRuntimeCommitsDiscardTransientPreviewValues()
     {
         File.Delete(temporary);
     }
+}
+
+static void ShotPlayPreparesTransparentFramesBeforeClock()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-shot-transport-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var slots = database.GetShotModuleInstanceSlots("shot_001");
+        foreach (var slot in slots)
+            database.UpdateModuleInstanceField(slot.Id, "moduleInstance.startFrame", "3");
+        database.UpdateShotField("shot_001", "shot.durationPolicy", "explicit");
+        database.UpdateShotField("shot_001", "shot.durationFrames", "12");
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = CreateTestWindow(temporary);
+            window.Show();
+            void Wait(Func<bool> ready) => True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                return ready();
+            }, TimeSpan.FromSeconds(30)), "Shot transport preparation did not complete.");
+            try
+            {
+                Required(window.FindControl<Button>("ProductionWorkspaceButton"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Wait(() => WindowSession(window).Workspace == EditorWorkspace.Production);
+                var select = Required(typeof(MainWindow).GetMethod("SelectNodeById",
+                    BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(string)], null));
+                True((bool)Required(select.Invoke(window, ["shot_001"])));
+                var controller = Required(typeof(MainWindow).GetField("_previewController",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
+                FieldInfo Field(string name) => Required(typeof(EditorPreviewController).GetField(name,
+                    BindingFlags.Instance | BindingFlags.NonPublic));
+                Wait(() => WindowSession(window).SelectedNode?.Id == "shot_001"
+                    && Field("_productionSessionSnapshot").GetValue(controller) is ProductionPreviewSessionSnapshot);
+                controller.SetProductionShotFrame(0);
+                controller.ToggleProductionPlayback();
+                True(controller.PlaybackState.IsBusy, "A gap must prepare playback, never start an unprepared clock.");
+                True(!Required(Field("_shotPlaybackTimer").GetValue(controller) as DispatcherTimer).IsEnabled);
+                controller.ToggleProductionPlayback();
+                Wait(() => !controller.PlaybackState.IsBusy);
+
+                var shot = WindowSession(window).TreeRoots.SelectMany(DescendantsAndSelf)
+                    .Single(node => node.Id == "shot_001");
+                var preparer = new ProductionPreviewPayloadPreparer(
+                    new DesignPreviewPayloadDataSource(database.PreviewInputs, database.Production,
+                        database.Resources, database.Resources, database.ProjectPaths),
+                    new ProductionPreviewRuntimeResolver(database.Resources, database.ProjectPaths));
+                var frames = preparer.PrepareFrames(shot, null, "light", 0, 4, CancellationToken.None);
+                Field("_preparedShotPlayback").SetValue(controller,
+                    new PreparedProductionPlayback("prepared", shot.Kind, shot.Id, 0, frames));
+                var present = Required(typeof(EditorPreviewController).GetMethod("TryRenderPreparedProductionFrame",
+                    BindingFlags.Instance | BindingFlags.NonPublic));
+                foreach (var frame in new[] { 0, 3, 1, 4 })
+                {
+                    Field("_shotPreviewFrame").SetValue(controller, frame);
+                    True((bool)Required(present.Invoke(controller, null)),
+                        "Transparent and rendered frames must both be consumed from the prepared sequence.");
+                }
+            }
+            finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
+        }, CancellationToken.None).GetAwaiter().GetResult();
+        SequenceEqual(before, SHA256.HashData(File.ReadAllBytes(temporary)));
+    }
+    finally { File.Delete(temporary); }
+}
+
+static void ProductionPlaybackPreparesGapsAndMultipleScreens()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-shot-playback-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var shot = Descendants(database.LoadProjectTree()).Single(node => node.Id == "shot_001");
+        var screens = database.GetShotModuleInstanceSlots(shot.Id);
+        Equal(2, screens.Count);
+        var timeline = new ModuleInstanceTimelineDataSource(database.Production, database.Resources);
+        var preparer = new ProductionPreviewPayloadPreparer(
+            new DesignPreviewPayloadDataSource(database.PreviewInputs, database.Production,
+                database.Resources, database.Resources, database.ProjectPaths),
+            new ProductionPreviewRuntimeResolver(database.Resources, database.ProjectPaths));
+        database.UpdateShotField(shot.Id, "shot.transition",
+            """{"transition":"none","direction":"bottom","bounds":"screen","fade":false,"translate":false,"scale":false}""");
+        database.UpdateModuleInstanceField(screens[0].Id, "moduleInstance.startFrame", "2");
+        var first = ModuleInstanceTimeline.ScreenRange(timeline, screens[0].Id);
+        var firstEnd = first.StartFrame + first.EffectiveDurationFrames;
+        foreach (var separation in new[] { 3, 0, -2 })
+        {
+            database.UpdateModuleInstanceField(screens[1].Id, "moduleInstance.startFrame",
+                (firstEnd + separation).ToString(CultureInfo.InvariantCulture));
+            var second = ModuleInstanceTimeline.ScreenRange(timeline, screens[1].Id);
+            var last = second.StartFrame + second.EffectiveDurationFrames;
+            database.UpdateShotField(shot.Id, "shot.durationPolicy", "explicit");
+            database.UpdateShotField(shot.Id, "shot.durationFrames", (last + 3).ToString(CultureInfo.InvariantCulture));
+            var before = SHA256.HashData(File.ReadAllBytes(temporary));
+            using var operations = new EditorOperationCoordinator();
+            var caller = Environment.CurrentManagedThreadId;
+            var worker = caller;
+            foreach (var start in new[] { 0, firstEnd - 2, last - 1, last })
+            {
+                var end = Math.Min(start + 5, last + 2);
+                var frames = operations.ExecuteAsync(() =>
+                {
+                    worker = Environment.CurrentManagedThreadId;
+                    return preparer.PrepareFrames(shot, null, "light", start, end, CancellationToken.None);
+                }).GetAwaiter().GetResult();
+                True(worker != caller);
+                Equal(end - start + 1, frames.Count);
+                var prepared = new PreparedProductionPlayback("test", shot.Kind, shot.Id, start, frames);
+                True(prepared.Covers(shot, start, end));
+                for (var frame = start; frame <= end; frame++)
+                {
+                    True(prepared.TryGetFrame(shot, frame, out var actual));
+                    var expected = preparer.Prepare(shot, null, "light", frame, CancellationToken.None);
+                    Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
+                    if (frame < 2 || frame >= last || (frame >= firstEnd && frame < second.StartFrame))
+                        True(actual is null, $"Expected transparent Shot frame {frame}.");
+                    else
+                        True(actual is not null, $"Expected rendered Shot frame {frame}.");
+                    if (frame >= second.StartFrame && frame < firstEnd)
+                        Equal(2, Required(Required(actual).ScreenTransition).Layers.Count);
+                }
+                True(!prepared.TryGetFrame(shot, end + 1, out _));
+                True(!prepared.TryGetFrame(new ProjectTreeNode(shot.Kind, "another-shot", "Other", "", shot.RecordClassId), start, out _));
+            }
+            SequenceEqual(before, SHA256.HashData(File.ReadAllBytes(temporary)));
+        }
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        Throws<OperationCanceledException>(() => preparer.PrepareFrames(
+            shot, null, "light", 0, 5, cancellation.Token));
+    }
+    finally { File.Delete(temporary); }
+}
+
+static void CommittedShotPlaybackPreservesFrames(string source)
+{
+    var temporary = Path.Combine(Path.GetDirectoryName(source)!, $".mockups-committed-shots-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SqliteProjectTestContext(temporary);
+        var roots = database.LoadProjectTree();
+        var catalog = new ProductionPreviewSessionDataSource(database.PreviewInputs,
+            database.Production, database.Resources, database.Resources).LoadSnapshot(roots);
+        var preparer = new ProductionPreviewPayloadPreparer(
+            new DesignPreviewPayloadDataSource(database.PreviewInputs, database.Production,
+                database.Resources, database.Resources, database.ProjectPaths),
+            new ProductionPreviewRuntimeResolver(database.Resources, database.ProjectPaths));
+        // Exact reported owner plus every multi-Screen Shot in the scoped Production.
+        var shots = DescendantsAndSelf(CanonicalProjectFromRoots(roots))
+            .Where(node => node.Kind == ProjectTreeNodeKind.Shot
+                && (node.Id == "shot_186b274a765846be9c778aeddc336221"
+                    || catalog.Shot(node.Id).Screens.Count > 1)).ToArray();
+        True(shots.Length > 0);
+        foreach (var shot in shots)
+        {
+            var snapshot = catalog.Shot(shot.Id);
+            var boundaries = snapshot.Screens.SelectMany(screen => new[]
+            {
+                screen.StartFrame, screen.StartFrame + screen.DurationFrames
+            }).Append(0).Append(snapshot.DurationFrames - 1).Distinct();
+            var checkedFrames = 0;
+            foreach (var boundary in boundaries)
+            {
+                var start = Math.Clamp(boundary - 1, 0, snapshot.DurationFrames - 1);
+                var end = Math.Clamp(boundary + 1, start, snapshot.DurationFrames - 1);
+                var frames = preparer.PrepareFrames(shot, null, "light", start, end, CancellationToken.None);
+                Equal(end - start + 1, frames.Count);
+                for (var frame = start; frame <= end; frame++)
+                {
+                    var actual = frames[frame - start];
+                    Equal(JsonSerializer.Serialize(preparer.Prepare(shot, null, "light", frame, CancellationToken.None)),
+                        JsonSerializer.Serialize(actual));
+                    var html = WebDesignPreviewRenderer.RenderBodyAsync(snapshot.DeviceMetrics, false, actual)
+                        .GetAwaiter().GetResult();
+                    True(html.Contains("data-renderable-id", StringComparison.Ordinal));
+                    if (actual is null) Equal(WebDesignPreviewRenderer.TransparentBodyHtml, html);
+                    checkedFrames++;
+                }
+            }
+            Console.WriteLine($"PASS SHOT {shot.Name}: {snapshot.Screens.Count} Screens, {checkedFrames} boundary frames");
+        }
+        SequenceEqual(before, SHA256.HashData(File.ReadAllBytes(temporary)));
+    }
+    finally { File.Delete(temporary); }
 }
 
 static void ProductionPlaybackSelectsPreparedOwnerFrames()
@@ -21972,6 +22171,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "Design defaults preserve later scalar and editable collection changes",
     "Design defaults preserve later scalar and fixed collection changes",
     "Media Design actions consume queued edits and retain exact ownership",
+    "Shot Play prepares transparent frames before starting its clock",
     "Notification Design actions consume queued edits and retain exact ownership",
     "Conversation Test Values serialize lifecycle and field edits",
     "Video Call Test Values serialize lifecycle and field edits",

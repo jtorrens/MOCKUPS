@@ -28,10 +28,18 @@ internal static class WebDesignPreviewRenderer
     private static int _frameCacheCapacity = DefaultFrameCacheCapacity;
     private static long _nextFrameCacheReservationId;
 
+    internal const string TransparentBodyHtml = """
+        <div
+          data-renderable-id="design_preview.surface"
+          aria-hidden="true"
+          style="width:100%;height:100%;background:transparent">
+        </div>
+        """;
+
     public static async Task<string> RenderBodyAsync(
         DevicePreviewMetrics metrics,
         bool showMarks,
-        DesignPreviewPayload payload)
+        DesignPreviewPayload? payload)
     {
         return await RenderBodyAsync(
             metrics,
@@ -45,7 +53,7 @@ internal static class WebDesignPreviewRenderer
     public static async Task<string> RenderRasterBodyAsync(
         DevicePreviewMetrics metrics,
         bool showMarks,
-        DesignPreviewPayload payload)
+        DesignPreviewPayload? payload)
     {
         return await RenderBodyAsync(
             metrics,
@@ -73,11 +81,12 @@ internal static class WebDesignPreviewRenderer
     private static async Task<string> RenderBodyAsync(
         DevicePreviewMetrics metrics,
         bool showMarks,
-        DesignPreviewPayload payload,
+        DesignPreviewPayload? payload,
         PersistentPreviewRenderer persistentRenderer,
         string lane,
         bool includeAuthoringTargets)
     {
+        if (payload is null) return TransparentBodyHtml;
         var stopwatch = Stopwatch.StartNew();
         var request = CreateRequest(
             metrics,

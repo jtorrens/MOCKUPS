@@ -124,6 +124,12 @@ It includes:
   cancellation, byte-for-byte read-only persistence and exact owner/frame
   lookup and covered-range reuse from the resulting immutable playback
   snapshot without signature recomputation;
+- Shot playback with leading, intermediate and trailing alpha-zero gaps,
+  complete empty intervals, contiguous Screens and overlapping Screen layers;
+  prepared null frames remain successful exact-owner lookups, HTML/raster share
+  the empty surface, and the real Shot Play command must prepare before starting
+  its clock even when a gap exists. Read-only committed multi-Screen Shot samples
+  verify the same preparation against independently requested boundary frames;
 - operation-coordinated static Production payload preparation, covering
   worker-thread execution, latest-revision ownership, close-time cancellation
   and reuse of the already prepared playback frame rather than a visual-thread

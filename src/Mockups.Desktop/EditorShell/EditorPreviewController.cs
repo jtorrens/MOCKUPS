@@ -460,7 +460,7 @@ internal sealed class EditorPreviewController : IDisposable
     private long _shotPlaybackStartedTimestamp;
     private int _shotPlaybackStartFrame;
     private bool _shotPlaybackIsPreparing;
-    private IReadOnlyList<DesignPreviewPayload>? _pendingPlaybackFramesOverride;
+    private IReadOnlyList<DesignPreviewPayload?>? _pendingPlaybackFramesOverride;
     private string _activeProductionModuleInstanceId = "";
     private bool _disposed;
     private PreviewVisualContextSnapshot?
@@ -1955,8 +1955,7 @@ internal sealed class EditorPreviewController : IDisposable
             || !prepared.TryGetFrame(
                 node,
                 _shotPreviewFrame,
-                out var payload)
-            || payload is null)
+                out var payload))
         {
             return false;
         }
@@ -1968,7 +1967,7 @@ internal sealed class EditorPreviewController : IDisposable
             payload);
         RenderStaticPreview(
             payload,
-            PreviewContextState.Renderable,
+            payload is null ? PreviewContextState.Transparent : PreviewContextState.Renderable,
             null);
         return true;
     }
@@ -2043,7 +2042,7 @@ internal sealed class EditorPreviewController : IDisposable
         UpdateDesignContextChrome(
             designPayload);
         if (_selectedPlaybackRoute == "raster"
-            && designPayload is not null
+            && contextState.Kind is PreviewContextStateKind.Renderable or PreviewContextStateKind.Transparent
             && IsPreviewPlaybackActive
             && !_showTransparencyGrid
             && !_showAlphaOnly
@@ -2261,11 +2260,9 @@ internal sealed class EditorPreviewController : IDisposable
         if (cacheOwner
             == PlaybackFrameCacheOwner.Shot)
         {
-            designPayload =
-                _pendingPlaybackFramesOverride?
-                    .FirstOrDefault()
-                ?? throw new InvalidOperationException(
-                    "Production playback requires prepared frame payloads.");
+            var preparedFrames = _pendingPlaybackFramesOverride
+                ?? throw new InvalidOperationException("Production playback requires prepared frames.");
+            designPayload = preparedFrames[0];
         }
         else
         {
@@ -2284,10 +2281,12 @@ internal sealed class EditorPreviewController : IDisposable
                 deviceId,
                 designPayload));
         var payload = designPayload;
-        var projectFps = payload.FrameRate;
+        var projectFps = cacheOwner == PlaybackFrameCacheOwner.Shot
+            ? PreparedProductionSession().Shot(ProductionShotId()).FrameRate
+            : payload!.FrameRate;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
         var designRequestSignature = cacheOwner == PlaybackFrameCacheOwner.Design
-            ? DesignPlaybackRequestSignature(metrics, payload, requestedAction)
+            ? DesignPlaybackRequestSignature(metrics, payload!, requestedAction)
             : "";
         var designReuse = cacheOwner == PlaybackFrameCacheOwner.Design
             ? PreparedPlaybackReusePolicy.Decide(
@@ -2299,8 +2298,8 @@ internal sealed class EditorPreviewController : IDisposable
         {
             PreviewDebugLog.Write(
                 "preview.playback.design-cache-hit",
-                ("component", payload.ComponentType),
-                ("name", payload.Name),
+                ("component", payload?.ComponentType),
+                ("name", payload?.Name),
                 ("action", requestedAction?.Id ?? ""),
                 ("frames", _preparedDesignPlayback!.Frames.Count));
             return true;
@@ -2310,16 +2309,16 @@ internal sealed class EditorPreviewController : IDisposable
         {
             InvalidatePreparedDesignPlayback();
         }
-        var frames = _pendingPlaybackFramesOverride?.ToList()
+        IReadOnlyList<DesignPreviewPayload?> frames = _pendingPlaybackFramesOverride
             ?? (designReuse == PreparedPlaybackReuse.Frames
                 ? _preparedDesignPlayback!.Frames
-                : PlaybackFramePayloads(payload, projectFps, requestedAction).ToList());
+                : PlaybackFramePayloads(payload!, projectFps, requestedAction).ToList());
         if (frames.Count == 0)
         {
             PreviewDebugLog.Write(
                 "preview.playback.frames.skip",
-                ("component", payload.ComponentType),
-                ("name", payload.Name),
+                ("component", payload?.ComponentType),
+                ("name", payload?.Name),
                 ("projectFps", projectFps),
                 ("previewFps", previewFps),
                 ("reason", "no-frames"));
@@ -2337,7 +2336,7 @@ internal sealed class EditorPreviewController : IDisposable
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
-                        metrics,
+                        ApplyPreviewOrientation(PreparedDeviceMetrics(deviceId, frames[frameIndex])),
                         _showDesignMarks,
                         frames[frameIndex]);
                     foreach (var source in DesignWebPreviewPane.ImageSourcesForPreload(bodyContent))
@@ -2391,8 +2390,8 @@ internal sealed class EditorPreviewController : IDisposable
                     frames);
                 PreviewDebugLog.Write(
                     "preview.playback.raster-cache-hit",
-                    ("component", payload.ComponentType),
-                    ("name", payload.Name),
+                    ("component", payload?.ComponentType),
+                    ("name", payload?.Name),
                     ("frames", frames.Count));
                 return true;
             }
@@ -2410,8 +2409,8 @@ internal sealed class EditorPreviewController : IDisposable
         var totalStopwatch = Stopwatch.StartNew();
         PreviewDebugLog.Write(
             "preview.playback.frames.start",
-            ("component", payload.ComponentType),
-            ("name", payload.Name),
+            ("component", payload?.ComponentType),
+            ("name", payload?.Name),
             ("projectFps", projectFps),
             ("previewFps", previewFps),
             ("multiplier", PreviewPlaybackTiming.FrameRateMultiplier),
@@ -2442,12 +2441,13 @@ internal sealed class EditorPreviewController : IDisposable
                 UpdateRasterProgress(frameIndex, frames.Count);
                 _aheadPreloadedFrameKeys.Add(PlaybackFrameKey(frame));
                 cancellationToken.ThrowIfCancellationRequested();
-                var rasterHtml = await DesignWebPreviewPane.BuildRasterHtmlAsync(metrics, frame);
+                var frameMetrics = ApplyPreviewOrientation(PreparedDeviceMetrics(deviceId, frame));
+                var rasterHtml = await DesignWebPreviewPane.BuildRasterHtmlAsync(frameMetrics, frame);
                 var rasterPath = Path.Combine(_rasterCacheDirectory, $"frame-{frameIndex:D6}.webp");
                 await _chromiumRasterizer.RasterizeAsync(
                     rasterHtml,
-                    Math.Max(1, (int)Math.Ceiling(metrics.CanvasWidth)),
-                    Math.Max(1, (int)Math.Ceiling(metrics.CanvasHeight)),
+                    Math.Max(1, (int)Math.Ceiling(frameMetrics.CanvasWidth)),
+                    Math.Max(1, (int)Math.Ceiling(frameMetrics.CanvasHeight)),
                     rasterPath,
                     "webp",
                     quality: 95,
@@ -2466,8 +2466,8 @@ internal sealed class EditorPreviewController : IDisposable
                 frames);
             PreviewDebugLog.Write(
                 "preview.playback.frames.end",
-                ("component", payload.ComponentType),
-                ("name", payload.Name),
+                ("component", payload?.ComponentType),
+                ("name", payload?.Name),
                 ("frames", _rasterPlaybackFrames.Count),
                 ("totalFrames", frames.Count),
                 ("ms", totalStopwatch.Elapsed.TotalMilliseconds));
@@ -2478,8 +2478,8 @@ internal sealed class EditorPreviewController : IDisposable
             InvalidatePlaybackPreparation(cacheOwner);
             PreviewDebugLog.Write(
                 "preview.playback.frames.cancelled",
-                ("component", payload.ComponentType),
-                ("name", payload.Name),
+                ("component", payload?.ComponentType),
+                ("name", payload?.Name),
                 ("frames", frames.Count),
                 ("ms", totalStopwatch.Elapsed.TotalMilliseconds));
             return false;
@@ -2489,8 +2489,8 @@ internal sealed class EditorPreviewController : IDisposable
             InvalidatePlaybackPreparation(cacheOwner);
             PreviewDebugLog.Write(
                 "preview.playback.frames.error",
-                ("component", payload.ComponentType),
-                ("name", payload.Name),
+                ("component", payload?.ComponentType),
+                ("name", payload?.Name),
                 ("frames", _rasterPlaybackFrames.Count),
                 ("ms", totalStopwatch.Elapsed.TotalMilliseconds),
                 ("error", error.Message));
@@ -2654,21 +2654,21 @@ internal sealed class EditorPreviewController : IDisposable
 
     private string RasterPlaybackSignature(
         DevicePreviewMetrics metrics,
-        DesignPreviewPayload payload,
-        IReadOnlyList<DesignPreviewPayload> frames)
+        DesignPreviewPayload? payload,
+        IReadOnlyList<DesignPreviewPayload?> frames)
     {
         return string.Join(
             "\u001f",
-            payload.Kind,
-            payload.ComponentType,
-            payload.Name,
-            payload.ConfigJson,
-            payload.ThemeTokensJson,
-            payload.ThemeStatusBarVariantReference,
-            payload.ThemeNavigationBarVariantReference,
-            payload.ComponentBaseConfigsJson,
-            payload.AppConfigJson,
-            payload.FrameRate,
+            payload?.Kind,
+            payload?.ComponentType,
+            payload?.Name,
+            payload?.ConfigJson,
+            payload?.ThemeTokensJson,
+            payload?.ThemeStatusBarVariantReference,
+            payload?.ThemeNavigationBarVariantReference,
+            payload?.ComponentBaseConfigsJson,
+            payload?.AppConfigJson,
+            payload?.FrameRate,
             _selectedMode,
             _showDesignMarks,
             metrics.CanvasWidth,
@@ -2760,10 +2760,12 @@ internal sealed class EditorPreviewController : IDisposable
     private void RememberPreparedDesignPlayback(
         PlaybackFrameCacheOwner owner,
         string requestSignature,
-        IReadOnlyList<DesignPreviewPayload> frames)
+        IReadOnlyList<DesignPreviewPayload?> frames)
     {
         if (owner != PlaybackFrameCacheOwner.Design) return;
-        _preparedDesignPlayback = new PreparedDesignPlayback(requestSignature, frames);
+        _preparedDesignPlayback = new PreparedDesignPlayback(requestSignature,
+            frames.Select(frame => frame
+                ?? throw new InvalidOperationException("Design playback requires a renderable owner.")).ToArray());
     }
 
     private void InvalidatePlaybackPreparation(PlaybackFrameCacheOwner owner)
@@ -3113,8 +3115,9 @@ internal sealed class EditorPreviewController : IDisposable
     private static int PlaybackDurationFrames(ComponentPreviewActionDefinition action, JsonObject preview, int fps, string themeTokensJson) =>
         ComponentPreviewActionRuntimeValue.DurationFrames(action, preview, fps, themeTokensJson);
 
-    private static string PlaybackFrameKey(DesignPreviewPayload payload)
+    private static string PlaybackFrameKey(DesignPreviewPayload? payload)
     {
+        if (payload is null) return "transparent";
         return string.Join(
             "\u001f",
             payload.ComponentType,
@@ -3569,15 +3572,6 @@ internal sealed class EditorPreviewController : IDisposable
         InvalidatePreparedDesignPlayback();
         var navigationRange = NavigationFrameRange();
         if (_shotPreviewFrame >= navigationRange.EndFrame) _shotPreviewFrame = navigationRange.StartFrame;
-        if (ShotPlaybackContainsTransparentGap(
-                payloadNode,
-                _shotPreviewFrame,
-                navigationRange.EndFrame))
-        {
-            InvalidatePreparedShotPlayback();
-            StartShotPlayback(shotId, navigationRange);
-            return;
-        }
         if (CanReusePreparedShotPlayback(
                 payloadNode,
                 _shotPreviewFrame,
@@ -3628,7 +3622,7 @@ internal sealed class EditorPreviewController : IDisposable
             }
             else
             {
-                IReadOnlyList<DesignPreviewPayload> frames;
+                IReadOnlyList<DesignPreviewPayload?> frames;
                 if (reuse == PreparedPlaybackReuse.Frames && prepared is not null)
                 {
                     frames = prepared.Frames;
@@ -3711,30 +3705,6 @@ internal sealed class EditorPreviewController : IDisposable
                 PlaybackFrameCacheOwner.Shot);
     }
 
-    private bool ShotPlaybackContainsTransparentGap(
-        ProjectTreeNode node,
-        int startFrame,
-        int endFrame)
-    {
-        if (node.Kind != ProjectTreeNodeKind.Shot)
-        {
-            return false;
-        }
-        var ranges = PreparedProductionSession()
-            .Shot(node.Id)
-            .FrameRanges;
-        for (var frame = startFrame; frame <= endFrame; frame++)
-        {
-            if (ProductionScreenPlaybackState.ActiveScreenIndex(
-                    ranges,
-                    frame) < 0)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void StartShotPlayback(
         string shotId,
         (int StartFrame, int EndFrame, int DurationFrames) navigationRange)
@@ -3753,7 +3723,7 @@ internal sealed class EditorPreviewController : IDisposable
         AdvanceShotPlayback();
     }
 
-    private async Task<IReadOnlyList<DesignPreviewPayload>> BuildShotPlaybackFramesAsync(
+    private async Task<IReadOnlyList<DesignPreviewPayload?>> BuildShotPlaybackFramesAsync(
         ProjectTreeNode payloadNode,
         int startFrame,
         int endFrame,
@@ -3803,11 +3773,12 @@ internal sealed class EditorPreviewController : IDisposable
                         $"{frame}\u001e"
                         + PlaybackPayloadFingerprint(
                             _productionPayloadPreparer
-                                .PrepareRequired(
+                                .Prepare(
                                     payloadNode,
                                     themeId,
                                     themeMode,
-                                    frame)))
+                                    frame,
+                                    cancellationToken)))
                     .ToList(),
                 cancellationToken);
 
@@ -3864,8 +3835,9 @@ internal sealed class EditorPreviewController : IDisposable
         return frames.Count > 0 ? frames : [startFrame];
     }
 
-    private static string PlaybackPayloadFingerprint(DesignPreviewPayload payload)
+    private static string PlaybackPayloadFingerprint(DesignPreviewPayload? payload)
     {
+        if (payload is null) return "transparent";
         var payloadJson = JsonSerializer.Serialize(new
         {
             payload.Kind,

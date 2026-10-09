@@ -721,7 +721,14 @@ request inputs, awaits the immutable frame list and never reads persistence
 while iterating playback frames. Each playback tick selects its exact payload
 from that prepared list by stable owner identity and absolute frame; it does
 not submit a second payload-preparation operation that a later tick could
-cancel. Preparation closes the static payload once per exact Screen and derives
+cancel. The sequence retains every requested frame, including an explicit null
+payload for an alpha-zero Shot gap. A successful prepared-frame lookup with
+that value is not a cache miss. Leading, intermediate and trailing gaps, complete
+empty intervals and transitions between multiple Screens use the same prepared
+HTML/raster route; no gap switches playback to per-tick database preparation.
+Transparent frames use the common empty surface document and participate in
+normal presentation acknowledgement, scrubbing and exact-range replay.
+Preparation closes the static payload once per exact Screen and derives
 only that Screen's frame-owned fields for its remaining frames; it does not
 repeat Theme, Actor, resource or document reads for every tick. Cancellation
 is checked between preparation frames.

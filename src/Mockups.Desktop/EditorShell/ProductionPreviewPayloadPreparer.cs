@@ -92,7 +92,7 @@ internal sealed class ProductionPreviewPayloadPreparer
             : _runtime.Resolve(payload, themeMode);
     }
 
-    public IReadOnlyList<DesignPreviewPayload>
+    public IReadOnlyList<DesignPreviewPayload?>
         PrepareFrames(
             ProjectTreeNode node,
             string? themeId,
@@ -174,7 +174,7 @@ internal sealed class ProductionPreviewPayloadPreparer
         return frames;
     }
 
-    private IReadOnlyList<DesignPreviewPayload>
+    private IReadOnlyList<DesignPreviewPayload?>
         PrepareShotFrames(
             ProjectTreeNode node,
             string? themeId,
@@ -193,7 +193,7 @@ internal sealed class ProductionPreviewPayloadPreparer
                 startFrame);
         }
 
-        var frames = new List<DesignPreviewPayload>(
+        var frames = new List<DesignPreviewPayload?>(
             lastFrame - startFrame + 1);
         for (var frame = startFrame;
              frame <= lastFrame;
@@ -206,8 +206,7 @@ internal sealed class ProductionPreviewPayloadPreparer
                     themeId,
                     themeMode,
                     frame,
-                    cancellationToken)
-                ?? throw MissingPayload(node, frame));
+                    cancellationToken));
         }
 
         return frames;
@@ -377,7 +376,7 @@ internal sealed record PreparedProductionPlayback(
     ProjectTreeNodeKind NodeKind,
     string NodeId,
     int StartFrame,
-    IReadOnlyList<DesignPreviewPayload> Frames)
+    IReadOnlyList<DesignPreviewPayload?> Frames)
 {
     public bool Covers(
         ProjectTreeNode node,

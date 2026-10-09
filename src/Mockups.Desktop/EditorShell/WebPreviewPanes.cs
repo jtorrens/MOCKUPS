@@ -2069,7 +2069,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
     public static async Task<string> BuildRasterHtmlAsync(
         DevicePreviewMetrics metrics,
-        DesignPreviewPayload payload)
+        DesignPreviewPayload? payload)
     {
         var bodyContent = await WebDesignPreviewRenderer.RenderRasterBodyAsync(
             metrics,
@@ -2083,13 +2083,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         DevicePreviewMetrics metrics) =>
         RasterDocumentHtml(
             metrics,
-            """
-            <div
-              data-renderable-id="design_preview.surface"
-              aria-hidden="true"
-              style="width:100%;height:100%;background:transparent">
-            </div>
-            """,
+            WebDesignPreviewRenderer.TransparentBodyHtml,
             "");
 
     public void SetRasterLoading(bool visible, string message)
@@ -2278,10 +2272,9 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         {
             await HideResidentNonRenderableStateAsync();
         }
-        if (update.Payload is null)
+        if (update.Payload is null
+            && update.ContextState.Kind != PreviewContextStateKind.Transparent)
         {
-            var transparent = update.ContextState.Kind
-                == PreviewContextStateKind.Transparent;
             LoadHtml(DeviceHtml(
                 update.Metrics,
                 update.IsDark,
@@ -2293,11 +2286,9 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 update.ShowDeviceFrame,
                 update.ShowTransparencyGrid,
                 update.ShowAlphaOnly,
-                transparent
-                    ? ""
-                    : Placeholder(
-                        "Design WebView host",
-                        "Select a component variant to preview it through the desktop component route."),
+                Placeholder(
+                    "Design WebView host",
+                    "Select a component variant to preview it through the desktop component route."),
                 reference: reference));
             RememberResidentShell(update.ShellIdentity);
             _lastRenderedUpdate = update;
@@ -2316,7 +2307,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             var loadingState = new PreviewContextState(
                 PreviewContextStateKind.Loading,
                 "Preparando preview",
-                $"Resolviendo {update.Payload.Name}…");
+                $"Resolviendo {update.Payload?.Name}…");
             if (_hasResidentDocument)
             {
                 await ShowResidentNonRenderableStateAsync(loadingState);
@@ -2328,7 +2319,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         }
         else
         {
-            ShowResidentContextState("loading", "Actualizando preview", update.Payload.Name);
+            ShowResidentContextState("loading", "Actualizando preview",
+                update.Payload is null ? "Fotograma transparente" : update.Payload.Name);
         }
         try
         {
@@ -2341,7 +2333,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         {
             renderError = error;
             bodyContent = Placeholder(
-                $"{update.Payload.Name} · {update.Payload.Kind}",
+                $"{update.Payload?.Name} · {update.Payload?.Kind}",
                 "Preview unavailable. See Messages.");
         }
 
@@ -2356,8 +2348,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 ("reason", renderError is null
                     ? "newer-pending"
                     : "newer-pending-after-render-error"),
-                ("component", update.Payload.ComponentType),
-                ("name", update.Payload.Name),
+                ("component", update.Payload?.ComponentType),
+                ("name", update.Payload?.Name),
                 ("ms", stopwatch.Elapsed.TotalMilliseconds));
             return;
         }
@@ -2375,8 +2367,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                     "preview.webview.update",
                     ("route", "retain-last-good"),
                     ("reason", "render-error"),
-                    ("component", update.Payload.ComponentType),
-                    ("name", update.Payload.Name),
+                    ("component", update.Payload?.ComponentType),
+                    ("name", update.Payload?.Name),
                     ("ms", stopwatch.Elapsed.TotalMilliseconds));
                 FrameStatusChanged?.Invoke(new DesignPreviewFrameStatus(
                     stopwatch.Elapsed.TotalMilliseconds,
@@ -2419,8 +2411,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                     "preview.webview.update",
                     ("route", "discarded"),
                     ("reason", "newer-pending-after-fonts"),
-                    ("component", update.Payload.ComponentType),
-                    ("name", update.Payload.Name),
+                    ("component", update.Payload?.ComponentType),
+                    ("name", update.Payload?.Name),
                     ("ms", stopwatch.Elapsed.TotalMilliseconds));
                 return;
             }
@@ -2437,8 +2429,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 PreviewDebugLog.Write(
                     "preview.webview.update",
                     ("route", "dom-patch"),
-                    ("component", update.Payload.ComponentType),
-                    ("name", update.Payload.Name),
+                    ("component", update.Payload?.ComponentType),
+                    ("name", update.Payload?.Name),
                     ("animationOnly", isAnimationOnlyUpdate),
                     ("marksOnly", isMarksOnlyUpdate),
                     ("ms", stopwatch.Elapsed.TotalMilliseconds),
@@ -2462,8 +2454,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 "preview.webview.update",
                 ("route", "retain-last-good"),
                 ("reason", fontsCommitted ? "body-commit-failed" : "font-style-commit-failed"),
-                ("component", update.Payload.ComponentType),
-                ("name", update.Payload.Name),
+                ("component", update.Payload?.ComponentType),
+                ("name", update.Payload?.Name),
                 ("ms", stopwatch.Elapsed.TotalMilliseconds));
             FrameStatusChanged?.Invoke(new DesignPreviewFrameStatus(
                 stopwatch.Elapsed.TotalMilliseconds,
@@ -2495,8 +2487,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         PreviewDebugLog.Write(
             "preview.webview.update",
             ("route", "full-load"),
-            ("component", update.Payload.ComponentType),
-            ("name", update.Payload.Name),
+            ("component", update.Payload?.ComponentType),
+            ("name", update.Payload?.Name),
             ("animationOnly", isAnimationOnlyUpdate),
             ("reason", _lastRenderedUpdate is null ? "initial-document" : "incompatible-shell"),
             ("renderError", renderError is not null),
