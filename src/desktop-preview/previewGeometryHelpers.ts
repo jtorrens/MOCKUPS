@@ -5,7 +5,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 export const referenceDesignWidth = 360;
 
 export function renderScale(payload: DesignPreviewPayload) {
-  return payload.previewFrame.screenWidth / referenceDesignWidth;
+  return (payload.rootPreviewFrame ?? payload.previewFrame).screenWidth / referenceDesignWidth;
 }
 
 export function screenPercentToDesignWidth(

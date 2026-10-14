@@ -141,6 +141,7 @@ function isBroadPreviewPath(file: string): boolean {
     || basename.includes("boundary")
     || basename.includes("adapter")
     || basename.startsWith("generated")
+    || basename === "previewgeometryhelpers.ts"
     || basename === "desktoppreviewcomponents.ts"
     || basename === "desktoppreviewmodules.ts";
 }

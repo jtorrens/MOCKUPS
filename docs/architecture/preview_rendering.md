@@ -269,6 +269,11 @@ measuring the translated child's actual depth at that edge.
 
 Device scaling derives from the required positive Screen width. Preview has no
 pixel-ratio or scale fallback and does not receive retired Device metrics.
+An embedded layout box changes placement and clipping, never the Screen's
+design-unit scale. `renderScale` uses the retained root Screen frame across
+nested boxes, so Surface radii, borders, shadows and graphic overlays retain
+their authored units at every participant size. Media scale affects image
+sampling inside its final viewport, not Surface appearance.
 
 After a Module owner has resolved its complete renderable tree, the shared
 Module boundary applies the Device `moduleTransparency` policy. Wallpaper and

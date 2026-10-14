@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { shadow } from "../../src/desktop-preview/previewSurfaceHelpers.js";
+import { previewPayloadInBox } from "../../src/desktop-preview/previewPayloadHelpers.js";
+import { renderScale } from "../../src/desktop-preview/previewGeometryHelpers.js";
 
 function payload(shadows: unknown): DesignPreviewPayload {
   return {
@@ -48,4 +50,21 @@ test("Shadow requires its exact Theme object path", () => {
     })),
     /Missing object value theme\.shadows\.default\.color/,
   );
+});
+
+test("Embedded boxes retain Screen units for surfaces at every size", () => {
+  const source = payload({ default: {
+    offsetX: 0, offsetY: 2, blur: 4, color: { color: "shadow", alpha: 0.5 },
+  } });
+  for (const screenWidth of [360, 1080]) {
+    source.previewFrame.screenWidth = screenWidth;
+    for (const width of [60, 120, 360]) {
+      const nested = previewPayloadInBox(previewPayloadInBox(source,
+        { x: 10, y: 20, width: 300, height: 600 }),
+      { x: 30, y: 40, width, height: 180 });
+      assert.equal(renderScale(nested), screenWidth / 360);
+      assert.deepEqual(shadow(nested), shadow(source));
+      assert.equal(nested.previewFrame.screenWidth, width);
+    }
+  }
 });
