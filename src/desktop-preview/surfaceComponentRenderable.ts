@@ -20,6 +20,8 @@ export interface SurfaceColorOverride {
   colorModes?: Record<string, { background: string; borderColor?: string }>;
 }
 
+type SurfacePaintLayer = "complete" | "background" | "border";
+
 export function surfaceComponentToRenderable(
   payload: DesignPreviewPayload,
   surface: SurfaceDesignContract,
@@ -51,19 +53,45 @@ export function surfaceComponentToRenderableAtWithColors(
   box: RenderableBox,
   colors?: SurfaceColorOverride,
 ): RenderableNode {
-  const resolvedColors = surfacePaintColors(payload, surface, colors);
+  return surfaceComponentPaintLayerAt(payload, surface, box, "complete", colors);
+}
+
+export function surfaceComponentBackgroundToRenderableAt(
+  payload: DesignPreviewPayload,
+  surface: SurfaceDesignContract,
+  box: RenderableBox,
+): RenderableNode {
+  return surfaceComponentPaintLayerAt(payload, surface, box, "background");
+}
+
+export function surfaceComponentBorderToRenderableAt(
+  payload: DesignPreviewPayload,
+  surface: SurfaceDesignContract,
+  box: RenderableBox,
+): RenderableNode {
+  return surfaceComponentPaintLayerAt(payload, surface, box, "border");
+}
+
+function surfaceComponentPaintLayerAt(
+  payload: DesignPreviewPayload,
+  surface: SurfaceDesignContract,
+  box: RenderableBox,
+  layer: SurfacePaintLayer,
+  colors?: SurfaceColorOverride,
+): RenderableNode {
+  const resolvedColors = surfaceLayerColors(surfacePaintColors(payload, surface, colors), layer);
   if (surface.tail.enabled && surface.tail.width > 0 && surface.tail.height > 0) {
-    return surfaceComponentTailRenderable(payload, surface, box, resolvedColors);
+    return surfaceComponentTailRenderable(payload, surface, box, resolvedColors, layer);
   }
 
-  const visualPadding = surfaceComponentVisualPadding(payload, surface);
-  const surfaceNode = surfaceComponentSurfaceNode(payload, surface, box, resolvedColors);
+  const visualPadding = surfaceComponentVisualPadding(payload, surface, layer);
+  const surfaceNode = surfaceComponentSurfaceNode(payload, surface, box, resolvedColors, layer);
   if (visualPadding <= 0) {
     return surfaceNode;
   }
 
   return {
-    id: surface.id,
+    id: surfaceLayerId(surface.id, layer),
     type: "group",
     frame: 0,
     box: {
@@ -78,7 +106,7 @@ export function surfaceComponentToRenderableAtWithColors(
     children: [
       {
         ...surfaceNode,
-        id: `${surface.id}.surface`,
+        id: `${surfaceLayerId(surface.id, layer)}.surface`,
       },
     ],
   };
@@ -89,17 +117,18 @@ function surfaceComponentTailRenderable(
   surface: SurfaceDesignContract,
   box: RenderableBox,
   colors: Required<SurfaceColorOverride>,
+  layer: SurfacePaintLayer,
 ): RenderableNode {
   const scale = renderScale(payload);
   const cornerRadius = numberToken(payload, surface.surface.cornerRadiusToken) * scale;
   const background = colors.background;
   const borderColor = colors.borderColor;
-  const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
-  const surfaceRelief = surfaceComponentRelief(surface, scale);
+  const surfaceShadow = layer !== "border" && surface.surface.shadowEnabled ? shadow(payload) : undefined;
+  const surfaceRelief = layer !== "border" ? surfaceComponentRelief(surface, scale) : undefined;
   const shape = surfaceShapeDataUri({
     body: box,
     borderColor,
-    borderWidth: surface.surface.borderWidth * scale,
+    borderWidth: layer === "background" ? 0 : surface.surface.borderWidth * scale,
     color: background,
     cornerRadius,
     relief: surfaceRelief,
@@ -115,7 +144,7 @@ function surfaceComponentTailRenderable(
   });
 
   return {
-    id: surface.id,
+    id: surfaceLayerId(surface.id, layer),
     type: "group",
     frame: 0,
     box,
@@ -125,7 +154,7 @@ function surfaceComponentTailRenderable(
     },
     children: [
       {
-        id: `${surface.id}.shape`,
+        id: `${surfaceLayerId(surface.id, layer)}.shape`,
         type: "image",
         frame: 0,
         box: shape.box,
@@ -148,13 +177,14 @@ function surfaceComponentSurfaceNode(
   surface: SurfaceDesignContract,
   box: RenderableBox,
   colors: Required<SurfaceColorOverride>,
+  layer: SurfacePaintLayer,
 ): RenderableNode {
   const scale = renderScale(payload);
-  const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
-  const surfaceRelief = surfaceComponentRelief(surface, scale);
+  const surfaceShadow = layer !== "border" && surface.surface.shadowEnabled ? shadow(payload) : undefined;
+  const surfaceRelief = layer !== "border" ? surfaceComponentRelief(surface, scale) : undefined;
 
   return {
-    id: surface.id,
+    id: surfaceLayerId(surface.id, layer),
     type: "surface",
     frame: 0,
     box,
@@ -162,11 +192,31 @@ function surfaceComponentSurfaceNode(
       background: colors.background,
       borderColor: colors.borderColor,
       borderRadius: numberToken(payload, surface.surface.cornerRadiusToken) * scale,
-      borderWidth: surface.surface.borderWidth * scale,
+      borderWidth: layer === "background" ? 0 : surface.surface.borderWidth * scale,
       shadow: surfaceShadow,
       surfaceRelief,
       colorModes: colors.colorModes,
     },
+  };
+}
+
+function surfaceLayerId(id: string, layer: SurfacePaintLayer) {
+  return layer === "complete" ? id : `${id}.${layer}`;
+}
+
+function surfaceLayerColors(
+  colors: Required<SurfaceColorOverride>,
+  layer: SurfacePaintLayer,
+): Required<SurfaceColorOverride> {
+  if (layer === "complete") return colors;
+  const select = (values: { background: string; borderColor?: string }) => layer === "background"
+    ? { background: values.background, borderColor: "transparent" }
+    : { background: "transparent", borderColor: values.borderColor ?? "transparent" };
+  return {
+    ...select(colors),
+    colorModes: Object.fromEntries(
+      Object.entries(colors.colorModes).map(([mode, values]) => [mode, select(values)]),
+    ),
   };
 }
 
@@ -217,11 +267,12 @@ function surfaceColorModes(
 function surfaceComponentVisualPadding(
   payload: DesignPreviewPayload,
   surface: SurfaceDesignContract,
+  layer: SurfacePaintLayer,
 ) {
   const scale = renderScale(payload);
-  const borderWidth = surface.surface.borderWidth * scale;
-  const surfaceShadow = surface.surface.shadowEnabled ? shadow(payload) : undefined;
-  const surfaceRelief = surfaceComponentRelief(surface, scale);
+  const borderWidth = layer === "background" ? 0 : surface.surface.borderWidth * scale;
+  const surfaceShadow = layer !== "border" && surface.surface.shadowEnabled ? shadow(payload) : undefined;
+  const surfaceRelief = layer !== "border" ? surfaceComponentRelief(surface, scale) : undefined;
   return surfaceVisualPadding(borderWidth, surfaceShadow, surfaceRelief);
 }
 

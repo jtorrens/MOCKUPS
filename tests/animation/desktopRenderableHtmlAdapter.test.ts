@@ -37,6 +37,29 @@ test("the generic HTML adapter paints a resolved text shadow", () => {
   assert.match(markup, /text-shadow:1px 2px 3px rgba\(0, 0, 0, 0\.5\)/);
 });
 
+test("surface borders keep the authored outer box and radius in HTML and SVG", () => {
+  const tree = {
+    id: "surface",
+    type: "surface" as const,
+    box: { x: 10, y: 20, width: 100, height: 60 },
+    style: {
+      background: "#112233",
+      borderColor: "#FFFFFF",
+      borderRadius: 20,
+      borderWidth: 8,
+    },
+  };
+  const html = renderToStaticMarkup(React.createElement(
+    DesktopRenderableHtmlAdapter,
+    { tree },
+  ));
+  const svg = renderableToSvg(tree);
+  assert.match(html, /border:8px solid #FFFFFF/);
+  assert.match(html, /border-radius:20px/);
+  assert.match(html, /box-sizing:border-box/);
+  assert.match(svg, /<rect x="14" y="24" width="92" height="52" rx="16" ry="16" fill="#112233" stroke="#FFFFFF" stroke-width="8"/);
+});
+
 test("both generic renderers reject retired inline Cursor metadata", () => {
   const tree = {
     id: "label.text",

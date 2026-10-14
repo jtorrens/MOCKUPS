@@ -275,6 +275,15 @@ nested boxes, so Surface radii, borders, shadows and graphic overlays retain
 their authored units at every participant size. Media scale affects image
 sampling inside its final viewport, not Surface appearance.
 
+A framed visual resolves one outer Surface geometry for every assigned size.
+Its background and effects paint first, bounded Media paints through the
+corresponding inner rounded clip, the Surface border paints next, and labels,
+icons and other declared overlays paint last. The HTML and SVG adapters keep
+that border inside the authored outer box: the outer radius remains the
+resolved Surface radius and the inner radius is reduced by the border width.
+Component and Module owners may order these generic layers, but they do not
+recalculate separate corner shapes for individual participant sizes.
+
 Media cutout emits a generic `cutout` paint primitive covering the final image
 viewport, inside its Surface border. It does not load or sample the source file.
 `renderableCutoutCompositor` implements destination-out in paint order for both

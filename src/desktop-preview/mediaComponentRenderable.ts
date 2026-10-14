@@ -15,7 +15,10 @@ import { mediaFrameUriForPath } from "./previewAssetResolver.js";
 import { resourceNoticeRenderable } from "./resourceNoticeRenderable.js";
 import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
-import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import {
+  surfaceComponentBackgroundToRenderableAt,
+  surfaceComponentBorderToRenderableAt,
+} from "./surfaceComponentRenderable.js";
 
 export function mediaComponentToRenderable(
   payload: DesignPreviewPayload,
@@ -57,20 +60,28 @@ function mediaComponentToRenderableForBoxes(
   boxes: MediaRenderBoxes,
 ): RenderableNode {
   const visualBox = mediaVisualBox(payload, media, boxes.media);
-  const mediaSurfaceNode = renderAuthoringSlot(
-    payload,
-    "component.media",
-    "component.media.surface.editor",
-    "component.surface",
-    "component.surface.backgroundColorToken",
-    (slotPayload) => surfaceComponentToRenderableAt(slotPayload, media.surface, boxes.media),
-  );
+  const mediaSurfaceLayer = (
+    render: typeof surfaceComponentBackgroundToRenderableAt,
+  ) => renderAuthoringSlot(
+      payload,
+      "component.media",
+      "component.media.surface.editor",
+      "component.surface",
+      "component.surface.backgroundColorToken",
+      (slotPayload) => render(slotPayload, media.surface, boxes.media),
+    );
+  const mediaSurfaceBackgroundNode = mediaSurfaceLayer(surfaceComponentBackgroundToRenderableAt);
+  const mediaSurfaceBorderNode = mediaSurfaceLayer(surfaceComponentBorderToRenderableAt);
   const mediaContentNode = mediaContent(payload, media, visualBox);
   const controlNodes = mediaControlNodes(payload, media, visualBox);
   const children = [
     ...mediaBars(payload, media, boxes),
-    mediaSurfaceNode,
-    mediaVisualClipNode(payload, media, visualBox, [mediaContentNode, ...controlNodes]),
+    mediaSurfaceBackgroundNode,
+    mediaVisualClipNode(payload, media, visualBox, [mediaContentNode]),
+    mediaSurfaceBorderNode,
+    ...(controlNodes.length > 0
+      ? [mediaVisualClipNode(payload, media, visualBox, controlNodes, `${media.id}.controlsClip`)]
+      : []),
   ];
   const transitionActive = media.motionFrame.active && media.motionFrame.progress < 1;
   const rootOverlay = media.displayState === "fullframe" || transitionActive;
@@ -120,10 +131,11 @@ function mediaVisualClipNode(
   media: MediaDesignContract,
   box: RenderableBox,
   children: RenderableNode[],
+  id = `${media.id}.visualClip`,
 ): RenderableNode {
   const borderWidth = Math.max(0, media.surface.surface.borderWidth * renderScale(payload));
   return {
-    id: `${media.id}.visualClip`,
+    id,
     type: "group",
     frame: 0,
     box,

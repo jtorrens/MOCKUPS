@@ -169,6 +169,23 @@ test("Media resolves playback, controls fade and full-screen Motion before paint
   assert.ok(resolved.motionFrame.progress > 0);
 });
 
+test("Media paints its rounded Surface border after image content and before controls", () => {
+  const source = withInputDefaults(committedComponentFixture("media"));
+  const media = resolveMediaComponent(source);
+  const node = mediaComponentToRenderableAt(source, media, { x: 20, y: 30, width: 240, height: 160 });
+  const ids = node.children?.map(child => child.id) ?? [];
+  const background = ids.indexOf(`${media.surface.id}.background`);
+  const content = ids.indexOf(`${media.id}.visualClip`);
+  const border = ids.indexOf(`${media.surface.id}.border`);
+  const controls = ids.indexOf(`${media.id}.controlsClip`);
+  assert.ok(background >= 0 && content > background && border > content);
+  assert.ok(controls < 0 || controls > border);
+  const borderNode = node.children?.[border];
+  assert.equal(borderNode?.style?.background, "transparent");
+  assert.equal(borderNode?.style?.shadow, undefined);
+  assert.equal(borderNode?.style?.surfaceRelief, undefined);
+});
+
 test("Media full-screen uses the complete root Screen frame", () => {
   const source = withInputDefaults(committedComponentFixture("media"));
   const rootPreviewFrame = {

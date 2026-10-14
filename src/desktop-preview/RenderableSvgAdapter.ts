@@ -115,16 +115,19 @@ function surfaceMarkup(node: RenderableNode): string {
   const box = node.box;
   if (!box) return "";
   const style = node.style ?? {};
+  const borderWidth = Math.max(0, finite(style.borderWidth) ?? 0);
+  const halfBorder = Math.min(borderWidth / 2, box.width / 2, box.height / 2);
+  const radius = Math.max(0, (finite(style.borderRadius ?? style.cornerRadius) ?? 0) - halfBorder);
   return `<rect ${attributes({
-    x: box.x,
-    y: box.y,
-    width: box.width,
-    height: box.height,
-    rx: finite(style.borderRadius ?? style.cornerRadius),
-    ry: finite(style.borderRadius ?? style.cornerRadius),
+    x: box.x + halfBorder,
+    y: box.y + halfBorder,
+    width: Math.max(0, box.width - halfBorder * 2),
+    height: Math.max(0, box.height - halfBorder * 2),
+    rx: radius,
+    ry: radius,
     fill: color(style.background ?? style.backgroundColor) ?? "none",
     stroke: color(style.borderColor),
-    "stroke-width": finite(style.borderWidth),
+    "stroke-width": borderWidth,
   })}/>`;
 }
 

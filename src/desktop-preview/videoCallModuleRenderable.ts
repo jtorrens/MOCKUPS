@@ -11,7 +11,11 @@ import { mediaComponentToRenderableAt } from "./mediaComponentRenderable.js";
 import { alignedRowsOverlayNode, rowsSectionNode } from "./moduleRowSectionRenderable.js";
 import { contentRowComponentToRenderable, contentRowHasRenderableContent } from "./contentRowComponentRenderable.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
-import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import {
+  surfaceComponentBackgroundToRenderableAt,
+  surfaceComponentBorderToRenderableAt,
+  surfaceComponentToRenderableAt,
+} from "./surfaceComponentRenderable.js";
 import { resolveVideoCallModule } from "./videoCallModuleResolver.js";
 import type { VideoCallComponentSlot, VideoCallModuleContract, VideoCallParticipant } from "./videoCallModuleContract.js";
 import { wrapExitMotionFrame, wrapMotionFrame } from "./previewMotionHelpers.js";
@@ -106,7 +110,7 @@ function participantNode(
   const scale = renderScale(payload);
   const content = inset(payload, box, participant.padding);
   const children: RenderableNode[] = [];
-  if (participant.showSurface) children.push(surfaceComponentToRenderableAt(payload, participant.surface, box));
+  if (participant.showSurface) children.push(surfaceComponentBackgroundToRenderableAt(payload, participant.surface, box));
   if (participant.showMedia && (participant.videoPresent || participant.media.mediaCutout)) children.push(mediaComponentToRenderableAt(payload, participant.media, content));
   if (!participant.videoPresent) {
     const avatar = participant.avatar;
@@ -134,6 +138,7 @@ function participantNode(
       height: statusSize.height,
     }));
   }
+  if (participant.showSurface) children.push(surfaceComponentBorderToRenderableAt(payload, participant.surface, box));
   if (participant.showActorName && participant.nameLabel) {
     const nameSize = measureLabelComponent(participant.nameLabel, payload, { maximumWidth: content.width });
     children.push(labelComponentToRenderableAt(
@@ -150,7 +155,17 @@ function participantNode(
     rowHasContent: contentRowHasRenderableContent,
     renderRow: contentRowComponentToRenderable,
   }));
-  return { id: participant.id, type: "group", frame: 0, box, style: { overflow: "hidden" }, children };
+  return {
+    id: participant.id,
+    type: "group",
+    frame: 0,
+    box,
+    style: {
+      overflow: "hidden",
+      borderRadius: numberToken(payload, participant.surface.surface.cornerRadiusToken) * scale,
+    },
+    children,
+  };
 }
 
 function participantBoxes(

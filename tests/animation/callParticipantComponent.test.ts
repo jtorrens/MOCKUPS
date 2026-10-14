@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { callParticipantComponentToRenderable } from "../../src/desktop-preview/callParticipantComponentRenderable.js";
 import { resolveCallParticipantComponent } from "../../src/desktop-preview/callParticipantComponentResolver.js";
+import { numberToken, renderScale } from "../../src/desktop-preview/componentRenderableCommon.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
 const fixture = () => committedComponentFixture("callParticipant", "default");
@@ -34,6 +35,27 @@ test("Call Participant accepts a Runtime connection-loss message and restores vi
   assert.equal(restored.connectionIconToken, undefined);
   assert.ok(node.children?.some(child => child.id === "component.callParticipant.media"));
   assert.ok(!node.children?.some(child => child.id === "component.callParticipant.avatar"));
+});
+
+test("Call Participant clips one rounded frame and paints its border above Media but below overlays", () => {
+  const source = fixture();
+  const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  preview.videoPresent = true;
+  preview.showName = true;
+  const edited = { ...source, designPreviewJson: JSON.stringify(preview) };
+  const participant = resolveCallParticipantComponent(edited);
+  const node = callParticipantComponentToRenderable(edited, participant, { x: 0, y: 0, width: 360, height: 360 });
+  const ids = node.children?.map(child => child.id) ?? [];
+  const background = ids.indexOf(`${participant.surface.id}.background`);
+  const media = ids.indexOf(participant.media.id);
+  const border = ids.indexOf(`${participant.surface.id}.border`);
+  const name = ids.indexOf(participant.nameLabel.id);
+  assert.ok(background >= 0 && media > background && border > media && name > border);
+  assert.equal(node.style?.overflow, "hidden");
+  assert.equal(
+    node.style?.borderRadius,
+    numberToken(edited, participant.surface.surface.cornerRadiusToken) * renderScale(edited),
+  );
 });
 
 test("Call Participant visual switches independently remove optional blocks", () => {

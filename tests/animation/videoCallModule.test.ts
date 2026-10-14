@@ -108,6 +108,37 @@ test("Video Call derives each visible participant name from its Actor", () => {
   assert.equal(hidden?.children?.some(child => child.id.includes(".name")), false);
 });
 
+test("Video Call paints every participant size through one rounded frame with its border above Media", () => {
+  const source = fixture();
+  const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
+  for (const participant of preview.participants) {
+    participant.videoPresent = true;
+    participant.showActorName = true;
+  }
+  const edited = { ...source, designPreviewJson: JSON.stringify(preview) };
+  const call = resolveVideoCallModule(edited);
+  const root = videoCallModuleToRenderable(edited);
+  const visitedRoles = new Set<string>();
+  for (const participant of call.participants.filter(item => item.present)) {
+    const node = root.children?.find(child => child.id === participant.id);
+    if (!node) continue;
+    visitedRoles.add(participant.role);
+    const ids = node.children?.map(child => child.id) ?? [];
+    const background = ids.indexOf(`${participant.surface.id}.background`);
+    const media = ids.indexOf(participant.media.id);
+    const border = ids.indexOf(`${participant.surface.id}.border`);
+    const name = participant.nameLabel ? ids.indexOf(participant.nameLabel.id) : -1;
+    assert.ok(background >= 0 && media > background && border > media, participant.role);
+    assert.ok(name < 0 || name > border, participant.role);
+    assert.equal(node.style?.overflow, "hidden");
+    assert.equal(
+      node.style?.borderRadius,
+      numberToken(edited, participant.surface.surface.cornerRadiusToken) * renderScale(edited),
+    );
+  }
+  assert.deepEqual([...visitedRoles].sort(), ["grid", "main", "pip"]);
+});
+
 test("Video Call uses exactly one configured gap between percentage regions", () => {
   const source = fixture();
   const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };

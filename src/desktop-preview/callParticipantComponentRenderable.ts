@@ -5,7 +5,10 @@ import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { boundedCenterBox, iconTokenStyle, numberToken, placeChild, renderScale, scalePlacement, selectedColor } from "./componentRenderableCommon.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import { mediaComponentToRenderableAt } from "./mediaComponentRenderable.js";
-import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import {
+  surfaceComponentBackgroundToRenderableAt,
+  surfaceComponentBorderToRenderableAt,
+} from "./surfaceComponentRenderable.js";
 
 export function callParticipantComponentToRenderable(
   payload: DesignPreviewPayload,
@@ -18,12 +21,13 @@ export function callParticipantComponentToRenderable(
   const insetY = numberToken(payload, participant.padding.yToken) * scale;
   const content = { x: box.x + insetX, y: box.y + insetY, width: Math.max(1, box.width - insetX * 2), height: Math.max(1, box.height - insetY * 2) };
   const children: RenderableNode[] = [];
-  if (participant.showBackground) children.push(surfaceComponentToRenderableAt(payload, participant.surface, box));
+  if (participant.showBackground) children.push(surfaceComponentBackgroundToRenderableAt(payload, participant.surface, box));
   if (participant.showMedia && (participant.videoPresent || participant.media.mediaCutout)) children.push(mediaComponentToRenderableAt(payload, participant.media, content));
   if (!participant.videoPresent && !participant.media.mediaCutout && participant.showAvatarWhenVideoAbsent) {
     const size = Math.min(participant.avatar.size * scale, content.width, content.height);
     children.push(avatarComponentToRenderableAt(payload, participant.avatar, { x: content.x + (content.width - size) / 2, y: content.y + (content.height - size) / 2 - 20 * scale, width: size, height: size }));
   }
+  if (participant.showBackground) children.push(surfaceComponentBorderToRenderableAt(payload, participant.surface, box));
   if (!participant.videoPresent && participant.showStatusWhenVideoAbsent) children.push(placedLabel(payload, participant.statusLabel, content, participant.statusPlacement));
   if (participant.showName) children.push(placedLabel(payload, participant.nameLabel, content, participant.namePlacement));
   if (participant.showMicrophoneStatus) children.push(iconNode(payload, `${participant.id}.microphone`, participant.microphoneIconToken, content, participant.microphonePlacement, 22 * scale));
@@ -31,7 +35,7 @@ export function callParticipantComponentToRenderable(
   if (participant.showActiveSpeakerIndicator && participant.speaking && participant.activeSpeakerBorderWidth > 0) {
     children.push({ id: `${participant.id}.activeSpeaker`, type: "surface", frame: 0, box, style: { background: "transparent", borderColor: selectedColor(payload, participant.activeSpeakerColorToken), borderWidth: participant.activeSpeakerBorderWidth * scale, borderRadius: numberToken(payload, participant.surface.surface.cornerRadiusToken) * scale } });
   }
-  return { id: participant.id, type: "group", frame: 0, box, style: { overflow: "hidden" }, children };
+  return { id: participant.id, type: "group", frame: 0, box, style: { overflow: "hidden", borderRadius: numberToken(payload, participant.surface.surface.cornerRadiusToken) * scale }, children };
 }
 
 function placedLabel(payload: DesignPreviewPayload, label: CallParticipantDesignContract["statusLabel"], parent: RenderableBox, placement: CallParticipantDesignContract["statusPlacement"]) {
