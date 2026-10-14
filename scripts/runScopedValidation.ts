@@ -233,6 +233,20 @@ export function planScopedValidation(
         ["--", "--exact", "collection mutations retain exact nested Variant identities and animation targets"],
       ));
     }
+    if ([
+      "src/Mockups.Application/DesignPreviewTestValues.cs",
+      "src/Mockups.Application/RuntimeInputValueKindContract.cs",
+      "src/Mockups.Desktop/EditorShell/StructuredCollectionItemFactory.cs",
+    ].includes(file)) {
+      for (const owner of ["Conversation", "Video Call"]) {
+        add(npmStep(
+          `desktop:runtime-text-add:${owner}`,
+          "test:focus:desktop",
+          "shared Runtime conversion must preserve text defaults through real collection Add",
+          ["--", "--exact", `${owner} Test Values serialize lifecycle and field edits`],
+        ));
+      }
+    }
     if (file === "data/mockups.sqlite") {
       database = true;
       desktopCore = true;

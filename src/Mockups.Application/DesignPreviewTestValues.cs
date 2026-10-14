@@ -453,13 +453,10 @@ public static class DesignPreviewTestValues
 
     public static JsonNode? ValueNode(ComponentInputDefinition input, string value)
     {
-        if (input.AllowEmpty && string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-        return RuntimeInputValueKindContract.ParseValue(
+        return RuntimeInputValueKindContract.ParseEditableValue(
             input.ValueKind,
             value,
+            input.AllowEmpty,
             $"Runtime Input '{input.Id}' value");
     }
 

@@ -196,6 +196,20 @@ public static class RuntimeInputValueKindContract
         }
     }
 
+    public static JsonNode? ParseEditableValue(
+        ValueKind valueKind, string value, bool allowEmpty, string owner)
+    {
+        // Empty text is content; optional non-text values use null for absence.
+        if (allowEmpty && string.IsNullOrWhiteSpace(value)
+            && valueKind is not ValueKind.StringSingleLine
+                and not ValueKind.StringMultiline
+                and not ValueKind.StringReadOnly)
+        {
+            return null;
+        }
+        return ParseValue(valueKind, value, owner);
+    }
+
     public static JsonNode ParseValue(ValueKind valueKind, string value, string owner) => valueKind switch
     {
         ValueKind.Boolean => JsonValue.Create(BooleanText.ParseRequired(value, owner))!,

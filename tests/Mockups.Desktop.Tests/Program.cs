@@ -2576,6 +2576,17 @@ static void ResourceScalarReadsRejectWrongShapes()
 
 static void RuntimeInputDefaultsUseValueKindOwner()
 {
+    foreach (var kind in new[] { ValueKind.StringSingleLine, ValueKind.StringMultiline, ValueKind.StringReadOnly })
+    {
+        foreach (var text in new[] { "", "   ", "\n", "Connection lost" })
+        {
+            Equal(text, Required(RuntimeInputValueKindContract.ParseEditableValue(
+                kind, text, true, "Text Runtime Input")).GetValue<string>());
+        }
+    }
+    True(RuntimeInputValueKindContract.ParseEditableValue(
+        ValueKind.IconToken, "", true, "Optional icon") is null);
+
     static JsonObject Definition(string kind, string valueKind, string? defaultValue) => new()
     {
         ["id"] = "test",
@@ -10018,6 +10029,20 @@ static void DesignCollectionMutationsSerialize(string moduleId, string collectio
                 var baselineReset = controller.ResetDesignPreviewTestValues(current.Owner.Node);
                 Wait(() => baselineReset.IsCompleted);
                 True(baselineReset.GetAwaiter().GetResult());
+                // Exercise the actual Add prototype, not a clone of an existing item.
+                var addDefault = actions.AddAfter(0);
+                Wait(() => addDefault.IsCompleted);
+                addDefault.GetAwaiter().GetResult();
+                var defaultItem = CurrentItems().OfType<JsonObject>()
+                    .Single(item => !ids.Contains(item["id"]!.GetValue<string>()));
+                Equal(input.DefaultValue, Required(defaultItem[input.JsonKey]).GetValue<string>());
+                var removeDefault = controller.MutateDesignPreviewCollectionAsync(current.Owner.Node,
+                    new DeleteStructuredCollectionItem(address, defaultItem["id"]!.GetValue<string>()));
+                Wait(() => removeDefault.IsCompleted);
+                removeDefault.GetAwaiter().GetResult();
+                var resetDefault = controller.ResetDesignPreviewTestValues(current.Owner.Node);
+                Wait(() => resetDefault.IsCompleted);
+                resetDefault.GetAwaiter().GetResult();
                 var other = CanonicalProjectNodes(database).Single(node =>
                     node.Id == "component_project_foqn_s2_list::variant::default");
                 var otherEdit = controller.SetDesignPreviewTestValue(other, "itemWidth", "419");

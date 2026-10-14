@@ -49,6 +49,14 @@ and Production instances. Their definition includes stable identity,
 `ValueKind`, serialization, option source, forwarding rules and animation
 metadata.
 
+`RuntimeInputValueKindContract.ParseEditableValue` owns conversion of editor
+text to Runtime values. Single-line, multiline and read-only string kinds
+preserve empty strings and whitespace exactly, including when `allowEmpty` is
+true. Optional non-text values retain their declared null-as-absence behavior.
+Test Values, collection creation and declared Preview defaults consume this
+same conversion through `DesignPreviewTestValues.ValueNode`; concrete resolvers
+do not repair null text.
+
 - Design Test Values are temporary samples for the selected definition.
 - A Production Screen payload is persisted instance data.
 - Saving Design Test Values as defaults explicitly updates the active
