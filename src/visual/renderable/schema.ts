@@ -39,6 +39,7 @@ const RenderableSurfaceReliefSchema = z.object({
 }).strict();
 
 const RenderableStyleSchema = z.object({
+  compositeMaskImage: z.string().startsWith("data:image/svg+xml;").optional(),
   shadow: RenderableShadowSchema.optional(),
   textShadow: RenderableShadowSchema.optional(),
   surfaceRelief: RenderableSurfaceReliefSchema.optional(),
@@ -96,5 +97,10 @@ export const RenderableNodeSchema: z.ZodType<RenderableNode> = z.lazy(() =>
     asset: RenderableAssetSchema.optional(),
     children: z.array(RenderableNodeSchema).optional(),
     metadata: RenderableMetadataSchema.optional(),
+  }).superRefine((node, context) => {
+    if (node.type !== "cutout") return;
+    if (!node.box || node.asset || node.text !== undefined || node.children?.length) {
+      context.addIssue({ code: "custom", message: "A cutout requires a box and cannot carry image, text or child paint." });
+    }
   }),
 );

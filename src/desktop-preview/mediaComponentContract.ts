@@ -41,6 +41,7 @@ export interface MediaTextOverlayContract {
 export interface MediaDesignContract {
   id: string;
   sourceUri: string;
+  mediaCutout: boolean;
   mediaKind: MediaKind;
   playbackState: MediaPlaybackState;
   currentTimeSeconds: number;

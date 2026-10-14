@@ -142,6 +142,7 @@ function isBroadPreviewPath(file: string): boolean {
     || basename.includes("adapter")
     || basename.startsWith("generated")
     || basename === "previewgeometryhelpers.ts"
+    || basename === "renderablecutoutcompositor.ts"
     || basename === "desktoppreviewcomponents.ts"
     || basename === "desktoppreviewmodules.ts";
 }

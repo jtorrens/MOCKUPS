@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `28` is the only current schema. Authored Production rows belong
+Schema version `29` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -952,6 +952,17 @@ workstation database frozen while the staged snapshot is validated.
 The disposable workspace receives explicit Project asset roots, preserving
 strict Project font, icon and media resolution without copying or mutating
 those assets.
+
+### Media cutout maintenance (schema 29)
+
+The explicit maintenance adds the Boolean `mediaCutout` Runtime declaration and
+`false` values to Media, Bubble, Call Participant and Gallery fixtures, message
+and participant collections, and their existing Production Screen payloads.
+Social Post has separate main-media and Gallery inputs. Complete embedded input
+documents follow their declared owner; sparse Overrides are not expanded.
+Schema 29 readers require the current contract. The canonical workstation is
+updated transactionally, then checkpointed into repository parity. No startup
+migration or compatibility path exists.
 
 ### Collection identity maintenance (schema 28)
 

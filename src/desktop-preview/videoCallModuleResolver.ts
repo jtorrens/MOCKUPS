@@ -95,6 +95,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
         media: resolveMediaComponentFromRecords(payload, participantMediaConfig, {
           mediaType: requiredString(item, "mediaType", `${itemOwner}.mediaType`),
           mediaSource: requiredPossiblyEmptyString(item, "mediaSource", `${itemOwner}.mediaSource`),
+          mediaCutout: requiredBoolean(item, "mediaCutout", `${itemOwner}.mediaCutout`),
           viewportSize: "390|844",
           mediaScale: requiredNumber(item, "mediaScale", `${itemOwner}.mediaScale`),
           mediaOffset: requiredString(item, "mediaOffset", `${itemOwner}.mediaOffset`),

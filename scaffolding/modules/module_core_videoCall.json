@@ -1636,6 +1636,25 @@
             ]
           },
           {
+            "id": "mediaCutout",
+            "label": "Media cutout",
+            "jsonKey": "mediaCutout",
+            "kind": "boolean",
+            "valueKind": "Boolean",
+            "defaultValue": "false",
+            "minimum": 0,
+            "maximum": 1,
+            "increment": 1,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "options": [],
+            "transition": null,
+            "unit": "",
+            "uiOrder": 11
+          },
+          {
             "id": "mediaOffset",
             "label": "Media offset",
             "jsonKey": "mediaOffset",
@@ -1665,7 +1684,8 @@
         "connectionText": "",
         "mediaScale": 1,
         "mediaOffset": "0|0",
-        "role": "main"
+        "role": "main",
+        "mediaCutout": false
       },
       {
         "id": "item_aab184dea3b5442195575fcfcf3e93eb",
@@ -1678,7 +1698,8 @@
         "connectionText": "",
         "mediaScale": 1,
         "mediaOffset": "0|0",
-        "role": "grid"
+        "role": "grid",
+        "mediaCutout": false
       },
       {
         "id": "item_fc87ff9895fb4f42bf4ee130e64b6096",
@@ -1691,7 +1712,8 @@
         "connectionText": "Connection lost",
         "mediaScale": 1,
         "mediaOffset": "0|0",
-        "role": "grid"
+        "role": "grid",
+        "mediaCutout": false
       },
       {
         "id": "item_3aec7f59229746848c48eeda95957af0",
@@ -1704,7 +1726,8 @@
         "connectionText": "",
         "mediaScale": 1,
         "mediaOffset": "0|0",
-        "role": "pip"
+        "role": "pip",
+        "mediaCutout": false
       }
     ],
     "animationTimeline": {

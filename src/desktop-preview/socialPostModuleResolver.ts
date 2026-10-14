@@ -163,6 +163,8 @@ export function resolveSocialPostModule(
       "mediaHeight",
       "module.core.socialPost.mediaHeight",
     )),
+    mediaCutout: requiredBoolean(preview, "mediaCutout", "module.core.socialPost.mediaCutout"),
+    galleryMediaCutout: requiredBoolean(preview, "galleryMediaCutout", "module.core.socialPost.galleryMediaCutout"),
     mediaScale: Math.max(0.01, requiredNumber(
       preview,
       "mediaScale",

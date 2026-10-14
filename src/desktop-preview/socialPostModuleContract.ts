@@ -43,6 +43,8 @@ export interface SocialPostModuleContract {
   mediaSources: string[];
   mediaHeightMode: "fixed" | "fill";
   mediaHeight: number;
+  mediaCutout: boolean;
+  galleryMediaCutout: boolean;
   mediaScale: number;
   mediaOffset: string;
   mediaIsPlaying: boolean;

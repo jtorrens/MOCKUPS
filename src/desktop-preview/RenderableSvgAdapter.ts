@@ -11,6 +11,7 @@ import { numberValue, stringValue } from "./previewValueHelpers.js";
 import { textGraphemes } from "./previewTextRevealHelpers.js";
 import { emojiRasterDataUri } from "./previewAssetResolver.js";
 import { renderableImagePaintBox } from "./renderableImagePlacement.js";
+import { compositeRenderableCutouts } from "./renderableCutoutCompositor.js";
 
 /**
  * Serializes an already-resolved paint tree to SVG.
@@ -40,7 +41,7 @@ type OutlineFont = {
 const outlinedFontCache = new Map<string, OutlineFont>();
 
 export function renderableToSvg(tree: RenderableNode, options: SvgExportOptions = {}): string {
-  const root = RenderableNodeSchema.parse(tree);
+  const root = compositeRenderableCutouts(RenderableNodeSchema.parse(tree));
   const canvas = requiredBox(root);
   const context: SvgRenderContext = { target: options.target ?? "web", fontFaces: root.metadata?.fontFaces ?? [], ids: new Map() };
   return [
@@ -63,6 +64,11 @@ function renderNode(node: RenderableNode, context: SvgRenderContext): string {
 }
 
 function opacityMaskMarkup(node: RenderableNode, svgId: string, paint: string) {
+  if (node.style?.compositeMaskImage && node.box) {
+    const b = node.box;
+    const id = `composite-${safeId(svgId)}`;
+    return `<defs><mask id="${id}" maskUnits="userSpaceOnUse" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}" style="mask-type:alpha"><image ${attributes({ ...b, href: String(node.style.compositeMaskImage) })}/></mask></defs><g mask="url(#${id})">${paint}</g>`;
+  }
   const value = node.style?.opacityMask;
   if (!value || typeof value !== "object" || Array.isArray(value)) return paint;
   const mask = value as unknown as RenderableOpacityMask;

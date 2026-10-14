@@ -40,6 +40,7 @@ export interface ConversationMessageContract {
   visibleAtFrame: number;
   mediaType: "none" | "image" | "sticker" | "video" | "audio";
   mediaSource: string;
+  mediaCutout: boolean;
   viewportSize: string;
   mediaScale: number;
   mediaOffset: string;

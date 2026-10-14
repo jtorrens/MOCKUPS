@@ -275,6 +275,14 @@ nested boxes, so Surface radii, borders, shadows and graphic overlays retain
 their authored units at every participant size. Media scale affects image
 sampling inside its final viewport, not Surface appearance.
 
+Media cutout emits a generic `cutout` paint primitive covering the final image
+viewport, inside its Surface border. It does not load or sample the source file.
+`renderableCutoutCompositor` implements destination-out in paint order for both
+HTML and SVG: a cutout erases preceding siblings and ancestor backgrounds, while
+later graphics remain above the hole. It preserves nested rounded clips,
+transforms, opacity masks and group opacity. This is a generic paint operation;
+neither adapter recognizes Media, Gallery, messages or participants.
+
 After a Module owner has resolved its complete renderable tree, the shared
 Module boundary applies the Device `moduleTransparency` policy. Wallpaper and
 fallback background nodes identify themselves only through the generic

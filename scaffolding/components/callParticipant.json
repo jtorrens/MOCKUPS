@@ -623,6 +623,37 @@
         "unit": ""
       },
       {
+        "id": "mediaCutout",
+        "label": "Media cutout",
+        "jsonKey": "mediaCutout",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 1,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "video",
+        "uiGroupLabel": "Video",
+        "uiParentGroupId": "",
+        "uiOrder": 101,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
         "id": "mediaOffset",
         "label": "Media offset",
         "jsonKey": "mediaOffset",
@@ -662,7 +693,8 @@
     "connectionState": "connecting",
     "speaking": false,
     "mediaScale": 1,
-    "mediaOffset": "0|0"
+    "mediaOffset": "0|0",
+    "mediaCutout": false
   },
   "metadata": {
     "note": "Participant tile with owner-relative connection and video state."

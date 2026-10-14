@@ -965,6 +965,37 @@
         "uiOrder": 63
       },
       {
+        "id": "mediaCutout",
+        "label": "Media cutout",
+        "jsonKey": "mediaCutout",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 1,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 64,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
         "id": "mediaOffset",
         "label": "Media offset",
         "jsonKey": "mediaOffset",
@@ -2127,7 +2158,8 @@
         }
       }
     ],
-    "showIconRow": false
+    "showIconRow": false,
+    "mediaCutout": false
   },
   "metadata": {
     "note": "Seeded reusable component class."

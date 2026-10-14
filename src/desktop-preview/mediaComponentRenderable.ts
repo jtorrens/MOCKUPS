@@ -252,6 +252,7 @@ function mediaContent(
   media: MediaDesignContract,
   box: RenderableBox,
 ): RenderableNode {
+  if (media.mediaCutout) return { id: `${media.id}.cutout`, type: "cutout", box };
   const frameTimeSeconds = media.mediaKind === "video" ? media.currentTimeSeconds : 0;
   const frame = mediaFrameUriForPath(payload, media.sourceUri, frameTimeSeconds);
   const uri = frame.uri;

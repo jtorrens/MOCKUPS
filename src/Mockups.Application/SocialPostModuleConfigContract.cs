@@ -152,6 +152,7 @@ internal static class SocialPostModuleConfigContract
             inputs,
             [
                 "mediaType",
+                "mediaCutout",
                 "mediaScale",
                 "mediaOffset",
                 "isPlaying",
@@ -168,6 +169,7 @@ internal static class SocialPostModuleConfigContract
             JsonPath.RequiredString(inputs, "mediaType", owner),
             ["image", "video"],
             $"{owner}.mediaType");
+        JsonPath.RequiredBoolean(inputs, "mediaCutout", owner);
         JsonPath.RequiredNumber(inputs, "mediaScale", owner);
         JsonPath.RequiredString(inputs, "mediaOffset", owner);
         JsonPath.RequiredBoolean(inputs, "isPlaying", owner);
@@ -196,6 +198,7 @@ internal static class SocialPostModuleConfigContract
                 "mediaType",
                 "mediaSource",
                 "viewportSize",
+                "mediaCutout",
                 "mediaScale",
                 "mediaOffset",
                 "isPlaying",
@@ -224,6 +227,7 @@ internal static class SocialPostModuleConfigContract
             ["none", "image", "video", "audio"], $"{owner}.mediaType");
         JsonPath.RequiredString(inputs, "mediaSource", owner, allowEmpty: true);
         JsonPath.RequiredString(inputs, "viewportSize", owner);
+        JsonPath.RequiredBoolean(inputs, "mediaCutout", owner);
         JsonPath.RequiredNumber(inputs, "mediaScale", owner);
         JsonPath.RequiredString(inputs, "mediaOffset", owner);
         JsonPath.RequiredBoolean(inputs, "isPlaying", owner);

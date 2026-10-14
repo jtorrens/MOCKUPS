@@ -58,6 +58,7 @@ export function resolveCallParticipantComponent(
       : connectionState === "lost" ? requiredString(owner, "connectionLostIconToken", "component.callParticipant.connectionLostIconToken") : undefined,
     surface: resolveSurfaceComponentAtSize(surfaceConfig, size, "component.callParticipant.surface"),
     media: resolveMediaComponentFromRecords(payload, mediaConfig, {
+      mediaCutout: requiredBoolean(preview, "mediaCutout", "component.callParticipant.runtime.mediaCutout"),
       mediaType: requiredString(preview, "mediaType", "component.callParticipant.runtime.mediaType"), mediaSource: requiredPossiblyEmptyString(preview, "mediaSource", "component.callParticipant.runtime.mediaSource"),
       viewportSize: `${size.width}|${size.height}`, mediaScale: requiredNumber(preview, "mediaScale", "component.callParticipant.runtime.mediaScale"), mediaOffset: requiredString(preview, "mediaOffset", "component.callParticipant.runtime.mediaOffset"),
       isPlaying: videoPresent, currentTimeSeconds: Math.max(0, payload.localFrame / Math.max(1, payload.frameRate)), durationSeconds: 0, isFullScreen: false, fullScreenTransition: false, fullframeOrientation: "portrait", controlsElapsedMs: 60000, motionElapsedMs: 0,

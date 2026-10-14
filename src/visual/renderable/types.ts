@@ -19,6 +19,7 @@ export interface RenderableAsset {
 }
 
 export const renderableNodeTypes = [
+  "cutout",
   "group",
   "icon",
   "image",

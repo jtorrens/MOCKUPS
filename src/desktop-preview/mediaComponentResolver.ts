@@ -156,6 +156,7 @@ export function resolveMediaComponentFromRecords(
   );
   return {
     id,
+    mediaCutout: requiredBoolean(inputs, "mediaCutout", "component.media.input.mediaCutout"),
     sourceUri: requiredPossiblyEmptyString(
       inputs,
       "mediaSource",

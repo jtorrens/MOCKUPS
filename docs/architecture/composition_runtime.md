@@ -542,3 +542,18 @@ prepares and persists the resulting content again before validation and atomic
 publication. Collection deletion and duplication therefore see the complete
 nested animation target graph, including items supplied by the exact selected
 Variant. Readers remain read-only; concrete resolvers perform no reconciliation.
+
+## Media cutout
+
+Visual Media declares the required Boolean Runtime Input `mediaCutout`, default
+`false`, with `hold` interpolation. Its final visible viewport becomes an alpha
+hole regardless of the source file's availability or intrinsic alpha. Image
+scale and offset never change the cutout geometry. Surface borders, names and
+later controls remain painted. Audio does not consume this input.
+
+Bubble attachments (images, videos and stickers) and Video Call participants own
+the value individually. Gallery owns one value for all directory items. Social
+Post forwards `mediaCutout` to its main media and `galleryMediaCutout` to Gallery.
+Design Test Values and Production Screen Runtime use the same declarations;
+existing authored documents receive explicit `false` during maintenance, never
+through reader defaults or startup repair.

@@ -11,6 +11,7 @@ import {
   stringValue as commonStringValue,
 } from "./previewValueHelpers.js";
 import { renderableImagePaintBox } from "./renderableImagePlacement.js";
+import { compositeRenderableCutouts } from "./renderableCutoutCompositor.js";
 
 export interface DesktopRenderableHtmlAdapterProps {
   tree: RenderableNode;
@@ -200,13 +201,14 @@ function nodeStyle(
   const color = optionalStringValue(style.textColor ?? style.color ?? style.foreground);
   const borderColor = optionalStringValue(style.borderColor);
   const borderWidth = optionalNumberValue(style.borderWidth);
+  const compositeMask = optionalStringValue(style.compositeMaskImage);
   const maskImage = optionalStringValue(style.maskImage);
   const webkitMaskImage = optionalStringValue(style.WebkitMaskImage);
   const opacityMaskImage = node.box
     ? opacityMaskCss(style.opacityMask, node.box)
     : undefined;
-  const effectiveMaskImage = opacityMaskImage ?? maskImage;
-  const effectiveWebkitMaskImage = opacityMaskImage ?? webkitMaskImage;
+  const effectiveMaskImage = compositeMask ? `url("${compositeMask}")` : opacityMaskImage ?? maskImage;
+  const effectiveWebkitMaskImage = compositeMask ? effectiveMaskImage : opacityMaskImage ?? webkitMaskImage;
   const paddingX = optionalNumberValue(style.paddingX);
   const paddingY = optionalNumberValue(style.paddingY);
   const display = optionalStringValue(style.display);
@@ -252,7 +254,7 @@ function nodeStyle(
     maskImage: effectiveMaskImage,
     maskPosition: opacityMaskImage ? "0 0" : effectiveMaskImage ? "center" : undefined,
     maskRepeat: effectiveMaskImage ? "no-repeat" : undefined,
-    maskSize: opacityMaskImage ? "100% 100%" : effectiveMaskImage ? "contain" : undefined,
+    maskSize: opacityMaskImage || compositeMask ? "100% 100%" : effectiveMaskImage ? "contain" : undefined,
     opacity: optionalNumberValue(node.transform?.opacity) ?? optionalNumberValue(style.opacity),
     overflow: optionalStringValue(style.overflow) as CSSProperties["overflow"],
     paddingBottom: paddingY,
@@ -489,7 +491,7 @@ export function DesktopRenderableHtmlAdapter({
   tree,
   showBounds = false,
 }: DesktopRenderableHtmlAdapterProps) {
-  const root = RenderableNodeSchema.parse(tree);
+  const root = compositeRenderableCutouts(RenderableNodeSchema.parse(tree));
   const css = fontFaceCss(root);
   return (
     <>

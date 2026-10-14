@@ -556,6 +556,7 @@ function bubbleMediaInputs(
     ),
     viewportSize: requiredString(preview, "viewportSize", "component.bubble.input.viewportSize"),
     mediaOffset: requiredString(preview, "mediaOffset", "component.bubble.input.mediaOffset"),
+    mediaCutout: requiredBoolean(preview, "mediaCutout", "component.bubble.input.mediaCutout"),
     mediaScale: requiredNumber(preview, "mediaScale", "component.bubble.input.mediaScale"),
     isPlaying: requiredBoolean(preview, "isPlaying", "component.bubble.input.isPlaying"),
     isFullScreen: requiredBoolean(

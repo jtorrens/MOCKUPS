@@ -2,6 +2,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import {
   parseObject,
+  requiredBoolean,
   requiredNumber,
   requiredNumberPair,
   requiredPossiblyEmptyString,
@@ -77,7 +78,7 @@ export function resolveGalleryComponent(payload: DesignPreviewPayload): GalleryD
       media: resolveMediaComponentFromRecords(
         payload,
         normalMediaConfig,
-        mediaInputs(sourceUri, itemWidth, itemHeight),
+        mediaInputs(sourceUri, itemWidth, itemHeight, requiredBoolean(inputs, "mediaCutout", "component.gallery.mediaCutout")),
         baseConfigs,
         `component.gallery.item.${id}`,
       ),
@@ -138,8 +139,9 @@ function stableMediaId(sourceUri: string) {
   return sourceUri.replace(/[^a-zA-Z0-9_-]+/g, "_");
 }
 
-function mediaInputs(sourceUri: string, width: number, height: number) {
+function mediaInputs(sourceUri: string, width: number, height: number, mediaCutout: boolean) {
   return {
+    mediaCutout,
     mediaSource: sourceUri,
     mediaType: projectMediaType(sourceUri),
     viewportSize: `${Math.max(1, Math.round(width))}|${Math.max(1, Math.round(height))}`,

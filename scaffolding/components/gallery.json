@@ -119,6 +119,37 @@
         "unit": ""
       },
       {
+        "id": "mediaCutout",
+        "label": "Media cutout",
+        "jsonKey": "mediaCutout",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 1,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "source",
+        "uiGroupLabel": "Source",
+        "uiParentGroupId": "",
+        "uiOrder": 11,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
         "id": "viewportSize",
         "label": "Viewport",
         "jsonKey": "viewportSize",
@@ -211,7 +242,8 @@
       }
     ],
     "collections": [],
-    "actions": []
+    "actions": [],
+    "mediaCutout": false
   },
   "metadata": {
     "note": "Gallery consumes the prepared Project media catalog and composes exact Surface and Media Variant boundaries."

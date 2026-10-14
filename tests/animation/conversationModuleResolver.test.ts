@@ -47,6 +47,7 @@ function payload(
       statusText: "",
       mediaType: "none",
       mediaSource: "",
+      mediaCutout: false,
       viewportSize: "240|160",
       mediaScale: 1,
       mediaOffset: "0|0",

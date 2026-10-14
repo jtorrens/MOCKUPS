@@ -295,7 +295,8 @@
         "fullScreenTransition": false,
         "fullframeOrientation": "portrait",
         "controlsElapsedMs": 0,
-        "motionElapsedMs": 0
+        "motionElapsedMs": 0,
+        "mediaCutout": false
       },
       "showMediaSeparator": true,
       "gallerySlot": {
@@ -1125,7 +1126,8 @@
             }
           }
         ],
-        "showIconRow": false
+        "showIconRow": false,
+        "mediaCutout": false
       },
       "showMessageSeparator": true,
       "footerSurfaceSlot": {
@@ -1381,6 +1383,29 @@
         ]
       },
       {
+        "id": "mediaCutout",
+        "label": "Media cutout",
+        "jsonKey": "mediaCutout",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 1,
+        "increment": 1,
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 31,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ],
+        "options": [],
+        "transition": null,
+        "unit": ""
+      },
+      {
         "id": "mediaOffset",
         "label": "Offset",
         "jsonKey": "mediaOffset",
@@ -1527,6 +1552,29 @@
         "uiGroupId": "gallery",
         "uiGroupLabel": "Gallery",
         "uiOrder": 20
+      },
+      {
+        "id": "galleryMediaCutout",
+        "label": "Gallery media cutout",
+        "jsonKey": "galleryMediaCutout",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "gallery",
+        "uiGroupLabel": "Gallery",
+        "uiOrder": 21,
+        "options": [],
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ],
+        "transition": null,
+        "minimum": 0,
+        "maximum": 1,
+        "increment": 1,
+        "unit": ""
       },
       {
         "id": "gallerySelectedIndex",
@@ -2334,7 +2382,9 @@
           }
         ]
       }
-    ]
+    ],
+    "mediaCutout": false,
+    "galleryMediaCutout": false
   },
   "metadata": {
     "note": "Social Post defines its two-row header and one padded Media section."
@@ -2590,7 +2640,8 @@
           "fullScreenTransition": false,
           "fullframeOrientation": "portrait",
           "controlsElapsedMs": 0,
-          "motionElapsedMs": 0
+          "motionElapsedMs": 0,
+          "mediaCutout": false
         },
         "showMediaSeparator": true,
         "gallerySlot": {
@@ -3420,7 +3471,8 @@
               }
             }
           ],
-          "showIconRow": false
+          "showIconRow": false,
+          "mediaCutout": false
         },
         "showMessageSeparator": true,
         "footerSurfaceSlot": {

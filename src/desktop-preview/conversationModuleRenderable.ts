@@ -300,6 +300,7 @@ function messageNodes(
         actorIdentityVisible: message.actorIdentityVisible,
         mediaType: message.mediaType,
         mediaSource: message.mediaSource,
+        mediaCutout: message.mediaCutout,
         viewportSize: message.viewportSize,
         mediaScale: message.mediaScale,
         mediaOffset: message.mediaOffset,

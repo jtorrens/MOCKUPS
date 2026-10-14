@@ -19,8 +19,8 @@ export function callParticipantComponentToRenderable(
   const content = { x: box.x + insetX, y: box.y + insetY, width: Math.max(1, box.width - insetX * 2), height: Math.max(1, box.height - insetY * 2) };
   const children: RenderableNode[] = [];
   if (participant.showBackground) children.push(surfaceComponentToRenderableAt(payload, participant.surface, box));
-  if (participant.showMedia && participant.videoPresent) children.push(mediaComponentToRenderableAt(payload, participant.media, content));
-  if (!participant.videoPresent && participant.showAvatarWhenVideoAbsent) {
+  if (participant.showMedia && (participant.videoPresent || participant.media.mediaCutout)) children.push(mediaComponentToRenderableAt(payload, participant.media, content));
+  if (!participant.videoPresent && !participant.media.mediaCutout && participant.showAvatarWhenVideoAbsent) {
     const size = Math.min(participant.avatar.size * scale, content.width, content.height);
     children.push(avatarComponentToRenderableAt(payload, participant.avatar, { x: content.x + (content.width - size) / 2, y: content.y + (content.height - size) / 2 - 20 * scale, width: size, height: size }));
   }

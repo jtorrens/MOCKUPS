@@ -1272,7 +1272,8 @@
           }
         ],
         "showIconRow": false,
-        "actionsRevealed": false
+        "actionsRevealed": false,
+        "mediaCutout": false
       },
       {
         "direction": "outgoing",
@@ -2069,7 +2070,8 @@
           }
         ],
         "showIconRow": false,
-        "actionsRevealed": false
+        "actionsRevealed": false,
+        "mediaCutout": false
       },
       {
         "direction": "system",
@@ -2866,7 +2868,8 @@
           }
         ],
         "showIconRow": false,
-        "actionsRevealed": false
+        "actionsRevealed": false,
+        "mediaCutout": false
       }
     ],
     "collections": [
@@ -3306,6 +3309,29 @@
             "uiOrder": 51,
             "uiSectionLabel": "Frame",
             "valueKind": "Decimal"
+          },
+          {
+            "id": "mediaCutout",
+            "label": "Media cutout",
+            "jsonKey": "mediaCutout",
+            "kind": "boolean",
+            "defaultValue": "false",
+            "minimum": 0,
+            "maximum": 1,
+            "increment": 1,
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 52,
+            "uiSectionLabel": "Frame",
+            "valueKind": "Boolean",
+            "options": [],
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "transition": null,
+            "unit": ""
           },
           {
             "id": "mediaOffset",

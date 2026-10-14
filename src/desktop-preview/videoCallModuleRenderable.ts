@@ -107,10 +107,10 @@ function participantNode(
   const content = inset(payload, box, participant.padding);
   const children: RenderableNode[] = [];
   if (participant.showSurface) children.push(surfaceComponentToRenderableAt(payload, participant.surface, box));
-  if (participant.showMedia && participant.videoPresent) children.push(mediaComponentToRenderableAt(payload, participant.media, content));
+  if (participant.showMedia && (participant.videoPresent || participant.media.mediaCutout)) children.push(mediaComponentToRenderableAt(payload, participant.media, content));
   if (!participant.videoPresent) {
     const avatar = participant.avatar;
-    const avatarSize = participant.showFallbackAvatar && avatar
+    const avatarSize = participant.showFallbackAvatar && !participant.media.mediaCutout && avatar
       ? Math.min(participant.avatarSize * scale, content.width, content.height)
       : 0;
     const statusSize = participant.showFallbackStatus

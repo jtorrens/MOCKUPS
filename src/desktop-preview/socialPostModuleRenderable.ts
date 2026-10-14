@@ -365,6 +365,7 @@ function gallerySectionNode(
     contract.gallerySlot,
     {
       mediaDirectory: contract.galleryDirectory,
+      mediaCutout: contract.galleryMediaCutout,
       viewportSize: `${box.width / scale}|${box.height / scale}`,
       selectedIndex: contract.gallerySelectedIndex,
       scrollRow: contract.galleryScrollRow,
@@ -441,6 +442,7 @@ function mediaSectionNode(
         ...contract.mediaInputs,
         mediaSource: sourceUri,
         mediaType: projectMediaType(sourceUri),
+        mediaCutout: contract.mediaCutout,
         mediaScale: contract.mediaScale,
         mediaOffset: contract.mediaOffset,
         isPlaying: isActive && isVideo ? contract.mediaIsPlaying : false,
