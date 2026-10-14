@@ -14598,7 +14598,7 @@ static void DesignPreparationPreservesEmptyScalars()
     var prepared = preparer.Prepare(payload, session.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId);
     session.ApplyPrepared(prepared);
     var values = Object(prepared.Payload.DesignPreviewJson);
-    True(values.ContainsKey("nullable") && values["nullable"] is null);
+    Equal("", values["nullable"]!.GetValue<string>());
     Equal("", values["text"]!.GetValue<string>());
     Equal(0, values["number"]!.GetValue<int>());
     Equal(false, values["flag"]!.GetValue<bool>());
@@ -14606,7 +14606,7 @@ static void DesignPreparationPreservesEmptyScalars()
     session.SetOwnerOverrideValue(owner, "nullable", "", isCollection: false);
     var edited = preparer.Prepare(payload, session.CapturePreparation(payload), payload.ThemeMode, payload.ProjectId);
     Equal("", edited.TransientValues[$"{edited.ScopeKey}:nullable"]);
-    True(Object(edited.Payload.DesignPreviewJson)["nullable"] is null);
+    Equal("", Object(edited.Payload.DesignPreviewJson)["nullable"]!.GetValue<string>());
 }
 
 static void DesignUneditedValuesFollowCurrentDefaults()
@@ -25931,7 +25931,7 @@ static void AnimatableFieldVocabularyIsConstrained()
         .Where(field => field["animatable"]?.GetValue<bool>() == true)
         .Select(field => field["id"]!.GetValue<string>());
     SequenceEqual(new[] { "actor", "headerSubtitle" }, screenAnimated);
-    SequenceEqual(new[] { "direction", "text", "keepCursorAfterWrite", "statusVisible", "status", "statusText", "mediaSource", "isPlaying", "fullScreen", "actionsRevealed", "showIconRow" }, messageAnimated);
+    SequenceEqual(new[] { "direction", "text", "keepCursorAfterWrite", "statusVisible", "status", "statusText", "mediaSource", "isPlaying", "fullScreen", "actionsRevealed", "showIconRow", "mediaCutout" }, messageAnimated);
     var buttonFieldIds = new[]
     {
         "enabled",
@@ -28061,6 +28061,8 @@ static void SocialPostComposesHeaderRows()
             "messageBubbleRevealMode",
             "messageWriteOnTrigger",
             "messageWriteOnFrame",
+            "mediaCutout",
+            "galleryMediaCutout",
         ],
         inputs.Select((input) => input.Id).ToList());
     var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
