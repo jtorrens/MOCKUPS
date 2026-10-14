@@ -1351,6 +1351,7 @@ test("a nested full-screen Media keeps the exact root Screen coordinates", () =>
     statusText: "",
     mediaType: "image",
     mediaSource: "",
+    mediaCutout: false,
     viewportSize: "240|160",
     mediaScale: 1,
     mediaOffset: "0|0",

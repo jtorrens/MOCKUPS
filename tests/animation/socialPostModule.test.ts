@@ -103,6 +103,8 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
     "messageBubbleRevealMode",
     "messageWriteOnTrigger",
     "messageWriteOnFrame",
+    "mediaCutout",
+    "galleryMediaCutout",
   ]);
   assert.deepEqual(runtime.collections.map(({ id }) => id), [
     "socialPostRows",
