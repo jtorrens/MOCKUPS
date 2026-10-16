@@ -205,6 +205,26 @@ export function planScopedValidation(
       typecheck = true;
       continue;
     }
+    if ([
+      "src/Mockups.Desktop.Host/Program.cs",
+      "src/Mockups.Desktop.Host/WorkstationUpdateMaintenance.cs",
+      "src/Mockups.Desktop.Host/ApplicationStartupCoordinator.cs",
+      "scripts/workstationProject.mjs",
+    ].includes(file)) {
+      desktopCompile = true;
+      add(npmStep(
+        "desktop:maintenance-startup",
+        "test:focus:desktop",
+        "update bookkeeping must never prevent read-only application startup",
+        ["--", "--exact", "repository maintenance does not block read-only application startup"],
+      ));
+      add(npmStep(
+        "tooling:workstation-update",
+        "test:focus:preview",
+        "updates require a closed application and preserve canonical-to-snapshot direction",
+        ["--", "tests/tooling/workstationProject.test.ts"],
+      ));
+    }
     if (file === "src/Mockups.Desktop/Common/SvgReplacementService.cs") {
       desktopCompile = true;
       add(npmStep(
@@ -665,7 +685,7 @@ function run(): void {
     process.stdout.write(
       "\n[workstation-update-maintenance] "
       + "node scripts/workstationProject.mjs require-update\n"
-      + "  MOCKUPS must remain closed for the complete repository update\n",
+      + "  the repository update must be registered; Desktop startup remains available\n",
     );
     if (!values.list) {
       const maintenance = spawnSync(

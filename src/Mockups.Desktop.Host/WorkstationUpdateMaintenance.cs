@@ -24,12 +24,8 @@ internal static class WorkstationUpdateMaintenance
             LockFileName);
     }
 
-    public static bool IsActive(
-        string databasePath) =>
-        File.Exists(LockFilePath(databasePath));
-
-    public static WorkstationApplicationAccessLease?
-        TryAcquireApplicationAccess(
+    public static WorkstationApplicationAccessLease
+        AcquireApplicationAccess(
             string databasePath)
     {
         var directory = Path.GetDirectoryName(
@@ -51,14 +47,6 @@ internal static class WorkstationUpdateMaintenance
                 File.Delete(applicationLockPath);
                 stream = CreateApplicationLock(
                     applicationLockPath);
-            }
-
-            if (IsActive(databasePath))
-            {
-                stream.Dispose();
-                stream = null;
-                File.Delete(applicationLockPath);
-                return null;
             }
 
             return new WorkstationApplicationAccessLease(

@@ -84,10 +84,9 @@ test("one maintenance cycle snapshots only the canonical workstation database", 
     assert.equal(existsSync(paths.workstationUpdateLock), true);
     assert.equal(requireWorkstationUpdate(paths), paths.workstationUpdateLock);
     assert.equal(readFileSync(paths.repositoryDatabase, "utf8"), "authored");
-    assert.throws(
-      () => bootstrapWorkstationProject(repository, workstation, () => {}),
-      /update maintenance is active/u,
-    );
+    bootstrapWorkstationProject(repository, workstation, () => {});
+    assert.equal(readFileSync(paths.workstationDatabase, "utf8"), "authored");
+    assert.equal(existsSync(paths.workstationUpdateLock), true);
 
     writeFileSync(paths.workstationDatabase, "authored-final");
     checkpointWorkstationUpdate(repository, workstation, () => {});
@@ -123,7 +122,7 @@ test("one maintenance cycle snapshots only the canonical workstation database", 
   }
 });
 
-test("failed maintenance begin releases its startup block", () => {
+test("failed maintenance begin removes its update marker", () => {
   const temporary = mkdtempSync(path.join(tmpdir(), "mockups-update-failure-"));
   const repository = path.join(temporary, "repository");
   const workstation = path.join(temporary, "workstation");
@@ -194,6 +193,8 @@ test("an active application prevents maintenance from acquiring the database", (
       /MOCKUPS is open/u,
     );
     assert.equal(existsSync(paths.workstationUpdateLock), false);
+    assert.equal(readFileSync(paths.repositoryDatabase, "utf8"), "database");
+    assert.equal(readFileSync(paths.workstationDatabase, "utf8"), "database");
   } finally {
     rmSync(temporary, { recursive: true, force: true });
   }

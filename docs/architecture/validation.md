@@ -42,6 +42,7 @@ the existing owner rather than creating a second guard or validation route.
 | Current data at Render execution | Desktop registry, `Render execution captures current data through the shared operation boundary` | An edit after planning appears in the next execution; a queued edit waits for the shared preparation gate and appears on the following execution. |
 | Missing resources never substitute another source | [resource and identity regressions](../../tests/animation/architectureAuditContracts.test.ts) | Missing icons paint a red square at authored size; media cannot search another root or reuse an older successful video frame after extraction fails. |
 | Atomic authoring and propagation | Desktop registry's Theme duration, Component Variant and Override promotion tests | Injected write failures leave all affected documents and durations unchanged, on temporary database copies. |
+| Update admission and independent startup | [workstation tooling](../../tests/tooling/workstationProject.test.ts), Desktop registry `repository maintenance does not block read-only application startup` | An application marker rejects update begin before snapshots change; an update marker permits application access and successful read-only session preparation. Reintroducing either startup rejection fails the success assertion. Packaging bootstrap preserves an existing database while maintenance is registered. `runScopedValidation.ts` selects both owners for changes to either side. |
 | Active rules and test selection | [documentation controls](../../tests/tooling/architectureValidationContracts.test.ts), [scope selection](../../tests/tooling/scopedValidation.test.ts) | Current schema and canonical index agree; exact known retired claims are rejected; build graphs and isolated UI consumers cannot be omitted by an earlier directory match. |
 
 Text checks enforce bounded documentation and metadata contracts only. They do
@@ -360,9 +361,9 @@ contains unrelated authoring data.
 
 The operational workstation database is outside the repository and is the
 canonical authoring authority. Every writing task starts with `npm run
-desktop:update:begin`, which creates the shared maintenance lock, proves the
-database is closed, validates it and atomically captures the baseline in
-`data/mockups.sqlite`. `test:revision` requires that lock and then compares the
+desktop:update:begin`, which checks that MOCKUPS is closed, registers the
+update, validates the database and atomically captures the baseline in
+`data/mockups.sqlite`. `test:revision` requires that marker and then compares the
 exact canonical and snapshot bytes. The snapshot is classified normally and
 must be staged with every intentional persistence change. `--file
 data/mockups.sqlite` may still select its exact validation owner before
@@ -370,8 +371,9 @@ staging.
 
 Persisted-contract maintenance migrates only the canonical workstation
 database. `npm run desktop:update:checkpoint` validates and snapshots that
-migrated authority while the app remains blocked. After validation and commit,
-`npm run desktop:update:end` requires parity and releases the lock.
+migrated authority with the database closed. The marker never blocks application
+startup. After validation and commit, `npm run desktop:update:end` requires
+parity and removes the marker.
 
 Desktop tests validate the snapshot before preparing a disposable test source.
 Their required Production Shot and Screens are then created through the real

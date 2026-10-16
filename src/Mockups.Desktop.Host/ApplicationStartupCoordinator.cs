@@ -22,9 +22,6 @@ public abstract record StartupResult
     public sealed record DatabaseInvalid(string Path, string Reason)
         : StartupResult;
 
-    public sealed record UpdateMaintenanceActive(string Path)
-        : StartupResult;
-
     public sealed record PreviewBundleMissing(string Path)
         : StartupResult;
 
@@ -116,14 +113,6 @@ public sealed class ApplicationStartupCoordinator
     {
         cancellationToken.ThrowIfCancellationRequested();
         var currentDatabasePath = Path.GetFullPath(databasePath);
-        var maintenancePath =
-            WorkstationUpdateMaintenance.LockFilePath(
-                currentDatabasePath);
-        if (File.Exists(maintenancePath))
-        {
-            return new StartupResult.UpdateMaintenanceActive(
-                maintenancePath);
-        }
         var manifestPath = Path.Combine(
             _previewBundleDirectory,
             "manifest.json");
@@ -241,8 +230,6 @@ internal static class StartupResultMessage
                 $"The current database is missing: {missing.Path}",
             StartupResult.DatabaseInvalid invalid =>
                 $"The current database is invalid: {invalid.Reason}",
-            StartupResult.UpdateMaintenanceActive maintenance =>
-                $"A repository update is active. MOCKUPS will remain closed until maintenance ends: {maintenance.Path}",
             StartupResult.PreviewBundleMissing missing =>
                 $"The Desktop Preview bundle is missing: {missing.Path}",
             StartupResult.PreviewBundleInvalid invalid =>

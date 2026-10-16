@@ -128,7 +128,6 @@ export function bootstrapWorkstationProject(
   validateDatabase = validateCurrentDatabase,
 ) {
   const paths = workstationProjectPaths(root, workstationRoot);
-  requireNoWorkstationUpdate(paths);
   requireFile(paths.repositoryDatabase, "Repository database snapshot");
   mkdirSync(paths.workstationRoot, { recursive: true });
   const createdDatabase = !existsSync(paths.workstationDatabase);
@@ -206,6 +205,12 @@ export function beginWorkstationUpdate(
   const paths = workstationProjectPaths(root, workstationRoot);
   validateRepository(root);
   requireFile(paths.workstationDatabase, "Workstation database");
+  if (existsSync(paths.workstationApplicationLock)) {
+    throw new Error(
+      `MOCKUPS is open: ${paths.workstationApplicationLock}`,
+    );
+  }
+  requireClosedDatabase(paths.workstationDatabase);
   mkdirSync(paths.workstationRoot, { recursive: true });
   try {
     writeFileSync(
@@ -228,12 +233,6 @@ export function beginWorkstationUpdate(
   }
 
   try {
-    if (existsSync(paths.workstationApplicationLock)) {
-      throw new Error(
-        `MOCKUPS is open: ${paths.workstationApplicationLock}`,
-      );
-    }
-    requireClosedDatabase(paths.workstationDatabase);
     return snapshotWorkstationProject(
       root,
       workstationRoot,

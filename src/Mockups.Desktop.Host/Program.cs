@@ -51,14 +51,8 @@ internal static class Program
             ?? DesktopHost.DefaultDatabasePath();
         using var workstationAccess =
             WorkstationUpdateMaintenance
-                .TryAcquireApplicationAccess(
+                .AcquireApplicationAccess(
                     databasePath);
-        if (workstationAccess is null)
-        {
-            Console.Error.WriteLine(
-                "MOCKUPS is closed while a repository update is active.");
-            return;
-        }
 
         SystemPreviewFixtureCatalog.ValidateInstalled();
 

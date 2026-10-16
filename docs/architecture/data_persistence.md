@@ -921,21 +921,24 @@ snapshot only when it does not yet exist; it never copies the external Project
 asset roots, and startup itself remains read-only.
 
 Every repository-writing task starts with `npm run desktop:update:begin`. It
-atomically creates the shared workstation maintenance lock before checking for
-open database handles, validates the canonical database, and captures its exact
-bytes into `data/mockups.sqlite`. Desktop startup reads that lock and refuses to
-open the Project for the complete update. Desktop and maintenance also acquire
-opposing application/update markers before touching SQLite, closing the race
-between a startup check and the first database open. `npm run desktop:db:snapshot` and
-`npm run desktop:update:checkpoint` require the active lock and always copy in
-the single canonical-to-snapshot direction.
+checks that MOCKUPS is closed through its application marker and open database
+handles before registering the update, validates the canonical database and
+captures its exact bytes into `data/mockups.sqlite`. The update marker coordinates
+repository writers and explicit maintenance commands only. It is never an
+application startup condition: an active or interrupted update cannot prevent
+Desktop from opening, and packaging bootstrap does not reject that marker.
+Desktop retains its application marker for update admission and its independent
+single-instance lease. There is no task-long exclusion of application startup.
+`npm run desktop:db:snapshot` and `npm run desktop:update:checkpoint` require
+an active update and a closed database and always copy in the single
+canonical-to-snapshot direction.
 
 When the schema or another persisted contract changes, the explicit
 maintenance workflow migrates only the canonical workstation database. A final
 checkpoint produces the repository snapshot from that migrated authority; the
 snapshot is never migrated independently. `npm run desktop:update:end` validates
 the canonical database, requires exact byte parity and only then removes the
-lock. Bootstrap and normal startup never overwrite an existing workstation
+update marker. Bootstrap and normal startup never overwrite an existing workstation
 database.
 
 Desktop tests first validate the staged snapshot, then build their disposable
@@ -947,8 +950,9 @@ that prepared source again before mutation.
 The complete repository gate also validates a disposable byte-for-byte copy of
 the staged parity database. The copy path is supplied explicitly to every
 database-backed test, scaffold verifier and architecture check. Validation
-never swaps the worktree database. The maintenance lock keeps the canonical
-workstation database frozen while the staged snapshot is validated.
+never swaps the worktree database. Validation consumes that captured snapshot;
+it does not freeze the canonical workstation database or block Desktop startup.
+The final parity check detects subsequent canonical authoring changes.
 The disposable workspace receives explicit Project asset roots, preserving
 strict Project font, icon and media resolution without copying or mutating
 those assets.

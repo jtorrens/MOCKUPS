@@ -203,3 +203,17 @@ test("collection identity owners retain nested persistence and isolated UI cover
     assert.ok(steps.some(step => step.id === "desktop-ui"), file);
   }
 });
+
+test("update admission and application startup select both contract owners", () => {
+  for (const file of [
+    "src/Mockups.Desktop.Host/Program.cs",
+    "src/Mockups.Desktop.Host/WorkstationUpdateMaintenance.cs",
+    "src/Mockups.Desktop.Host/ApplicationStartupCoordinator.cs",
+    "scripts/workstationProject.mjs",
+  ]) {
+    const ids = planScopedValidation(repositoryRoot, [file]).map(step => step.id);
+    assert.ok(ids.includes("desktop:maintenance-startup"), file);
+    assert.ok(ids.includes("tooling:workstation-update"), file);
+    assert.ok(ids.includes("desktop-compile"), file);
+  }
+});

@@ -205,7 +205,7 @@ var tests = new (string Name, Action Run)[]
     ("Desktop Preview startup rejects missing and stale bundle artifacts", DesktopPreviewBundleValidationIsStrict),
     ("startup classifies missing and invalid Preview bundles", StartupClassifiesPreviewBundleFailures),
     ("default Desktop database belongs to the workstation application data root", DefaultDesktopDatabaseUsesApplicationData),
-    ("active repository maintenance keeps the canonical database closed", ActiveRepositoryMaintenanceKeepsCanonicalDatabaseClosed),
+    ("repository maintenance does not block read-only application startup", RepositoryMaintenanceDoesNotBlockReadOnlyApplicationStartup),
     ("startup classifies missing empty and invalid databases", StartupClassifiesDatabaseFailures),
     ("startup prepares a read-only session and honors cancellation", StartupPreparesReadOnlySessionAndHonorsCancellation),
     ("closing the editor cancels Preview work and releases its lifetime", ClosingEditorCancelsPreviewLifetime),
@@ -1320,7 +1320,7 @@ static void StartupClassifiesDatabaseFailures()
     }
 }
 
-static void ActiveRepositoryMaintenanceKeepsCanonicalDatabaseClosed()
+static void RepositoryMaintenanceDoesNotBlockReadOnlyApplicationStartup()
 {
     var root = Path.Combine(
         Path.GetTempPath(),
@@ -1339,7 +1339,7 @@ static void ActiveRepositoryMaintenanceKeepsCanonicalDatabaseClosed()
         WorkstationUpdateMaintenance.ApplicationLockFileName);
     using (var access =
            WorkstationUpdateMaintenance
-               .TryAcquireApplicationAccess(databasePath))
+               .AcquireApplicationAccess(databasePath))
     {
         True(access is not null);
         True(File.Exists(applicationPath));
@@ -1350,11 +1350,10 @@ static void ActiveRepositoryMaintenanceKeepsCanonicalDatabaseClosed()
         "{\"schemaVersion\":1,\"state\":\"active\"}");
     try
     {
-        using var blockedAccess =
+        using var access =
             WorkstationUpdateMaintenance
-                .TryAcquireApplicationAccess(databasePath);
-        True(blockedAccess is null);
-        True(!File.Exists(applicationPath));
+                .AcquireApplicationAccess(databasePath);
+        True(File.Exists(applicationPath));
         var before = SHA256.HashData(
             File.ReadAllBytes(databasePath));
         var coordinator = new ApplicationStartupCoordinator(
@@ -1364,10 +1363,8 @@ static void ActiveRepositoryMaintenanceKeepsCanonicalDatabaseClosed()
 
         var result = coordinator.Start(databasePath);
 
-        True(result is StartupResult.UpdateMaintenanceActive);
-        Equal(
-            maintenancePath,
-            ((StartupResult.UpdateMaintenanceActive)result).Path);
+        True(result is StartupResult.Success);
+        True(File.Exists(maintenancePath));
         SequenceEqual(
             before,
             SHA256.HashData(

@@ -401,9 +401,9 @@ lease and continue to consume immutable snapshots without Project reads.
 For each coherent phase:
 
 1. confirm branch, expected commit and clean worktree;
-2. run `npm run desktop:update:begin` before the first edit; this closes the
-   authoring interval, captures the canonical baseline and blocks Desktop
-   startup until the task ends;
+2. run `npm run desktop:update:begin` before the first edit; this checks that
+   MOCKUPS is closed and captures the canonical baseline. The update marker
+   never blocks later Desktop startup;
 3. if the captured baseline changed, checkpoint it before mixing it with the
    new implementation;
 4. inspect the current owner and shared equivalent;
@@ -421,7 +421,7 @@ For each coherent phase:
 10. inspect the final diff, including parity artifacts;
 11. create a local commit;
 12. run `npm run desktop:update:end`; it validates exact canonical/snapshot
-    parity before releasing the startup block;
+    parity before removing the update marker;
 13. on macOS, always run `npm run desktop:launch:mac`; it rebuilds the bundle,
    atomically installs `/Applications/MOCKUPS Editor.app` and opens that exact
    installed artifact. Review it there; on other platforms, open the validated
@@ -439,9 +439,10 @@ The Desktop and development scaffolds author only the canonical workstation
 database. On macOS it is `~/Library/Application Support/MOCKUPS/mockups.sqlite`.
 Each Project's assets remain at the absolute external `media_root` selected for
 that Project; bootstrap and snapshot never copy them into or out of Application
-Support. `test:revision` requires active update maintenance and exact parity, so
-the app cannot author concurrently and a revision cannot silently validate a
-stale snapshot. Bootstrap is explicit and create-only; application startup
+Support. `test:revision` requires active update maintenance and exact parity
+at validation entry. It consumes a disposable snapshot and does not prevent
+later application startup; final parity must still match before closing the
+update. Bootstrap is explicit and create-only; application startup
 never copies or repairs persistence.
 
 Only one task writes tracked project code or parity data in the shared checkout
