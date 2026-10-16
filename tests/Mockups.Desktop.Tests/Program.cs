@@ -119,6 +119,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview visual context boundary preserves options metrics and media root read-only", PreviewVisualContextBoundaryPreservesResolvedResources),
     ("Production Preview session boundary preserves Shot and Screen data read-only", ProductionPreviewSessionBoundaryPreservesCurrentData),
     ("Module Instance animation store preserves current documents and explicit writes", ModuleInstanceAnimationStorePreservesCurrentDocuments),
+    ("animation actions acknowledge pending writes and recover after failure", AnimationActionsAcknowledgePendingWrites),
     ("failed animation commands restore the last confirmed document", FailedAnimationCommandRestoresConfirmedDocument),
     ("rapid animation commands serialize against the latest confirmed document", RapidAnimationCommandsUseLatestConfirmedDocument),
     ("independent animation surfaces rebase mutations on persisted state", IndependentAnimationSurfacesRebaseOnPersistedState),
@@ -387,6 +388,7 @@ var tests = new (string Name, Action Run)[]
     ("Social Post composes two structure-projected header and footer rows", SocialPostComposesHeaderRows),
     ("Social Post Screen creation persists projected Runtime rows atomically", SocialPostScreenCreationIsAtomic),
     ("Social Post editor exposes its current generic header contract", SocialPostEditorExposesCurrentHeaderContract),
+    ("Production animation activation keeps Payload and navigation mounted", () => ProductionScalarCommitKeepsScreenPayloadMounted(false, true)),
     ("Production scalar commits keep Screen Payload mounted", () => ProductionScalarCommitKeepsScreenPayloadMounted(false)),
     ("pinned Production authoring refreshes its timeline while editing Design", () => ProductionScalarCommitKeepsScreenPayloadMounted(true)),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
@@ -7277,7 +7279,7 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
     }
 }
 
-static void ProductionScalarCommitKeepsScreenPayloadMounted(bool pinWhileEditingDesign)
+static void ProductionScalarCommitKeepsScreenPayloadMounted(bool pinWhileEditingDesign, bool activateAnimation = false)
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(
@@ -7409,6 +7411,39 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted(bool pinWhileEditing
                 .OfType<DictionaryFieldControl>()
                 .Single((field) =>
                     field.FieldId == "headerSubtitle");
+            if (activateAnimation)
+            {
+                var roots = WindowSession(window).TreeRoots;
+                var toggle = mountedSurface.GetVisualDescendants().OfType<Button>()
+                    .First(button => Avalonia.Automation.AutomationProperties.GetName(button)?
+                        .StartsWith("Enable animation for ", StringComparison.Ordinal) == true);
+                var name = Required(Avalonia.Automation.AutomationProperties.GetName(toggle));
+                toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                True(!toggle.IsEnabled);
+                True(toggle.Content is ProgressBar { IsIndeterminate: true });
+                True(SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return toggle.IsEnabled && Avalonia.Automation.AutomationProperties.GetName(toggle)
+                        == name.Replace("Enable animation", "Disable animation");
+                }, TimeSpan.FromSeconds(15)));
+                True(SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return !ReferenceEquals(previousSession, preparedSession.GetValue(preview));
+                }, TimeSpan.FromSeconds(15)));
+                var settleAnimation = Stopwatch.StartNew();
+                while (settleAnimation.Elapsed < TimeSpan.FromSeconds(1))
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    True(ReferenceEquals(mountedSurface, authoringHost.Content));
+                    True(ReferenceEquals(roots, WindowSession(window).TreeRoots));
+                    Thread.Sleep(10);
+                }
+                True(mountedSurface.GetVisualDescendants().Contains(toggle));
+                window.Close();
+                return;
+            }
             mountedField.SetValue(
                 "Mounted payload",
                 commit: true);
@@ -15481,7 +15516,6 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
         var store = new ModuleInstanceAnimationDocumentStore(
             database.Animations,
             database.Production,
-            database.Resources,
             timelineDataSource,
             operations);
         var screen = Descendants(database.LoadProjectTree())
@@ -15529,6 +15563,10 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
             SequenceEqual(frames.OrderBy((frame) => frame), frames);
         }
 
+        foreach (var shot in Descendants(database.LoadProjectTree()).Where(node => node.Kind == ProjectTreeNodeKind.Shot))
+            foreach (var range in ModuleInstanceTimeline.ScreenRanges(timelineDataSource, shot.Id))
+                Equal(range, ModuleInstanceTimeline.ScreenRange(timelineDataSource, range.ScreenId));
+
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
@@ -15546,6 +15584,47 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
     {
         File.Delete(temporary);
     }
+}
+
+static void AnimationActionsAcknowledgePendingWrites()
+{
+    using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        foreach (var fail in new[] { false, true })
+        {
+            var button = EditorTimelineTransport.CreateNavigationButton(
+                EditorTimelineTransport.CreateKeyframeGlyph(false), "Create keyframe");
+            var content = button.Content;
+            var completion = new TaskCompletionSource();
+            var writes = 0;
+            var errors = 0;
+            EditorTimelineTransport.BindAnimationAction(button, () =>
+            {
+                writes++;
+                return completion.Task;
+            }, _ => errors++);
+            var window = new Window { Content = button, Width = 200, Height = 120 };
+            window.Show();
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            True(!button.IsEnabled);
+            True(button.Content is ProgressBar { IsIndeterminate: true });
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Equal(1, writes);
+            if (fail) completion.SetException(new InvalidOperationException("Rejected write"));
+            else completion.SetResult();
+            True(SpinWait.SpinUntil(() =>
+            {
+                Dispatcher.UIThread.RunJobs();
+                return button.IsEnabled;
+            }, TimeSpan.FromSeconds(5)));
+            True(ReferenceEquals(content, button.Content));
+            Equal(fail ? 1 : 0, errors);
+            Equal("Create keyframe", Avalonia.Automation.AutomationProperties.GetName(button));
+            window.Close();
+        }
+    }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
 static void FailedAnimationCommandRestoresConfirmedDocument()
@@ -15686,7 +15765,6 @@ static void IndependentAnimationSurfacesRebaseOnPersistedState()
             new(
                 database.Animations,
                 database.Production,
-                database.Resources,
                 timeline,
                 operations);
         var screen = Descendants(database.LoadProjectTree())
@@ -22493,6 +22571,8 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "animation actions acknowledge pending writes and recover after failure",
+    "Production animation activation keeps Payload and navigation mounted",
     "Usage breadcrumbs show exact Production ancestry without changing navigation",
     "Preview Loop shares controls and repeats prepared Design actions",
     "Design defaults preserve later scalar and editable collection changes",

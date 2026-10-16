@@ -1,4 +1,8 @@
 using Avalonia;
+using System;
+using System.Threading.Tasks;
+using Avalonia.Automation;
+using Avalonia.Threading;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
@@ -10,6 +14,54 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class EditorTimelineTransport
 {
+    // One pending presentation for track activation and keyframe actions.
+    // This acknowledges input immediately without publishing unconfirmed data.
+    public static void BindAnimationAction(
+        Button button, Func<Task> action, Action<Exception> onError)
+    {
+        var pending = false;
+        button.Click += async (_, args) =>
+        {
+            args.Handled = true;
+            if (pending) return;
+            pending = true;
+            var content = button.Content;
+            var name = AutomationProperties.GetName(button);
+            var help = AutomationProperties.GetHelpText(button);
+            var tip = ToolTip.GetTip(button);
+            var enabled = button.IsEnabled;
+            var indicator = new ProgressBar
+            {
+                IsIndeterminate = true, Width = 16, Height = 4,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            button.IsEnabled = false;
+            button.Content = indicator;
+            EditorAccessibility.Describe(button, "Saving animation…");
+            try
+            {
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+                await action();
+            }
+            catch (Exception exception)
+            {
+                onError(exception);
+            }
+            finally
+            {
+                pending = false;
+                if (ReferenceEquals(button.Content, indicator)) button.Content = content;
+                if (AutomationProperties.GetName(button) == "Saving animation…")
+                {
+                    AutomationProperties.SetName(button, name);
+                    AutomationProperties.SetHelpText(button, help);
+                    ToolTip.SetTip(button, tip);
+                }
+                button.IsEnabled = enabled;
+            }
+        };
+    }
+
     public static ToggleButton CreateLoopButton(PreviewPlaybackState state)
     {
         var button = new ToggleButton

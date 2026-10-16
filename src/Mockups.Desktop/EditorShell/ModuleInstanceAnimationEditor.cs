@@ -58,7 +58,6 @@ internal sealed class ModuleInstanceAnimationEditor
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
             animation,
             timeline,
-            moduleInstanceThemes,
             timelineDataSource,
             operations);
         _dictionaryServices = dictionaryServices;
@@ -445,69 +444,81 @@ internal sealed class ModuleInstanceAnimationEditor
             RefreshVisuals();
         }
 
+        var pendingMutations = 0;
         async Task SaveAndRefresh(
             Func<ModuleInstanceAnimationDocument, bool>
                 mutation)
         {
-            var selectedKey = TargetKey(selected);
-            var authoringHorizon = timelineDuration;
-            var result = await commands.ExecuteAsync(
-                mutation);
-            document =
-                new ModuleInstanceAnimationDocument(
-                    result.ConfirmedAnimationJson);
-            if (!result.Succeeded)
+            pendingMutations++;
+            detailHost.IsEnabled = false;
+            timelineHost.IsEnabled = false;
+            try
             {
-                currentAnimation =
-                    DesignPreviewTestValues.Parse(
+                var selectedKey = TargetKey(selected);
+                var authoringHorizon = timelineDuration;
+                var result = await commands.ExecuteAsync(
+                    mutation);
+                document =
+                    new ModuleInstanceAnimationDocument(
                         result.ConfirmedAnimationJson);
+                if (!result.Succeeded)
+                {
+                    currentAnimation =
+                        DesignPreviewTestValues.Parse(
+                            result.ConfirmedAnimationJson);
+                    RefreshTargetBindings(
+                        selectedKey);
+                    _messages.Error(
+                        "Save animation",
+                        result.Error
+                        ?? new InvalidOperationException(
+                            "Animation persistence failed."));
+                    RefreshVisuals();
+                    return;
+                }
+                if (result.Snapshot is null)
+                {
+                    return;
+                }
+                preparedSnapshot = result.Snapshot;
+                _preparedAnimationSnapshot =
+                    preparedSnapshot;
+                currentAnimation = DesignPreviewTestValues.Parse(
+                    preparedSnapshot.Source.AnimationJson);
+                screenStartFrame =
+                    preparedSnapshot.ActionStartFrame;
+                actualScreenDuration =
+                    preparedSnapshot.DurationFrames;
                 RefreshTargetBindings(
                     selectedKey);
-                _messages.Error(
-                    "Save animation",
-                    result.Error
-                    ?? new InvalidOperationException(
-                        "Animation persistence failed."));
+                maximumAuthoredTimelineFrame = MaximumAuthoredTimelineFrame();
+                timelineMinimumFrame = Math.Min(
+                    timelineMinimumFrame,
+                    MinimumAuthoredTimelineFrame());
+                naturalTimelineDuration = usesOwnerTimeline
+                    ? ReferenceNaturalDuration()
+                    : actualScreenDuration;
+                calculatedAuthoringDuration = CalculatedAuthoringDuration(maximumAuthoredTimelineFrame);
+                hasOutOfRangeKeyframes = maximumAuthoredTimelineFrame >= naturalTimelineDuration;
+                timelineDuration = !usesOwnerTimeline && durationPolicy == RuntimeDurationPolicy.Explicit
+                    ? Math.Max(actualScreenDuration, authoringHorizon)
+                    : Math.Max(calculatedAuthoringDuration, authoringHorizon);
+                currentFrame = Math.Clamp(
+                    currentFrame,
+                    timelineMinimumFrame,
+                    timelineDuration - 1);
+                playhead.SetRange(
+                    timelineMinimumFrame,
+                    timelineDuration);
                 RefreshVisuals();
-                return;
+                _onChanged();
             }
-            if (result.Snapshot is null)
+            finally
             {
-                return;
+                pendingMutations--;
+                detailHost.IsEnabled = pendingMutations == 0;
+                timelineHost.IsEnabled = pendingMutations == 0;
             }
-
-            preparedSnapshot = result.Snapshot;
-            _preparedAnimationSnapshot =
-                preparedSnapshot;
-            currentAnimation = DesignPreviewTestValues.Parse(
-                preparedSnapshot.Source.AnimationJson);
-            screenStartFrame =
-                preparedSnapshot.ActionStartFrame;
-            actualScreenDuration =
-                preparedSnapshot.DurationFrames;
-            RefreshTargetBindings(
-                selectedKey);
-            maximumAuthoredTimelineFrame = MaximumAuthoredTimelineFrame();
-            timelineMinimumFrame = Math.Min(
-                timelineMinimumFrame,
-                MinimumAuthoredTimelineFrame());
-            naturalTimelineDuration = usesOwnerTimeline
-                ? ReferenceNaturalDuration()
-                : actualScreenDuration;
-            calculatedAuthoringDuration = CalculatedAuthoringDuration(maximumAuthoredTimelineFrame);
-            hasOutOfRangeKeyframes = maximumAuthoredTimelineFrame >= naturalTimelineDuration;
-            timelineDuration = !usesOwnerTimeline && durationPolicy == RuntimeDurationPolicy.Explicit
-                ? Math.Max(actualScreenDuration, authoringHorizon)
-                : Math.Max(calculatedAuthoringDuration, authoringHorizon);
-            currentFrame = Math.Clamp(
-                currentFrame,
-                timelineMinimumFrame,
-                timelineDuration - 1);
-            playhead.SetRange(
-                timelineMinimumFrame,
-                timelineDuration);
-            _onChanged();
-            RefreshVisuals();
         }
 
         void RefreshTargetBindings(
@@ -820,9 +831,9 @@ internal sealed class ModuleInstanceAnimationEditor
                 Content = CreateAnimationActivationLabel(target.Label),
                 HorizontalAlignment = HorizontalAlignment.Left,
             };
-            activate.Click += (_, _) =>
-            {
-                _ = saveMutation((candidate) =>
+            EditorAccessibility.Describe(activate, $"Enable animation for {target.Label}");
+            EditorTimelineTransport.BindAnimationAction(activate, () =>
+                saveMutation((candidate) =>
                 {
                     AddInitialTrack(
                         candidate,
@@ -832,8 +843,7 @@ internal sealed class ModuleInstanceAnimationEditor
                         target.BaseValue,
                         target.FieldId);
                     return true;
-                });
-            };
+                }), exception => _messages.Error("Save animation", exception));
             return activate;
         }
         var localFrame = ownerFrame;
@@ -914,9 +924,9 @@ internal sealed class ModuleInstanceAnimationEditor
                         .ToList()),
                 selectedInterpolation),
             DictionaryServices(node));
-        void SaveValue(string value, string interpolation)
+        Task SaveValue(string value, string interpolation)
         {
-            _ = saveMutation((candidate) =>
+            return saveMutation((candidate) =>
             {
                 candidate.UpsertKeyframe(
                     target.FieldId,
@@ -929,12 +939,12 @@ internal sealed class ModuleInstanceAnimationEditor
                 return true;
             });
         }
-        keyframeButton.Click += (_, _) =>
+        EditorTimelineTransport.BindAnimationAction(keyframeButton, async () =>
         {
-            if (exact is null) SaveValue(valueControl.Value, interpolationControl.Value);
+            if (exact is null) await SaveValue(valueControl.Value, interpolationControl.Value);
             else if (enabledKeyframes.Count > 1)
             {
-                _ = saveMutation((candidate) =>
+                await saveMutation((candidate) =>
                 {
                     candidate.RemoveKeyframe(
                         target.FieldId,
@@ -943,15 +953,15 @@ internal sealed class ModuleInstanceAnimationEditor
                     return true;
                 });
             }
-        };
+        }, exception => _messages.Error("Save animation", exception));
         keyframeButton.IsEnabled = exact is null || enabledKeyframes.Count > 1;
         valueControl.IsEnabled = true;
-        valueControl.ValueCommitted += (_, value) => SaveValue(value, interpolationControl.Value);
+        valueControl.ValueCommitted += (_, value) => _ = SaveValue(value, interpolationControl.Value);
         panel.Children.Add(valueControl);
         interpolationControl.IsEnabled = true;
         interpolationControl.ValueCommitted += (_, interpolation) =>
         {
-            if (exact is not null) SaveValue(valueControl.Value, interpolation);
+            if (exact is not null) _ = SaveValue(valueControl.Value, interpolation);
         };
         panel.Children.Add(interpolationControl);
         return panel;

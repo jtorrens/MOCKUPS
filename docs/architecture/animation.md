@@ -304,6 +304,24 @@ The visual timeline never treats an unawaited write as committed and rapid
 keyframe or track commands cannot overwrite one another from a shared
 stale JSON copy.
 
+Track activation and keyframe buttons acknowledge the click immediately through
+`EditorTimelineTransport.BindAnimationAction`: a pending indicator replaces the
+glyph and repeated activation is disabled until completion. Only confirmed
+snapshots update track state; failures restore the action and report the error.
+Timeline mutation also disables its editing hosts while a command is pending,
+including controls rebuilt by playhead changes. Payload publishes the confirmed
+snapshot to its mounted animation bindings (including track-owned duration
+fields), then requests the normal Preview refresh without reloading navigation.
+Animation-only refreshes retain the Payload surface and dictionary controls.
+
+A mutation reads the current animation document inside the operation gate and
+prepares one complete snapshot after the write. Single-Screen ranges use the
+same range projection as Shot ranges, but load only that Screen and its explicit
+Shot timing; they never prepare neighboring Screens. Theme tokens are reused
+from that operation's prepared source. Transaction validation and Shot duration
+synchronization remain unchanged. `animation.mutation` diagnostics separate
+queue, candidate preparation, validated save and snapshot preparation times.
+
 Production Preview navigation separately receives a Project-wide immutable
 timeline catalog. Shot controls use its ordered Screen ranges and absolute
 keyframe frames; visual callbacks do not reload a Screen, walk persisted slots

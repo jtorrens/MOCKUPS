@@ -88,6 +88,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private string? _preparedAnimationJson;
     private RuntimeInputTimelineMutation? _preparedTimelineMutation;
     private RuntimeInputSurface? _mountedSurface;
+    private event Action<ModuleInstanceAnimationDocument>? AnimationPresentationChanged;
     private IRuntimeInputOptionsDataSource ActiveInputOptions =>
         new PreparedRuntimeInputOptionsDataSource(PreparedDictionaryContext);
 
@@ -377,9 +378,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 JsonSerializer.SerializeToNode(new { next.Inputs, next.Collections, next.Actions }))
             || current.DictionaryContext is not { } context
             || next.DictionaryContext is not { } nextContext
-            || !context.HasSameContent(nextContext)
-            || current.AnimationSnapshot?.Source.AnimationJson
-                != next.AnimationSnapshot?.Source.AnimationJson)
+            || !context.HasSameContent(nextContext))
         {
             return false;
         }
@@ -391,6 +390,26 @@ internal sealed class RuntimeInputsCollectionEditor
         _mountedSurface = next with { Preview = current.Preview };
         UsePreparedContext(next);
         return true;
+    }
+
+    private void AcceptConfirmedAnimationSnapshot(ModuleInstanceAnimationSnapshot snapshot)
+    {
+        if (_mountedSurface is not { } surface || surface.Owner.Node.Id != snapshot.ModuleInstanceId) return;
+        _mountedSurface = surface with { AnimationSnapshot = snapshot };
+        UsePreparedContext(_mountedSurface);
+    }
+
+    private void BindAnimationPresentation(Control control, Action<ModuleInstanceAnimationDocument> refresh)
+    {
+        void Refresh() => refresh(new ModuleInstanceAnimationDocument(
+            _preparedAnimationJson ?? throw new InvalidOperationException("Animation presentation requires a prepared document.")));
+        control.AttachedToVisualTree += (_, _) =>
+        {
+            AnimationPresentationChanged += refresh;
+            Refresh();
+        };
+        control.DetachedFromVisualTree += (_, _) => AnimationPresentationChanged -= refresh;
+        Refresh();
     }
 
     private async Task CommitSurfaceRuntimeValueAsync(
@@ -439,6 +458,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 "Production animation editing requires its prepared dictionary context."),
             surface.AnimationSnapshot ?? throw new InvalidOperationException(
                 "Production animation editing requires its prepared snapshot."));
+        if (surface.AnimationSnapshot is { } animation)
+            AnimationPresentationChanged?.Invoke(new ModuleInstanceAnimationDocument(animation.Source.AnimationJson));
     }
 
     private sealed record PreparedDesignTestValues(
@@ -2404,17 +2425,24 @@ internal sealed class RuntimeInputsCollectionEditor
         IReadOnlyList<ComponentInputDefinition>? ownerInputs = null)
     {
         if (!owner.IsInstance) return control;
+        if (input.Animation is null && ownerInputs?.Any(candidate =>
+                candidate.Animation?.BaseDurationFieldId == input.Id) != true) return control;
         var document = new ModuleInstanceAnimationDocument(
             PreparedAnimationJson(owner));
-        var timingOwnedByTrack = ownerInputs?.Any((candidate) =>
-            candidate.Animation is { } animation
-            && animation.BaseDurationFieldId.Equals(input.Id, StringComparison.Ordinal)
-            && document.HasTrack(candidate.Id, targetId)) == true;
-        if (timingOwnedByTrack)
+        var originallyEnabled = control.IsEnabled;
+        var originalTip = ToolTip.GetTip(control);
+        BindAnimationPresentation(control, current =>
         {
-            control.IsEnabled = false;
-            ToolTip.SetTip(control, "Duration is owned by the active animation track.");
-        }
+            var timingOwnedByTrack = ownerInputs?.Any(candidate =>
+                candidate.Animation is { } animation
+                && animation.BaseDurationFieldId.Equals(input.Id, StringComparison.Ordinal)
+                && current.HasTrack(candidate.Id, targetId)) == true;
+            control.IsEnabled = originallyEnabled && !timingOwnedByTrack
+                && !current.HasTrack(input.Id, targetId);
+            if (timingOwnedByTrack)
+                ToolTip.SetTip(control, "Duration is owned by the active animation track.");
+            else ToolTip.SetTip(control, originalTip);
+        });
         if (input.Animation is null) return control;
         var active = document.HasTrack(input.Id, targetId);
         var baseValue = control.Value;
@@ -2441,9 +2469,8 @@ internal sealed class RuntimeInputsCollectionEditor
         EditorAccessibility.Describe(toggle, active
             ? $"Disable animation for {input.Label}"
             : $"Enable animation for {input.Label}");
-        toggle.Click += async (_, args) =>
+        EditorTimelineTransport.BindAnimationAction(toggle, async () =>
         {
-            args.Handled = true;
             if (active)
             {
                 if (!await _confirmAnimationDisable(input.Label)) return;
@@ -2457,6 +2484,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             else
             {
+                baseValue = control.Value;
                 await ExecutePreparedAnimationMutationAsync(
                     owner,
                     (candidate) =>
@@ -2468,7 +2496,7 @@ internal sealed class RuntimeInputsCollectionEditor
                                 owner.Node,
                                 input,
                                 targetId,
-                                control.Value);
+                                baseValue);
                         }
                         else
                         {
@@ -2477,15 +2505,14 @@ internal sealed class RuntimeInputsCollectionEditor
                                 targetId,
                                 DesignPreviewTestValues.ValueNode(
                                     input,
-                                    control.Value)
-                                    ?? JsonValue.Create(control.Value)!,
+                                    baseValue)
+                                    ?? JsonValue.Create(baseValue)!,
                                 input.Animation.Interpolations.First());
                         }
                         return true;
                     });
             }
-            if (_reloadAndSelect is not null) _reloadAndSelect(owner.Node);
-        };
+        }, exception => _messages.Error("Save animation", exception));
         var row = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("Auto,*"),
@@ -2494,13 +2521,25 @@ internal sealed class RuntimeInputsCollectionEditor
         row.Children.Add(toggle);
         Grid.SetColumn(control, 1);
         row.Children.Add(control);
-        if (active && _animationEditor is not null)
+        void RefreshResolvedValue()
         {
-            control.IsEnabled = false;
-            void RefreshResolvedValue() => control.SetPresentedValue(
-                _animationEditor.ResolveRuntimeValue(owner.Node, input, targetId, baseValue));
-            PreviewPlaybackStateBinding.Attach(row, _playbackState, RefreshResolvedValue);
+            if (_animationEditor is not null && active)
+                control.SetPresentedValue(_animationEditor.ResolveRuntimeValue(owner.Node, input, targetId, baseValue));
         }
+        BindAnimationPresentation(row, current =>
+        {
+            var wasActive = active;
+            active = current.HasTrack(input.Id, targetId);
+            toggle.Content = EditorTimelineTransport.CreateAnimationActivationGlyph(
+                filled: active, extendsOwnerDuration: input.Animation.ExtendsOwnerDuration,
+                size: 16, brush: active ? EditorAnimationVisuals.ActiveTrackBrush : EditorAnimationVisuals.InactiveTrackBrush);
+            EditorAccessibility.Describe(toggle, active
+                ? $"Disable animation for {input.Label}"
+                : $"Enable animation for {input.Label}");
+            if (wasActive && !active) control.SetPresentedValue(baseValue);
+            RefreshResolvedValue();
+        });
+        PreviewPlaybackStateBinding.Attach(row, _playbackState, RefreshResolvedValue);
         return row;
     }
 
@@ -2535,6 +2574,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 ?? new InvalidOperationException(
                     "Animation persistence failed.");
         }
+        if (result.Snapshot is not null) AcceptConfirmedAnimationSnapshot(result.Snapshot);
     }
 
     private EditorInternalNavigationSection CreateTestValueCollectionGroupSubcard(

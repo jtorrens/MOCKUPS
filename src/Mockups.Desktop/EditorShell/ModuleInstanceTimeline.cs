@@ -87,13 +87,7 @@ internal static class ModuleInstanceTimeline
         {
             var source =
                 sources[index];
-            var range =
-                new ScreenTimelineRange(
-                    ids[index],
-                    source.StartFrame,
-                    transitionFrames,
-                    source.ActionDelayFrames,
-                    DurationFrames(source));
+            var range = ScreenRange(ids[index], source, transitionFrames);
             ranges.Add(range);
         }
         return ranges;
@@ -106,12 +100,24 @@ internal static class ModuleInstanceTimeline
         var source =
             dataSource.Load(
                 moduleInstanceId);
-        return ScreenRanges(
-                dataSource,
-                source.ShotId)
-            .Single((range) =>
-                range.ScreenId == moduleInstanceId);
+        return ScreenRange(dataSource, moduleInstanceId, source);
     }
+
+    public static ScreenTimelineRange ScreenRange(
+        ModuleInstanceTimelineDataSource dataSource,
+        string moduleInstanceId,
+        ModuleInstanceTimelineSource source)
+    {
+        var shot = dataSource.LoadShot(source.ShotId);
+        return ScreenRange(moduleInstanceId, source,
+            ScreenTimelineTiming.EffectiveTransitionDurationFrames(
+                shot.TransitionJson, shot.TransitionDurationFrames));
+    }
+
+    private static ScreenTimelineRange ScreenRange(
+        string id, ModuleInstanceTimelineSource source, int transitionFrames) =>
+        new(id, source.StartFrame, transitionFrames,
+            source.ActionDelayFrames, DurationFrames(source));
 
     public static int ScreenStartFrame(ModuleInstanceTimelineDataSource dataSource, string moduleInstanceId)
         => ScreenRange(

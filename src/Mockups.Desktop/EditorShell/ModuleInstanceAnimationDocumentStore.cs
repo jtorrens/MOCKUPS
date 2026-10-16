@@ -1,5 +1,7 @@
 using Mockups.DesktopEditorShell.Data;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -22,20 +24,17 @@ internal sealed class ModuleInstanceAnimationDocumentStore
 {
     private readonly IModuleInstanceAnimationStore _database;
     private readonly IModuleInstanceTimelineStore _timeline;
-    private readonly IModuleInstanceThemeTokenQuery _themeTokens;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
     private readonly EditorOperationCoordinator _operations;
 
     public ModuleInstanceAnimationDocumentStore(
         IModuleInstanceAnimationStore database,
         IModuleInstanceTimelineStore timeline,
-        IModuleInstanceThemeTokenQuery themeTokens,
         ModuleInstanceTimelineDataSource timelineDataSource,
         EditorOperationCoordinator operations)
     {
         _database = database;
         _timeline = timeline;
-        _themeTokens = themeTokens;
         _timelineDataSource = timelineDataSource;
         _operations = operations;
     }
@@ -43,27 +42,31 @@ internal sealed class ModuleInstanceAnimationDocumentStore
     public ModuleInstanceAnimationSource Load(string moduleInstanceId)
     {
         var timeline = _timelineDataSource.Load(moduleInstanceId);
-        return new ModuleInstanceAnimationSource(
+        return LoadSource(moduleInstanceId, timeline);
+    }
+
+    private ModuleInstanceAnimationSource LoadSource(
+        string moduleInstanceId, ModuleInstanceTimelineSource timeline) =>
+        new ModuleInstanceAnimationSource(
             _timeline.GetModuleInstanceVariantSettings(
                 moduleInstanceId).ConfigJson,
             timeline.AnimationJson,
             timeline.RuntimePreviewJson,
-            _themeTokens.GetModuleInstanceThemeTokensJson(
-                moduleInstanceId),
+            timeline.ThemeTokensJson,
             timeline.EffectiveContractJson,
             timeline.FrameRate);
-    }
 
     public ModuleInstanceAnimationSnapshot LoadSnapshot(
         string moduleInstanceId)
     {
+        var timeline = _timelineDataSource.Load(moduleInstanceId);
         var range =
             ModuleInstanceTimeline.ScreenRange(
                 _timelineDataSource,
-                moduleInstanceId);
+                moduleInstanceId, timeline);
         return new ModuleInstanceAnimationSnapshot(
             moduleInstanceId,
-            Load(moduleInstanceId),
+            LoadSource(moduleInstanceId, timeline),
             range.StartFrame,
             range.StartFrame
                 + range.ActionStartFrame,
@@ -72,25 +75,28 @@ internal sealed class ModuleInstanceAnimationDocumentStore
                 range.ActionDurationFrames));
     }
 
-    public Task<ModuleInstanceAnimationSnapshot>
-        ExecuteMutationAsync(
-            string moduleInstanceId,
-            System.Func<ModuleInstanceAnimationDocument, bool>
-                mutation) =>
-        _operations.ExecuteAsync(
-            () =>
-            {
-                var current = LoadSnapshot(moduleInstanceId);
-                var candidate =
-                    new ModuleInstanceAnimationDocument(
-                        current.Source.AnimationJson);
-                if (!mutation(candidate))
-                {
-                    return current;
-                }
-                _database.UpdateModuleInstanceAnimationJson(
-                    moduleInstanceId,
-                    candidate.ToJson());
-                return LoadSnapshot(moduleInstanceId);
-            });
+    public Task<ModuleInstanceAnimationSnapshot> ExecuteMutationAsync(
+        string moduleInstanceId,
+        System.Func<ModuleInstanceAnimationDocument, bool> mutation)
+    {
+        var timer = Stopwatch.StartNew();
+        return _operations.ExecuteAsync(() =>
+        {
+            var queueMs = timer.Elapsed.TotalMilliseconds;
+            var currentJson = _timeline.GetModuleInstanceSettings(moduleInstanceId).AnimationJson;
+            var candidate = new ModuleInstanceAnimationDocument(currentJson);
+            var changed = mutation(candidate);
+            var preparedMs = timer.Elapsed.TotalMilliseconds;
+            if (changed)
+                _database.UpdateModuleInstanceAnimationJson(moduleInstanceId, candidate.ToJson());
+            var savedMs = timer.Elapsed.TotalMilliseconds;
+            var snapshot = LoadSnapshot(moduleInstanceId);
+            PreviewDebugLog.Write("animation.mutation",
+                ("screen", moduleInstanceId), ("queueMs", queueMs),
+                ("prepareMs", preparedMs - queueMs),
+                ("saveMs", savedMs - preparedMs),
+                ("snapshotMs", timer.Elapsed.TotalMilliseconds - savedMs));
+            return snapshot;
+        });
+    }
 }

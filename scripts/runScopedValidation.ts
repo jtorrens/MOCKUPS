@@ -226,6 +226,22 @@ export function planScopedValidation(
       ));
     }
     if ([
+      "src/Mockups.Desktop/EditorShell/EditorTimelineTransport.cs",
+      "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
+      "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
+      "src/Mockups.Desktop/EditorShell/ModuleInstanceTimeline.cs",
+      "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
+    ].includes(file)) {
+      desktopUi = true;
+      for (const name of [
+        "Module Instance animation store preserves current documents and explicit writes",
+        "animation actions acknowledge pending writes and recover after failure",
+        "Production animation activation keeps Payload and navigation mounted",
+      ]) add(npmStep(`desktop:animation-feedback:${name}`, "test:focus:desktop",
+        "animation feedback must remain immediate and retain the mounted authoring surface",
+        ["--", "--exact", name]));
+    }
+    if ([
       "src/Mockups.Application/ReferenceUsageModels.cs",
       "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
       "src/Mockups.Desktop/EditorShell/EditorReferenceUsageLink.cs",

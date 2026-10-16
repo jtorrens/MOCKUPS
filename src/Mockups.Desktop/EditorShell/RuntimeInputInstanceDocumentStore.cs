@@ -27,7 +27,6 @@ internal sealed class RuntimeInputInstanceDocumentStore
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
             animation,
             timeline,
-            themeTokens,
             new ModuleInstanceTimelineDataSource(
                 timeline,
                 themeTokens),
