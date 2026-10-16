@@ -14377,7 +14377,7 @@ static void EmbeddedFieldsResolveInheritedNestedOverrides()
         var database = new SqliteProjectTestContext(temporary);
         var conversation = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
-                && node.Id == "module_core_chat::variant::foqn_chats_sin_cabecera_copy");
+                && node.Id == "module_core_chat::variant::default");
         conversation = database.DuplicateModuleVariant(
             conversation,
             "Nested inherited override test");
@@ -14387,6 +14387,11 @@ static void EmbeddedFieldsResolveInheritedNestedOverrides()
             EmbeddedComponentSlotCatalog.Get("component.bubble.actorLabel.editor"),
             EmbeddedComponentSlotCatalog.Get("component.label.surface.editor"),
         };
+
+        // Build the local override explicitly; authored user Variants may be
+        // renamed or deleted independently of this regression fixture.
+        database.UpdateEmbeddedComponentField(
+            conversation, slots, "component.style.cornerRadiusToken", "theme.radii.s");
 
         var inherited = database.CreateEmbeddedComponentFieldValue(
             conversation,
