@@ -123,6 +123,9 @@ It includes:
   `ComponentVariantSlot` fields inside structured collections, nested
   collection paths, amber propagation through field/card/internal navigation,
   and Restore persistence through the stable item path;
+- exhaustive owner rendering for calculated embedded inputs and forwarded
+  structured collections, rejecting duplicate Runtime storage keys and any
+  effective collection field omitted by its complete declaration;
 - shared modal lifetime, including the single presenter owning the exact native
   `ShowDialog` call, dismissal of transient surfaces and displacement of
   auxiliary siblings before that call, one-time restoration after close or

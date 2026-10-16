@@ -148,6 +148,13 @@ When a new Component boundary is created:
 Forwarding is prepared before Preview registry dispatch. A resolver, registry,
 bridge or renderer never infers forwarding from matching names or shapes.
 
+A forwarded collection declares every field that can remain in its effective
+items. When it projects a Variant-owned structured collection, its parent
+declaration reuses that collection's complete structural field contract and
+adds only the explicit Runtime fields owned by the forwarding boundary.
+Reconciliation may preserve those declared structural values by stable item id;
+it never turns undeclared stored keys into an implicit compatibility path.
+
 ## Embedded documents
 
 At a recursive embedded boundary:

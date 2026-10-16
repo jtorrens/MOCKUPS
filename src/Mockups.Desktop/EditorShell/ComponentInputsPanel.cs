@@ -729,7 +729,9 @@ internal sealed class ComponentPreviewInputSession
         return true;
     }
 
-    private void StopPlayback(bool clearPlayingState = false)
+    private void StopPlayback(
+        bool clearPlayingState = false,
+        bool notifyStopped = false)
     {
         var wasEnabled = _playbackTimer.IsEnabled;
         if (wasEnabled)
@@ -743,7 +745,7 @@ internal sealed class ComponentPreviewInputSession
         {
             SetPlaybackState(activeAction, false);
         }
-        if (wasEnabled || wasPlaying)
+        if (wasEnabled || wasPlaying || notifyStopped)
         {
             PreviewDebugLog.Write(
                 "preview.playback.stop",
@@ -855,7 +857,7 @@ internal sealed class ComponentPreviewInputSession
 
         HeldFinalActionId = "";
         _values[ActionStateKey(action)] = "false";
-        StopPlayback();
+        StopPlayback(notifyStopped: true);
         PlaybackBusyChanged?.Invoke(false);
     }
 

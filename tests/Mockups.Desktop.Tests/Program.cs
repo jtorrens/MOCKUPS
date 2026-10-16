@@ -2941,6 +2941,24 @@ static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()
         node.Kind == ProjectTreeNodeKind.ComponentVariant
         && node.IsProtected);
     var settings = database.GetComponentClassSettings(textBox.Id);
+    var previewContract = JsonPath.ParseRequiredObject(
+        settings.DesignPreviewJson,
+        "Text Box Runtime contract");
+    var previewInputs = JsonPath.RequiredArray(
+        previewContract,
+        "inputs",
+        "Text Box Runtime contract").OfType<JsonObject>().ToDictionary(
+            (input) => JsonPath.RequiredString(input, "id", "Text Box Runtime input"),
+            StringComparer.Ordinal);
+    foreach (var inputId in new[] { "fixedSize", "contentMaxWidth", "growSize" })
+    {
+        Equal(
+            "calculated",
+            JsonPath.RequiredString(
+                previewInputs[inputId],
+                "source",
+                $"Text Box Runtime input '{inputId}'"));
+    }
     var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
     var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
     var payload = Required(CreatePreviewPayload(database, textBoxVariant, theme.Id));
@@ -6051,12 +6069,16 @@ static void RapidVisualSelectionCommitsLatestPreparedEditor()
                 var window = CreateTestWindow(temporary);
                 window.Show();
                 var roots = WindowSession(window).TreeRoots;
-                var first = Descendants(roots)
+                var projectNodes = CanonicalProjectNodesFromRoots(roots);
+                var first = projectNodes
                     .First((node) =>
-                        node.Kind == ProjectTreeNodeKind.Theme);
-                var latest = Descendants(roots)
+                        node.Kind == ProjectTreeNodeKind.ComponentVariant);
+                var latest = projectNodes
                     .First((node) =>
-                        node.Kind == ProjectTreeNodeKind.Actor);
+                        node.Kind == ProjectTreeNodeKind.ComponentVariant
+                        && !node.Parent!.Id.Equals(
+                            first.Parent!.Id,
+                            StringComparison.Ordinal));
                 var selectNode = typeof(MainWindow).GetMethod(
                     "SelectNodeById",
                     BindingFlags.Instance
@@ -6082,11 +6104,22 @@ static void RapidVisualSelectionCommitsLatestPreparedEditor()
                     BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
                 var operations = Required(typeof(EditorPreviewController).GetField("_operations",
                     BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(preview) as EditorOperationCoordinator);
-                void Wait(Func<bool> condition) => True(SpinWait.SpinUntil(() =>
+                void Wait(Func<bool> condition)
                 {
-                    Dispatcher.UIThread.RunJobs();
-                    return condition();
-                }, TimeSpan.FromSeconds(15)), "Selection loading did not reach its expected state.");
+                    if (SpinWait.SpinUntil(() =>
+                        {
+                            Dispatcher.UIThread.RunJobs();
+                            return condition();
+                        }, TimeSpan.FromSeconds(15)))
+                    {
+                        return;
+                    }
+                    throw new InvalidOperationException(
+                        "Selection loading did not reach its expected state. "
+                        + $"Selected={WindowSession(window).SelectedNode?.Id}; "
+                        + $"Committed={content.CommittedOwnerId}; Loading={loading.IsVisible}; "
+                        + $"Message={Required(window.FindControl<TextBox>("ShellMessagesTextBox")).Text}");
+                }
                 void AssertLoading(string destination)
                 {
                     True(loading.IsVisible);
@@ -6119,14 +6152,14 @@ static void RapidVisualSelectionCommitsLatestPreparedEditor()
 
                     // A newer record selection retires the workspace request.
                     True((bool)selectNode.Invoke(window, [first.Id])!);
-                    AssertLoading(first.Name);
+                    AssertLoading(first.Parent!.Name);
                     Required(window.FindControl<Button>("DesignWorkspaceButton"))
                         .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                    AssertLoading(first.Name);
+                    AssertLoading(first.Parent.Name);
                     True((bool)selectNode.Invoke(window, [latest.Id])!);
-                    AssertLoading(latest.Name);
+                    AssertLoading(latest.Parent!.Name);
                     Dispatcher.UIThread.RunJobs();
-                    AssertLoading(latest.Name);
+                    AssertLoading(latest.Parent.Name);
                 }
                 finally { release.TrySetResult(true); }
                 Wait(() => blocker.IsCompleted && content.CommittedOwnerId == latest.Id && !loading.IsVisible);
@@ -6142,11 +6175,11 @@ static void RapidVisualSelectionCommitsLatestPreparedEditor()
                     connection.Open();
                     using var command = connection.CreateCommand();
                     command.CommandText = "UPDATE editor_layouts SET layout_json = '[]' WHERE record_class_id = $id";
-                    command.Parameters.AddWithValue("$id", first.RecordClassId);
+                    command.Parameters.AddWithValue("$id", first.Parent!.RecordClassId);
                     Equal(1, command.ExecuteNonQuery());
                 }
                 True((bool)selectNode.Invoke(window, [first.Id])!);
-                AssertLoading(first.Name);
+                AssertLoading(first.Parent!.Name);
                 Wait(() => !loading.IsVisible && content.Cards.Any(card =>
                     card.SessionStateId == "editor:preparation-error"));
                 True(navigation.IsEffectivelyEnabled);
@@ -9717,6 +9750,13 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             runtimeFields.Single((field) => field.FieldId == "itemWidth")
                 .SetValue("320", commit: true);
             Dispatcher.UIThread.RunJobs();
+            Check(
+                SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return PreviewUpdateSequence(previewPane) > initialPreviewSequence;
+                }, TimeSpan.FromSeconds(15)),
+                "Changing a Chat List Runtime Input did not request a new Preview render.");
             var inputSession = typeof(EditorPreviewController)
                 .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(previewController) as ComponentPreviewInputSession
@@ -9735,13 +9775,6 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                         "Chat List effective Design Preview"),
                     "itemWidth",
                     "Chat List effective Design Preview"));
-            Check(
-                SpinWait.SpinUntil(() =>
-                {
-                    Dispatcher.UIThread.RunJobs();
-                    return PreviewUpdateSequence(previewPane) > initialPreviewSequence;
-                }, TimeSpan.FromSeconds(15)),
-                "Changing a Chat List Runtime Input did not request a new Preview render.");
 
             // Activate the actual shared action, not a stand-alone callback.
             window.GetVisualDescendants().OfType<DictionaryFieldControl>()
@@ -22854,6 +22887,15 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var slots = collections.Single((collection) => collection.Id == "stackStates");
         var stateInputs = collections.Single((collection) => collection.Id == "stackStateInputs");
         var stateSelection = slots.Fields.Single((input) => input.Id == "runtimeStateId");
+        SequenceEqual(
+            ["name", "alternatives", "gapBeforeMode", "gapBeforeToken", "gapBeforeWeight", "runtimeStateId"],
+            slots.Fields.Select((field) => field.Id).ToList());
+        Equal(
+            true,
+            slots.Fields.Single((field) => field.Id == "alternatives").StructuredCollection is not null);
+        Equal(
+            true,
+            slots.Fields.Where((field) => field.Id != "runtimeStateId").All((field) => field.ActionOnly));
         Equal("name", slots.ItemPresentation?.TitleFieldId ?? "");
         Equal("name", stateInputs.ItemPresentation?.TitleFieldId ?? "");
         Equal("Initial", stateInputs.ItemPresentation?.FirstItemBadge ?? "");
@@ -26151,6 +26193,7 @@ static void PreviewLoopSharesControlsAndDesignActions()
                     Equal(0, stopped);
                     state.SetLooping(false);
                     for (var frame = 1; frame <= end; frame++) Tick();
+                    Tick();
                     input.NotifyPlaybackFramePresented();
                     True(!input.IsPlaybackActive);
                     Equal(end, input.CurrentActionFrame(actionId));

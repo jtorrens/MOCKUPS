@@ -996,7 +996,191 @@
                   "jsonKey": "name",
                   "kind": "text",
                   "valueKind": "StringSingleLine",
-                  "defaultValue": "",
+                  "defaultValue": "Slot",
+                  "actionOnly": true
+                },
+                {
+                  "id": "alternatives",
+                  "label": "States",
+                  "jsonKey": "alternatives",
+                  "kind": "collection",
+                  "valueKind": "StructuredCollection",
+                  "defaultValue": "[{\"id\":\"item_16b5ffd2bf2a4657abbb342a0e822411\",\"name\":\"State\",\"variantReference\":\"\",\"overrides\":{},\"inputs\":{},\"active\":false,\"behavior\":\"replace\",\"placement\":{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0},\"enterMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false},\"exitMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}}]",
+                  "structuredCollection": {
+                    "id": "alternatives",
+                    "label": "States",
+                    "jsonKey": "alternatives",
+                    "itemLabel": "State",
+                    "componentItems": {
+                      "variantReferenceJsonKey": "variantReference",
+                      "overridesJsonKey": "overrides",
+                      "inputsJsonKey": "inputs"
+                    },
+                    "fields": [
+                      {
+                        "id": "name",
+                        "label": "Name",
+                        "jsonKey": "name",
+                        "kind": "text",
+                        "valueKind": "StringSingleLine",
+                        "defaultValue": "State"
+                      },
+                      {
+                        "id": "variantReference",
+                        "label": "Component",
+                        "jsonKey": "variantReference",
+                        "kind": "componentVariant",
+                        "defaultValue": "",
+                        "componentType": "*",
+                        "allowEmpty": true,
+                        "valueKind": "ComponentVariant"
+                      },
+                      {
+                        "id": "active",
+                        "label": "Active",
+                        "jsonKey": "active",
+                        "kind": "boolean",
+                        "defaultValue": "false",
+                        "minimumItemIndex": 1,
+                        "valueKind": "Boolean"
+                      },
+                      {
+                        "id": "behavior",
+                        "label": "Behavior",
+                        "jsonKey": "behavior",
+                        "kind": "option",
+                        "defaultValue": "replace",
+                        "minimumItemIndex": 1,
+                        "options": [
+                          {
+                            "value": "replace",
+                            "label": "Replace"
+                          },
+                          {
+                            "value": "overlay",
+                            "label": "Overlay"
+                          }
+                        ],
+                        "valueKind": "OptionToken"
+                      },
+                      {
+                        "id": "placement",
+                        "label": "Placement",
+                        "jsonKey": "placement",
+                        "kind": "text",
+                        "valueKind": "AlignmentPlacement",
+                        "defaultValue": "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}"
+                      },
+                      {
+                        "id": "enterMotion",
+                        "label": "Enter transition",
+                        "jsonKey": "enterMotion",
+                        "kind": "text",
+                        "valueKind": "Motion",
+                        "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                      },
+                      {
+                        "id": "exitMotion",
+                        "label": "Exit transition",
+                        "jsonKey": "exitMotion",
+                        "kind": "text",
+                        "valueKind": "Motion",
+                        "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                      }
+                    ],
+                    "itemPresentation": {
+                      "titleFieldId": "name",
+                      "firstItemBadge": "Initial",
+                      "subtitleFieldIds": [
+                        "variantReference",
+                        "behavior",
+                        "placement"
+                      ],
+                      "subtitleMaxCharacters": 72,
+                      "fallbackIcon": "component"
+                    }
+                  },
+                  "actionOnly": true
+                },
+                {
+                  "id": "gapBeforeMode",
+                  "label": "Gap before",
+                  "jsonKey": "gapBeforeMode",
+                  "kind": "option",
+                  "defaultValue": "fixed",
+                  "minimumItemIndex": 1,
+                  "options": [
+                    {
+                      "value": "fixed",
+                      "label": "Fixed"
+                    },
+                    {
+                      "value": "reflow",
+                      "label": "Reflow"
+                    }
+                  ],
+                  "valueKind": "OptionToken",
+                  "actionOnly": true
+                },
+                {
+                  "id": "gapBeforeToken",
+                  "label": "Fixed gap before",
+                  "jsonKey": "gapBeforeToken",
+                  "kind": "themeToken",
+                  "defaultValue": "theme.spacing.m",
+                  "minimumItemIndex": 1,
+                  "options": [
+                    {
+                      "value": "theme.spacing.none",
+                      "label": "spacing.none"
+                    },
+                    {
+                      "value": "theme.spacing.xs",
+                      "label": "spacing.xs"
+                    },
+                    {
+                      "value": "theme.spacing.s",
+                      "label": "spacing.s"
+                    },
+                    {
+                      "value": "theme.spacing.m",
+                      "label": "spacing.m"
+                    },
+                    {
+                      "value": "theme.spacing.l",
+                      "label": "spacing.l"
+                    },
+                    {
+                      "value": "theme.spacing.xl",
+                      "label": "spacing.xl"
+                    },
+                    {
+                      "value": "theme.spacing.xxl",
+                      "label": "spacing.xxl"
+                    }
+                  ],
+                  "enabledWhenItemJsonKey": "gapBeforeMode",
+                  "enabledWhenItemValues": [
+                    "fixed"
+                  ],
+                  "valueKind": "ThemeToken",
+                  "actionOnly": true
+                },
+                {
+                  "id": "gapBeforeWeight",
+                  "label": "Reflow gap before weight",
+                  "jsonKey": "gapBeforeWeight",
+                  "kind": "number",
+                  "valueKind": "Decimal",
+                  "defaultValue": "1",
+                  "minimumItemIndex": 1,
+                  "minimum": 0.01,
+                  "maximum": 100,
+                  "increment": 0.1,
+                  "enabledWhenItemJsonKey": "gapBeforeMode",
+                  "enabledWhenItemValues": [
+                    "reflow"
+                  ],
                   "actionOnly": true
                 },
                 {
@@ -1052,7 +1236,11 @@
             },
             "projection": {
               "itemMetadataJsonKeys": [
-                "name"
+                "name",
+                "alternatives",
+                "gapBeforeMode",
+                "gapBeforeToken",
+                "gapBeforeWeight"
               ],
               "optionsSourceCollectionJsonKey": "alternatives",
               "stateJsonKey": "runtimeStateId",
@@ -2104,7 +2292,191 @@
                     "jsonKey": "name",
                     "kind": "text",
                     "valueKind": "StringSingleLine",
-                    "defaultValue": "",
+                    "defaultValue": "Slot",
+                    "actionOnly": true
+                  },
+                  {
+                    "id": "alternatives",
+                    "label": "States",
+                    "jsonKey": "alternatives",
+                    "kind": "collection",
+                    "valueKind": "StructuredCollection",
+                    "defaultValue": "[{\"id\":\"item_16b5ffd2bf2a4657abbb342a0e822411\",\"name\":\"State\",\"variantReference\":\"\",\"overrides\":{},\"inputs\":{},\"active\":false,\"behavior\":\"replace\",\"placement\":{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0},\"enterMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false},\"exitMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}}]",
+                    "structuredCollection": {
+                      "id": "alternatives",
+                      "label": "States",
+                      "jsonKey": "alternatives",
+                      "itemLabel": "State",
+                      "componentItems": {
+                        "variantReferenceJsonKey": "variantReference",
+                        "overridesJsonKey": "overrides",
+                        "inputsJsonKey": "inputs"
+                      },
+                      "fields": [
+                        {
+                          "id": "name",
+                          "label": "Name",
+                          "jsonKey": "name",
+                          "kind": "text",
+                          "valueKind": "StringSingleLine",
+                          "defaultValue": "State"
+                        },
+                        {
+                          "id": "variantReference",
+                          "label": "Component",
+                          "jsonKey": "variantReference",
+                          "kind": "componentVariant",
+                          "defaultValue": "",
+                          "componentType": "*",
+                          "allowEmpty": true,
+                          "valueKind": "ComponentVariant"
+                        },
+                        {
+                          "id": "active",
+                          "label": "Active",
+                          "jsonKey": "active",
+                          "kind": "boolean",
+                          "defaultValue": "false",
+                          "minimumItemIndex": 1,
+                          "valueKind": "Boolean"
+                        },
+                        {
+                          "id": "behavior",
+                          "label": "Behavior",
+                          "jsonKey": "behavior",
+                          "kind": "option",
+                          "defaultValue": "replace",
+                          "minimumItemIndex": 1,
+                          "options": [
+                            {
+                              "value": "replace",
+                              "label": "Replace"
+                            },
+                            {
+                              "value": "overlay",
+                              "label": "Overlay"
+                            }
+                          ],
+                          "valueKind": "OptionToken"
+                        },
+                        {
+                          "id": "placement",
+                          "label": "Placement",
+                          "jsonKey": "placement",
+                          "kind": "text",
+                          "valueKind": "AlignmentPlacement",
+                          "defaultValue": "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}"
+                        },
+                        {
+                          "id": "enterMotion",
+                          "label": "Enter transition",
+                          "jsonKey": "enterMotion",
+                          "kind": "text",
+                          "valueKind": "Motion",
+                          "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                        },
+                        {
+                          "id": "exitMotion",
+                          "label": "Exit transition",
+                          "jsonKey": "exitMotion",
+                          "kind": "text",
+                          "valueKind": "Motion",
+                          "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                        }
+                      ],
+                      "itemPresentation": {
+                        "titleFieldId": "name",
+                        "firstItemBadge": "Initial",
+                        "subtitleFieldIds": [
+                          "variantReference",
+                          "behavior",
+                          "placement"
+                        ],
+                        "subtitleMaxCharacters": 72,
+                        "fallbackIcon": "component"
+                      }
+                    },
+                    "actionOnly": true
+                  },
+                  {
+                    "id": "gapBeforeMode",
+                    "label": "Gap before",
+                    "jsonKey": "gapBeforeMode",
+                    "kind": "option",
+                    "defaultValue": "fixed",
+                    "minimumItemIndex": 1,
+                    "options": [
+                      {
+                        "value": "fixed",
+                        "label": "Fixed"
+                      },
+                      {
+                        "value": "reflow",
+                        "label": "Reflow"
+                      }
+                    ],
+                    "valueKind": "OptionToken",
+                    "actionOnly": true
+                  },
+                  {
+                    "id": "gapBeforeToken",
+                    "label": "Fixed gap before",
+                    "jsonKey": "gapBeforeToken",
+                    "kind": "themeToken",
+                    "defaultValue": "theme.spacing.m",
+                    "minimumItemIndex": 1,
+                    "options": [
+                      {
+                        "value": "theme.spacing.none",
+                        "label": "spacing.none"
+                      },
+                      {
+                        "value": "theme.spacing.xs",
+                        "label": "spacing.xs"
+                      },
+                      {
+                        "value": "theme.spacing.s",
+                        "label": "spacing.s"
+                      },
+                      {
+                        "value": "theme.spacing.m",
+                        "label": "spacing.m"
+                      },
+                      {
+                        "value": "theme.spacing.l",
+                        "label": "spacing.l"
+                      },
+                      {
+                        "value": "theme.spacing.xl",
+                        "label": "spacing.xl"
+                      },
+                      {
+                        "value": "theme.spacing.xxl",
+                        "label": "spacing.xxl"
+                      }
+                    ],
+                    "enabledWhenItemJsonKey": "gapBeforeMode",
+                    "enabledWhenItemValues": [
+                      "fixed"
+                    ],
+                    "valueKind": "ThemeToken",
+                    "actionOnly": true
+                  },
+                  {
+                    "id": "gapBeforeWeight",
+                    "label": "Reflow gap before weight",
+                    "jsonKey": "gapBeforeWeight",
+                    "kind": "number",
+                    "valueKind": "Decimal",
+                    "defaultValue": "1",
+                    "minimumItemIndex": 1,
+                    "minimum": 0.01,
+                    "maximum": 100,
+                    "increment": 0.1,
+                    "enabledWhenItemJsonKey": "gapBeforeMode",
+                    "enabledWhenItemValues": [
+                      "reflow"
+                    ],
                     "actionOnly": true
                   },
                   {
@@ -2160,7 +2532,11 @@
               },
               "projection": {
                 "itemMetadataJsonKeys": [
-                  "name"
+                  "name",
+                  "alternatives",
+                  "gapBeforeMode",
+                  "gapBeforeToken",
+                  "gapBeforeWeight"
                 ],
                 "optionsSourceCollectionJsonKey": "alternatives",
                 "stateJsonKey": "runtimeStateId",
