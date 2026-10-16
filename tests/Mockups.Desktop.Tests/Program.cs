@@ -197,6 +197,7 @@ var tests = new (string Name, Action Run)[]
     ("animated media paths validate and retain exact keyframe ownership", AnimatedMediaPathsValidateAndRetainKeyframeOwnership),
     ("External Media keeps existing paths and filenames visible", ExternalMediaKeepsExistingPathsVisible),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
+    ("Usage breadcrumbs show exact Production ancestry without changing navigation", UsageBreadcrumbsShowExactProductionAncestry),
     ("Production Data owns actors devices and fonts", ProductionDataOwnsConcreteResources),
     ("Production tree orders Shots alphabetically by name", ProductionTreeOrdersShotsByName),
     ("selected navigation rows contain every action and chevron", SelectedNavigationRowsContainEveryAction),
@@ -22492,6 +22493,7 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "Usage breadcrumbs show exact Production ancestry without changing navigation",
     "Preview Loop shares controls and repeats prepared Design actions",
     "Design defaults preserve later scalar and editable collection changes",
     "Design defaults preserve later scalar and fixed collection changes",
@@ -23521,6 +23523,64 @@ static void ExternalMediaKeepsExistingPathsVisible()
                 "/project/avatars",
                 "/replacement",
                 "/project/avatars/team/alex.png"));
+    }, CancellationToken.None).GetAwaiter().GetResult();
+}
+
+static void UsageBreadcrumbsShowExactProductionAncestry()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = Descendants(database.LoadProjectTree()).ToList();
+    var usages = nodes.Where(node => node.Kind == ProjectTreeNodeKind.Shot)
+        .SelectMany(node => database.ReferenceUsages.GetReferenceUsageDetails(node))
+        .Where(usage => usage.SourceKind == ProjectTreeNodeKind.ModuleInstance)
+        .ToList();
+    True(usages.Select(usage => usage.SourceNodeId).Distinct().Count() >= 2);
+    foreach (var usage in usages)
+    {
+        var screen = nodes.Single(node => node.Id == usage.SourceNodeId);
+        var names = new List<string>();
+        for (var parent = screen.Parent; parent is not null; parent = parent.Parent)
+        {
+            if (parent.Kind is ProjectTreeNodeKind.Project
+                or ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.Shot)
+                names.Insert(0, parent.Name);
+        }
+        Equal(3, names.Count);
+        Equal(string.Join(" / ", names), usage.SourceBreadcrumb);
+    }
+
+    using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        foreach (var usage in usages.Take(2))
+        {
+            var selected = new List<string>();
+            var navigator = new EditorReferenceUsageNavigator(
+                (workspace, id) =>
+                {
+                    selected.Add($"{workspace}:{id}");
+                    return Task.FromResult(true);
+                },
+                (_, _) => Task.CompletedTask,
+                new RecordingMessageSink());
+            var link = EditorReferenceUsageLink.Create(
+                usage, isDark: true, () => navigator.Navigate(usage));
+            var window = new Window { Width = 540, Content = link };
+            window.Show();
+            try
+            {
+                Dispatcher.UIThread.RunJobs();
+                var texts = link.GetVisualDescendants().OfType<TextBlock>().ToList();
+                var breadcrumb = texts.Single(text => text.Text == usage.SourceBreadcrumb);
+                Equal(TextWrapping.Wrap, breadcrumb.TextWrapping);
+                True(breadcrumb.Bounds.Width > 0);
+                True(texts.Any(text => text.Text == usage.Label));
+                True(texts.Any(text => text.Text == usage.Field));
+                link.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                SequenceEqual(new[] { $"Production:{usage.SourceNodeId}" }, selected);
+            }
+            finally { window.Close(); }
+        }
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
 

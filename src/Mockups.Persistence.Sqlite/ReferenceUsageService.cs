@@ -85,7 +85,9 @@ internal sealed class ReferenceUsageService :
     public IReadOnlyList<ReferenceUsageDetail> GetReferenceUsageDetails(
         ProjectTreeNode node)
     {
-        return GetUsages(node.Kind, node.Id)
+        using var connection = _context.OpenConnection();
+        var breadcrumbs = ReadProductionBreadcrumbs(connection);
+        return GetUsages(connection, node.Kind, node.Id)
             .Select((usage) => new ReferenceUsageDetail(
                 usage.SourceNodeId,
                 usage.SourceKind,
@@ -96,7 +98,10 @@ internal sealed class ReferenceUsageService :
                 usage.EmbeddedContext is null
                     ? null
                     : ToEmbeddedComponentUsage(
-                        usage.EmbeddedContext)))
+                        usage.EmbeddedContext),
+                breadcrumbs.GetValueOrDefault(
+                    new ReferenceTarget(usage.SourceKind, usage.SourceNodeId),
+                    "")))
             .OrderBy((usage) => usage.IsProduction)
             .ThenBy(
                 (usage) => usage.Label,
@@ -105,6 +110,38 @@ internal sealed class ReferenceUsageService :
                 (usage) => usage.Field,
                 StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static IReadOnlyDictionary<ReferenceTarget, string> ReadProductionBreadcrumbs(
+        SqliteConnection connection)
+    {
+        var breadcrumbs = new Dictionary<ReferenceTarget, string>();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT p.name, e.id, e.name, s.id, s.name, mi.id
+            FROM projects p
+            JOIN episodes e ON e.project_id = p.id
+            LEFT JOIN shots s ON s.episode_id = e.id
+            LEFT JOIN module_instances mi ON mi.shot_id = s.id
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var project = reader.GetString(0);
+            breadcrumbs.TryAdd(
+                new ReferenceTarget(ProjectTreeNodeKind.Episode, reader.GetString(1)),
+                project);
+            if (reader.IsDBNull(3)) continue;
+            var episode = $"{project} / {reader.GetString(2)}";
+            breadcrumbs.TryAdd(
+                new ReferenceTarget(ProjectTreeNodeKind.Shot, reader.GetString(3)),
+                episode);
+            if (reader.IsDBNull(5)) continue;
+            breadcrumbs.Add(
+                new ReferenceTarget(ProjectTreeNodeKind.ModuleInstance, reader.GetString(5)),
+                $"{episode} / {reader.GetString(4)}");
+        }
+        return breadcrumbs;
     }
 
     public IReadOnlyList<ReferenceUsageRecord> GetUsages(

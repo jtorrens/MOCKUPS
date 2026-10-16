@@ -58,6 +58,16 @@ internal static class EditorReferenceUsageLink
                 },
             },
         };
+        if (usage.SourceBreadcrumb.Length > 0)
+        {
+            labels.Children.Insert(1, new TextBlock
+            {
+                Text = usage.SourceBreadcrumb,
+                FontSize = 11,
+                Opacity = 0.8,
+                TextWrapping = TextWrapping.Wrap,
+            });
+        }
         Grid.SetColumn(labels, textColumn);
         content.Children.Add(labels);
 
@@ -76,7 +86,10 @@ internal static class EditorReferenceUsageLink
             Cursor = new Cursor(StandardCursorType.Hand),
             Content = content,
         };
-        EditorAccessibility.Describe(button, $"Open {usage.Label}", usage.Field);
+        EditorAccessibility.Describe(button, $"Open {usage.Label}",
+            usage.SourceBreadcrumb.Length > 0
+                ? $"{usage.SourceBreadcrumb} · {usage.Field}"
+                : usage.Field);
         ToolTip.SetTip(button, $"Open in {(usage.IsProduction ? "Production" : "Design")}");
         button.Click += async (_, args) =>
         {

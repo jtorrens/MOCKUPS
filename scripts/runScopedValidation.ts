@@ -225,6 +225,19 @@ export function planScopedValidation(
         ["--", "tests/tooling/workstationProject.test.ts"],
       ));
     }
+    if ([
+      "src/Mockups.Application/ReferenceUsageModels.cs",
+      "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
+      "src/Mockups.Desktop/EditorShell/EditorReferenceUsageLink.cs",
+    ].includes(file)) {
+      desktopUi = true;
+      add(npmStep(
+        "desktop:usage-breadcrumbs",
+        "test:focus:desktop",
+        "Usage hierarchy metadata must reach the shared link without changing its destination",
+        ["--", "--exact", "Usage breadcrumbs show exact Production ancestry without changing navigation"],
+      ));
+    }
     if (file === "src/Mockups.Desktop/Common/SvgReplacementService.cs") {
       desktopCompile = true;
       add(npmStep(

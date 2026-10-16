@@ -482,6 +482,15 @@ values, items and tracks. Only removed destinations lose their animation tracks.
 The Variant and all affected Screens save atomically; validation failure keeps
 the previous authored state.
 
+Usage links show their exact Production ancestry below the source name:
+Project / Episode / Shot for a Screen, and the corresponding parent path for
+an Episode or Shot. The existing referenced-field label remains a separate
+line. The shared Usage query supplies that path from relational ownership,
+independently of the active Project; labels wrap at the available width.
+This is presentation metadata only and never changes navigation or selects a
+different Project automatically. The Usage card and deletion confirmation use
+the same link presentation.
+
 Deletion confirmation presents each blocking Usage reference as a navigable
 link. Activating it closes the dialog, switches workspace when necessary,
 opens the exact tree branch and selects the owner.

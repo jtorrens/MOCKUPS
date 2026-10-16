@@ -9,7 +9,8 @@ public sealed record ReferenceUsageDetail(
     string SourceName,
     string Field,
     ReferenceUsageScope Scope,
-    EmbeddedComponentUsage? EmbeddedUsage)
+    EmbeddedComponentUsage? EmbeddedUsage,
+    string SourceBreadcrumb = "")
 {
     public string Label => $"{SourceTypeLabel}: {SourceName}";
 
