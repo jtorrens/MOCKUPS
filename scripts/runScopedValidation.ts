@@ -244,7 +244,7 @@ export function planScopedValidation(
         "Application modals preserve Preview and displace siblings",
         "presented editor operations own the shared loading scrim",
       ]) add(npmStep(`desktop:tree-action-feedback:${name}`, "test:focus:desktop",
-        "tree actions must show preparation immediately, preserve Preview and refresh only after mutation",
+        "tree actions must separate preparation, confirmation and execution in one modal, suppress background progress, preserve Preview and refresh only after mutation",
         ["--", "--exact", name]));
     }
     if ([

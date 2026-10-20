@@ -19,6 +19,7 @@ internal sealed class EditorOperationActivityPresenter : IDisposable
     {
         _operations = operations;
         _scrim = scrim;
+        EditorModalWindowScope.ModalActivityChanged += Refresh;
         _operations.ActivityChanged += OnActivityChanged;
         _operations.OperationMeasured += OnOperationMeasured;
     }
@@ -32,6 +33,7 @@ internal sealed class EditorOperationActivityPresenter : IDisposable
         _disposed = true;
         _operations.ActivityChanged -= OnActivityChanged;
         _operations.OperationMeasured -= OnOperationMeasured;
+        EditorModalWindowScope.ModalActivityChanged -= Refresh;
         _active.Clear();
         _scrim.Hide();
     }
@@ -62,11 +64,17 @@ internal sealed class EditorOperationActivityPresenter : IDisposable
             _active.Remove(activity.Id);
         }
 
+        Refresh();
+    }
+
+    private void Refresh()
+    {
+        if (_disposed) return;
         var current = _active
             .OrderByDescending((entry) => entry.Key)
             .Select((entry) => entry.Value)
             .FirstOrDefault();
-        if (current is null)
+        if (current is null || EditorModalWindowScope.IsModalActive)
         {
             _scrim.Hide();
             return;

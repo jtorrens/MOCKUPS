@@ -30,6 +30,9 @@ internal static class EditorModalWindowScope
     private static readonly ConditionalWeakTable<Window, Lifecycle> Lifecycles = new();
     private static readonly Dictionary<Window, Window> ActiveChildren = [];
 
+    public static bool IsModalActive => ActiveChildren.Count > 0;
+    public static event Action? ModalActivityChanged;
+
     public static void RegisterHost(Window owner, params IEditorModalOcclusionParticipant[] participants)
     {
         Hosts.Remove(owner);
@@ -77,11 +80,13 @@ internal static class EditorModalWindowScope
             // Native ownership keeps the modal above native WebViews without
             // capturing, hiding or reloading their resident presentation.
             ActiveChildren.Add(owner, dialog);
+            ModalActivityChanged?.Invoke();
             return await dialog.ShowDialog<TResult>(owner);
         }
         finally
         {
             if (ActiveChildren.GetValueOrDefault(owner) == dialog) ActiveChildren.Remove(owner);
+            ModalActivityChanged?.Invoke();
             dialog.Opened -= Opened;
             dialog.Closed -= Closed;
             foreach (var state in displaced.Reverse())
@@ -139,6 +144,41 @@ internal static class EditorModalWindowScope
         });
         try { return await ShowDialog<TResult>(dialog, owner); }
         finally { cancellation.Cancel(); }
+    }
+
+    // The same native modal owns execution after confirmation. Closing is blocked
+    // until the write and its UI refresh finish; failures remain visible here.
+    public static async Task ExecuteConfirmed<TResult>(Window dialog, string message,
+        Func<Task> execute, TResult result)
+    {
+        var status = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap };
+        var progress = new ProgressBar { IsIndeterminate = true, Height = 4 };
+        var close = new Button { Content = "Close", MinWidth = 92, IsVisible = false,
+            HorizontalAlignment = HorizontalAlignment.Right };
+        close.Click += (_, _) => Close(dialog);
+        dialog.Content = new Border
+        {
+            Padding = new Thickness(22),
+            Child = new StackPanel { Spacing = 18, Children = { status, progress, close } },
+        };
+        void PreventClose(object? sender, WindowClosingEventArgs args) => args.Cancel = true;
+        dialog.Closing += PreventClose;
+        try
+        {
+            await execute();
+        }
+        catch (Exception error)
+        {
+            status.Text = error.Message;
+            progress.IsVisible = false;
+            close.IsVisible = true;
+            return;
+        }
+        finally
+        {
+            dialog.Closing -= PreventClose;
+        }
+        Close(dialog, result);
     }
 
     private static IReadOnlyList<Window> ApplicationWindows(Window owner)

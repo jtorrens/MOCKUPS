@@ -116,7 +116,8 @@ internal sealed class EditorDialogService
         isDestructive: true, width: 480, height: 250);
 
     public Task<RecordDeleteDecision?> PrepareDelete(ProjectTreeNode node,
-        Func<CancellationToken, Task<IReadOnlyList<ReferenceUsageDetail>>> prepare)
+        Func<CancellationToken, Task<IReadOnlyList<ReferenceUsageDetail>>> prepare,
+        Func<Task> execute)
     {
         var dialog = CreateDialog(DeleteTitle(node), 540, 360);
         return EditorModalWindowScope.ShowPrepared<IReadOnlyList<ReferenceUsageDetail>, RecordDeleteDecision>(
@@ -130,7 +131,8 @@ internal sealed class EditorDialogService
                     return;
                 }
                 PopulateConfirmation(dialog, $"Delete {node.Name}?", DeleteMessage(node), "Delete", true,
-                    () => EditorModalWindowScope.Close(dialog, new RecordDeleteDecision(true)),
+                    async () => await EditorModalWindowScope.ExecuteConfirmed(dialog, "Deleting item…",
+                        execute, new RecordDeleteDecision(true)),
                     () => EditorModalWindowScope.Close(dialog, new RecordDeleteDecision(false)));
             });
     }

@@ -298,38 +298,21 @@ internal sealed class EditorNodeCommandController
 
     public async Task DeleteNode(ProjectTreeNode node)
     {
-        using var activity = _operations.BeginActivity("Deleting item…");
         if (!node.CanDelete) return;
 
         var decision = await Dialogs().PrepareDelete(node,
             token => _operations.ExecuteAsync(
-                () => _referenceUsage.GetReferenceUsageDetails(node), token));
-        if (decision?.Usage is { } usage)
-        {
-            await _navigateToUsage(usage);
-            return;
-        }
-        if (decision?.Confirmed != true) return;
-
-        var nextSelection = node.Parent is null
-            ? _treeRoots().FirstOrDefault((root) => root.Id != node.Id)
-            : node.Parent;
-        try
-        {
-            await _operations.ExecuteAsync(() => _database.Delete(node));
-        }
-        catch (Exception exception)
-        {
-            await ShowInfoDialog("Delete failed", exception.Message);
-            return;
-        }
-
-        if (nextSelection is null)
-        {
-            await _loadProjectTree();
-            return;
-        }
-        await _reloadAndSelect(nextSelection);
+                () => _referenceUsage.GetReferenceUsageDetails(node), token), async () =>
+            {
+                using var activity = _operations.BeginActivity("Deleting item…");
+                var nextSelection = node.Parent is null
+                    ? _treeRoots().FirstOrDefault(root => root.Id != node.Id)
+                    : node.Parent;
+                await _operations.ExecuteAsync(() => _database.Delete(node));
+                if (nextSelection is null) await _loadProjectTree();
+                else await _reloadAndSelect(nextSelection);
+            });
+        if (decision?.Usage is { } usage) await _navigateToUsage(usage);
     }
 
     public Task ShowInfoDialog(string title, string message)

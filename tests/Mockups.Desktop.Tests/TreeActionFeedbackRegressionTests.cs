@@ -21,6 +21,8 @@ internal static class TreeActionFeedbackRegressionTests
             owner.Show();
             EditorModalWindowScope.RegisterHost(owner);
             using var operations = new EditorOperationCoordinator();
+            var scrim = new EditorLoadingScrim();
+            using var presenter = new EditorOperationActivityPresenter(operations, scrim);
             var active = new HashSet<long>();
             operations.ActivityChanged += activity =>
             {
@@ -65,9 +67,15 @@ internal static class TreeActionFeedbackRegressionTests
                     Require(!Buttons(dialog).Any(button => Equals(button.Content, "Delete")), "Delete cannot be available while preparing");
                     release.Set();
                     Pump(() => Buttons(dialog).Any(button => Equals(button.Content, "Delete")));
+                    Require(!scrim.IsVisible, "Confirmation must not duplicate progress behind the modal");
+                    Require(active.Count == 0, "Waiting for confirmation must not announce deletion");
                     Require(reads == 1, "Usage must be read exactly once");
                     Buttons(dialog).Single(button => Equals(button.Content, "Delete")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     Pump(() => reloads == 1);
+                    Require(!scrim.IsVisible, "Execution progress belongs only to the modal");
+                    dialog.Close();
+                    Require(dialog.IsVisible, "Execution cannot be dismissed before refresh finishes");
+                    Require(dialog.IsVisible && !Buttons(dialog).Any(button => Equals(button.Content, "Delete")), "Execution must retain the same dialog without an enabled confirmation");
                     Require(writes == 1 && !deletion.IsCompleted && active.Count == 1, "Activity must include post-write refresh");
                     reload.SetResult();
                     Pump(() => deletion.IsCompleted);
@@ -78,7 +86,7 @@ internal static class TreeActionFeedbackRegressionTests
                 // An obsolete completion must not republish a closed loading dialog.
                 var late = new TaskCompletionSource<IReadOnlyList<ReferenceUsageDetail>>(TaskCreationOptions.RunContinuationsAsynchronously);
                 var item = new ProjectTreeNode(ProjectTreeNodeKind.Actor, "cancel", "Cancel", "", "actors");
-                var pending = new EditorDialogService(owner, true).PrepareDelete(item, _ => late.Task);
+                var pending = new EditorDialogService(owner, true).PrepareDelete(item, _ => late.Task, () => Task.CompletedTask);
                 var closed = owner.OwnedWindows.Single();
                 Dispatcher.UIThread.RunJobs();
                 closed.Close();

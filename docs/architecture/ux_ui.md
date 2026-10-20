@@ -470,9 +470,12 @@ Deletion reads current typed Usage once before confirmation. It does not reload
 the tree or prepare the Production Preview catalog merely to ask a question.
 The persisted command still enforces current deletion rules. A successful
 mutation performs its one normal atomic tree/catalog refresh. The shared
-operation activity remains visible over Navigation and Editor through queueing,
-writing and that refresh, never over Preview; failure and cancellation release
-it. Non-dialog tree commands use the same activity lifetime. `dialog.open`,
+operation presenter suppresses the Navigation/Editor scrim whenever a native
+modal is active. Waiting for confirmation is not execution and shows no activity.
+After Delete is accepted, the same modal owns progress through the write and
+refresh, blocks closing during execution, and retains errors with Close available.
+The shared `ExecuteConfirmed` lifecycle closes it only after success. Preview
+remains stable; no second progress surface appears behind a modal. Non-dialog tree commands use the same activity lifetime. `dialog.open`,
 `dialog.prepare` and `editor.operation` diagnostics distinguish native opening,
 preparation, queue wait and worker execution without including user decision
 time in preparation measurements.
