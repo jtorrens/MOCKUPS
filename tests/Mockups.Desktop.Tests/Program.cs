@@ -9794,20 +9794,29 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 initialPreviewSequence > 0,
                 "Chat List Module selection did not request a render from the Preview host.");
 
-            runtimeFields.Single((field) => field.FieldId == "itemWidth")
-                .SetValue("320", commit: true);
-            Dispatcher.UIThread.RunJobs();
-            Check(
-                SpinWait.SpinUntil(() =>
-                {
-                    Dispatcher.UIThread.RunJobs();
-                    return PreviewUpdateSequence(previewPane) > initialPreviewSequence;
-                }, TimeSpan.FromSeconds(15)),
-                "Changing a Chat List Runtime Input did not request a new Preview render.");
             var inputSession = typeof(EditorPreviewController)
                 .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(previewController) as ComponentPreviewInputSession
                 ?? throw new InvalidOperationException("Missing Module Preview input session.");
+            runtimeFields.Single((field) => field.FieldId == "itemWidth")
+                .SetValue("320", commit: true);
+            // A pending render from selection can advance the sequence before
+            // this queued edit publishes. Await the edited owner and its actual
+            // prepared document, not an unrelated Preview update.
+            Check(
+                SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    var state = previewController.CaptureDesignPreviewTransientState(selected);
+                    var runtimeDocument = typeof(ComponentPreviewInputSession)
+                        .GetField("_runtimePreview", BindingFlags.Instance | BindingFlags.NonPublic)
+                        ?.GetValue(inputSession) as JsonObject;
+                    return state.Values.GetValueOrDefault($"{state.ScopeKey}:itemWidth") == "320"
+                        && runtimeDocument?["itemWidth"]?.GetValue<double>() == 320d
+                        && PreviewUpdateSequence(previewPane) > initialPreviewSequence;
+                }, TimeSpan.FromSeconds(15)),
+                "Changing a Chat List Runtime Input did not publish 320 to its prepared Preview document. "
+                + Required(window.FindControl<TextBox>("ShellMessagesTextBox")).Text);
             PreviewInputTestFixture.Bind(inputSession, database.Design, database.DictionaryContext,
                 database.Resources, database.ProjectPaths);
             var effectivePayload = inputSession.ApplyInputs(
