@@ -7912,6 +7912,19 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
 
 static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
 {
+    static T CompleteModal<T>(Task<T> result)
+    {
+        var timeout = Stopwatch.StartNew();
+        while (!result.IsCompleted)
+        {
+            Dispatcher.UIThread.RunJobs();
+            if (timeout.Elapsed > TimeSpan.FromSeconds(5))
+                throw new TimeoutException("Native modal completion did not return to its owner.");
+            Thread.Sleep(1);
+        }
+        return result.GetAwaiter().GetResult();
+    }
+
     using var session = HeadlessUnitTestSession.StartNew(
         typeof(HeadlessTestApplication));
     session.Dispatch(() =>
@@ -8078,7 +8091,7 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         True(!floating.IsVisible);
         True(!auxiliary.IsEnabled);
         EditorModalWindowScope.Close(childDialog, false);
-        Equal(false, childResult.GetAwaiter().GetResult());
+        Equal(false, CompleteModal(childResult));
         Dispatcher.UIThread.RunJobs();
         Equal(0, modalHost.Children.Count);
         True(!childDialog.Topmost);
@@ -8088,7 +8101,7 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         True(!auxiliary.IsEnabled);
 
         EditorModalWindowScope.Close(dialog);
-        Equal(null, dialogResult.GetAwaiter().GetResult());
+        Equal(null, CompleteModal(dialogResult));
         Dispatcher.UIThread.RunJobs();
         True(!modalHost.IsVisible);
         Equal(0, modalHost.Children.Count);
@@ -10412,12 +10425,12 @@ static void DesignCollectionDefaultsUseCurrentState(
                         .Single(item => item["id"]!.GetValue<string>() == firstId), input));
 
                 saveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => window.GetLogicalDescendants().OfType<Button>()
+                Wait(() => window.OwnedWindows.SelectMany(dialog => dialog.GetLogicalDescendants()).OfType<Button>()
                     .Any(button => button.Content as string == "Save default values"), "Missing defaults confirmation.");
-                window.GetLogicalDescendants().OfType<Button>()
+                window.OwnedWindows.SelectMany(dialog => dialog.GetLogicalDescendants()).OfType<Button>()
                     .Single(button => button.Content as string == "Cancel")
                     .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => saveButton.IsEnabled, "Cancel must retain the pending Test Values.");
+                Wait(() => window.OwnedWindows.Count == 0 && saveButton.IsEnabled, "Cancel must retain the pending Test Values.");
                 Equal(before, database.GetModuleSettings(moduleId).DesignPreviewJson);
                 string? duplicatedId = null;
                 if (collection.CanEditStructure && string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey))
@@ -10439,7 +10452,7 @@ static void DesignCollectionDefaultsUseCurrentState(
                     Equal(before, database.GetModuleSettings(moduleId).DesignPreviewJson);
                 }
                 saveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => window.GetLogicalDescendants().OfType<Button>()
+                Wait(() => window.OwnedWindows.SelectMany(dialog => dialog.GetLogicalDescendants()).OfType<Button>()
                     .Any(button => button.Content as string == "Save default values"), "Missing second defaults confirmation.");
                 ComponentPreviewTransientState? laterState = null;
                 if (laterValues is { } later)
@@ -10476,7 +10489,7 @@ static void DesignCollectionDefaultsUseCurrentState(
                     }
                     laterState = controller.CaptureDesignPreviewTransientState(surface.Owner.Node);
                 }
-                window.GetLogicalDescendants().OfType<Button>()
+                window.OwnedWindows.SelectMany(dialog => dialog.GetLogicalDescendants()).OfType<Button>()
                     .Single(button => button.Content as string == "Save default values")
                     .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 if (laterValues is null)
