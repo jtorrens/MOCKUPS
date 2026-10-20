@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
+internal abstract class WebPreviewPane : Grid
 {
     protected readonly NativeWebView WebView;
     private readonly Image _nativeRasterFrame = new()
@@ -27,17 +27,7 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
         IsVisible = false,
     };
-    private readonly Image _modalSnapshotFrame = new()
-    {
-        Stretch = Stretch.Fill,
-        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
-        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
-        IsVisible = false,
-    };
     private Bitmap? _nativeRasterBitmap;
-    private Bitmap? _modalSnapshotBitmap;
-    private bool _modalWebViewWasVisible;
-    private bool _modalOccluded;
     private bool _nativeRasterBitmapIsBuffered;
     private readonly EditorLoadingScrim _contextLoading = new();
     protected bool IsContextPreparing => _contextLoading.IsVisible;
@@ -61,7 +51,6 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
 
         Children.Add(WebView);
         Children.Add(_nativeRasterFrame);
-        Children.Add(_modalSnapshotFrame);
         Children.Add(_contextLoading);
     }
 
@@ -71,100 +60,20 @@ internal abstract class WebPreviewPane : Grid, IEditorModalOcclusionParticipant
         // Keep its resident document, but remove every previous presentation.
         WebView.IsVisible = false;
         _nativeRasterFrame.IsVisible = false;
-        ClearModalSnapshot();
         _contextLoading.Show("Preparando preview…", null, takeFocus: false);
     }
 
     protected void CompletePresentationContext()
     {
         _contextLoading.Hide();
-        WebView.IsVisible = !_modalOccluded && !_nativeRasterFrame.IsVisible;
+        WebView.IsVisible = !_nativeRasterFrame.IsVisible;
     }
 
     public string NativeHostLifecycleState()
     {
         return $"pane={Bounds.X:0.##},{Bounds.Y:0.##},{Bounds.Width:0.##},{Bounds.Height:0.##};"
             + $"webview={WebView.Bounds.X:0.##},{WebView.Bounds.Y:0.##},{WebView.Bounds.Width:0.##},{WebView.Bounds.Height:0.##};"
-            + $"webVisible={WebView.IsVisible};rasterVisible={_nativeRasterFrame.IsVisible};"
-            + $"modalSnapshotVisible={_modalSnapshotFrame.IsVisible}";
-    }
-
-    public async Task PrepareAsync()
-    {
-        ClearModalSnapshot();
-        if (!WebView.IsVisible)
-        {
-            return;
-        }
-
-        try
-        {
-            var capture = AppleWebViewSnapshot.CapturePngAsync(WebView);
-            if (await Task.WhenAny(capture, Task.Delay(1500)) != capture)
-            {
-                PreviewDebugLog.Write("preview.modal-snapshot.timeout");
-                return;
-            }
-
-            var bytes = await capture;
-            if (bytes is null || bytes.Length == 0)
-            {
-                return;
-            }
-
-            using var stream = new MemoryStream(bytes, writable: false);
-            _modalSnapshotBitmap = new Bitmap(stream);
-            _modalSnapshotFrame.Source = _modalSnapshotBitmap;
-            _modalSnapshotFrame.Width = WebView.Bounds.Width;
-            _modalSnapshotFrame.Height = WebView.Bounds.Height;
-            _modalSnapshotFrame.Margin = new Avalonia.Thickness(
-                WebView.Bounds.X,
-                WebView.Bounds.Y,
-                0,
-                0);
-            _modalSnapshotFrame.IsVisible =
-                _modalSnapshotFrame.Width > 0
-                && _modalSnapshotFrame.Height > 0;
-            PreviewDebugLog.Write(
-                "preview.modal-snapshot.ready",
-                ("bytes", bytes.Length),
-                ("width", _modalSnapshotFrame.Width),
-                ("height", _modalSnapshotFrame.Height));
-        }
-        catch (Exception error)
-        {
-            ClearModalSnapshot();
-            PreviewDebugLog.Write(
-                "preview.modal-snapshot.error",
-                ("error", error.Message));
-        }
-    }
-
-    public void Occlude()
-    {
-        _modalWebViewWasVisible = WebView.IsVisible;
-        _modalOccluded = true;
-        WebView.IsVisible = false;
-    }
-
-    public void Restore()
-    {
-        if (!_modalOccluded)
-        {
-            return;
-        }
-
-        WebView.IsVisible = _modalWebViewWasVisible && !IsContextPreparing;
-        _modalOccluded = false;
-        ClearModalSnapshot();
-    }
-
-    private void ClearModalSnapshot()
-    {
-        _modalSnapshotFrame.IsVisible = false;
-        _modalSnapshotFrame.Source = null;
-        _modalSnapshotBitmap?.Dispose();
-        _modalSnapshotBitmap = null;
+            + $"webVisible={WebView.IsVisible};rasterVisible={_nativeRasterFrame.IsVisible}";
     }
 
     public void ShowRasterFrame(string rasterId)

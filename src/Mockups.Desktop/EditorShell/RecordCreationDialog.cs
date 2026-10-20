@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -26,15 +27,17 @@ internal sealed class RecordCreationDialog
         _services = services ?? new DictionaryFieldServices();
     }
 
-    public async Task<RecordCreationDraft?> Show(RecordCreationDefinition definition)
+    public Task<RecordCreationDraft?> Show(RecordCreationDefinition definition) =>
+        ShowPrepared(definition.Title, _ => Task.FromResult(definition));
+
+    public Task<RecordCreationDraft?> ShowPrepared(
+        string title, Func<CancellationToken, Task<RecordCreationDefinition>> prepare)
     {
-        var values = definition.Fields.ToDictionary(
-            (field) => field.Definition.Id, (field) => field.Value, StringComparer.Ordinal);
         var dialog = new SukiWindow
         {
-            Title = definition.Title,
+            Title = title,
             Width = DialogWidth,
-            Height = Math.Min(720, 260 + definition.Fields.Count * 72),
+            Height = 480,
             MinWidth = DialogMinimumWidth,
             MinHeight = 300,
             CanResize = true,
@@ -46,6 +49,22 @@ internal sealed class RecordCreationDialog
         };
         EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
+        return EditorModalWindowScope.ShowPrepared<RecordCreationDefinition, RecordCreationDraft>(
+            dialog, _owner, "Preparing form…", prepare,
+            definition => Populate(dialog, definition));
+    }
+
+    private void Populate(Window dialog, RecordCreationDefinition definition)
+    {
+        var values = definition.Fields.ToDictionary(
+            (field) => field.Definition.Id, (field) => field.Value, StringComparer.Ordinal);
+        dialog.Title = definition.Title;
+        dialog.Height = Math.Min(720, 260 + definition.Fields.Count * 72);
+        if (!definition.RequiresConfirmation)
+        {
+            EditorModalWindowScope.Close(dialog, new RecordCreationDraft(definition.Id, values));
+            return;
+        }
         var validation = new TextBlock { Opacity = 0.72, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         var accept = new Button { Content = definition.ActionLabel, MinWidth = 92 };
         void Refresh()
@@ -113,8 +132,5 @@ internal sealed class RecordCreationDialog
         Grid.SetRow(actions, 1);
         dialog.Content = new Border { Padding = EditorUiDensity.CardThickness(18), Child = root };
         Refresh();
-        return await EditorModalWindowScope.ShowDialog<RecordCreationDraft>(
-            dialog,
-            _owner);
     }
 }

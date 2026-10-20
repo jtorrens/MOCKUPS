@@ -259,7 +259,8 @@ var tests = new (string Name, Action Run)[]
     ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
     ("same-owner editor refresh keeps root and embedded cards mounted", SameOwnerEditorRefreshKeepsCardsMounted),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
-    ("Application modals use the shared overlay and displace siblings", ApplicationModalsUseSharedOverlayAndDisplaceSiblings),
+    ("Application modals preserve Preview and displace siblings", ApplicationModalsPreservePreviewAndDisplaceSiblings),
+    ("tree deletion prepares its dialog immediately and refreshes once", TreeActionFeedbackRegressionTests.DeletePreparationAndCompletion),
     ("presented editor operations own the shared loading scrim", PresentedEditorOperationsOwnSharedLoadingScrim),
     ("navigation panel restores its width and opens for routed selection", NavigationPanelRestoresWidthAndOpensForRoutedSelection),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
@@ -7909,7 +7910,7 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
     }
 }
 
-static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
+static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
 {
     using var session = HeadlessUnitTestSession.StartNew(
         typeof(HeadlessTestApplication));
@@ -7984,7 +7985,6 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
                 () => true);
         EditorModalWindowScope.RegisterHost(
             owner,
-            modalHost,
             modalOcclusion,
             controller);
         toggle.RaiseEvent(
@@ -8040,13 +8040,14 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
             owner);
         Dispatcher.UIThread.RunJobs();
         True(!ToolTip.GetIsOpen(headerSurface));
-        True(modalHost.IsVisible);
-        Equal(1, modalHost.Children.Count);
-        Equal(1, modalOcclusion.PrepareCount);
+        True(!modalHost.IsVisible);
+        Equal(0, modalHost.Children.Count);
         Equal(1, modalOcclusion.OccludeCount);
         True(modalOcclusion.IsOccluded);
         True(!dialog.Topmost);
-        True(!dialog.IsVisible);
+        True(dialog.IsVisible);
+        True(ReferenceEquals(owner, dialog.Owner));
+        True(previewContent.IsVisible);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
         True(!floating.IsVisible);
@@ -8065,12 +8066,12 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
             childDialog,
             dialog);
         Dispatcher.UIThread.RunJobs();
-        Equal(2, modalHost.Children.Count);
-        Equal(1, modalOcclusion.PrepareCount);
+        Equal(0, modalHost.Children.Count);
         Equal(1, modalOcclusion.OccludeCount);
         True(modalOcclusion.IsOccluded);
         True(!childDialog.Topmost);
-        True(!childDialog.IsVisible);
+        True(childDialog.IsVisible);
+        True(ReferenceEquals(dialog, childDialog.Owner));
         True(!dialog.Topmost);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
@@ -8079,7 +8080,7 @@ static void ApplicationModalsUseSharedOverlayAndDisplaceSiblings()
         EditorModalWindowScope.Close(childDialog, false);
         Equal(false, childResult.GetAwaiter().GetResult());
         Dispatcher.UIThread.RunJobs();
-        Equal(1, modalHost.Children.Count);
+        Equal(0, modalHost.Children.Count);
         True(!childDialog.Topmost);
         True(!dialog.Topmost);
         True(!floating.Topmost);
@@ -22576,6 +22577,8 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "tree deletion prepares its dialog immediately and refreshes once",
+    "Application modals preserve Preview and displace siblings",
     "animation actions acknowledge pending writes and recover after failure",
     "Production animation activation keeps Payload and navigation mounted",
     "Usage breadcrumbs show exact Production ancestry without changing navigation",
@@ -29817,16 +29820,9 @@ internal static class HeadlessTestApplication
 
 internal sealed class TestModalOcclusionParticipant : IEditorModalOcclusionParticipant
 {
-    public int PrepareCount { get; private set; }
     public int OccludeCount { get; private set; }
     public int RestoreCount { get; private set; }
     public bool IsOccluded { get; private set; }
-
-    public Task PrepareAsync()
-    {
-        PrepareCount++;
-        return Task.CompletedTask;
-    }
 
     public void Occlude()
     {

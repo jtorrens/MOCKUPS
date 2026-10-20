@@ -855,9 +855,6 @@ internal sealed class EditorPreviewController : IDisposable
 
     public string NativeHostLifecycleState() => _designPreviewPane.NativeHostLifecycleState();
 
-    public IEditorModalOcclusionParticipant ModalOcclusionParticipant =>
-        _designPreviewPane;
-
     private void RefreshDesignContextHistoryChrome()
     {
         var previewWorkspace = PreviewWorkspace();

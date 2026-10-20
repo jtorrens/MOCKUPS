@@ -456,6 +456,27 @@ lifecycle remain a separate Design editor.
 
 ## Lifecycle consistency
 
+Tree lifecycle actions acknowledge activation before awaiting persistence. A
+bounded dialog opens through `EditorModalWindowScope.ShowPrepared` with a
+loading message and no enabled accept action; the same dialog then presents
+its prepared confirmation, selection or Dictionary form. Closing it cancels
+queued reads and prevents late results from publishing. Preparation errors stay
+in that dialog with Close available. Creation, duplication, Add Screen and
+deletion share this lifetime. Native modal ownership, including nested dialogs,
+keeps the dialog above the exact visible owner without snapshotting, hiding or
+reloading the resident Preview. Preview is not a modal occlusion participant.
+
+Deletion reads current typed Usage once before confirmation. It does not reload
+the tree or prepare the Production Preview catalog merely to ask a question.
+The persisted command still enforces current deletion rules. A successful
+mutation performs its one normal atomic tree/catalog refresh. The shared
+operation activity remains visible over Navigation and Editor through queueing,
+writing and that refresh, never over Preview; failure and cancellation release
+it. Non-dialog tree commands use the same activity lifetime. `dialog.open`,
+`dialog.prepare` and `editor.operation` diagnostics distinguish native opening,
+preparation, queue wait and worker execution without including user decision
+time in preparation measurements.
+
 An action may be available in more than one useful context.
 
 When an action is valid both in the tree and editor, it uses the same label,

@@ -226,6 +226,28 @@ export function planScopedValidation(
       ));
     }
     if ([
+      "src/Mockups.Application/EditorOperationCoordinator.cs",
+      "src/Mockups.Desktop/Common/EditorModalWindowScope.cs",
+      "src/Mockups.Desktop/EditorShell/EditorNodeCommandController.cs",
+      "src/Mockups.Desktop/EditorShell/EditorAddChildWorkflow.cs",
+      "src/Mockups.Desktop/EditorShell/EditorDialogService.cs",
+      "src/Mockups.Desktop/EditorShell/RecordCreationDialog.cs",
+      "src/Mockups.Desktop/EditorShell/ShotModulePickerDialog.cs",
+      "src/Mockups.Desktop/EditorShell/EditorOperationActivityPresenter.cs",
+      "src/Mockups.Desktop/EditorShell/PreviewControlsDockController.cs",
+      "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
+      "tests/Mockups.Desktop.Tests/TreeActionFeedbackRegressionTests.cs",
+    ].includes(file)) {
+      desktopUi = true;
+      for (const name of [
+        "tree deletion prepares its dialog immediately and refreshes once",
+        "Application modals preserve Preview and displace siblings",
+        "presented editor operations own the shared loading scrim",
+      ]) add(npmStep(`desktop:tree-action-feedback:${name}`, "test:focus:desktop",
+        "tree actions must show preparation immediately, preserve Preview and refresh only after mutation",
+        ["--", "--exact", name]));
+    }
+    if ([
       "src/Mockups.Desktop/EditorShell/EditorTimelineTransport.cs",
       "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
       "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocumentStore.cs",

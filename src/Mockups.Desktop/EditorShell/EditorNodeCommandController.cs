@@ -64,6 +64,7 @@ internal sealed class EditorNodeCommandController
 
     public async Task RestoreVariantSnapshot(ProjectTreeNode node, EditorVariantHistorySnapshot snapshot)
     {
+        using var activity = _operations.BeginActivity("Restoring Variant…");
         if (node.Kind is not ProjectTreeNodeKind.ComponentVariant and not ProjectTreeNodeKind.ModuleVariant)
         {
             return;
@@ -113,6 +114,7 @@ internal sealed class EditorNodeCommandController
 
     public async Task AddChild(ProjectTreeNode parent)
     {
+        using var activity = _operations.BeginActivity("Adding item…");
         var workflow = new EditorAddChildWorkflow(
             _owner,
             _children,
@@ -136,21 +138,14 @@ internal sealed class EditorNodeCommandController
 
     public async void DuplicateNode(ProjectTreeNode node)
     {
+        using var activity = _operations.BeginActivity("Duplicating item…");
         if (node.Parent is null || !node.CanDuplicate) return;
 
         try
         {
-            var definition = await _operations.ExecuteWithActivityAsync(
-                "Preparing duplication…",
-                () => _database.PrepareRecordDuplication(node));
-            var draft = definition.RequiresConfirmation
-                ? await new RecordCreationDialog(_owner).Show(definition)
-                : new RecordCreationDraft(
-                    definition.Id,
-                    definition.Fields.ToDictionary(
-                        (field) => field.Definition.Id,
-                        (field) => field.Value,
-                        StringComparer.Ordinal));
+            var draft = await new RecordCreationDialog(_owner).ShowPrepared(
+                $"Duplicate {node.Name}", token => _operations.ExecuteAsync(
+                    () => _database.PrepareRecordDuplication(node), token));
             if (draft is null) return;
             var copy = await _operations.ExecuteAsync(
                 () => _database.Duplicate(node, draft));
@@ -164,6 +159,7 @@ internal sealed class EditorNodeCommandController
 
     public async Task RenameNode(ProjectTreeNode node)
     {
+        using var activity = _operations.BeginActivity("Renaming item…");
         if (!node.CanRenameDirectly)
         {
             return;
@@ -194,6 +190,7 @@ internal sealed class EditorNodeCommandController
         ProjectTreeNode target,
         ProductionHierarchyTransferMode mode)
     {
+        using var activity = _operations.BeginActivity("Transferring item…");
         try
         {
             var transferred = await _operations.ExecuteAsync(
@@ -279,6 +276,7 @@ internal sealed class EditorNodeCommandController
 
     public async Task ToggleVariantLock(ProjectTreeNode node)
     {
+        using var activity = _operations.BeginActivity("Updating Variant lock…");
         if (node.Kind is not ProjectTreeNodeKind.ComponentVariant and not ProjectTreeNodeKind.ModuleVariant)
         {
             return;
@@ -300,38 +298,18 @@ internal sealed class EditorNodeCommandController
 
     public async Task DeleteNode(ProjectTreeNode node)
     {
+        using var activity = _operations.BeginActivity("Deleting item…");
         if (!node.CanDelete) return;
 
-        var deleteNodeId = node.Id;
-        if (!await _loadProjectTree())
+        var decision = await Dialogs().PrepareDelete(node,
+            token => _operations.ExecuteAsync(
+                () => _referenceUsage.GetReferenceUsageDetails(node), token));
+        if (decision?.Usage is { } usage)
         {
+            await _navigateToUsage(usage);
             return;
         }
-        node = EditorNodeSelectionState.FindNodeById(_treeRoots(), deleteNodeId) ?? node;
-
-        var usages = await _operations.ExecuteWithActivityAsync(
-            "Checking reference usage…",
-            () => _referenceUsage.GetReferenceUsageDetails(node));
-        if (usages.Count > 0)
-        {
-            var selected = await new EditorReferenceUsageDialog(_owner, _isDark()).Show(node, usages);
-            if (selected is not null)
-            {
-                await _navigateToUsage(selected);
-            }
-            return;
-        }
-
-        var confirmed = node.Kind == ProjectTreeNodeKind.Shot
-            ? await Dialogs().ConfirmAction(
-                "Delete Shot",
-                $"Delete {node.Name}?",
-                "The Shot and its Screens will be removed. Existing production output folders are retained and are never deleted automatically.",
-                "Delete",
-                width: 480,
-                height: 240)
-            : await Dialogs().ConfirmDelete(node);
-        if (!confirmed) return;
+        if (decision?.Confirmed != true) return;
 
         var nextSelection = node.Parent is null
             ? _treeRoots().FirstOrDefault((root) => root.Id != node.Id)

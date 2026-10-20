@@ -201,8 +201,6 @@ public partial class MainWindow : SukiWindow
             _previewController.OnDetachedPreviewKeyDown;
         EditorModalWindowScope.RegisterHost(
             this,
-            ModalOverlayHost,
-            _previewController.ModalOcclusionParticipant,
             _previewControlsDock);
         _treePreviewTransitions =
             new EditorTreePreviewTransitionCoordinator(

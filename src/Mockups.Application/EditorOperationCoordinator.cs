@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,18 +16,39 @@ public sealed class EditorOperationCoordinator : IDisposable
     private long _nextActivityId;
 
     public event Action<EditorOperationActivity>? ActivityChanged;
+    public event Action<EditorOperationMeasurement>? OperationMeasured;
+
+    public IDisposable BeginActivity(string message)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(message);
+        var activity = new EditorOperationActivity(Interlocked.Increment(ref _nextActivityId), message, true);
+        ActivityChanged?.Invoke(activity);
+        return new ActivityScope(this, activity);
+    }
+
+    private sealed class ActivityScope(EditorOperationCoordinator owner, EditorOperationActivity activity) : IDisposable
+    {
+        private int _disposed;
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+                owner.ActivityChanged?.Invoke(activity with { IsActive = false });
+        }
+    }
 
     public Task<T> ExecuteAsync<T>(
         Func<T> operation,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        [CallerMemberName] string operationName = "")
     {
         ArgumentNullException.ThrowIfNull(operation);
-        return ExecuteAsync(_ => Task.FromResult(operation()), cancellationToken);
+        return ExecuteAsync(_ => Task.FromResult(operation()), cancellationToken, operationName);
     }
 
     public async Task<T> ExecuteAsync<T>(
         Func<CancellationToken, Task<T>> operation,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        [CallerMemberName] string operationName = "")
     {
         ArgumentNullException.ThrowIfNull(operation);
         CancellationToken lifetimeToken;
@@ -45,28 +68,36 @@ public sealed class EditorOperationCoordinator : IDisposable
                 lifetimeToken,
                 cancellationToken);
         var token = operationCancellation.Token;
+        var timer = Stopwatch.StartNew();
         await _operationGate.WaitAsync(token).ConfigureAwait(false);
+        var queueMs = timer.Elapsed.TotalMilliseconds;
+        var succeeded = false;
         try
         {
             token.ThrowIfCancellationRequested();
-            return await Task.Run(() => operation(token), token).ConfigureAwait(false);
+            var result = await Task.Run(() => operation(token), token).ConfigureAwait(false);
+            succeeded = true;
+            return result;
         }
         finally
         {
             _operationGate.Release();
+            OperationMeasured?.Invoke(new EditorOperationMeasurement(
+                operationName, queueMs, timer.Elapsed.TotalMilliseconds - queueMs, succeeded));
         }
     }
 
     public Task ExecuteAsync(
         Action operation,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default,
+        [CallerMemberName] string operationName = "") =>
         ExecuteAsync(
             () =>
             {
                 operation();
                 return true;
             },
-            cancellationToken);
+            cancellationToken, operationName);
 
     public async Task<T> ExecuteWithActivityAsync<T>(
         string message,
@@ -76,22 +107,8 @@ public sealed class EditorOperationCoordinator : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
         ArgumentNullException.ThrowIfNull(operation);
 
-        var activity = new EditorOperationActivity(
-            Interlocked.Increment(ref _nextActivityId),
-            message,
-            true);
-        ActivityChanged?.Invoke(activity);
-        try
-        {
-            return await ExecuteAsync(
-                    operation,
-                    cancellationToken)
-                .ConfigureAwait(false);
-        }
-        finally
-        {
-            ActivityChanged?.Invoke(activity with { IsActive = false });
-        }
+        using var activity = BeginActivity(message);
+        return await ExecuteAsync(operation, cancellationToken, message).ConfigureAwait(false);
     }
 
     public async Task<T> ExecuteShutdownAsync<T>(
@@ -173,3 +190,6 @@ public readonly record struct EditorOperationActivity(
     long Id,
     string Message,
     bool IsActive);
+
+public readonly record struct EditorOperationMeasurement(
+    string Name, double QueueMs, double WorkMs, bool Succeeded);

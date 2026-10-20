@@ -409,13 +409,11 @@
                     </DockPanel>
                 </suki:GlassCard>
             </Border>
+            <editor:EditorLoadingScrim x:Name="OperationLoadingScrim"
+                                       Grid.ColumnSpan="3"
+                                       ZIndex="1000" />
         </Grid>
     </Grid>
-    <editor:EditorLoadingScrim x:Name="OperationLoadingScrim"
-                               ZIndex="1000" />
-    <Panel x:Name="ModalOverlayHost"
-           ZIndex="2000"
-           IsVisible="False" />
     </Grid>
     </Border>
 </suki:SukiWindow>

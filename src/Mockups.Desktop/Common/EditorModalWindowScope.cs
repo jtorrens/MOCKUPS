@@ -10,134 +10,135 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.Common;
 
 internal interface IEditorModalOcclusionParticipant
 {
-    Task PrepareAsync();
-
     void Occlude();
-
     void Restore();
 }
 
 internal static class EditorModalWindowScope
 {
-    private static readonly ConditionalWeakTable<Window, ModalHost> Hosts = new();
-    private static readonly Dictionary<Window, ModalSession> Sessions = [];
+    private static readonly ConditionalWeakTable<Window, IEditorModalOcclusionParticipant[]> Hosts = new();
     private static readonly ConditionalWeakTable<Window, Lifecycle> Lifecycles = new();
+    private static readonly Dictionary<Window, Window> ActiveChildren = [];
 
-    public static void RegisterHost(
-        Window owner,
-        Panel overlayHost,
-        params IEditorModalOcclusionParticipant[] occlusionParticipants)
+    public static void RegisterHost(Window owner, params IEditorModalOcclusionParticipant[] participants)
     {
-        ArgumentNullException.ThrowIfNull(owner);
-        ArgumentNullException.ThrowIfNull(overlayHost);
-        ArgumentNullException.ThrowIfNull(occlusionParticipants);
         Hosts.Remove(owner);
-        Hosts.Add(owner, new ModalHost(owner, overlayHost, occlusionParticipants));
+        Hosts.Add(owner, participants);
     }
 
     public static void OnOpened(Window dialog, Action action) =>
         Lifecycles.GetOrCreateValue(dialog).Opened += action;
-
     public static void OnClosed(Window dialog, Action action) =>
         Lifecycles.GetOrCreateValue(dialog).Closed += action;
+    public static Task ShowDialog(Window dialog, Window owner) => ShowDialog<object>(dialog, owner);
 
-    public static async Task ShowDialog(Window dialog, Window owner)
+    public static async Task<TResult?> ShowDialog<TResult>(Window dialog, Window owner)
     {
-        await ShowDialog<object>(dialog, owner);
-    }
-
-    public static Task<TResult?> ShowDialog<TResult>(Window dialog, Window owner)
-    {
-        ArgumentNullException.ThrowIfNull(dialog);
-        ArgumentNullException.ThrowIfNull(owner);
-
-        var host = ResolveHost(owner);
-        var session = new ModalSession<TResult>(dialog, host);
-        Sessions.Add(dialog, session);
-        _ = OpenAsync(dialog, host, session);
-        return session.Completion;
-    }
-
-    private static async Task OpenAsync(
-        Window dialog,
-        ModalHost host,
-        ModalSession session)
-    {
+        while (ActiveChildren.TryGetValue(owner, out var child)) owner = child;
+        var timer = Stopwatch.StartNew();
+        var windows = ApplicationWindows(owner);
+        CloseTransientSurfaces(windows.Prepend(owner));
+        var displaced = windows.Select(window => (Window: window, window.Topmost, window.IsEnabled)).ToArray();
+        var participants = Hosts.TryGetValue(owner, out var registered) ? registered : [];
+        var occluded = new List<IEditorModalOcclusionParticipant>();
+        void Opened(object? sender, EventArgs args)
+        {
+            PreviewDebugLog.Write("dialog.open", ("title", dialog.Title), ("ms", timer.Elapsed.TotalMilliseconds));
+            if (Lifecycles.TryGetValue(dialog, out var lifecycle)) lifecycle.InvokeOpened();
+        }
+        void Closed(object? sender, EventArgs args)
+        {
+            if (Lifecycles.TryGetValue(dialog, out var lifecycle)) lifecycle.InvokeClosed();
+        }
+        dialog.Opened += Opened;
+        dialog.Closed += Closed;
         try
         {
-            await host.PushAsync(session);
-            if (!session.IsClosed)
+            foreach (var state in displaced)
             {
-                InvokeOpened(dialog);
+                state.Window.Topmost = false;
+                state.Window.IsEnabled = false;
             }
-        }
-        catch (Exception error)
-        {
-            Sessions.Remove(dialog);
-            session.Fail(error);
-        }
-    }
-
-    public static void Close(Window dialog) => Close<object>(dialog, null);
-
-    public static void Close<TResult>(Window dialog, TResult? result)
-    {
-        if (!Sessions.Remove(dialog, out var session))
-        {
-            return;
-        }
-
-        session.Close(result);
-        InvokeClosed(dialog);
-    }
-
-    private static ModalHost ResolveHost(Window requestedOwner)
-    {
-        if (Sessions.TryGetValue(requestedOwner, out var ownerSession))
-        {
-            return ownerSession.Host;
-        }
-
-        for (Window? current = requestedOwner;
-             current is not null;
-             current = current.Owner as Window)
-        {
-            if (Hosts.TryGetValue(current, out var host))
+            foreach (var participant in participants)
             {
-                return host;
+                occluded.Add(participant);
+                participant.Occlude();
             }
+            // Native ownership keeps the modal above native WebViews without
+            // capturing, hiding or reloading their resident presentation.
+            ActiveChildren.Add(owner, dialog);
+            return await dialog.ShowDialog<TResult>(owner);
         }
-
-        throw new InvalidOperationException(
-            "A modal dialog requires a registered application overlay host.");
+        finally
+        {
+            if (ActiveChildren.GetValueOrDefault(owner) == dialog) ActiveChildren.Remove(owner);
+            dialog.Opened -= Opened;
+            dialog.Closed -= Closed;
+            foreach (var state in displaced.Reverse())
+            {
+                state.Window.IsEnabled = state.IsEnabled;
+                state.Window.Topmost = state.Topmost;
+            }
+            foreach (var participant in occluded.AsEnumerable().Reverse()) participant.Restore();
+        }
     }
 
-    private static void InvokeOpened(Window dialog)
-    {
-        if (!Lifecycles.TryGetValue(dialog, out var lifecycle))
-        {
-            return;
-        }
+    public static void Close(Window dialog) => dialog.Close();
+    public static void Close<TResult>(Window dialog, TResult? result) => dialog.Close(result);
 
-        Dispatcher.UIThread.Post(
-            lifecycle.InvokeOpened,
-            DispatcherPriority.Loaded);
-    }
-
-    private static void InvokeClosed(Window dialog)
+    public static async Task<TResult?> ShowPrepared<TPrepared, TResult>(
+        Window dialog, Window owner, string message,
+        Func<CancellationToken, Task<TPrepared>> prepare,
+        Action<TPrepared> present)
     {
-        if (Lifecycles.TryGetValue(dialog, out var lifecycle))
+        using var cancellation = new CancellationTokenSource();
+        var status = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap };
+        var progress = new ProgressBar { IsIndeterminate = true, Height = 4 };
+        var cancel = new Button { Content = "Cancel", MinWidth = 92, HorizontalAlignment = HorizontalAlignment.Right };
+        cancel.Click += (_, _) => Close(dialog);
+        dialog.Content = new Border
         {
-            lifecycle.InvokeClosed();
-        }
+            Padding = new Avalonia.Thickness(22),
+            Child = new StackPanel { Spacing = 18, Children = { status, progress, cancel } },
+        };
+        var loadingContent = dialog.Content;
+        OnClosed(dialog, cancellation.Cancel);
+        OnOpened(dialog, async () =>
+        {
+            var timer = Stopwatch.StartNew();
+            try
+            {
+                // Let the loading surface paint before even a completed read
+                // can replace it with a potentially large form.
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+                cancellation.Token.ThrowIfCancellationRequested();
+                var prepared = await prepare(cancellation.Token);
+                if (!cancellation.IsCancellationRequested) present(prepared);
+                PreviewDebugLog.Write("dialog.prepare", ("title", dialog.Title), ("ms", timer.Elapsed.TotalMilliseconds));
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+            catch (Exception error)
+            {
+                if (cancellation.IsCancellationRequested) return;
+                dialog.Content = loadingContent;
+                status.Text = error.Message;
+                progress.IsVisible = false;
+                cancel.Content = "Close";
+                PreviewDebugLog.Write("dialog.prepare.failed", ("title", dialog.Title), ("ms", timer.Elapsed.TotalMilliseconds), ("error", error.Message));
+            }
+        });
+        try { return await ShowDialog<TResult>(dialog, owner); }
+        finally { cancellation.Cancel(); }
     }
 
     private static IReadOnlyList<Window> ApplicationWindows(Window owner)
@@ -203,265 +204,6 @@ internal static class EditorModalWindowScope
         }
     }
 
-    private sealed class ModalHost
-    {
-        private readonly Window _owner;
-        private readonly Panel _overlayHost;
-        private readonly IReadOnlyList<IEditorModalOcclusionParticipant> _occlusionParticipants;
-        private readonly List<ModalSession> _stack = [];
-        private WindowState[] _displaced = [];
-
-        public ModalHost(
-            Window owner,
-            Panel overlayHost,
-            IReadOnlyList<IEditorModalOcclusionParticipant> occlusionParticipants)
-        {
-            _owner = owner;
-            _overlayHost = overlayHost;
-            _occlusionParticipants = occlusionParticipants;
-        }
-
-        public Rect OwnerBounds => _owner.Bounds;
-        public bool IsDark => EditorSukiWindowTheme.IsDark(_owner);
-
-        public async Task PushAsync(ModalSession session)
-        {
-            if (_stack.Count == 0)
-            {
-                var windows = ApplicationWindows(_owner);
-                CloseTransientSurfaces(windows.Prepend(_owner));
-                foreach (var participant in _occlusionParticipants)
-                {
-                    await participant.PrepareAsync();
-                }
-
-                if (session.IsClosed)
-                {
-                    return;
-                }
-
-                _displaced = windows
-                    .Select(window => new WindowState(
-                        window,
-                        window.Topmost,
-                        window.IsEnabled))
-                    .ToArray();
-                foreach (var state in _displaced)
-                {
-                    state.Window.Topmost = false;
-                    state.Window.IsEnabled = false;
-                }
-
-                foreach (var participant in _occlusionParticipants)
-                {
-                    participant.Occlude();
-                }
-            }
-            else
-            {
-                _stack[^1].Surface.IsEnabled = false;
-            }
-
-            _stack.Add(session);
-            _overlayHost.Children.Add(session.Surface);
-            _overlayHost.IsVisible = true;
-            session.FocusInitialControl();
-        }
-
-        public void Pop(ModalSession session)
-        {
-            if (!_stack.Remove(session))
-            {
-                return;
-            }
-
-            _overlayHost.Children.Remove(session.Surface);
-            if (_stack.Count > 0)
-            {
-                _stack[^1].Surface.IsEnabled = true;
-                _stack[^1].FocusInitialControl();
-                return;
-            }
-
-            _overlayHost.IsVisible = false;
-            foreach (var state in _displaced.Reverse())
-            {
-                state.Window.IsEnabled = state.WasEnabled;
-                state.Window.Topmost = state.WasTopmost;
-            }
-            _displaced = [];
-            foreach (var participant in _occlusionParticipants.Reverse())
-            {
-                participant.Restore();
-            }
-            _owner.Activate();
-        }
-    }
-
-    private abstract class ModalSession
-    {
-        protected ModalSession(Window dialog, ModalHost host)
-        {
-            Dialog = dialog;
-            Host = host;
-            Surface = CreateSurface(dialog);
-        }
-
-        protected Window Dialog { get; }
-        public ModalHost Host { get; }
-        public Control Surface { get; }
-        public bool IsClosed { get; private set; }
-        public abstract void Close(object? result);
-        public abstract void Fail(Exception error);
-
-        protected bool MarkClosed()
-        {
-            if (IsClosed)
-            {
-                return false;
-            }
-
-            IsClosed = true;
-            return true;
-        }
-
-        public void FocusInitialControl()
-        {
-            Dispatcher.UIThread.Post(
-                () => Surface.GetVisualDescendants()
-                    .OfType<InputElement>()
-                    .FirstOrDefault(candidate => candidate.Focusable && candidate.IsEffectivelyEnabled)
-                    ?.Focus(),
-                DispatcherPriority.Input);
-        }
-
-        private Control CreateSurface(Window dialog)
-        {
-            var content = dialog.Content as Control
-                ?? throw new InvalidOperationException(
-                    $"Modal '{dialog.Title}' requires Control content.");
-            dialog.Content = null;
-
-            var close = new Button
-            {
-                Content = "×",
-                Width = 30,
-                Height = 30,
-                Padding = new Thickness(0),
-                FontSize = 20,
-                Background = Brushes.Transparent,
-                BorderBrush = Brushes.Transparent,
-            };
-            close.Click += (_, _) => EditorModalWindowScope.Close(dialog);
-
-            var header = new Grid
-            {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-                Margin = new Thickness(18, 12, 12, 8),
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = dialog.Title,
-                        FontSize = 17,
-                        FontWeight = FontWeight.SemiBold,
-                        VerticalAlignment = VerticalAlignment.Center,
-                    },
-                    close,
-                },
-            };
-            Grid.SetColumn(close, 1);
-
-            var card = new Border
-            {
-                Width = Math.Min(Normalize(dialog.Width, 520), Math.Max(320, Host.OwnerBounds.Width - 48)),
-                Height = Math.Min(Normalize(dialog.Height, 360), Math.Max(240, Host.OwnerBounds.Height - 48)),
-                MinWidth = Math.Min(Normalize(dialog.MinWidth, 0), Math.Max(0, Host.OwnerBounds.Width - 48)),
-                MinHeight = Math.Min(Normalize(dialog.MinHeight, 0), Math.Max(0, Host.OwnerBounds.Height - 48)),
-                CornerRadius = new CornerRadius(12),
-                BorderThickness = new Thickness(1),
-                BorderBrush = new SolidColorBrush(Color.Parse(
-                    Host.IsDark ? "#4DFFFFFF" : "#33000000")),
-                Background = dialog.Background
-                    ?? EditorSukiWindowTheme.NeutralBackgroundBrush(Host.IsDark),
-                BoxShadow = new BoxShadows(new BoxShadow
-                {
-                    Blur = 32,
-                    OffsetY = 12,
-                    Color = Color.Parse("#99000000"),
-                }),
-                Child = new Grid
-                {
-                    RowDefinitions = new RowDefinitions("Auto,*"),
-                    Children = { header, content },
-                },
-            };
-            Grid.SetRow(content, 1);
-
-            var backdrop = new Border
-            {
-                Background = new SolidColorBrush(Color.Parse("#99000000")),
-            };
-            var surface = new Grid
-            {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch,
-                Focusable = true,
-                Children = { backdrop, card },
-            };
-            card.HorizontalAlignment = HorizontalAlignment.Center;
-            card.VerticalAlignment = VerticalAlignment.Center;
-            surface.KeyDown += (_, args) =>
-            {
-                if (args.Key != Key.Escape)
-                {
-                    return;
-                }
-
-                EditorModalWindowScope.Close(dialog);
-                args.Handled = true;
-            };
-            return surface;
-        }
-
-        private static double Normalize(double value, double fallback) =>
-            double.IsNaN(value) || double.IsInfinity(value) || value <= 0
-                ? fallback
-                : value;
-    }
-
-    private sealed class ModalSession<TResult> : ModalSession
-    {
-        private readonly TaskCompletionSource<TResult?> _completion =
-            new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public ModalSession(Window dialog, ModalHost host)
-            : base(dialog, host)
-        {
-        }
-
-        public Task<TResult?> Completion => _completion.Task;
-
-        public override void Close(object? result)
-        {
-            if (!MarkClosed())
-            {
-                return;
-            }
-
-            Host.Pop(this);
-            _completion.TrySetResult(result is null ? default : (TResult)result);
-        }
-
-        public override void Fail(Exception error)
-        {
-            if (MarkClosed())
-            {
-                _completion.TrySetException(error);
-            }
-        }
-    }
-
     private sealed class Lifecycle
     {
         public event Action? Opened;
@@ -469,10 +211,4 @@ internal static class EditorModalWindowScope
         public void InvokeOpened() => Opened?.Invoke();
         public void InvokeClosed() => Closed?.Invoke();
     }
-
-    private sealed record WindowState(
-        Window Window,
-        bool WasTopmost,
-        bool WasEnabled);
-
 }

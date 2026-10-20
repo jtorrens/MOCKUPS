@@ -42,9 +42,16 @@ internal sealed class EditorReferenceUsageDialog
         };
         EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
+        Populate(dialog, node, usages, usage => EditorModalWindowScope.Close(dialog, usage));
+        return EditorModalWindowScope.ShowDialog<ReferenceUsageDetail>(dialog, _owner);
+    }
+
+    internal void Populate(Window dialog, ProjectTreeNode node,
+        IReadOnlyList<ReferenceUsageDetail> usages, System.Action<ReferenceUsageDetail?> close)
+    {
         var list = new StackPanel { Spacing = 14 };
-        AddGroup(dialog, list, "Design usage", usages.Where((usage) => !usage.IsProduction));
-        AddGroup(dialog, list, "Production usage", usages.Where((usage) => usage.IsProduction));
+        AddGroup(close, list, "Design usage", usages.Where((usage) => !usage.IsProduction));
+        AddGroup(close, list, "Production usage", usages.Where((usage) => usage.IsProduction));
 
         var closeButton = new Button
         {
@@ -52,7 +59,7 @@ internal sealed class EditorReferenceUsageDialog
             MinWidth = 92,
             HorizontalAlignment = HorizontalAlignment.Right,
         };
-        closeButton.Click += (_, _) => EditorModalWindowScope.Close<ReferenceUsageDetail>(dialog, null);
+        closeButton.Click += (_, _) => close(null);
 
         var header = new StackPanel
         {
@@ -95,13 +102,11 @@ internal sealed class EditorReferenceUsageDialog
         Grid.SetRow(closeButton, 2);
         dialog.Content = new Border { Padding = new Thickness(22), Child = root };
 
-        return EditorModalWindowScope.ShowDialog<ReferenceUsageDetail>(
-            dialog,
-            _owner);
+
     }
 
     private void AddGroup(
-        Window dialog,
+        System.Action<ReferenceUsageDetail?> close,
         Panel host,
         string label,
         IEnumerable<ReferenceUsageDetail> usages)
@@ -123,7 +128,7 @@ internal sealed class EditorReferenceUsageDialog
                 _isDark,
                 () =>
                 {
-                    EditorModalWindowScope.Close(dialog, usage);
+                    close(usage);
                     return Task.CompletedTask;
                 },
                 includeKindIcon: true));

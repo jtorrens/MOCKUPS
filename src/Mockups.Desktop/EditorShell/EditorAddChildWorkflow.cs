@@ -61,17 +61,9 @@ internal sealed class EditorAddChildWorkflow
     {
         try
         {
-            var definition = await _operations.ExecuteWithActivityAsync(
-                "Preparing creation form…",
-                () => _database.PrepareRecordCreation(parent, creationId));
-            var draft = definition.RequiresConfirmation
-                ? await new RecordCreationDialog(_owner).Show(definition)
-                : new RecordCreationDraft(
-                    definition.Id,
-                    definition.Fields.ToDictionary(
-                        (field) => field.Definition.Id,
-                        (field) => field.Value,
-                        StringComparer.Ordinal));
+            var draft = await new RecordCreationDialog(_owner).ShowPrepared(
+                "Create record", token => _operations.ExecuteAsync(
+                    () => _database.PrepareRecordCreation(parent, creationId), token));
             return draft is null
                 ? null
                 : await _operations.ExecuteAsync(
@@ -90,23 +82,10 @@ internal sealed class EditorAddChildWorkflow
             _owner, _moduleInstances, _operations).Show(shot.Id);
         if (draft is null) return null;
         var selectionValues = ModuleInstanceSelectionValues(draft);
-        var definition = await _operations.ExecuteWithActivityAsync(
-            "Preparing Screen Runtime Inputs…",
-            () => _database.PrepareRecordCreation(
-                shot,
-                "moduleInstance",
-                selectionValues));
-        var runtimeValues = definition.RequiresConfirmation
-            ? await new RecordCreationDialog(
-                _owner,
-                new DictionaryFieldServices(BrowsePath: _browsePath)).Show(definition)
-            : new RecordCreationDraft(
-                definition.Id,
-                definition.Fields.ToDictionary(
-                    (field) => field.Definition.Id,
-                    (field) => field.Value,
-                    StringComparer.Ordinal),
-                selectionValues);
+        var runtimeValues = await new RecordCreationDialog(
+            _owner, new DictionaryFieldServices(BrowsePath: _browsePath)).ShowPrepared(
+                "Create Screen", token => _operations.ExecuteAsync(
+                    () => _database.PrepareRecordCreation(shot, "moduleInstance", selectionValues), token));
         return runtimeValues is null
             ? null
             : await _operations.ExecuteAsync(

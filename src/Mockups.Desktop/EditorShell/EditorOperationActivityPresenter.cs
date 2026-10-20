@@ -1,4 +1,5 @@
 using Avalonia.Threading;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,7 @@ internal sealed class EditorOperationActivityPresenter : IDisposable
         _operations = operations;
         _scrim = scrim;
         _operations.ActivityChanged += OnActivityChanged;
+        _operations.OperationMeasured += OnOperationMeasured;
     }
 
     public void Dispose()
@@ -29,15 +31,20 @@ internal sealed class EditorOperationActivityPresenter : IDisposable
         }
         _disposed = true;
         _operations.ActivityChanged -= OnActivityChanged;
+        _operations.OperationMeasured -= OnOperationMeasured;
         _active.Clear();
         _scrim.Hide();
     }
 
+    private static void OnOperationMeasured(EditorOperationMeasurement measurement) =>
+        PreviewDebugLog.Write("editor.operation", ("name", measurement.Name),
+            ("queueMs", measurement.QueueMs), ("workMs", measurement.WorkMs),
+            ("success", measurement.Succeeded));
+
     private void OnActivityChanged(EditorOperationActivity activity)
     {
-        Dispatcher.UIThread.Post(
-            () => Apply(activity),
-            DispatcherPriority.Input);
+        if (Dispatcher.UIThread.CheckAccess()) Apply(activity);
+        else Dispatcher.UIThread.Post(() => Apply(activity), DispatcherPriority.Input);
     }
 
     private void Apply(EditorOperationActivity activity)
@@ -64,6 +71,6 @@ internal sealed class EditorOperationActivityPresenter : IDisposable
             _scrim.Hide();
             return;
         }
-        _scrim.Show(current, cancel: null);
+        _scrim.Show(current, cancel: null, takeFocus: false);
     }
 }

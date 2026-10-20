@@ -30,19 +30,6 @@ internal sealed class ShotModulePickerDialog
 
     public async Task<ShotModuleInstanceDraft?> Show(string shotId)
     {
-        var startup = await _operations.ExecuteWithActivityAsync(
-            "Preparing Add Screen…",
-            () =>
-            {
-                var modules = _database.GetAvailableShotModules(
-                    shotId);
-                var variants = modules.ToDictionary(
-                    (module) => module.Id,
-                    (module) => _database.GetModuleVariantOptions(
-                        module.Id).ToList());
-                return (Modules: modules, Variants: variants);
-            });
-        var modules = startup.Modules;
         var dialog = new SukiWindow
         {
             Title = "Add Screen to Shot",
@@ -59,6 +46,23 @@ internal sealed class ShotModulePickerDialog
         };
         EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
+        return await EditorModalWindowScope.ShowPrepared<
+            (IReadOnlyList<ShotModuleChoice> Modules, Dictionary<string, List<FieldOption>> Variants), ShotModuleInstanceDraft>(
+            dialog, _owner, "Loading Modules and Variants…",
+            token => _operations.ExecuteAsync(() =>
+            {
+                var modules = _database.GetAvailableShotModules(shotId);
+                var variants = modules.ToDictionary(module => module.Id,
+                    module => _database.GetModuleVariantOptions(module.Id).ToList());
+                return (modules, variants);
+            }, token),
+            startup => Populate(dialog, startup));
+    }
+
+    private void Populate(Window dialog,
+        (IReadOnlyList<ShotModuleChoice> Modules, Dictionary<string, List<FieldOption>> Variants) startup)
+    {
+        var modules = startup.Modules;
         var moduleOptions = modules
             .Select((module) => new FieldOption(module.Id, modules.Count((candidate) => candidate.Name == module.Name) > 1
                 ? $"{module.Name} · {module.AppName}"
@@ -184,15 +188,9 @@ internal sealed class ShotModulePickerDialog
             Padding = EditorUiDensity.CardThickness(18),
             Child = root,
         };
-        EditorModalWindowScope.OnOpened(dialog, () =>
-        {
-            RefreshVariants();
-            RefreshAddButton();
-            if (modules.Count == 0) moduleCombo.IsEnabled = false;
-        });
-        return await EditorModalWindowScope.ShowDialog<ShotModuleInstanceDraft>(
-            dialog,
-            _owner);
+        RefreshVariants();
+        RefreshAddButton();
+        if (modules.Count == 0) moduleCombo.IsEnabled = false;
 
         void AddField(string label, Control control, int row)
         {

@@ -4,10 +4,16 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System.Threading.Tasks;
+using System;
+using System.Threading;
+using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
+
+internal sealed record RecordDeleteDecision(bool Confirmed, ReferenceUsageDetail? Usage = null);
 
 internal sealed class EditorDialogService
 {
@@ -105,27 +111,42 @@ internal sealed class EditorDialogService
             height);
     }
 
-    public Task<bool> ConfirmDelete(ProjectTreeNode node)
-    {
-        var message = node.Kind == ProjectTreeNodeKind.Project
-            ? "This permanently removes the Project and all of its Production data. Files outside MOCKUPS are retained. A Project containing Shots cannot be deleted."
-            : node.Kind == ProjectTreeNodeKind.Episode
-            ? "This will also remove the Shots inside this Episode from the current Project."
-            : node.Kind == ProjectTreeNodeKind.App
-                ? "This will also remove the Modules inside this App from the current Project."
-                : node.Kind == ProjectTreeNodeKind.ModuleInstance
-                    ? "This removes only this Screen from the Shot. Its Module and Variant remain available."
-                : "This removes this item from the current Project.";
+    public Task<bool> ConfirmDelete(ProjectTreeNode node) => Confirm(
+        DeleteTitle(node), $"Delete {node.Name}?", DeleteMessage(node), "Delete",
+        isDestructive: true, width: 480, height: 250);
 
-        return Confirm(
-            node.Kind == ProjectTreeNodeKind.ModuleInstance ? "Delete Screen" : $"Delete {node.Kind}",
-            $"Delete {node.Name}?",
-            message,
-            "Delete",
-            isDestructive: true,
-            width: 420,
-            height: 220);
+    public Task<RecordDeleteDecision?> PrepareDelete(ProjectTreeNode node,
+        Func<CancellationToken, Task<IReadOnlyList<ReferenceUsageDetail>>> prepare)
+    {
+        var dialog = CreateDialog(DeleteTitle(node), 540, 360);
+        return EditorModalWindowScope.ShowPrepared<IReadOnlyList<ReferenceUsageDetail>, RecordDeleteDecision>(
+            dialog, _owner, "Checking reference usage…", prepare, usages =>
+            {
+                if (usages.Count > 0)
+                {
+                    dialog.Height = 460;
+                    new EditorReferenceUsageDialog(_owner, _isDark).Populate(dialog, node, usages,
+                        usage => EditorModalWindowScope.Close(dialog, new RecordDeleteDecision(false, usage)));
+                    return;
+                }
+                PopulateConfirmation(dialog, $"Delete {node.Name}?", DeleteMessage(node), "Delete", true,
+                    () => EditorModalWindowScope.Close(dialog, new RecordDeleteDecision(true)),
+                    () => EditorModalWindowScope.Close(dialog, new RecordDeleteDecision(false)));
+            });
     }
+
+    private static string DeleteTitle(ProjectTreeNode node) =>
+        node.Kind == ProjectTreeNodeKind.ModuleInstance ? "Delete Screen" : $"Delete {node.Kind}";
+
+    private static string DeleteMessage(ProjectTreeNode node) => node.Kind switch
+    {
+        ProjectTreeNodeKind.Project => "This permanently removes the Project and all of its Production data. Files outside MOCKUPS are retained. A Project containing Shots cannot be deleted.",
+        ProjectTreeNodeKind.Episode => "This will also remove the Shots inside this Episode from the current Project.",
+        ProjectTreeNodeKind.App => "This will also remove the Modules inside this App from the current Project.",
+        ProjectTreeNodeKind.Shot => "The Shot and its Screens will be removed. Existing production output folders are retained and are never deleted automatically.",
+        ProjectTreeNodeKind.ModuleInstance => "This removes only this Screen from the Shot. Its Module and Variant remain available.",
+        _ => "This removes this item from the current Project.",
+    };
 
     public Task<string?> PromptText(
         string title,
@@ -225,6 +246,15 @@ internal sealed class EditorDialogService
         double height = 220)
     {
         var dialog = CreateDialog(title, width, height);
+        PopulateConfirmation(dialog, headline, body, actionLabel, isDestructive,
+            () => EditorModalWindowScope.Close(dialog, true),
+            () => EditorModalWindowScope.Close(dialog, false));
+        return EditorModalWindowScope.ShowDialog<bool>(dialog, _owner);
+    }
+
+    private void PopulateConfirmation(Window dialog, string headline, string? body,
+        string actionLabel, bool isDestructive, Action confirm, Action cancel)
+    {
         var root = new Border
         {
             Padding = new Thickness(22),
@@ -266,7 +296,7 @@ internal sealed class EditorDialogService
             Content = "Cancel",
             MinWidth = 92,
         };
-        cancelButton.Click += (_, _) => EditorModalWindowScope.Close(dialog, false);
+        cancelButton.Click += (_, _) => cancel();
 
         var confirmButton = new Button
         {
@@ -282,7 +312,7 @@ internal sealed class EditorDialogService
                 ? (_isDark ? "#e8a1a8" : "#b4232e")
                 : (_isDark ? "#d7e2ff" : "#23477f"))),
         };
-        confirmButton.Click += (_, _) => EditorModalWindowScope.Close(dialog, true);
+        confirmButton.Click += (_, _) => confirm();
 
         actions.Children.Add(cancelButton);
         actions.Children.Add(confirmButton);
@@ -293,7 +323,6 @@ internal sealed class EditorDialogService
         ((Grid)root.Child).Children.Add(actions);
         dialog.Content = root;
 
-        return EditorModalWindowScope.ShowDialog<bool>(dialog, _owner);
     }
 
     private SukiWindow CreateDialog(string title, double width, double height)

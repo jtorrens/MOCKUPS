@@ -122,7 +122,7 @@ internal sealed class PreviewControlsDockController :
         }
     }
 
-    public Task PrepareAsync()
+    public void Occlude()
     {
         _restoreFloatingWindowAfterModal =
             IsDetached
@@ -130,14 +130,6 @@ internal sealed class PreviewControlsDockController :
         if (_restoreFloatingWindowAfterModal)
         {
             CaptureFloatingGeometry();
-        }
-        return Task.CompletedTask;
-    }
-
-    public void Occlude()
-    {
-        if (_restoreFloatingWindowAfterModal)
-        {
             _floatingWindow?.Hide();
         }
     }
