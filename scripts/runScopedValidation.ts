@@ -205,6 +205,11 @@ export function planScopedValidation(
       typecheck = true;
       continue;
     }
+    if (file === "src/desktop-preview/conversationModuleResolver.ts"
+      || file === "docs/architecture/animation.md") {
+      previewTests.add("tests/animation/conversationModuleResolver.test.ts");
+      typecheck = true;
+    }
     if (file === "src/Mockups.Application/BubbleComponentConfigContract.cs"
       || file === "scaffolding/components/bubble.json") {
       add(npmStep(

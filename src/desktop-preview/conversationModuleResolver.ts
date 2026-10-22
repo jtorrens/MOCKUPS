@@ -281,6 +281,10 @@ export function resolveConversationModuleFrame(
       message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
     );
     const textCompletionFrame = timeline.fieldCompletionFrame("text", targetId);
+    // Delivery belongs to the completed message, including tracked text.
+    message.statusVisible = requiredBoolean(message, "statusVisible",
+      `module.core.chat.messages[${index}].statusVisible`)
+      && screenFrame >= textCompletionFrame;
     const textOriginFrame = timeline.screenFrame("text", targetId, 0);
     const textUsesTrackCompletion = timeline.usesTrackCompletion("text", targetId);
     const postHold = direction === "outgoing"

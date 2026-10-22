@@ -96,6 +96,13 @@ presence interval. It keeps the Text Input Bar for the complete Screen while
 outgoing write-on alone supplies text; otherwise the Text Box owns placeholder
 rendering. Keyboard presence remains tied to outgoing writing.
 
+Conversation clips delivery-status visibility until the common owner timeline's
+`text` completion frame, including explicit text tracks. At that exact frame it
+exposes the resolved `statusVisible`, `status` and `statusText` values; false
+visibility remains hidden. This message-owned visibility boundary does not
+retime status keyframes or change authored values. Bubble receives the already
+resolved visibility and does not calculate a second writing clock.
+
 Each Conversation message also owns the non-sequencing Boolean
 `Actions revealed`. It uses `hold` from the message owner start. A value change
 drives the Conversation Variant's reveal timing while Conversation displaces

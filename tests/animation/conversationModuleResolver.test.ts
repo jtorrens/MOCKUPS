@@ -485,6 +485,40 @@ test("chat Actor resolves hold keyframes through the prepared record catalog", (
   assert.deepEqual(resolved.actor, { id: "actor_sam", displayName: "Sam" });
 });
 
+test("delivery waits for text completion and preserves resolved status values", () => {
+  for (const direction of ["incoming", "outgoing", "system"]) {
+    for (const tracked of [false, true]) {
+      const messages = [{ id: "m1", direction, text: "hello", startFrame: 3,
+        delayAfterPreviousFrames: 3, writeOnDurationFrames: 8,
+        statusVisible: true, statusState: "sent", statusText: "sent" }];
+      const tracks = [
+        track("status", "m1", [{ id: "s0", frame: 0, value: "read" }]),
+        track("statusText", "m1", [{ id: "t0", frame: 0, value: "Read" }]),
+        track("statusVisible", "m1", [
+          { id: "v0", frame: 0, value: true },
+          { id: "v1", frame: 12, value: false },
+        ]),
+        ...(tracked ? [track("text", "m1", [
+          { id: "x0", frame: 0, value: "" },
+          { id: "x1", frame: 6, value: "hello", interpolation: "writeOn" },
+        ])] : []),
+      ];
+      const completion = 3 + (tracked ? 6 : 8);
+      for (const frame of [completion - 1, completion, completion + 1, 15]) {
+        const message = (resolveConversationModuleFrame(payload(frame, tracks, messages))
+          .messages as Array<Record<string, unknown>>)[0]!;
+        assert.equal(message.statusVisible, frame >= completion && frame < 15,
+          `${direction}, tracked=${tracked}, frame=${frame}`);
+        assert.equal(message.statusState, "read");
+        assert.equal(message.statusText, "Read");
+      }
+      const hidden = (resolveConversationModuleFrame(payload(completion, [],
+        [{ ...messages[0], statusVisible: false }])).messages as Array<Record<string, unknown>>)[0]!;
+      assert.equal(hidden.statusVisible, false);
+    }
+  }
+});
+
 test("delivery, status, Icon Row visibility and full-screen fields resolve independently", () => {
   const messages = [{
     id: "m1",
