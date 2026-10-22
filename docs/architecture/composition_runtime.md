@@ -269,6 +269,18 @@ fields from their effective inherited values; the `inherited` marker is
 reserved for the commit path and is never supplied to Runtime-contract
 resolution.
 
+Bubble Variants own three required message-size tokens: `incomingTextSizeToken`,
+`outgoingTextSizeToken` and `systemTextSizeToken`, exposed through Dictionary
+ThemeToken controls in the Text card and the normal contextual Overrides route.
+Bubble selects the declared size binding from the resolved message direction;
+the shared Runtime preparation boundary supplies that value to Text Box through
+the explicit `textSizeToken` link. Explicit Runtime sizing, including the
+Conversation typing indicator, retains precedence. Text Box still owns font
+layout and measurement; Theme resolves each token. Changing Text Box's own size
+does not replace a Bubble's three authored sizes.
+Schema-30 maintenance initializes all three from each Bubble's prior effective
+Text Box Variant plus local Overrides, preserving existing message appearance.
+
 Bubble additionally owns one optional fixed Icon Row boundary. The boundary
 stores an exact Icon Row Variant and local Overrides in its Runtime collection
 item payload. Its explicit `showIconRow` visibility is a forwardable, animatable

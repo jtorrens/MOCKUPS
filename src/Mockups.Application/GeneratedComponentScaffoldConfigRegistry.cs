@@ -19,6 +19,7 @@ internal static class GeneratedComponentScaffoldConfigRegistry
             case "badge":
                 return true;
             case "bubble":
+                BubbleComponentConfigContract.Validate(config, context);
                 return true;
             case "button":
                 return true;

@@ -9,6 +9,60 @@ import {
 } from "../../src/desktop-preview/textBoxComponentRenderable.js";
 import type { RenderableNode } from "../../src/visual/renderable/types.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
+import { prepareComponentConfiguration } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
+
+test("Bubble selects message text size by direction through its prepared Variant and Overrides", () => {
+  for (const variantId of ["default", "default_copy"]) {
+    const source = committedComponentFixture("bubble", variantId);
+    const catalog = JSON.parse(source.componentBaseConfigsJson);
+    const reference = `component_project_foqn_s2_bubble::variant::${variantId}`;
+    const sizes = {
+      incoming: "theme.typography.sizes.xs",
+      outgoing: "theme.typography.sizes.l",
+      system: "theme.typography.sizes.xl",
+    };
+    const config = prepareComponentConfiguration(catalog, "bubble", reference, {
+      bubble: {
+        incomingTextSizeToken: sizes.incoming,
+        outgoingTextSizeToken: sizes.outgoing,
+        systemTextSizeToken: sizes.system,
+        textBoxSlot: { overrides: { textBox: { typography: { sizeToken: "theme.typography.sizes.m" } } } },
+      },
+    });
+    source.configJson = JSON.stringify(config);
+    const preview = JSON.parse(source.designPreviewJson);
+    preview.writeOnTrigger = false;
+    for (const [state, token] of Object.entries(sizes)) {
+      preview.state = state;
+      delete preview.textSizeToken;
+      source.designPreviewJson = JSON.stringify(preview);
+      const resolved = resolveBubbleComponent(source);
+      assert.equal(resolved.textBox.typography.sizeToken, token, `${variantId}/${state}`);
+      const regularSize = measureTextBoxComponent(source, resolved.textBox).typography.fontSize;
+      preview.textSizeToken = "theme.typography.sizes.s";
+      preview.typingIndicator = true;
+      source.designPreviewJson = JSON.stringify(preview);
+      const typing = resolveBubbleComponent(source);
+      assert.equal(typing.textBox.typography.sizeToken, preview.textSizeToken);
+      assert.notEqual(measureTextBoxComponent(source, typing.textBox).typography.fontSize, regularSize);
+      delete preview.typingIndicator;
+    }
+    assert.notEqual(catalog.variants[reference].bubble.incomingTextSizeToken, sizes.incoming);
+  }
+});
+
+test("Bubble requires all three configured message sizes even when Runtime supplies one", () => {
+  for (const direction of ["incoming", "outgoing", "system"]) {
+    const source = committedComponentFixture("bubble");
+    const config = JSON.parse(source.configJson);
+    delete config.bubble[`${direction}TextSizeToken`];
+    source.configJson = JSON.stringify(config);
+    const preview = JSON.parse(source.designPreviewJson);
+    preview.textSizeToken = "theme.typography.sizes.s";
+    source.designPreviewJson = JSON.stringify(preview);
+    assert.throws(() => resolveBubbleComponent(source), new RegExp(`component\\.bubble\\.${direction}TextSizeToken`));
+  }
+});
 
 test("Bubble maps resolved alignment to tail side and visibility independently of message state", () => {
   const source = committedComponentFixture("bubble", "default_copy");

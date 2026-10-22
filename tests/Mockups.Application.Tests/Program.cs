@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 
 var tests = new (string Name, Action Run)[]
 {
+    ("Bubble requires valid message size tokens for every direction", BubbleConfigTests.DirectionSizesAreRequired),
     ("SVG fill transforms keep direct reusable geometry", SvgFillTransformsKeepDirectReusableGeometry),
     ("redirected child-process text round-trips exact UTF-8", RedirectedChildProcessTextRoundTripsExactUtf8),
     ("initial tree load resolves a selectable Design context", InitialTreeLoadSelectsDesignContext),

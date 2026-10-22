@@ -3,7 +3,7 @@ import type {
   SpacingPairContract,
 } from "./previewComponentContracts.js";
 import type { AudioDesignContract } from "./audioComponentContract.js";
-import type { RuntimeValueLink } from "./runtimePreviewDocumentContract.js";
+import type { RuntimeValueBinding, RuntimeValueLink } from "./runtimePreviewDocumentContract.js";
 import type { AvatarDesignContract } from "./avatarComponentContract.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
@@ -90,3 +90,11 @@ export interface BubbleDesignContract {
 export const bubbleTextBoxValueLinks = [
   { sourceFieldId: "textSizeToken", sourceJsonKey: "textSizeToken", targetFieldId: "textSizeToken", targetJsonKey: "textSizeToken" },
 ] as const satisfies readonly RuntimeValueLink[];
+
+// Direction is Bubble semantics; value precedence remains in the shared
+// preparation boundary, including an explicit typing-indicator Runtime size.
+export const bubbleTextSizeBindings = {
+  incoming: [{ fieldId: "textSizeToken", runtimeJsonKey: "textSizeToken", configPath: ["bubble", "incomingTextSizeToken"] }],
+  outgoing: [{ fieldId: "textSizeToken", runtimeJsonKey: "textSizeToken", configPath: ["bubble", "outgoingTextSizeToken"] }],
+  system: [{ fieldId: "textSizeToken", runtimeJsonKey: "textSizeToken", configPath: ["bubble", "systemTextSizeToken"] }],
+} as const satisfies Record<BubbleState, readonly RuntimeValueBinding[]>;

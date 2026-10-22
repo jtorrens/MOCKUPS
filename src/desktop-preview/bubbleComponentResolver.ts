@@ -2,8 +2,9 @@ import {
   embeddedComponentConfig,
   mergeComponentDefaults,
   projectRuntimeValues,
+  prepareRuntimeValues,
 } from "./runtimePreviewDocumentContract.js";
-import { bubbleTextBoxValueLinks } from "./bubbleComponentContract.js";
+import { bubbleTextBoxValueLinks, bubbleTextSizeBindings } from "./bubbleComponentContract.js";
 import {
   optionalBoolean,
   optionalNumber,
@@ -88,6 +89,11 @@ export function resolveBubbleComponent(
     : { first: maxWidth, second: 1 };
   const padding = requiredStringPair(bubble, "padding", "component.bubble.padding");
   const state = bubbleState(requiredString(preview, "state", "component.bubble.input.state"));
+  for (const bindings of Object.values(bubbleTextSizeBindings)) {
+    const key = bindings[0].configPath[1];
+    requiredString(bubble, key, `component.bubble.${key}`);
+  }
+  const textSizeValues = prepareRuntimeValues(config, preview, bubbleTextSizeBindings[state]);
   const alignments: Record<BubbleState, BubbleAlignment> = {
     incoming: bubbleAlignment(requiredString(
       bubble,
@@ -188,7 +194,7 @@ export function resolveBubbleComponent(
 
   const textBoxInputs = {
     sampleText: visibleText,
-    ...projectRuntimeValues(preview, bubbleTextBoxValueLinks),
+    ...projectRuntimeValues(textSizeValues, bubbleTextBoxValueLinks),
     textAnimationMode: optionalString(preview, "textAnimationMode"),
     textAnimationElapsedMs: optionalNumber(preview, "textAnimationElapsedMs", 0),
     size: `${maxWidth}|1`,

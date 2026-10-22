@@ -205,6 +205,19 @@ export function planScopedValidation(
       typecheck = true;
       continue;
     }
+    if (file === "src/Mockups.Application/BubbleComponentConfigContract.cs"
+      || file === "scaffolding/components/bubble.json") {
+      add(npmStep(
+        "preview:bubble-direction-sizes", "test:focus:preview",
+        "Bubble persisted direction sizes must reach Text Box through shared preparation",
+        ["--", "tests/animation/bubbleComponent.test.ts"],
+      ));
+      add(npmStep(
+        "application:bubble-direction-sizes", "test:focus:application",
+        "Bubble configuration requires all three valid direction tokens",
+        ["--", "--exact", "Bubble requires valid message size tokens for every direction"],
+      ));
+    }
     if ([
       "src/Mockups.Desktop.Host/Program.cs",
       "src/Mockups.Desktop.Host/WorkstationUpdateMaintenance.cs",

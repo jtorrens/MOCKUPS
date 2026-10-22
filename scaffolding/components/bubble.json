@@ -35,7 +35,7 @@
     "renderableExport": "bubbleComponentToRenderable",
     "registryMode": "simple",
     "focusedTest": "tests/animation/atomicTemporalComponents.test.ts",
-    "configContractExport": null
+    "configContractExport": "BubbleComponentConfigContract"
   },
   "config": {
     "style": {
@@ -159,7 +159,10 @@
       },
       "iconRowChildCount": 1,
       "iconRowGapToken": "theme.spacing.s",
-      "iconRowVerticalPaddingToken": "theme.spacing.none"
+      "iconRowVerticalPaddingToken": "theme.spacing.none",
+      "incomingTextSizeToken": "theme.typography.sizes.s",
+      "outgoingTextSizeToken": "theme.typography.sizes.s",
+      "systemTextSizeToken": "theme.typography.sizes.s"
     }
   },
   "defaultVariant": {
@@ -289,7 +292,10 @@
         },
         "iconRowChildCount": 1,
         "iconRowGapToken": "theme.spacing.s",
-        "iconRowVerticalPaddingToken": "theme.spacing.none"
+        "iconRowVerticalPaddingToken": "theme.spacing.none",
+        "incomingTextSizeToken": "theme.typography.sizes.s",
+        "outgoingTextSizeToken": "theme.typography.sizes.s",
+        "systemTextSizeToken": "theme.typography.sizes.s"
       }
     }
   },
@@ -470,7 +476,10 @@
           },
           "iconRowChildCount": 1,
           "iconRowGapToken": "theme.spacing.s",
-          "iconRowVerticalPaddingToken": "theme.spacing.none"
+          "iconRowVerticalPaddingToken": "theme.spacing.none",
+          "incomingTextSizeToken": "theme.typography.sizes.s",
+          "outgoingTextSizeToken": "theme.typography.sizes.s",
+          "systemTextSizeToken": "theme.typography.sizes.s"
         }
       }
     }
@@ -4603,6 +4612,213 @@
         "recordClassId": "component.textBox",
         "allowRuntimeInputForwarding": true
       }
+    },
+    {
+      "id": "component.bubble.incomingTextSizeToken",
+      "label": "Incoming text size",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "incomingTextSizeToken"
+      ],
+      "defaultValue": "theme.typography.sizes.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.typography.sizes.xs",
+          "label": "typography.sizes.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.s",
+          "label": "typography.sizes.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.m",
+          "label": "typography.sizes.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.l",
+          "label": "typography.sizes.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.xl",
+          "label": "typography.sizes.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.outgoingTextSizeToken",
+      "label": "Outgoing text size",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "outgoingTextSizeToken"
+      ],
+      "defaultValue": "theme.typography.sizes.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.typography.sizes.xs",
+          "label": "typography.sizes.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.s",
+          "label": "typography.sizes.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.m",
+          "label": "typography.sizes.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.l",
+          "label": "typography.sizes.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.xl",
+          "label": "typography.sizes.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.systemTextSizeToken",
+      "label": "System text size",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "systemTextSizeToken"
+      ],
+      "defaultValue": "theme.typography.sizes.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.typography.sizes.xs",
+          "label": "typography.sizes.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.s",
+          "label": "typography.sizes.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.m",
+          "label": "typography.sizes.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.l",
+          "label": "typography.sizes.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.xl",
+          "label": "typography.sizes.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {
@@ -4678,7 +4894,7 @@
       {
         "id": "bubbleText",
         "label": "Text",
-        "subtitle": "Text box variant used by the message body",
+        "subtitle": "Text box and message sizes by direction",
         "icon": "text-input",
         "order": 30,
         "visible": true,
@@ -4693,6 +4909,21 @@
               {
                 "id": "component.bubble.textBox.editor",
                 "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.incomingTextSizeToken",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.outgoingTextSizeToken",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.systemTextSizeToken",
+                "order": 40,
                 "visible": true
               }
             ]
