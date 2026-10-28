@@ -478,6 +478,12 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         window.Closing += (_, args) =>
         {
             if (_disposed) return;
+            if (args.CloseReason is WindowCloseReason.OwnerWindowClosing
+                or WindowCloseReason.ApplicationShutdown or WindowCloseReason.OSShutdown)
+            {
+                CaptureGeometry(entry);
+                return;
+            }
             args.Cancel = true;
             Place(entry, entry.LastDock);
         };

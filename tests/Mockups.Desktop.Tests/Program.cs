@@ -20128,10 +20128,17 @@ static void UtilityLayoutSurvivesNewSession()
         first.Dock.RestoreLayout(desired);
         Dispatcher.UIThread.RunJobs();
         first.Window.UpdateLayout();
-        var saved = JsonSerializer.Deserialize<PreviewUtilityLayoutState>(
-            JsonSerializer.Serialize(first.Dock.CaptureLayout()))!;
-        first.Dock.Dispose();
+        PreviewUtilityLayoutState? closingLayout = null;
+        first.Window.Closing += (_, _) =>
+        {
+            closingLayout = first.Dock.CaptureLayout();
+            first.Dock.Dispose();
+        };
         first.Window.Close();
+        True(!first.Window.IsVisible);
+        True(closingLayout!.Tabs.Single(tab => tab.Id == "setup").GroupId is null);
+        var saved = JsonSerializer.Deserialize<PreviewUtilityLayoutState>(
+            JsonSerializer.Serialize(closingLayout))!;
         var next = Create();
         try
         {

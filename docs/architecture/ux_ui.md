@@ -222,6 +222,8 @@ and detached state are restored when the modal closes. `ShowDialog` then present
 modal with its exact visible owner. Closing or failed presentation restores the
 captured sibling topmost and interaction state once.
 
+Closing the owner or quitting the application preserves detached placement; only
+an explicit close of the utility window returns its tab to the last group.
 Floating position and size survive application sessions. Before showing a utility
 window, the placement owner constrains its size and screen-pixel position to the
 current monitor working area, accounting for display scaling. If its saved origin
