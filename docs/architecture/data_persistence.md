@@ -989,3 +989,10 @@ ordered groups with exact root ids, tab ids with dock and return-group reference
 selected tab ids, group/editor heights and floating geometry. See
 [utility placement](ux_ui.md) for restoration and monitor constraints. No card
 expansion, editor scroll, internal selection or authored payload is persisted here.
+
+Normal `SqliteProjectContext` connections use SQLite `ReadWrite`, never
+`ReadWriteCreate`; validation uses `ReadOnly`. A missing or removed database
+fails without creating an empty replacement, including a late canceled read
+at shutdown. Only explicit bootstrap/creation and snapshot destinations may
+create files. The Desktop regression `SQLite context connections never create
+a missing database` checks both connection kinds and file absence.

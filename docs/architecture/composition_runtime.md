@@ -155,6 +155,21 @@ adds only the explicit Runtime fields owned by the forwarding boundary.
 Reconciliation may preserve those declared structural values by stable item id;
 it never turns undeclared stored keys into an implicit compatibility path.
 
+Forwarded state selections and transition origins are strict on read. A stored
+id outside the declared alternatives (or an unknown parent item) is an error;
+`RuntimeInputForwardingContract` never replaces it with the first alternative.
+Its prepared collection carries the explicit `forwardedStateProjection` keys
+and source collection. That same projection declares its hidden, action-only
+transition, elapsed-time and origin fields through the ordinary Runtime field
+contract, so mutation validation and storage retain exactly the generated shape.
+`RuntimeInputDocumentContract.ReconcileContentForContract`
+uses that metadata only during an authored contract transition: validate against
+the previous source, preserve surviving selections, and reset a removed selection
+to the newly declared initial state with its transition stopped. The existing
+Variant commit publishes the reconciled Screen content in the same transaction.
+Design action transport retires invalid targets through its existing session
+owner before publishing the next frame; it cannot repair stored Runtime values.
+
 ## Embedded documents
 
 At a recursive embedded boundary:

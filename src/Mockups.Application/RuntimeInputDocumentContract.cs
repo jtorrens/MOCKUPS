@@ -307,13 +307,86 @@ public static class RuntimeInputDocumentContract
             var nextKey = CollectionStorageKey(next);
             if (!previousCollections.TryGetValue(id, out var previous)) continue;
             var previousKey = CollectionStorageKey(previous);
+            var currentItems = RequiredCollection(current, previousKey, "Current Runtime content");
+            if (next["forwardedStateProjection"] is JsonObject projection)
+            {
+                var previousProjection = JsonPath.RequiredObject(previous, "forwardedStateProjection", "Previous forwarded collection");
+                ValidateForwardedCollectionStates(currentItems,
+                    RequiredCollection(previousContract, JsonPath.RequiredString(previous, "sourceCollectionJsonKey", "Previous forwarded collection"), "Previous Runtime contract"),
+                    previousProjection);
+                currentItems = ReconcileForwardedCollectionStates(currentItems,
+                    RequiredCollection(nextContract, JsonPath.RequiredString(next, "sourceCollectionJsonKey", "Next forwarded collection"), "Next Runtime contract"),
+                    RequiredCollection(nextContract, JsonPath.RequiredString(next, "jsonKey", "Next forwarded collection"), "Next Runtime contract"),
+                    projection);
+            }
             mapped[nextKey] = ReconcileCollectionValues(
-                RequiredCollection(current, previousKey, "Current Runtime content"),
-                previous,
-                next,
+                currentItems, previous, next,
                 nextContract[JsonPath.RequiredString(next, "jsonKey", "Runtime collection")] as JsonArray);
         }
         return CreateContentForContract(mapped, nextContract);
+    }
+
+    // Reading a forwarded collection never selects another state. Structural
+    // edits reconcile through ReconcileContentForContract before publication.
+    internal static void ValidateForwardedCollectionStates(
+        JsonArray current, JsonArray source, JsonObject projection)
+    {
+        RuntimeCollectionDocumentContract.Validate(current, "Forwarded Runtime state values");
+        var sourceById = JsonPath.ObjectItems(source, "Forwarded Runtime state source")
+            .ToDictionary(item => JsonPath.RequiredString(item, "id", "Forwarded Runtime state source"), StringComparer.Ordinal);
+        var stateKey = JsonPath.RequiredString(projection, "stateJsonKey", "Forwarded state projection");
+        var fromKey = JsonPath.RequiredString(projection, "fromJsonKey", "Forwarded state projection");
+        foreach (var item in JsonPath.ObjectItems(current, "Forwarded Runtime state values"))
+        {
+            var id = JsonPath.RequiredString(item, "id", "Forwarded Runtime state values");
+            if (!sourceById.TryGetValue(id, out var sourceItem))
+                throw new InvalidOperationException($"Forwarded Runtime collection contains unknown item '{id}'.");
+            var allowed = ForwardedStateIds(sourceItem, projection);
+            foreach (var key in new[] { stateKey, fromKey })
+            {
+                var value = JsonPath.RequiredString(item, key, $"Forwarded Runtime item '{id}'");
+                if (!allowed.Contains(value))
+                    throw new InvalidOperationException($"Forwarded Runtime item '{id}' has invalid state '{value}' in '{key}'.");
+            }
+        }
+    }
+
+    private static JsonArray ReconcileForwardedCollectionStates(
+        JsonArray current, JsonArray source, JsonArray defaults, JsonObject projection)
+    {
+        var next = ReconcileProjectedCollection(current, defaults);
+        var sourceById = JsonPath.ObjectItems(source, "Next forwarded state source")
+            .ToDictionary(item => JsonPath.RequiredString(item, "id", "Next forwarded state source"), StringComparer.Ordinal);
+        var defaultById = JsonPath.ObjectItems(defaults, "Next forwarded state defaults")
+            .ToDictionary(item => JsonPath.RequiredString(item, "id", "Next forwarded state defaults"), StringComparer.Ordinal);
+        var stateKey = JsonPath.RequiredString(projection, "stateJsonKey", "Forwarded state projection");
+        var fromKey = JsonPath.RequiredString(projection, "fromJsonKey", "Forwarded state projection");
+        var transitionKey = JsonPath.RequiredString(projection, "transitionJsonKey", "Forwarded state projection");
+        var elapsedKey = JsonPath.RequiredString(projection, "elapsedJsonKey", "Forwarded state projection");
+        foreach (var item in JsonPath.ObjectItems(next, "Reconciled forwarded state values"))
+        {
+            var id = JsonPath.RequiredString(item, "id", "Reconciled forwarded state values");
+            var allowed = ForwardedStateIds(sourceById[id], projection);
+            var state = JsonPath.RequiredString(item, stateKey, "Reconciled forwarded state values");
+            var from = JsonPath.RequiredString(item, fromKey, "Reconciled forwarded state values");
+            if (allowed.Contains(state) && allowed.Contains(from)) continue;
+            if (!allowed.Contains(state)) item[stateKey] = defaultById[id][stateKey]!.DeepClone();
+            item[fromKey] = item[stateKey]!.DeepClone();
+            item[transitionKey] = false;
+            item[elapsedKey] = 0;
+        }
+        ValidateForwardedCollectionStates(next, source, projection);
+        return next;
+    }
+
+    private static HashSet<string> ForwardedStateIds(JsonObject source, JsonObject projection)
+    {
+        var key = JsonPath.RequiredString(projection, "optionsSourceCollectionJsonKey", "Forwarded state projection");
+        var alternatives = JsonPath.RequiredArray(source, key, "Forwarded state source");
+        RuntimeCollectionDocumentContract.Validate(alternatives, "Forwarded state alternatives");
+        return JsonPath.ObjectItems(alternatives, "Forwarded state alternatives")
+            .Select(item => JsonPath.RequiredString(item, "id", "Forwarded state alternative"))
+            .ToHashSet(StringComparer.Ordinal);
     }
 
     private static JsonObject ReconcileFields(

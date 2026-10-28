@@ -265,6 +265,7 @@ export function planScopedValidation(
         ["--", "--exact", name]));
     }
     if (["src/Mockups.Desktop/App.axaml", "src/Mockups.Desktop/Common/EditorSukiWindowTheme.cs",
+      "src/Mockups.Desktop/Common/EditorSukiWindowTemplate.cs",
       "src/Mockups.Desktop/Common/EditorContextMenuBehavior.cs"].includes(file)) {
       desktopUi = true;
       add(npmStep("desktop:context-menu-dismissal", "test:focus:desktop",
@@ -347,6 +348,25 @@ export function planScopedValidation(
         "test:focus:desktop",
         "shared collection commits must preserve exact nested Variant identities and animation ownership",
         ["--", "--exact", "collection mutations retain exact nested Variant identities and animation targets"],
+      ));
+    }
+    if (file === "src/Mockups.Persistence.Sqlite.Core/SqliteProjectContext.cs") {
+      add(npmStep(
+        "desktop:sqlite-existing-only",
+        "test:focus:desktop",
+        "normal connections must never create a missing authoring database",
+        ["--", "--exact", "SQLite context connections never create a missing database"],
+      ));
+    }
+    if ([
+      "src/Mockups.Application/RuntimeInputForwardingContract.cs",
+      "src/Mockups.Application/RuntimeInputDocumentContract.cs",
+    ].includes(file)) {
+      add(npmStep(
+        "desktop:forwarded-state-mutation",
+        "test:focus:desktop",
+        "forwarded state changes must persist through the shared contract before strict Preview reads",
+        ["--", "--exact", "forwarded runtime collections expose slot state actions"],
       ));
     }
     if ([

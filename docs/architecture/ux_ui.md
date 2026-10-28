@@ -188,8 +188,12 @@ button. Tabs and floating headers have no placement context menu; insertion and
 grouping are expressed directly through drop zones. Remaining tabs retain their
 original order. The editor stays above the groups with its breadcrumb, cards and
 scroll and recovers all height when no tool remains below it.
-The common Suki window content template supplies Avalonia’s `VisualLayerManager`
-and light-dismiss overlay for other application menus and popups.
+The common `EditorSukiWindowTemplate` integrates Suki chrome with Avalonia's
+`PART_VisualLayerManager` control-template contract. The platform initializes
+popup, light-dismiss and text-selector layers on that named part. The adapter
+preserves Suki's exact named chrome controls and fails if the vendor template
+already declares another layer owner. Window content is presented once through
+the vendor presenter; a content DataTemplate must not wrap/re-present it.
 The Preview title and rendered frame remain in the right panel. When no
 available tab remains there, its utility region contracts to a small labelled
 drop zone and releases the remaining height to the frame. Each group remembers

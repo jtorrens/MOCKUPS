@@ -39,6 +39,7 @@ test("shared Application contracts select their real Desktop consumers", () => {
 
 test("shared editor controllers and changed Desktop tests retain isolated UI coverage", () => {
   for (const file of [
+    "src/Mockups.Desktop/Common/EditorSukiWindowTemplate.cs",
     "src/Mockups.Desktop/EditorShell/EditorContentPreparationService.cs",
     "src/Mockups.Desktop/EditorShell/ProductionPreviewSessionDataSource.cs",
     "tests/Mockups.Desktop.Tests/Program.cs",
@@ -200,6 +201,17 @@ test("collection identity owners retain nested persistence and isolated UI cover
     const steps = planScopedValidation(repositoryRoot, [file]);
     assert.ok(steps.some(step => step.id === "desktop:collection-identities"
       && step.args.includes("collection mutations retain exact nested Variant identities and animation targets")), file);
+    assert.ok(steps.some(step => step.id === "desktop-ui"), file);
+  }
+});
+
+test("forwarding owners retain the persisted state mutation regression", () => {
+  for (const file of [
+    "src/Mockups.Application/RuntimeInputForwardingContract.cs",
+    "src/Mockups.Application/RuntimeInputDocumentContract.cs",
+  ]) {
+    const steps = planScopedValidation(repositoryRoot, [file]);
+    assert.ok(steps.some(step => step.id === "desktop:forwarded-state-mutation"), file);
     assert.ok(steps.some(step => step.id === "desktop-ui"), file);
   }
 });

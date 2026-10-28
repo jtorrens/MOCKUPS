@@ -40,6 +40,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime numeric presentation survives collection and forwarding boundaries", RuntimeNumericPresentationSurvivesBoundaries),
     ("Runtime default preparation preserves declared types and active Variant fields", RuntimeDefaultPreparationUsesDeclaredContract),
     ("projected Runtime collections reconcile by stable id", ProjectedRuntimeCollectionsReconcileById),
+    ("forwarded states reconcile only during contract mutations and reject invalid reads", ForwardedStatesRequireExplicitMutation),
     ("Component Input bindings project exact structure-owned Runtime values", ComponentInputBindingsProjectExactStructuredRuntimeValues),
     ("Component Input projection ownership covers Module and Component parents", ComponentInputProjectionOwnershipCoversParents),
     ("Runtime documents reject missing and parent-owned values", RuntimeDocumentsRejectInvalidOwnership),
@@ -1149,6 +1150,83 @@ static void RuntimeDefinitionsPreserveOwner()
     Throws<InvalidOperationException>(() =>
         RuntimeInputDocumentContract.IsRuntimeDefinition(
             new JsonObject { ["source"] = "unknown" }));
+}
+
+static void ForwardedStatesRequireExplicitMutation()
+{
+    static void RejectInvalidState(Action action)
+    {
+        try { action(); }
+        catch (InvalidOperationException error)
+        {
+            True(error.Message.Contains("invalid state", StringComparison.Ordinal));
+            return;
+        }
+        throw new InvalidOperationException("An invalid forwarded state was accepted.");
+    }
+    // Two independent metadata shapes prove that neither state names nor a
+    // concrete Component/Module are selected by the common contract.
+    foreach (var prefix in new[] { "panel", "scene" })
+    {
+        var key = $"{prefix}Values";
+        var stateKey = $"{prefix}State";
+        var fromKey = $"{prefix}From";
+        var projection = new JsonObject
+        {
+            ["optionsSourceCollectionJsonKey"] = "choices",
+            ["stateJsonKey"] = stateKey,
+            ["fromJsonKey"] = fromKey,
+            ["transitionJsonKey"] = "moving",
+            ["elapsedJsonKey"] = "elapsed",
+        };
+        var config = new JsonObject
+        {
+            ["items"] = new JsonArray(new JsonObject
+            {
+                ["id"] = "owner",
+                ["choices"] = new JsonArray(new JsonObject { ["id"] = "initial" }, new JsonObject { ["id"] = "selected" }),
+            }),
+            [RuntimeInputForwardingContract.StorageKey] = new JsonObject
+            {
+                ["items"] = new JsonObject
+                {
+                    ["id"] = $"{prefix}.states", ["jsonKey"] = key,
+                    ["collection"] = new JsonObject { ["id"] = prefix, ["fields"] = new JsonArray() },
+                    ["projection"] = projection,
+                },
+            },
+        };
+        var previous = RuntimeInputForwardingContract.EffectivePreview(new JsonObject(), config);
+        var current = RuntimeInputDocumentContract.CreateContentForContract(new JsonObject(), previous);
+        var item = current[key]![0]!.AsObject();
+        item[stateKey] = "selected";
+        item[fromKey] = "initial";
+        item["moving"] = true;
+        item["elapsed"] = 40;
+        var before = current.ToJsonString();
+        var nextConfig = config.DeepClone().AsObject();
+        nextConfig["items"]![0]!["choices"]!.AsArray().RemoveAt(1);
+        var next = RuntimeInputForwardingContract.EffectivePreview(new JsonObject(), nextConfig);
+        RejectInvalidState(() => RuntimeInputForwardingContract.EffectivePreview(current, nextConfig));
+        Equal(before, current.ToJsonString());
+        var reconciled = RuntimeInputDocumentContract.ReconcileContentForContract(current, previous, next);
+        Equal("initial", reconciled[key]![0]![stateKey]!.GetValue<string>());
+        Equal("initial", reconciled[key]![0]![fromKey]!.GetValue<string>());
+        Equal(false, reconciled[key]![0]!["moving"]!.GetValue<bool>());
+        Equal(0, reconciled[key]![0]!["elapsed"]!.GetValue<int>());
+        _ = RuntimeInputForwardingContract.EffectivePreview(reconciled, nextConfig);
+        Equal(before, current.ToJsonString());
+        var retained = RuntimeInputDocumentContract.ReconcileContentForContract(current, previous, previous);
+        Equal("selected", retained[key]![0]![stateKey]!.GetValue<string>());
+        Equal(40, retained[key]![0]!["elapsed"]!.GetValue<int>());
+        foreach (var invalidKey in new[] { stateKey, fromKey })
+        {
+            var invalid = current.DeepClone().AsObject();
+            invalid[key]![0]![invalidKey] = "unknown";
+            RejectInvalidState(() => RuntimeInputForwardingContract.EffectivePreview(invalid, config));
+            RejectInvalidState(() => RuntimeInputDocumentContract.ReconcileContentForContract(invalid, previous, next));
+        }
+    }
 }
 
 static void ProjectedRuntimeCollectionsReconcileById()

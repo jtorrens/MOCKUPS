@@ -122,12 +122,6 @@ internal sealed partial class SqliteResourceOwner :
         IReadOnlyList<string> path) =>
         JsonPath.NumberString(root, path);
 
-    private static double JsonNumberDouble(
-        JsonObject root,
-        IReadOnlyList<string> path,
-        double fallback) =>
-        JsonPath.NumberDouble(root, path, fallback);
-
     private static string JsonString(
         JsonObject root,
         IReadOnlyList<string> path) =>

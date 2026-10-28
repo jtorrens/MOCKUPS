@@ -1,6 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="using:Avalonia.Controls.Converters"
+             xmlns:common="using:Mockups.DesktopEditorShell.Common"
              xmlns:pc="using:Avalonia.Controls.Primitives.Converters"
              xmlns:suki="clr-namespace:SukiUI;assembly=SukiUI"
              xmlns:sukiControls="clr-namespace:SukiUI.Controls;assembly=SukiUI"
@@ -43,12 +44,8 @@
     <Application.Styles>
         <suki:SukiTheme ThemeColor="Blue" />
         <Style Selector=":is(sukiControls|SukiWindow)">
-            <Setter Property="ContentTemplate">
-                <DataTemplate>
-                    <VisualLayerManager>
-                        <ContentPresenter Content="{Binding}" />
-                    </VisualLayerManager>
-                </DataTemplate>
+            <Setter Property="Template">
+                <common:EditorSukiWindowTemplate ChromeTheme="{StaticResource SukiWindowTheme}" />
             </Setter>
         </Style>
         <Style Selector="Control">

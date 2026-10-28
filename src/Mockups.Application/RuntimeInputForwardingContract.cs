@@ -47,7 +47,7 @@ public static class RuntimeInputForwardingContract
                 if (!effective.TryGetPropertyValue(jsonKey, out var storedNode))
                     effective[jsonKey] = projected;
                 else if (storedNode is JsonArray stored)
-                    effective[jsonKey] = ReconcileProjectedParentCollection(
+                    effective[jsonKey] = PrepareProjectedParentCollection(
                         stored,
                         source,
                         projected,
@@ -59,6 +59,8 @@ public static class RuntimeInputForwardingContract
                 runtimeCollection["jsonKey"] = jsonKey;
                 runtimeCollection["sourceCollectionJsonKey"] = sourceKey;
                 runtimeCollection["storageCollectionJsonKey"] = jsonKey;
+                runtimeCollection["forwardedStateProjection"] = next["projection"]!.DeepClone();
+                DeclareProjectedStateTransport(runtimeCollection, next["projection"]!.AsObject());
                 if (!ObjectItems(collections, "Effective Preview collections")
                     .Any((candidate) => Text(candidate["id"]) == Text(runtimeCollection["id"])))
                     collections.Add(runtimeCollection);
@@ -109,6 +111,28 @@ public static class RuntimeInputForwardingContract
             }
         });
         return effective;
+    }
+
+    private static void DeclareProjectedStateTransport(JsonObject collection, JsonObject projection)
+    {
+        var fields = JsonPath.RequiredArray(collection, "fields", "Forwarded state collection");
+        foreach (var (projectionKey, label, kind, valueKind, defaultValue) in new[]
+                 {
+                     ("transitionJsonKey", "Transition", "boolean", "Boolean", "false"),
+                     ("elapsedJsonKey", "Elapsed", "number", "Decimal", "0"),
+                     ("fromJsonKey", "From state", "text", "StringSingleLine", ""),
+                 })
+        {
+            var key = JsonPath.RequiredString(projection, projectionKey, "Forwarded state projection");
+            if (ObjectItems(fields, "Forwarded state collection fields").Any(field => Text(field["jsonKey"]) == key))
+                throw new InvalidOperationException($"Forwarded state transport '{key}' must have one projection owner.");
+            fields.Add(new JsonObject
+            {
+                ["id"] = key, ["jsonKey"] = key, ["label"] = label,
+                ["kind"] = kind, ["valueKind"] = valueKind, ["defaultValue"] = defaultValue,
+                ["source"] = "runtime", ["actionOnly"] = true, ["showInEditor"] = false,
+            });
+        }
     }
 
     private static void ProjectChildRuntimeCollection(
@@ -327,7 +351,7 @@ public static class RuntimeInputForwardingContract
         return result;
     }
 
-    private static JsonArray ReconcileProjectedParentCollection(
+    private static JsonArray PrepareProjectedParentCollection(
         JsonArray stored,
         JsonArray source,
         JsonArray projected,
@@ -338,53 +362,8 @@ public static class RuntimeInputForwardingContract
             throw new InvalidOperationException(
                 "Forwarded structural runtime collection requires an explicit projection.");
         }
-        var alternativesKey = Text(projection["optionsSourceCollectionJsonKey"]);
-        var stateKey = Text(projection["stateJsonKey"]);
-        var transitionKey = Text(projection["transitionJsonKey"]);
-        var elapsedKey = Text(projection["elapsedJsonKey"]);
-        var fromKey = Text(projection["fromJsonKey"]);
-        var result = ReconcileProjectedItems(
-            stored,
-            projected,
-            ["id", .. MetadataKeys(projection)]);
-        var sourceById = ObjectItems(
-                source,
-                "Forwarded runtime collection source")
-            .ToDictionary(
-                (item) => Text(item["id"]),
-                StringComparer.Ordinal);
-        foreach (var item in ObjectItems(
-                     result,
-                     "Reconciled forwarded runtime collection"))
-        {
-            var id = Text(item["id"]);
-            var sourceItem = sourceById[id];
-            var alternatives = sourceItem[alternativesKey] as JsonArray
-                ?? throw new InvalidOperationException(
-                    $"Forwarded runtime collection item '{id}' is missing '{alternativesKey}'.");
-            var allowed = ObjectItems(
-                    alternatives,
-                    $"Forwarded runtime collection item '{id}' alternatives")
-                .Select((alternative) => Text(alternative["id"]))
-                .ToHashSet(StringComparer.Ordinal);
-            if (!allowed.Contains(Text(item[stateKey])))
-            {
-                var fallback = projected
-                    .OfType<JsonObject>()
-                    .Single((candidate) => Text(candidate["id"]) == id);
-                item[stateKey] = fallback[stateKey]?.DeepClone();
-                item[transitionKey] = fallback[transitionKey]?.DeepClone();
-                item[elapsedKey] = fallback[elapsedKey]?.DeepClone();
-                item[fromKey] = fallback[fromKey]?.DeepClone();
-            }
-            else if (!allowed.Contains(Text(item[fromKey])))
-            {
-                item[fromKey] = item[stateKey]?.DeepClone();
-                item[transitionKey] = false;
-                item[elapsedKey] = 0;
-            }
-        }
-        return result;
+        RuntimeInputDocumentContract.ValidateForwardedCollectionStates(stored, source, projection);
+        return ReconcileProjectedItems(stored, projected, ["id", .. MetadataKeys(projection)]);
     }
 
     private static JsonArray ReconcileProjectedItems(

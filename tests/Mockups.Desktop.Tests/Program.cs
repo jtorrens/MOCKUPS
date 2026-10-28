@@ -67,6 +67,7 @@ var tests = new (string Name, Action Run)[]
 {
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("opening an existing desktop database is byte-for-byte read-only", ExistingDatabaseOpenIsReadOnly),
+    ("SQLite context connections never create a missing database", SqliteContextNeverCreatesMissingDatabase),
     ("rejected databases remain byte-for-byte unchanged", RejectedDatabaseOpenIsReadOnly),
     ("References enforce their declared Project or System scope", ReferencesEnforceDeclaredScope),
     ("current editor layouts reject retired or incomplete roots read-only", CurrentEditorLayoutContractFailsReadOnly),
@@ -1425,6 +1426,16 @@ static void StartupPreparesReadOnlySessionAndHonorsCancellation()
     }
 }
 
+static void SqliteContextNeverCreatesMissingDatabase()
+{
+    var path = Path.Combine(Path.GetTempPath(), $"mockups-missing-context-{Guid.NewGuid():N}.sqlite");
+    var context = new SqliteProjectContext(path);
+    Throws<SqliteException>(() => { using var connection = context.OpenConnection(); });
+    True(!File.Exists(path));
+    Throws<SqliteException>(() => { using var connection = context.OpenValidationConnection(); });
+    True(!File.Exists(path));
+}
+
 static void SqliteWriteCoordinationIsPerContext()
 {
     var root = Path.Combine(
@@ -1435,6 +1446,8 @@ static void SqliteWriteCoordinationIsPerContext()
     var secondPath = Path.Combine(root, "second.sqlite");
     try
     {
+        File.WriteAllBytes(firstPath, []);
+        File.WriteAllBytes(secondPath, []);
         var first = new SqliteProjectContext(firstPath);
         var second = new SqliteProjectContext(secondPath);
         True(!ReferenceEquals(first.WriteGate, second.WriteGate));
@@ -1605,7 +1618,7 @@ static void ClosingEditorCancelsPreviewLifetime()
                     "Missing Production Preview timer lifetime.");
             timer.Start();
 
-            window.Close();
+            CloseTestWindow(window);
 
             True(designOperation.IsCancellationRequested);
             True(designPayloadOperation.IsCancellationRequested);
@@ -5900,7 +5913,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
                                     listItemVariant),
                             listItemVariant))
                         .Count);
-                window.Close();
+                CloseTestWindow(window);
             },
             CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -6049,7 +6062,7 @@ static void ExplicitOverrideEditsRemainAuthoredUntilRestore()
                     ?.GetValue<double>()
                 ?? -1);
 
-            window.Close();
+            CloseTestWindow(window);
         },
         CancellationToken.None).GetAwaiter().GetResult();
 }
@@ -6186,7 +6199,7 @@ static void RapidVisualSelectionCommitsLatestPreparedEditor()
                 Wait(() => !loading.IsVisible && content.Cards.Any(card =>
                     card.SessionStateId == "editor:preparation-error"));
                 True(navigation.IsEffectivelyEnabled);
-                window.Close();
+                CloseTestWindow(window);
             },
             CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -6295,7 +6308,7 @@ static void NewShotReloadPreparesPreviewBeforeSelection()
                 Equal(
                     shot.Id,
                     snapshot.Shot(shot.Id).ShotId);
-                window.Close();
+                CloseTestWindow(window);
             },
             CancellationToken.None);
     }
@@ -6431,7 +6444,7 @@ static void FailedPreviewPreparationKeepsPriorSession()
                 True(ReferenceEquals(
                     priorCatalog,
                     preparedSession.GetValue(preview)));
-                window.Close();
+                CloseTestWindow(window);
             },
             CancellationToken.None);
     }
@@ -6527,7 +6540,7 @@ static void ObsoletePreviewAuthoringPreparationCannotCommit()
                     .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)!
                     .GetValue(previewController)!;
                 True(!inputSession.IsPreparedFor(previewOwner));
-                window.Close();
+                CloseTestWindow(window);
             },
             CancellationToken.None);
     }
@@ -6959,7 +6972,7 @@ static void EditorViewStateSurvivesRealNavigation()
                 avatarOffset,
                 "Design history forward navigation");
 
-            window.Close();
+            CloseTestWindow(window);
             Dispatcher.UIThread.RunJobs();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -7272,7 +7285,7 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
                 "Embedded same-owner refresh");
             True(labelCard.IsExpanded);
 
-            window.Close();
+            CloseTestWindow(window);
             Dispatcher.UIThread.RunJobs();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -7444,7 +7457,7 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted(bool pinWhileEditing
                     Thread.Sleep(10);
                 }
                 True(mountedSurface.GetVisualDescendants().Contains(toggle));
-                window.Close();
+                CloseTestWindow(window);
                 return;
             }
             mountedField.SetValue(
@@ -7664,7 +7677,7 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted(bool pinWhileEditing
             Equal(screenId, preview.PreviewAuthoringNode(
                 Required(WindowSession(window).SelectedNode),
                 WindowSession(window).TreeRoots).Id);
-            window.Close();
+            CloseTestWindow(window);
             Dispatcher.UIThread.RunJobs();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -7928,7 +7941,9 @@ static void SukiWindowsDismissContextMenusOnOutsideClicks()
             else EditorContextMenuBehavior.Configure(window);
             window.Show();
             Dispatcher.UIThread.RunJobs();
-            True(target.FindAncestorOfType<VisualLayerManager>() is not null);
+            var layers = Required(target.FindAncestorOfType<VisualLayerManager>());
+            Equal("PART_VisualLayerManager", layers.Name);
+            Equal(1, window.GetLogicalDescendants().Count(item => ReferenceEquals(item, target)));
             menu.Open(target);
             Dispatcher.UIThread.RunJobs();
             True(menu.IsOpen);
@@ -7937,7 +7952,7 @@ static void SukiWindowsDismissContextMenusOnOutsideClicks()
             Dispatcher.UIThread.RunJobs();
             True(!menu.IsOpen);
             Equal(content, window.Content);
-            window.Close();
+            CloseTestWindow(window);
         }
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
@@ -8013,7 +8028,11 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         var centralTabs = new TabControl();
         var centralSurface = new Border { Child = centralTabs };
         var centralSplitter = new GridSplitter();
-        var centralToggle = new Button();
+        var centralToggle = new Button
+        {
+            Width = 30, Height = 30, Padding = new Thickness(0), Margin = new Thickness(0, 0, 12, 0),
+            HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top,
+        };
         var centralEditor = new TextBox { Text = "Independent editor" };
         var centralLayout = new Grid
         {
@@ -9072,7 +9091,7 @@ static void PreviewShellVisualTreeIsResponsive()
             Equal(selectedTab, tabs.SelectedItem);
             setupGrid.Width = double.NaN;
             setupGrid.HorizontalAlignment = HorizontalAlignment.Stretch;
-            window.Hide();
+            CloseTestWindow(window);
 
             void WaitForWorkspace(EditorWorkspace workspace)
             {
@@ -9632,7 +9651,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 return previewController.CaptureDesignPreviewTransientState(selectedNode).CollectionTestValuesJson != beforeMove;
             }, TimeSpan.FromSeconds(15)), "List reorder did not publish its completed collection.");
 
-            window.Close();
+            CloseTestWindow(window);
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
@@ -10056,7 +10075,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             Equal(0, opened.RuntimeSource.Address.Path.Count);
             True(window.OwnedWindows.Count == 0);
 
-            window.Close();
+            CloseTestWindow(window);
 
             static long PreviewUpdateSequence(DesignWebPreviewPane pane)
             {
@@ -10401,7 +10420,7 @@ static void DesignCollectionMutationsSerialize(string moduleId, string collectio
                 }
                 Equal(before, database.GetModuleSettings(moduleId).DesignPreviewJson);
             }
-            finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
+            finally { CloseTestWindow(window); Dispatcher.UIThread.RunJobs(); }
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally { File.Delete(temporary); }
@@ -10534,7 +10553,7 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                     controller.CaptureDesignPreviewTransientState(owner).Values.OrderBy(pair => pair.Key));
                 Equal(before, database.GetComponentClassSettings(componentId).DesignPreviewJson);
             }
-            finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
+            finally { CloseTestWindow(window); Dispatcher.UIThread.RunJobs(); }
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally { File.Delete(temporary); }
@@ -10750,7 +10769,7 @@ static void DesignCollectionDefaultsUseCurrentState(
             finally
             {
                 foreach (var dialog in window.OwnedWindows.ToArray()) dialog.Close();
-                window.Close();
+                CloseTestWindow(window);
                 Dispatcher.UIThread.RunJobs();
             }
         }, CancellationToken.None).GetAwaiter().GetResult();
@@ -10879,7 +10898,7 @@ static void ConversationModuleEditorVisualTreeExposesTestValues()
                     decimal.ToDouble(readyFrameInput.Value ?? -1),
                     frameSlider.Value);
 
-                window.Close();
+                CloseTestWindow(window);
             },
             CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -11311,7 +11330,7 @@ static void PreviewAuthoringFocusRevealsExactCard()
         True(itemUiState.IsExpanded(
             "component.iconRow.items:button_attachment:expanded"));
         Equal(0, messages.Warnings.Count);
-        window.Close();
+        CloseTestWindow(window);
 
         var previewItemTarget = new EditorSubcardLayoutHost(
             [
@@ -11729,7 +11748,7 @@ static void PinnedModuleVariantPreviewSurvivesEditorSelection()
                     "Module variant has no parent module",
                     StringComparison.Ordinal));
 
-                window.Hide();
+                CloseTestWindow(window);
             },
             CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -11903,7 +11922,7 @@ static void PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign()
                     as ProductionPreviewSessionSnapshot
                     ?? throw new InvalidOperationException("Missing Production Preview session.");
                 Equal(shot.Id, snapshot.Screen(lockedNode.Id).ShotId);
-                window.Hide();
+                CloseTestWindow(window);
             },
             CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -15857,7 +15876,7 @@ static void AnimationActionsAcknowledgePendingWrites()
             True(ReferenceEquals(content, button.Content));
             Equal(fail ? 1 : 0, errors);
             Equal("Create keyframe", Avalonia.Automation.AutomationProperties.GetName(button));
-            window.Close();
+            CloseTestWindow(window);
         }
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
@@ -16259,7 +16278,7 @@ static void ResourceRecoveryNotificationIsShared()
             Dispatcher.UIThread.RunJobs();
             Equal(4, messages.Warnings.Count);
             True(messages.Warnings[3].Contains("not committed", StringComparison.Ordinal));
-            window.Close();
+            CloseTestWindow(window);
             service.Retry(notices[0].Id);
             Dispatcher.UIThread.RunJobs();
             Equal(4, messages.Warnings.Count);
@@ -19454,7 +19473,7 @@ static void RenderQueueProgressControlIsStable()
                 laterProgress,
                 laterProgressAfterClear));
 
-            window.Close();
+            CloseTestWindow(window);
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
@@ -21269,7 +21288,7 @@ static void DeclaredRecordReferenceOverridesUseSharedAction()
                     == "record-overrides:moduleTransparency");
             True(transparencyCard.IsExpanded);
             Equal(0, window.OwnedWindows.Count);
-            window.Close();
+            CloseTestWindow(window);
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
@@ -21862,7 +21881,7 @@ static void ShotPlayPreparesTransparentFramesBeforeClock()
                 advance.Invoke(controller, null);
                 True(controller.ProductionShotFrame() < shotState.DurationFrames - 1);
             }
-            finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
+            finally { CloseTestWindow(window); Dispatcher.UIThread.RunJobs(); }
         }, CancellationToken.None).GetAwaiter().GetResult();
         SequenceEqual(before, SHA256.HashData(File.ReadAllBytes(temporary)));
     }
@@ -23309,7 +23328,8 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var stateInputs = collections.Single((collection) => collection.Id == "stackStateInputs");
         var stateSelection = slots.Fields.Single((input) => input.Id == "runtimeStateId");
         SequenceEqual(
-            ["name", "alternatives", "gapBeforeMode", "gapBeforeToken", "gapBeforeWeight", "runtimeStateId"],
+            ["name", "alternatives", "gapBeforeMode", "gapBeforeToken", "gapBeforeWeight", "runtimeStateId",
+                "runtimeStateTransition", "runtimeStateElapsedMs", "runtimeStateFromId"],
             slots.Fields.Select((field) => field.Id).ToList());
         Equal(
             true,
@@ -23431,6 +23451,19 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
                 stateAction,
                 payload.ThemeTokensJson));
 
+        var shot = CanonicalProjectNodes(database).First(node => node.Kind == ProjectTreeNodeKind.Shot);
+        var moduleChoice = database.GetAvailableShotModules(shot.Id).Single(choice => choice.Id == module.Id);
+        var screen = AddPreparedModuleInstance(Children(database), shot,
+            new ShotModuleInstanceDraft(moduleChoice, moduleVariant.Id, moduleVariant.Name, "Forwarded state reconciliation"));
+        var slotId = items[0]!["id"]!.GetValue<string>();
+        database.UpdateModuleInstanceRuntimeCollectionValue(screen.Id, slots.JsonKey, slotId,
+            "runtimeStateId", JsonValue.Create(deletedStateId));
+        Equal(deletedStateId, Object(database.GetModuleInstanceSettings(screen.Id).ContentJson)[slots.JsonKey]![0]!["runtimeStateId"]!.GetValue<string>());
+        var invalidStored = selectedPreview.DeepClone().AsObject();
+        invalidStored[slots.JsonKey]![0]!["runtimeStateFromId"] = "missing-state";
+        Throws<InvalidOperationException>(() => RuntimePreviewDocumentContract.PrepareFixture(invalidStored, config,
+            previewInputData.ComponentVariantConfig, previewInputData.ComponentVariantRuntimeContract));
+
         var stackItems = config["systemComposition"]?["stackInputs"]?["items"]?.DeepClone() as JsonArray
             ?? throw new InvalidOperationException("Missing Lock Screen Stack items.");
         (stackItems[0]?["alternatives"] as JsonArray)?.RemoveAt(1);
@@ -23442,6 +23475,26 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var firstRemainingStateId = normalizedPreview[slots.SourceCollectionJsonKey]?[0]?["alternatives"]?[0]?["id"]?.GetValue<string>() ?? "";
         Equal(firstRemainingStateId, normalizedPreview[slots.JsonKey]?[0]?["runtimeStateId"]?.GetValue<string>() ?? "");
         True(firstRemainingStateId != deletedStateId);
+        var persistedContent = Object(database.GetModuleInstanceSettings(screen.Id).ContentJson);
+        Equal(firstRemainingStateId, persistedContent[slots.JsonKey]![0]!["runtimeStateId"]!.GetValue<string>());
+        Equal(firstRemainingStateId, persistedContent[slots.JsonKey]![0]!["runtimeStateFromId"]!.GetValue<string>());
+        var published = Object(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
+        Equal(firstRemainingStateId, published[slots.JsonKey]![0]!["runtimeStateId"]!.GetValue<string>());
+        _ = new SqliteProjectTestContext(temporary);
+        // A deliberately corrupted disposable row must fail both runtime reads
+        // and startup; neither boundary may silently repair the authored state.
+        var validScreen = database.GetModuleInstanceSettings(screen.Id);
+        var invalidContent = Object(validScreen.ContentJson);
+        invalidContent[slots.JsonKey]![0]!["runtimeStateId"] = "missing-state";
+        using var connection = database.Context.OpenConnection();
+        database.Production.ModuleInstanceRepository.UpdateContentAndAnimation(connection, screen.Id,
+            invalidContent.ToJsonString(), validScreen.AnimationJson);
+        Throws<InvalidOperationException>(() => database.GetModuleInstanceRuntimePreviewJson(screen.Id));
+        Throws<InvalidOperationException>(() => new SqliteProjectTestContext(temporary));
+        Equal(invalidContent.ToJsonString(), database.GetModuleInstanceSettings(screen.Id).ContentJson);
+        database.Production.ModuleInstanceRepository.UpdateContentAndAnimation(connection, screen.Id,
+            validScreen.ContentJson, validScreen.AnimationJson);
+
     }
     finally
     {
@@ -24001,7 +24054,7 @@ static void UsageBreadcrumbsShowExactProductionAncestry()
                 link.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 SequenceEqual(new[] { $"Production:{usage.SourceNodeId}" }, selected);
             }
-            finally { window.Close(); }
+            finally { CloseTestWindow(window); }
         }
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
@@ -24235,7 +24288,7 @@ static void SelectedNavigationRowsContainEveryAction()
             Color.Parse("#463711"),
             Required(activeProjectBand.Background as SolidColorBrush).Color);
 
-        window.Close();
+        CloseTestWindow(window);
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
@@ -24317,7 +24370,7 @@ static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
                     == "RenderQueueRenderPendingButton");
             Equal("Render pending", renderPending.Content);
             True(!renderPending.IsEnabled);
-            window.Close();
+            CloseTestWindow(window);
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
@@ -26682,7 +26735,7 @@ static void PreviewLoopSharesControlsAndDesignActions()
                 finally { input.StopActivePlayback(); }
             }
         }
-        finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
+        finally { CloseTestWindow(window); Dispatcher.UIThread.RunJobs(); }
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
@@ -26886,7 +26939,7 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         True(restore.IsEnabled);
         True(previous.IsEnabled);
         True(next.IsEnabled);
-        window.Close();
+        CloseTestWindow(window);
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
@@ -27930,7 +27983,7 @@ static void ComponentInputBindingsResolveRecordReferences()
         True(combos.All((combo) =>
             (combo.ItemsSource as IEnumerable<FieldOption>)?.Any()
                 == true));
-        window.Close();
+        CloseTestWindow(window);
     }, CancellationToken.None).GetAwaiter().GetResult();
 
     True(optionRequests.Contains(("actors", false)));
@@ -28944,7 +28997,7 @@ static void SocialPostEditorExposesCurrentHeaderContract()
             True(!(messages.Text ?? "").Contains(
                 "Prepare editor",
                 StringComparison.Ordinal));
-            window.Close();
+            CloseTestWindow(window);
             Dispatcher.UIThread.RunJobs();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -29826,6 +29879,23 @@ static void DefaultDesktopDatabaseUsesApplicationData()
             "MOCKUPS",
             "window-state.json"),
         EditorShellStateService.DefaultShellStatePath());
+}
+
+static void CloseTestWindow(Window window)
+{
+    var closed = false;
+    window.Closed += OnClosed;
+    try
+    {
+        window.Close();
+        True(SpinWait.SpinUntil(() =>
+        {
+            Dispatcher.UIThread.RunJobs();
+            return closed;
+        }, TimeSpan.FromSeconds(30)), "Test window must finish its asynchronous close before deleting its database.");
+    }
+    finally { window.Closed -= OnClosed; }
+    void OnClosed(object? sender, EventArgs args) => closed = true;
 }
 
 static MainWindow CreateTestWindow(string databasePath) =>

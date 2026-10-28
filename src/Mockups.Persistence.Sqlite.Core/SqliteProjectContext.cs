@@ -19,6 +19,7 @@ internal sealed class SqliteProjectContext
         {
             DataSource = DatabasePath,
             ForeignKeys = true,
+            Mode = SqliteOpenMode.ReadWrite,
         }.ToString();
         _validationConnectionString = new SqliteConnectionStringBuilder
         {
