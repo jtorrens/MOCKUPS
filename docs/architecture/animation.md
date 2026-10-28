@@ -472,7 +472,12 @@ intercept its drag. Every keyframe, including Screen frame zero, uses the filled
 editable form. A destination keyframe owns interpolation for the
 preceding segment: `hold` preserves the source value, while `writeOn` resolves
 the source-to-destination text at every intervening frame. That one resolved
-value is the value shown by both the animation editor and Preview; a concrete
+value is shown by Preview and captured when inserting a keyframe. Between
+text keyframes whose destination interpolation is `writeOn`, the dictionary
+editor displays and edits the complete destination value and labels its owner-local
+frame. Editing value or interpolation updates that existing destination; it does
+not insert a keyframe at the playhead. This policy belongs to the shared animation
+editor for every text field and target, independent of Module identity. A concrete
 Module must not apply a second text reveal after track resolution, while its
 composer and keyboard remain visible for the resolved field-completion interval.
 Inserting a keyframe within a segment captures that exact resolved value and

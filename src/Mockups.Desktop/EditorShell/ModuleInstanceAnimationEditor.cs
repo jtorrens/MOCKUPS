@@ -909,11 +909,18 @@ internal sealed class ModuleInstanceAnimationEditor
         header.Children.Add(count);
         panel.Children.Add(header);
 
-        var displayedValue = ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        var editingKeyframe = exact
+            ?? ModuleInstanceAnimationValueResolver.WriteOnEditingKeyframe(selected.Track, localFrame);
+        var editingFrame = editingKeyframe?.Frame ?? localFrame;
+        var calculatedValue = ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
             selected.Track,
             localFrame,
             ValueNode(target.Input.ValueKind, target.BaseValue),
             target.Input.ValueKind);
+        var displayedValue = ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+            selected.Track, editingFrame, ValueNode(target.Input.ValueKind, target.BaseValue), target.Input.ValueKind);
+        if (editingKeyframe is not null)
+            panel.Children.Add(new TextBlock { Text = $"Keyframe · frame {editingFrame}", Opacity = 0.72 });
         var valueControl = new DictionaryFieldControl(
             new FieldValue(RuntimeInputFieldDefinitionFactory.Create(ActiveInputOptions, node, target.Input), displayedValue),
             DictionaryServices(node));
@@ -933,14 +940,14 @@ internal sealed class ModuleInstanceAnimationEditor
                         .ToList()),
                 selectedInterpolation),
             DictionaryServices(node));
-        Task SaveValue(string value, string interpolation)
+        Task SaveValue(string value, string interpolation, int frame)
         {
             return saveMutation((candidate) =>
             {
                 candidate.UpsertKeyframe(
                     target.FieldId,
                     target.TargetId,
-                    localFrame,
+                    frame,
                     ValueNode(
                         target.Input.ValueKind,
                         value),
@@ -950,7 +957,7 @@ internal sealed class ModuleInstanceAnimationEditor
         }
         EditorTimelineTransport.BindAnimationAction(keyframeButton, async () =>
         {
-            if (exact is null) await SaveValue(valueControl.Value, interpolationControl.Value);
+            if (exact is null) await SaveValue(calculatedValue, selectedInterpolation, localFrame);
             else if (enabledKeyframes.Count > 1)
             {
                 await saveMutation((candidate) =>
@@ -965,12 +972,12 @@ internal sealed class ModuleInstanceAnimationEditor
         }, exception => _messages.Error("Save animation", exception));
         keyframeButton.IsEnabled = exact is null || enabledKeyframes.Count > 1;
         valueControl.IsEnabled = true;
-        valueControl.ValueCommitted += (_, value) => _ = SaveValue(value, interpolationControl.Value);
+        valueControl.ValueCommitted += (_, value) => _ = SaveValue(value, interpolationControl.Value, editingFrame);
         panel.Children.Add(valueControl);
         interpolationControl.IsEnabled = true;
         interpolationControl.ValueCommitted += (_, interpolation) =>
         {
-            if (exact is not null) _ = SaveValue(valueControl.Value, interpolation);
+            if (editingKeyframe is not null) _ = SaveValue(valueControl.Value, interpolation, editingFrame);
         };
         panel.Children.Add(interpolationControl);
         return panel;

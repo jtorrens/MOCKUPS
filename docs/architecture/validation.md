@@ -879,3 +879,8 @@ and retains real UI animation publication cases. Geometry assertions alone do
 not validate native capture loss, Escape or rendered alignment; manual review
 must also drag Conversation and another collection owner, cancel both marker
 and block gestures, and compare marker centers at several zoom levels.
+
+Write-on editing selection is covered by `RuntimeControlsResolveActiveFrameValue`
+for root and item targets, exact keys, interior frames and outside ranges. It
+separately checks that resolved capture values remain partial. The shared
+animation selection includes the value resolver and mounted animation UI cases.

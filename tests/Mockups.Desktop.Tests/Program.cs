@@ -25401,6 +25401,20 @@ static void RuntimeControlsResolveActiveFrameValue()
     writeOnDocument.AddTrack("text", "", JsonValue.Create("")!, "writeOn");
     writeOnDocument.UpsertKeyframe("text", "", 100, JsonValue.Create("AB")!, "writeOn");
     var writeOn = Required(writeOnDocument.Track("text", ""));
+    foreach (var targetId in new[] { "", "item-1" })
+    {
+        var editing = EmptyDocument();
+        editing.AddTrack("caption", targetId, JsonValue.Create("")!, "writeOn");
+        editing.UpsertKeyframe("caption", targetId, 100, JsonValue.Create("AB")!, "writeOn");
+        var track = Required(editing.Track("caption", targetId));
+        Equal(100, Required(ModuleInstanceAnimationValueResolver.WriteOnEditingKeyframe(track, 50)).Frame);
+        True(ModuleInstanceAnimationValueResolver.WriteOnEditingKeyframe(track, 0) is null);
+        True(ModuleInstanceAnimationValueResolver.WriteOnEditingKeyframe(track, 100) is null);
+        True(ModuleInstanceAnimationValueResolver.WriteOnEditingKeyframe(track, -1) is null);
+        True(ModuleInstanceAnimationValueResolver.WriteOnEditingKeyframe(track, 101) is null);
+        Equal("A", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(track, 50, JsonValue.Create("")!, ValueKind.StringMultiline));
+    }
+
     Equal("", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
         writeOn, 0, JsonValue.Create("base")!, ValueKind.StringMultiline));
     Equal("A", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(

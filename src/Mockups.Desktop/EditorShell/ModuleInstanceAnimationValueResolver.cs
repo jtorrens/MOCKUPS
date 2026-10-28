@@ -8,6 +8,17 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class ModuleInstanceAnimationValueResolver
 {
+    public static AnimationKeyframeView? WriteOnEditingKeyframe(AnimationTrackView track, int frame)
+    {
+        var enabled = track.Keyframes.Where(key => key.Enabled).OrderBy(key => key.Frame).ToList();
+        if (enabled.Any(key => key.Frame == frame)) return null;
+        var source = enabled.LastOrDefault(key => key.Frame < frame);
+        var destination = enabled.FirstOrDefault(key => key.Frame > frame);
+        return source is not null && destination?.Interpolation == "writeOn"
+            && Text(source.Value, out _) && Text(destination.Value, out _)
+                ? destination : null;
+    }
+
     public static string ResolveDisplayValue(
         AnimationTrackView track,
         double frame,
