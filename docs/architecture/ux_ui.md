@@ -155,24 +155,38 @@ Preview combines the visual-context setup and the generic Preview controls in
 one scrollable Design surface. Both sections retain their existing semantic
 owners and state. Production uses the same combined Preview surface; its
 production context and Shot transport remain visible within that tab.
-Each utility tab can move independently into its own resizable topmost window.
-`PreviewControlsDockController` owns only placement: it moves the exact live
-content without creating another authoring controller, Preview session or clock.
-Dragging a tab header outside its original panel and releasing detaches that
-tab. The shared header action detaches the selected docked tab as a keyboard-
-accessible alternative. Remaining tabs keep their original order and stay usable.
-Dragging a floating window's content header over the original utility panel
-highlights the drop zone; releasing docks only that tab. Its Return to panel
-action and window close do the same. Escape cancels a header drag.
-The Preview title and rendered frame remain in the main window. When every
-available tab is detached, the utility region contracts to a small labelled
-drop zone and releases the remaining height to the frame. Redocking restores
-its prior height. Content, internal selection and scroll survive host transfers;
-playback continues through the existing shared owner.
+Each utility tab can move independently between the original Preview utility
+panel, one tab group below the central editor and its own resizable topmost
+window. `PreviewControlsDockController` owns placement through declared dock
+sites and one transfer operation. It moves the exact live content without
+creating another authoring controller, Preview session or clock.
+Dragging a tab or floating content header over either tool group highlights its
+destination. When the central group is empty, the bottom of the editor shows an
+overlaid destination preview during the drag; it does not resize the editor
+until release. Dropping there opens the lower group and its adjustable divider.
+Multiple tools share tabs in that group. The editor stays above it with its
+breadcrumb, cards and scroll, and recovers all height when no available tool
+remains below it. Side docking and arbitrary nested splits are not supported.
+Releasing outside both destinations floats the tab. Each group's shared header
+action floats its selected tab. Right-clicking a tab or floating content header
+exposes Move to Preview panel, Move to Editor panel, Float tab and Restore
+default tool layout. The same commands are available through the tab's keyboard
+context menu. Restore returns every tool to its original group. Closing a
+floating window or using Return to panel docks that tab in its last dock site.
+Escape cancels a header drag. Remaining tabs retain their original order.
+The Preview title and rendered frame remain in the right panel. When no
+available tab remains there, its utility region contracts to a small labelled
+drop zone and releases the remaining height to the frame. Each group remembers
+its own expanded height during the session. Content, internal selection and
+scroll survive host transfers; playback continues through the existing owner.
 Availability remains context-owned: an unavailable detached tab is hidden and
-returns in its own window when available again. Its title follows the current
-Payload/Test Values or Timeline context. Explicit authoring focus activates its
-floating window; ordinary navigation does not redock it.
+returns in its own window when available again. Unavailable docked tabs retain
+their location and return in that group. The title follows the current
+Payload/Test Values or Timeline context. Explicit authoring focus selects the
+tab in its current group or activates its floating window; ordinary navigation
+does not move it. Utility selection memory observes both dock groups.
+Dock locations, dividers and floating geometry remain session-only. Every new
+application session starts with all tools in the original Preview panel.
 
 Application modals always take precedence over those topmost utility windows.
 Before native presentation, the common modal presenter closes application

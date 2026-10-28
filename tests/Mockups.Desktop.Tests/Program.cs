@@ -7978,9 +7978,25 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
             IsVisible = false,
         };
         var modalOcclusion = new TestModalOcclusionParticipant();
+        var centralTabs = new TabControl();
+        var centralSurface = new Border { Child = centralTabs };
+        var centralSplitter = new GridSplitter();
+        var centralToggle = new Button();
+        var centralEditor = new TextBox { Text = "Independent editor" };
+        var centralLayout = new Grid
+        {
+            RowDefinitions = new RowDefinitions("*,0,0"),
+            Children = { centralEditor, centralSplitter, centralSurface, centralToggle },
+        };
+        Grid.SetRow(centralSplitter, 1);
+        Grid.SetRow(centralSurface, 2);
+        Grid.SetRow(centralToggle, 2);
+        Grid.SetColumn(root, 1);
+        Grid.SetColumnSpan(modalHost, 2);
         owner.Content = new Grid
         {
-            Children = { root, modalHost },
+            ColumnDefinitions = new ColumnDefinitions("*,*"),
+            Children = { centralLayout, root, modalHost },
         };
         owner.Show();
         owner.Measure(new Size(1000, 700));
@@ -7990,12 +8006,11 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         using var controller =
             new PreviewControlsDockController(
                 owner,
-                utilitySurface,
-                tabs,
-                previewGrid,
-                splitter,
-                toggle,
-                () => true);
+                () => true,
+                new PreviewUtilityDockSite("Preview panel", utilitySurface, tabs,
+                    previewGrid, 0, 1, splitter, toggle, 48),
+                new PreviewUtilityDockSite("Editor panel", centralSurface, centralTabs,
+                    centralLayout, 2, 1, centralSplitter, centralToggle, 0, centralLayout));
         EditorModalWindowScope.RegisterHost(
             owner,
             modalOcclusion,
@@ -8159,6 +8174,64 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         floating.Close();
         Dispatcher.UIThread.RunJobs();
         True(!controller.IsDetached(firstTab));
+
+        void Place(TabItem tab, string action) => Required(tab.ContextMenu).Items.OfType<MenuItem>()
+            .Single(item => Equals(item.Header, action))
+            .RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        True(!centralSurface.IsVisible);
+        var retainedEditor = centralLayout.Children[0];
+        Place(firstTab, "Move to Editor panel");
+        Dispatcher.UIThread.RunJobs();
+        True(centralSurface.IsVisible);
+        True(centralSplitter.IsVisible);
+        True(!tabs.Items.Contains(firstTab));
+        True(centralTabs.Items.Contains(firstTab));
+        True(ReferenceEquals(firstTab.Content, firstContent));
+        Equal("Retained draft", firstContent.Text);
+        True(ReferenceEquals(retainedEditor, centralLayout.Children[0]));
+        Equal("Independent editor", centralEditor.Text);
+        Place(secondTab, "Move to Editor panel");
+        Dispatcher.UIThread.RunJobs();
+        Equal(2, centralTabs.Items.Count);
+        Equal(0, tabs.Items.Count);
+        Equal(firstTab, centralTabs.Items[0]);
+        Equal(secondTab, centralTabs.Items[1]);
+        Equal(48d, previewGrid.RowDefinitions[0].Height.Value);
+        TabItem? selectedUtility = null;
+        controller.SelectedTabChanged += tab => selectedUtility = tab;
+        controller.SelectTab(firstTab);
+        Equal(firstTab, selectedUtility);
+        centralLayout.RowDefinitions[2].Height = new GridLength(350);
+        owner.UpdateLayout();
+        Place(firstTab, "Float tab");
+        Dispatcher.UIThread.RunJobs();
+        True(controller.IsDetached(firstTab));
+        True(centralTabs.Items.Contains(secondTab));
+        Required(controller.FloatingWindow(firstTab)).Close();
+        Dispatcher.UIThread.RunJobs();
+        True(centralTabs.Items.Contains(firstTab));
+        True(!tabs.Items.Contains(firstTab));
+        True(ReferenceEquals(firstTab.Content, firstContent));
+        firstTab.IsVisible = false;
+        secondTab.IsVisible = false;
+        True(!centralSurface.IsVisible);
+        Equal(0d, centralLayout.RowDefinitions[2].Height.Value);
+        firstTab.IsVisible = true;
+        secondTab.IsVisible = true;
+        True(centralSurface.IsVisible);
+        Equal(350d, centralLayout.RowDefinitions[2].Height.Value);
+        Place(firstTab, "Restore default tool layout");
+        Dispatcher.UIThread.RunJobs();
+        True(!centralSurface.IsVisible);
+        True(!centralSplitter.IsVisible);
+        Equal(0d, centralLayout.RowDefinitions[1].Height.Value);
+        Equal(0d, centralLayout.RowDefinitions[2].Height.Value);
+        Equal(0, centralTabs.Items.Count);
+        Equal(firstTab, tabs.Items[0]);
+        Equal(secondTab, tabs.Items[1]);
+        True(ReferenceEquals(firstTab.Content, firstContent));
+        True(ReferenceEquals(secondTab.Content, secondContent));
+        Equal(37d, secondContent.Value);
         owner.Close();
     }, CancellationToken.None).GetAwaiter().GetResult();
 }

@@ -9,71 +9,61 @@ using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Common;
 using SukiUI.Controls;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
+
+internal sealed record PreviewUtilityDockSite(
+    string Label, Border Surface, TabControl Tabs, Grid Layout,
+    int ContentRow, int SplitterRow, GridSplitter Splitter, Button DetachButton,
+    double EmptyHeight, Grid? EmptyDropOverlay = null);
 
 // Owns visual placement only. Each tab retains its exact live content and the
 // existing Preview/session owners continue to supply all authoring state.
 internal sealed class PreviewControlsDockController : IDisposable, IEditorModalOcclusionParticipant
 {
     private readonly Window _owner;
-    private readonly Border _surface;
-    private readonly TabControl _tabs;
-    private readonly Grid _previewGrid;
-    private readonly GridSplitter _splitter;
-    private readonly Button _detachButton;
     private readonly Func<bool> _isDark;
     private readonly Entry[] _entries;
-    private readonly Border _dropCue;
-    private readonly TextBlock _dropLabel;
-    private double _dockedHeight = PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight;
+    private readonly DockSite[] _sites;
     private double _textScale = 1;
-    private bool _collapsed;
     private bool _disposed;
     private bool _occluded;
     private Drag? _drag;
 
-    public PreviewControlsDockController(Window owner, Border surface, TabControl tabs,
-        Grid previewGrid, GridSplitter splitter, Button detachButton, Func<bool> isDark)
+    public PreviewControlsDockController(Window owner, Func<bool> isDark,
+        params PreviewUtilityDockSite[] sites)
     {
         _owner = owner;
-        _surface = surface;
-        _tabs = tabs;
-        _previewGrid = previewGrid;
-        _splitter = splitter;
-        _detachButton = detachButton;
         _isDark = isDark;
-        _entries = tabs.Items.Cast<TabItem>().Select(tab => new Entry(tab)).ToArray();
-        _dropLabel = new TextBlock
+        _sites = sites.Select(site => new DockSite(site)).ToArray();
+        _entries = _sites.SelectMany(site => site.Definition.Tabs.Items.Cast<TabItem>()
+            .Select(tab => new Entry(tab, site))).ToArray();
+        foreach (var site in _sites)
         {
-            Text = "Drop a tab here to dock",
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        _dropCue = new Border
-        {
-            Child = _dropLabel,
-            CornerRadius = new CornerRadius(12),
-            BorderThickness = new Thickness(2),
-            IsHitTestVisible = false,
-            IsVisible = false,
-        };
-        surface.Child = null;
-        surface.Child = new Grid { Children = { tabs, _dropCue } };
+            var definition = site.Definition;
+            definition.Surface.Child = null;
+            definition.Surface.Child = new Grid { Children = { definition.Tabs, site.Cue } };
+            if (definition.EmptyDropOverlay is { } overlay)
+            {
+                Grid.SetRowSpan(site.EmptyCue, overlay.RowDefinitions.Count);
+                site.EmptyCue.VerticalAlignment = VerticalAlignment.Bottom;
+                overlay.Children.Add(site.EmptyCue);
+            }
+            definition.DetachButton.Background = Brushes.Transparent;
+            definition.DetachButton.BorderBrush = Brushes.Transparent;
+            definition.DetachButton.BorderThickness = new Thickness(0);
+            definition.DetachButton.Content = EditorIcons.Create(EditorIcons.Open, 15);
+            definition.DetachButton.Click += OnDetachClick;
+            definition.Tabs.SelectionChanged += OnSelectionChanged;
+        }
         foreach (var entry in _entries)
         {
             entry.Tab.PropertyChanged += OnTabPropertyChanged;
             BindDragHandle(entry.Tab);
-            ToolTip.SetTip(entry.Tab, "Drag this tab outside the panel to detach");
+            entry.Tab.ContextMenu = CreatePlacementMenu(entry);
+            ToolTip.SetTip(entry.Tab, "Drag to a tool panel or outside to float; right-click for placement");
         }
-        _detachButton.Background = Brushes.Transparent;
-        _detachButton.BorderBrush = Brushes.Transparent;
-        _detachButton.BorderThickness = new Thickness(0);
-        _detachButton.Content = EditorIcons.Create(EditorIcons.Open, 15);
-        _detachButton.Click += OnDetachClick;
-        _tabs.SelectionChanged += OnSelectionChanged;
         _owner.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, true);
         RefreshLayout();
     }
@@ -81,6 +71,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
     internal Window? FloatingWindow(TabItem tab) => EntryFor(tab).Window;
     internal bool IsDetached(TabItem tab) => EntryFor(tab).Detached;
     public event EventHandler<KeyEventArgs>? PreviewKeyDown;
+    public event Action<TabItem>? SelectedTabChanged;
 
     public void SelectTab(TabItem tab, bool activate = false)
     {
@@ -88,9 +79,9 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         if (entry.Detached)
         {
             if (activate && !_occluded && tab.IsVisible) entry.Window?.Activate();
-            EnsureDockSelection();
+            EnsureDockSelections();
         }
-        else if (tab.IsVisible) _tabs.SelectedItem = tab;
+        else if (tab.IsVisible) entry.Dock!.Definition.Tabs.SelectedItem = tab;
         RefreshLayout();
     }
 
@@ -99,9 +90,15 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         foreach (var entry in _entries)
             if (entry.Window is { } window)
                 EditorSukiWindowTheme.ApplyNeutralBackground(window, _isDark());
-        _dropCue.BorderBrush = EditorUiVisuals.FocusBrush(_isDark());
-        _dropCue.Background = EditorUiVisuals.SelectedBackgroundBrush(_isDark());
-        _dropLabel.Foreground = EditorUiVisuals.SelectedTextBrush(_isDark());
+        foreach (var site in _sites)
+        {
+            foreach (var cue in new[] { site.Cue, site.EmptyCue })
+            {
+                cue.BorderBrush = EditorUiVisuals.FocusBrush(_isDark());
+                cue.Background = EditorUiVisuals.SelectedBackgroundBrush(_isDark());
+                ((TextBlock)cue.Child!).Foreground = EditorUiVisuals.SelectedTextBrush(_isDark());
+            }
+        }
     }
 
     public void ApplyTextScale(double scale)
@@ -135,8 +132,12 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         if (_disposed) return;
         CancelDrag();
         _disposed = true;
-        _detachButton.Click -= OnDetachClick;
-        _tabs.SelectionChanged -= OnSelectionChanged;
+        foreach (var site in _sites)
+        {
+            site.Definition.DetachButton.Click -= OnDetachClick;
+            site.Definition.Tabs.SelectionChanged -= OnSelectionChanged;
+            site.Definition.EmptyDropOverlay?.Children.Remove(site.EmptyCue);
+        }
         _owner.RemoveHandler(InputElement.KeyDownEvent, OnKeyDown);
         foreach (var entry in _entries)
         {
@@ -153,12 +154,15 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
 
     private void OnDetachClick(object? sender, RoutedEventArgs args)
     {
-        if (_tabs.SelectedItem is TabItem tab) Detach(EntryFor(tab));
+        var site = _sites.Single(site => site.Definition.DetachButton == sender);
+        if (site.Definition.Tabs.SelectedItem is TabItem tab) Move(EntryFor(tab), null);
     }
 
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs args)
     {
-        if (ReferenceEquals(args.Source, _tabs)) RefreshLayout();
+        if (!_sites.Any(site => ReferenceEquals(args.Source, site.Definition.Tabs))) return;
+        RefreshLayout();
+        if (sender is TabControl { SelectedItem: TabItem selected }) SelectedTabChanged?.Invoke(selected);
     }
 
     private void OnTabPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs args)
@@ -181,46 +185,81 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
                 entry.Window?.Hide();
             }
         }
-        EnsureDockSelection();
+        EnsureDockSelections();
         RefreshLayout();
     }
 
-    private void EnsureDockSelection()
+    private void EnsureDockSelections()
     {
-        if (_tabs.SelectedItem is TabItem current && current.IsVisible && !EntryFor(current).Detached) return;
-        _tabs.SelectedItem = _entries.FirstOrDefault(entry => !entry.Detached && entry.Tab.IsVisible)?.Tab;
+        foreach (var site in _sites)
+        {
+            var tabs = site.Definition.Tabs;
+            if (tabs.SelectedItem is TabItem current && current.IsVisible && EntryFor(current).Dock == site) continue;
+            tabs.SelectedItem = _entries.FirstOrDefault(entry => entry.Dock == site && entry.Tab.IsVisible)?.Tab;
+        }
     }
 
-    private void Detach(Entry entry, PixelPoint? position = null)
+    // Every placement change uses one transfer, irrespective of source/destination.
+    private void Move(Entry entry, DockSite? destination, PixelPoint? position = null)
     {
-        if (_disposed || _occluded || entry.Detached || !entry.Tab.IsVisible) return;
+        if (_disposed || _occluded || entry.Dock == destination) return;
         var scroll = CaptureScroll(entry.Content);
+        var source = entry.Dock;
+        entry.Revision++;
         entry.Tab.Content = null;
-        entry.Detached = true;
-        _tabs.Items.Remove(entry.Tab);
-        EnsureDockSelection();
+        entry.Host.Content = null;
+        CaptureGeometry(entry);
+        entry.Dock = destination;
+        source?.Definition.Tabs.Items.Remove(entry.Tab);
+        entry.Window?.Hide();
+        if (destination is not null)
+        {
+            entry.LastDock = destination;
+            var tabs = destination.Definition.Tabs;
+            var index = _entries.TakeWhile(candidate => candidate != entry).Count(candidate => candidate.Dock == destination);
+            tabs.Items.Insert(index, entry.Tab);
+            if (entry.Tab.IsVisible) tabs.SelectedItem = entry.Tab;
+        }
+        else
+        {
+            EnsureWindow(entry);
+            if (position is { } dropPosition) entry.Position = dropPosition;
+            if (entry.Tab.IsVisible)
+            {
+                Show(entry);
+                entry.Window!.Activate();
+            }
+        }
+        EnsureDockSelections();
         RefreshLayout();
-        EnsureWindow(entry);
-        if (position is { } dropPosition) entry.Position = dropPosition;
-        Show(entry);
-        entry.Window!.Activate();
-        Transfer(entry, () => entry.Host.Content = entry.Content, scroll);
+        Transfer(entry, () =>
+        {
+            if (entry.Detached) entry.Host.Content = entry.Content;
+            else entry.Tab.Content = entry.Content;
+        }, scroll);
     }
 
-    private void Redock(Entry entry)
+    private ContextMenu CreatePlacementMenu(Entry entry)
     {
-        if (_disposed || !entry.Detached) return;
-        var scroll = CaptureScroll(entry.Content);
-        CaptureGeometry(entry);
-        entry.Host.Content = null;
-        entry.Detached = false;
-        entry.Window?.Hide();
-        var index = _entries.TakeWhile(candidate => candidate != entry).Count(candidate => !candidate.Detached);
-        _tabs.Items.Insert(index, entry.Tab);
-        if (entry.Tab.IsVisible) _tabs.SelectedItem = entry.Tab;
-        EnsureDockSelection();
-        RefreshLayout();
-        Transfer(entry, () => entry.Tab.Content = entry.Content, scroll);
+        var menu = new ContextMenu();
+        foreach (var site in _sites)
+        {
+            var item = new MenuItem { Header = $"Move to {site.Definition.Label}" };
+            item.Click += (_, _) => Move(entry, site);
+            menu.Items.Add(item);
+        }
+        var detach = new MenuItem { Header = "Float tab" };
+        detach.Click += (_, _) => Move(entry, null);
+        menu.Items.Add(detach);
+        menu.Items.Add(new Separator());
+        var reset = new MenuItem { Header = "Restore default tool layout" };
+        reset.Click += (_, _) =>
+        {
+            CancelDrag();
+            foreach (var candidate in _entries) Move(candidate, candidate.Home);
+        };
+        menu.Items.Add(reset);
+        return menu;
     }
 
     private void Transfer(Entry entry, Action attach, (ScrollViewer Viewer, Vector Offset)[] scroll)
@@ -249,11 +288,12 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         entry.Label = new TextBlock { Text = entry.Tab.Header?.ToString(), VerticalAlignment = VerticalAlignment.Center };
         var dock = EditorTimelineTransport.CreateNavigationButton(EditorIcons.Create(EditorIcons.Back, 15), "Return to panel");
         ToolTip.SetTip(dock, "Return to panel");
-        dock.Click += (_, _) => Redock(entry);
+        dock.Click += (_, _) => Move(entry, entry.LastDock);
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Children = { entry.Label, dock } };
         Grid.SetColumn(dock, 1);
         entry.Handle = new Border { Padding = new Thickness(12, 6), Background = Brushes.Transparent, Child = header };
-        ToolTip.SetTip(entry.Handle, "Drag this header onto the original panel to dock");
+        entry.Handle.ContextMenu = CreatePlacementMenu(entry);
+        ToolTip.SetTip(entry.Handle, "Drag this header to a tool panel to dock; right-click for placement");
         BindDragHandle(entry.Handle);
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), Children = { entry.Handle, entry.Host } };
         Grid.SetRow(entry.Host, 1);
@@ -271,7 +311,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         {
             if (_disposed) return;
             args.Cancel = true;
-            Redock(entry);
+            Move(entry, entry.LastDock);
         };
         entry.Window = window;
     }
@@ -295,26 +335,40 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
 
     private void RefreshLayout()
     {
-        var empty = !_entries.Any(entry => !entry.Detached && entry.Tab.IsVisible);
-        var row = _previewGrid.RowDefinitions[0];
-        if (empty && !_collapsed && row.ActualHeight > 0) _dockedHeight = row.ActualHeight;
-        if (empty != _collapsed || row.Height.IsAuto)
+        foreach (var site in _sites)
         {
-            row.MinHeight = empty ? 48 : PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight;
-            row.Height = new GridLength(empty ? 48 : _dockedHeight);
+            var definition = site.Definition;
+            var empty = !_entries.Any(entry => entry.Dock == site && entry.Tab.IsVisible);
+            var row = definition.Layout.RowDefinitions[definition.ContentRow];
+            if (empty && !site.Collapsed && row.ActualHeight > 0) site.DockedHeight = row.ActualHeight;
+            if (empty != site.Collapsed || !site.Initialized)
+            {
+                row.MinHeight = empty ? definition.EmptyHeight : PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight;
+                row.Height = new GridLength(empty ? definition.EmptyHeight : site.DockedHeight);
+            }
+            site.Initialized = true;
+            site.Collapsed = empty;
+            definition.Surface.MinHeight = empty ? definition.EmptyHeight : PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight;
+            definition.Surface.IsVisible = !empty || definition.EmptyHeight > 0;
+            definition.Layout.RowDefinitions[definition.SplitterRow].Height = new GridLength(empty ? 0 : 10);
+            definition.Splitter.IsVisible = !empty;
+            definition.Tabs.IsVisible = !empty;
+            definition.DetachButton.IsVisible = !empty;
+            definition.DetachButton.IsEnabled = definition.Tabs.SelectedItem is TabItem selected && selected.IsVisible;
+            var description = definition.Tabs.SelectedItem is TabItem active ? $"Detach {active.Header}" : "Detach selected tab";
+            EditorAccessibility.Describe(definition.DetachButton, description);
+            ToolTip.SetTip(definition.DetachButton, description);
+            var highlighted = _drag is { Started: true } drag && drag.Target == site;
+            site.Cue.IsVisible = empty && definition.EmptyHeight > 0 || !empty && highlighted;
+            site.EmptyCue.IsVisible = empty && highlighted && definition.EmptyDropOverlay is not null;
+            if (definition.EmptyDropOverlay is { } overlay)
+                site.EmptyCue.Height = EmptyDropHeight(overlay);
         }
-        _collapsed = empty;
-        _surface.MinHeight = empty ? 48 : PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight;
-        _previewGrid.RowDefinitions[1].Height = new GridLength(empty ? 0 : 10);
-        _splitter.IsVisible = !empty;
-        _tabs.IsVisible = !empty;
-        _detachButton.IsEnabled = _tabs.SelectedItem is TabItem selected && selected.IsVisible;
-        var description = _tabs.SelectedItem is TabItem active ? $"Detach {active.Header}" : "Detach selected tab";
-        EditorAccessibility.Describe(_detachButton, description);
-        ToolTip.SetTip(_detachButton, description);
-        _dropCue.IsVisible = empty || _drag is { Started: true, OverDock: true };
         RefreshTheme();
     }
+
+    private static double EmptyDropHeight(Control overlay) => Math.Min(
+        PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight, overlay.Bounds.Height / 2);
 
     private void BindDragHandle(Control handle)
     {
@@ -352,15 +406,29 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
             drag.Started = true;
             args.Pointer.Capture(drag.Handle);
         }
-        drag.OverDock = IsOverDock(point);
+        drag.Target = DockAt(point);
         if (drag.Entry.Detached && drag.WindowOrigin is { } origin)
             drag.Entry.Window!.Position = origin + (point - drag.Start);
         RefreshLayout();
         args.Handled = true;
     }
 
-    private bool IsOverDock(PixelPoint point) => _surface.IsEffectivelyVisible
-        && new Rect(_surface.Bounds.Size).Contains(_surface.PointToClient(point));
+    private DockSite? DockAt(PixelPoint point)
+    {
+        foreach (var site in _sites)
+        {
+            var definition = site.Definition;
+            if (site.Collapsed && definition.EmptyDropOverlay is { IsEffectivelyVisible: true } overlay)
+            {
+                var height = EmptyDropHeight(overlay);
+                var bounds = new Rect(0, overlay.Bounds.Height - height, overlay.Bounds.Width, height);
+                if (bounds.Contains(overlay.PointToClient(point))) return site;
+            }
+            else if (definition.Surface.IsEffectivelyVisible
+                && new Rect(definition.Surface.Bounds.Size).Contains(definition.Surface.PointToClient(point))) return site;
+        }
+        return null;
+    }
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs args)
     {
@@ -370,12 +438,9 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         args.Pointer.Capture(null);
         if (drag.Started)
         {
-            if (drag.Entry.Detached)
-            {
-                if (IsOverDock(point)) Redock(drag.Entry);
-                else CaptureGeometry(drag.Entry);
-            }
-            else if (!IsOverDock(point)) Detach(drag.Entry, point);
+            var destination = DockAt(point);
+            if (drag.Entry.Dock != destination) Move(drag.Entry, destination, point);
+            else if (drag.Entry.Detached) CaptureGeometry(drag.Entry);
             args.Handled = true;
         }
         RefreshLayout();
@@ -403,7 +468,29 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         if (sender != _owner) PreviewKeyDown?.Invoke(sender, args);
     }
 
-    private sealed class Entry(TabItem tab)
+    private sealed class DockSite(PreviewUtilityDockSite definition)
+    {
+        public PreviewUtilityDockSite Definition { get; } = definition;
+        public Border Cue { get; } = CreateCue(definition.Label);
+        public Border EmptyCue { get; } = CreateCue(definition.Label);
+        public double DockedHeight = PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight;
+        public bool Collapsed;
+        public bool Initialized;
+
+        private static Border CreateCue(string label) => new()
+        {
+            Child = new TextBlock
+            {
+                Text = $"Drop here · {label}",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            },
+            CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(2),
+            IsHitTestVisible = false, IsVisible = false,
+        };
+    }
+
+    private sealed class Entry(TabItem tab, DockSite home)
     {
         public TabItem Tab { get; } = tab;
         public Control Content { get; } = tab.Content as Control
@@ -416,7 +503,10 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         public SukiWindow? Window;
         public Border? Handle;
         public TextBlock? Label;
-        public bool Detached;
+        public DockSite Home { get; } = home;
+        public DockSite LastDock = home;
+        public DockSite? Dock = home;
+        public bool Detached => Dock is null;
         public int Revision;
         public PixelPoint? Position;
         public double Width = 720;
@@ -431,6 +521,6 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         public PixelPoint Start { get; } = start;
         public PixelPoint? WindowOrigin { get; } = windowOrigin;
         public bool Started;
-        public bool OverDock;
+        public DockSite? Target;
     }
 }

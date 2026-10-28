@@ -189,12 +189,11 @@ public partial class MainWindow : SukiWindow
         _previewControlsDock =
             new PreviewControlsDockController(
                 this,
-                PreviewUtilitySurface,
-                PreviewUtilityTabs,
-                PreviewPanelGrid,
-                PreviewUtilitySplitter,
-                PreviewControlsDetachButton,
-                () => _themeController.IsDark);
+                () => _themeController.IsDark,
+                new PreviewUtilityDockSite("Preview panel", PreviewUtilitySurface, PreviewUtilityTabs,
+                    PreviewPanelGrid, 0, 1, PreviewUtilitySplitter, PreviewControlsDetachButton, 48),
+                new PreviewUtilityDockSite("Editor panel", EditorUtilitySurface, EditorUtilityTabs,
+                    EditorPanelLayout, 2, 1, EditorUtilitySplitter, EditorUtilityDetachButton, 0, EditorPanelLayout));
         _previewControlsDock.PreviewKeyDown +=
             _previewController.OnDetachedPreviewKeyDown;
         EditorModalWindowScope.RegisterHost(
@@ -498,12 +497,11 @@ public partial class MainWindow : SukiWindow
             layoutCards,
             _collectionCards,
             specialSurfaces.CreateCards);
-        PreviewUtilityTabs.SelectionChanged += (_, args) =>
+        _previewControlsDock.SelectedTabChanged += selectedTab =>
         {
             if (_isUpdatingPreviewUtilityTab
-                || !ReferenceEquals(args.Source, PreviewUtilityTabs)
                 || string.IsNullOrWhiteSpace(_previewUtilityTabStateKey)
-                || PreviewUtilityTabId(PreviewUtilityTabs.SelectedItem) is not { } tabId)
+                || PreviewUtilityTabId(selectedTab) is not { } tabId)
             {
                 return;
             }
