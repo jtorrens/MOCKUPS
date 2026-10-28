@@ -8263,6 +8263,49 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         True(ReferenceEquals(firstTab.Content, firstContent));
         True(ReferenceEquals(secondTab.Content, secondContent));
         Equal(37d, secondContent.Value);
+        // Exercise routed pointer gestures, not just placement commands.
+        foreach (var dragged in new[] { firstTab, secondTab })
+        {
+            var previous = dragged == firstTab ? secondTab : firstTab;
+            controller.SelectTab(previous);
+            owner.UpdateLayout();
+            var press = owner.PointToClient(dragged.PointToScreen(new Point(12, 12)));
+            var outside = new Point(50, 80);
+            var initialHeight = previewGrid.RowDefinitions[0].Height;
+            owner.MouseDown(press, MouseButton.Left);
+            owner.MouseMove(outside, RawInputModifiers.LeftMouseButton);
+            Dispatcher.UIThread.RunJobs();
+            True(!controller.IsDetached(dragged));
+            True(tabs.Items.Contains(dragged));
+            Equal(initialHeight, previewGrid.RowDefinitions[0].Height);
+            owner.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+            owner.MouseUp(outside, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            Equal(previous, tabs.SelectedItem);
+            True(!controller.IsDetached(dragged));
+
+            owner.MouseDown(press, MouseButton.Left);
+            owner.MouseMove(outside, RawInputModifiers.LeftMouseButton);
+            owner.MouseUp(outside, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            True(controller.IsDetached(dragged));
+            var tool = Required(controller.FloatingWindow(dragged));
+            True(!((SukiWindow)tool).IsTitleBarVisible);
+            var handle = tool.GetVisualDescendants().OfType<Border>()
+                .Single(border => border.ContextMenu is not null);
+            var toolPress = tool.PointToClient(handle.PointToScreen(new Point(12, 12)));
+            var originalPosition = tool.Position;
+            tool.MouseDown(toolPress, MouseButton.Left);
+            tool.MouseMove(toolPress + new Vector(40, 30), RawInputModifiers.LeftMouseButton);
+            Dispatcher.UIThread.RunJobs();
+            Equal(originalPosition, tool.Position);
+            tool.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+            tool.MouseUp(toolPress + new Vector(40, 30), MouseButton.Left);
+            Equal(originalPosition, tool.Position);
+            tool.Close();
+            Dispatcher.UIThread.RunJobs();
+            True(!controller.IsDetached(dragged));
+        }
         owner.Close();
     }, CancellationToken.None).GetAwaiter().GetResult();
 }

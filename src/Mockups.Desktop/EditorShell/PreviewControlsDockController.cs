@@ -155,7 +155,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
     private void OnDetachClick(object? sender, RoutedEventArgs args)
     {
         var site = _sites.Single(site => site.Definition.DetachButton == sender);
-        if (site.Definition.Tabs.SelectedItem is TabItem tab) Move(EntryFor(tab), null);
+        if (site.Definition.Tabs.SelectedItem is TabItem tab) Place(EntryFor(tab), null);
     }
 
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs args)
@@ -175,6 +175,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
             entry.Label!.Text = window.Title;
         }
         if (args.Property != Visual.IsVisibleProperty) return;
+        if (!tab.IsVisible && _drag?.Entry == entry) CancelDrag();
         if (entry.Detached)
         {
             if (tab.IsVisible && !_occluded) Show(entry);
@@ -199,10 +200,18 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         }
     }
 
+    private void Place(Entry entry, DockSite? destination)
+    {
+        CancelDrag();
+        Move(entry, destination);
+    }
+
     // Every placement change uses one transfer, irrespective of source/destination.
     private void Move(Entry entry, DockSite? destination, PixelPoint? position = null)
     {
         if (_disposed || _occluded || entry.Dock == destination) return;
+        entry.Tab.ContextMenu?.Close();
+        entry.Handle?.ContextMenu?.Close();
         var scroll = CaptureScroll(entry.Content);
         var source = entry.Dock;
         entry.Revision++;
@@ -245,11 +254,13 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         foreach (var site in _sites)
         {
             var item = new MenuItem { Header = $"Move to {site.Definition.Label}" };
-            item.Click += (_, _) => Move(entry, site);
+            item.Click += (_, _) => Place(entry, site);
+            menu.Opening += (_, _) => item.IsEnabled = entry.Dock != site;
             menu.Items.Add(item);
         }
         var detach = new MenuItem { Header = "Float tab" };
-        detach.Click += (_, _) => Move(entry, null);
+        detach.Click += (_, _) => Place(entry, null);
+        menu.Opening += (_, _) => detach.IsEnabled = !entry.Detached;
         menu.Items.Add(detach);
         menu.Items.Add(new Separator());
         var reset = new MenuItem { Header = "Restore default tool layout" };
@@ -288,7 +299,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         entry.Label = new TextBlock { Text = entry.Tab.Header?.ToString(), VerticalAlignment = VerticalAlignment.Center };
         var dock = EditorTimelineTransport.CreateNavigationButton(EditorIcons.Create(EditorIcons.Back, 15), "Return to panel");
         ToolTip.SetTip(dock, "Return to panel");
-        dock.Click += (_, _) => Move(entry, entry.LastDock);
+        dock.Click += (_, _) => Place(entry, entry.LastDock);
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Children = { entry.Label, dock } };
         Grid.SetColumn(dock, 1);
         entry.Handle = new Border { Padding = new Thickness(12, 6), Background = Brushes.Transparent, Child = header };
@@ -301,6 +312,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         {
             Title = entry.Tab.Header?.ToString(), MinWidth = 560, MinHeight = 280,
             CanResize = true, CanFullScreen = false, CanPin = false,
+            IsTitleBarVisible = false, WindowDecorations = WindowDecorations.BorderOnly,
             ShowInTaskbar = false, Topmost = true,
             WindowStartupLocation = WindowStartupLocation.Manual,
             Content = layout,
@@ -311,7 +323,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         {
             if (_disposed) return;
             args.Cancel = true;
-            Move(entry, entry.LastDock);
+            Place(entry, entry.LastDock);
         };
         entry.Window = window;
     }
@@ -358,13 +370,19 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
             var description = definition.Tabs.SelectedItem is TabItem active ? $"Detach {active.Header}" : "Detach selected tab";
             EditorAccessibility.Describe(definition.DetachButton, description);
             ToolTip.SetTip(definition.DetachButton, description);
-            var highlighted = _drag is { Started: true } drag && drag.Target == site;
+            var highlighted = _drag is { Started: true } drag && drag.Target == site && drag.OriginDock != site;
             site.Cue.IsVisible = empty && definition.EmptyHeight > 0 || !empty && highlighted;
             site.EmptyCue.IsVisible = empty && highlighted && definition.EmptyDropOverlay is not null;
             if (definition.EmptyDropOverlay is { } overlay)
                 site.EmptyCue.Height = EmptyDropHeight(overlay);
         }
         RefreshTheme();
+        foreach (var site in _sites)
+            if (_drag is not { Started: true } drag || drag.Target != site || drag.OriginDock == site)
+            {
+                site.Cue.Background = Brushes.Transparent;
+                site.Cue.BorderBrush = Brushes.Transparent;
+            }
     }
 
     private static double EmptyDropHeight(Control overlay) => Math.Min(
@@ -391,27 +409,65 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         if (_occluded || sender is not Control handle
             || !args.GetCurrentPoint(handle).Properties.IsLeftButtonPressed
             || args.Source is Visual source && source.GetSelfAndVisualAncestors().OfType<Button>().Any()) return;
+        CancelDrag();
         var entry = _entries.Single(candidate => candidate.Tab == handle || candidate.Handle == handle);
-        _drag = new Drag(entry, handle, args.Pointer, handle.PointToScreen(args.GetPosition(handle)), entry.Window?.Position);
+        var start = handle.PointToScreen(args.GetPosition(handle));
+        var origin = entry.Detached ? entry.Window!.Position : handle.PointToScreen(default);
+        _drag = new Drag(entry, handle, args.Pointer, start, start - origin,
+            _sites.Select(site => (site, site.Definition.Tabs.SelectedItem)).ToArray());
     }
 
     private void OnPointerMoved(object? sender, PointerEventArgs args)
     {
         if (_drag is not { } drag || sender != drag.Handle) return;
+        if (!args.GetCurrentPoint(drag.Handle).Properties.IsLeftButtonPressed)
+        {
+            CancelDrag();
+            return;
+        }
         var point = drag.Handle.PointToScreen(args.GetPosition(drag.Handle));
         if (!drag.Started)
         {
-            var delta = point - drag.Start;
+            // Threshold is in logical units, independent of display scaling.
+            var delta = args.GetPosition(drag.Handle) - drag.Handle.PointToClient(drag.Start);
             if (Math.Abs(delta.X) + Math.Abs(delta.Y) < 8) return;
             drag.Started = true;
+            drag.Entry.Tab.ContextMenu?.Close();
+            drag.Entry.Handle?.ContextMenu?.Close();
+            ToolTip.SetIsOpen(drag.Handle, false);
             args.Pointer.Capture(drag.Handle);
+            if (_drag != drag) return;
+            drag.Preview = CreateDragPreview(drag);
+            drag.Preview.Position = point - drag.GrabOffset;
+            drag.Preview.Show(_owner);
         }
         drag.Target = DockAt(point);
-        if (drag.Entry.Detached && drag.WindowOrigin is { } origin)
-            drag.Entry.Window!.Position = origin + (point - drag.Start);
+        drag.Preview!.Position = point - drag.GrabOffset;
         RefreshLayout();
         args.Handled = true;
     }
+
+    private Window CreateDragPreview(Drag drag) => new()
+    {
+        Width = Math.Max(180, drag.Handle.Bounds.Width),
+        Height = 40,
+        WindowDecorations = WindowDecorations.None,
+        CanResize = false, ShowActivated = false, ShowInTaskbar = false, Topmost = true,
+        IsHitTestVisible = false,
+        WindowStartupLocation = WindowStartupLocation.Manual,
+        Content = new Border
+        {
+            Background = EditorSukiWindowTheme.NeutralBackgroundBrush(_isDark()),
+            BorderBrush = EditorUiVisuals.FocusBrush(_isDark()), BorderThickness = new Thickness(1),
+            Padding = new Thickness(12, 6),
+            Child = new TextBlock
+            {
+                Text = drag.Entry.Tab.Header?.ToString(),
+                Foreground = EditorUiVisuals.SelectedTextBrush(_isDark()),
+                VerticalAlignment = VerticalAlignment.Center,
+            },
+        },
+    };
 
     private DockSite? DockAt(PixelPoint point)
     {
@@ -434,16 +490,26 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
     {
         if (_drag is not { } drag || sender != drag.Handle) return;
         var point = drag.Handle.PointToScreen(args.GetPosition(drag.Handle));
-        _drag = null;
-        args.Pointer.Capture(null);
+        var destination = DockAt(point);
+        FinishDrag(drag);
         if (drag.Started)
         {
-            var destination = DockAt(point);
-            if (drag.Entry.Dock != destination) Move(drag.Entry, destination, point);
-            else if (drag.Entry.Detached) CaptureGeometry(drag.Entry);
+            if (drag.Entry.Dock != destination) Move(drag.Entry, destination, point - drag.GrabOffset);
+            else if (drag.Entry.Detached)
+            {
+                drag.Entry.Window!.Position = point - drag.GrabOffset;
+                CaptureGeometry(drag.Entry);
+            }
             args.Handled = true;
         }
         RefreshLayout();
+    }
+
+    private void FinishDrag(Drag drag)
+    {
+        _drag = null;
+        if (drag.Started) drag.Pointer.Capture(null);
+        drag.Preview?.Close();
     }
 
     private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs args) => CancelDrag();
@@ -451,9 +517,10 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
     private void CancelDrag()
     {
         if (_drag is not { } drag) return;
-        _drag = null;
-        if (drag.Entry.Detached && drag.WindowOrigin is { } origin) drag.Entry.Window!.Position = origin;
-        drag.Pointer.Capture(null);
+        FinishDrag(drag);
+        if (drag.Started)
+            foreach (var (site, selection) in drag.Selections)
+                site.Definition.Tabs.SelectedItem = selection;
         RefreshLayout();
     }
 
@@ -513,13 +580,17 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         public double Height = 420;
     }
 
-    private sealed class Drag(Entry entry, Control handle, IPointer pointer, PixelPoint start, PixelPoint? windowOrigin)
+    private sealed class Drag(Entry entry, Control handle, IPointer pointer, PixelPoint start,
+        PixelVector grabOffset, (DockSite Site, object? Selection)[] selections)
     {
         public Entry Entry { get; } = entry;
         public Control Handle { get; } = handle;
         public IPointer Pointer { get; } = pointer;
         public PixelPoint Start { get; } = start;
-        public PixelPoint? WindowOrigin { get; } = windowOrigin;
+        public PixelVector GrabOffset { get; } = grabOffset;
+        public DockSite? OriginDock { get; } = entry.Dock;
+        public (DockSite Site, object? Selection)[] Selections { get; } = selections;
+        public Window? Preview;
         public bool Started;
         public DockSite? Target;
     }

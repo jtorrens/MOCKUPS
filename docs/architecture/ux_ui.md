@@ -160,24 +160,34 @@ panel, one tab group below the central editor and its own resizable topmost
 window. `PreviewControlsDockController` owns placement through declared dock
 sites and one transfer operation. It moves the exact live content without
 creating another authoring controller, Preview session or clock.
-Dragging a tab or floating content header over either tool group highlights its
-destination. When the central group is empty, the bottom of the editor shows an
-overlaid destination preview during the drag; it does not resize the editor
-until release. Dropping there opens the lower group and its adjustable divider.
-Multiple tools share tabs in that group. The editor stays above it with its
-breadcrumb, cards and scroll, and recovers all height when no available tool
-remains below it. Side docking and arbitrary nested splits are not supported.
-Releasing outside both destinations floats the tab. Each group's shared header
-action floats its selected tab. Right-clicking a tab or floating content header
-exposes Move to Preview panel, Move to Editor panel, Float tab and Restore
-default tool layout. The same commands are available through the tab's keyboard
-context menu. The common Suki window content template supplies Avalonia’s
-`VisualLayerManager` and its light-dismiss overlay: clicking outside the menu
-inside the window closes it through the native popup behavior. This applies
-to the main window and floating tools. Moving the pointer away alone does not
-close it. Restore returns every tool to its original group. Closing a
-floating window or using Return to panel docks that tab in its last dock site.
-Escape cancels a header drag. Remaining tabs retain their original order.
+Tab and floating-header drags use one transaction. Below an eight-logical-pixel
+threshold, input remains a click. Beyond it, a nonactivating lightweight header
+preview follows the cursor; the live content, floating window and panel sizes
+remain unchanged until release. Only a different valid destination is blue;
+the origin remains neutral. Both occupied groups accept drops across their tool
+surface. An empty central group accepts the bottom band of the editor and shows
+an overlay without reserving layout space until release. The empty right group
+retains a neutral labelled drop zone.
+Releasing over another group transfers the exact content; releasing over the
+origin leaves placement unchanged. Releasing outside both groups floats or
+repositions the tool, preserving the pointer's grab offset. Escape or lost
+pointer capture removes the preview and restores the original group selections;
+no intermediate placement or geometry is committed. Becoming unavailable or
+opening a modal cancels an active drag.
+Floating tools have one content header for dragging and docking, without a
+second native title strip with different drag behavior. Return to panel and
+window Close return to the last dock. Remaining tabs retain their original order.
+Multiple tools share tabs in the lower central group. The editor stays above it
+with its breadcrumb, cards and scroll, and recovers all height when no available
+tool remains below it. Side docking and arbitrary nested splits are not supported.
+Each group's shared action floats its selected tab. Right-clicking a tab or
+floating header exposes Move to Preview panel, Move to Editor panel, Float tab
+and Restore default tool layout. Commands for the current location are disabled.
+The same commands are available through the keyboard context menu and share the
+placement operation with drag completion. Restore returns every tool to its
+original group. The common Suki window content template supplies Avalonia’s
+`VisualLayerManager` and light-dismiss overlay: clicking outside a menu inside
+the window closes it. Moving the pointer away alone does not close it.
 The Preview title and rendered frame remain in the right panel. When no
 available tab remains there, its utility region contracts to a small labelled
 drop zone and releases the remaining height to the frame. Each group remembers

@@ -278,7 +278,7 @@ export function planScopedValidation(
     ].includes(file)) {
       desktopUi = true;
       add(npmStep("desktop:independent-utility-tabs", "test:focus:desktop",
-        "declared tool docks preserve live controls, central editor, selection, last dock, reset, availability and modal occlusion",
+        "declared tool docks preserve live controls, deferred pointer gestures, Escape selection, stable geometry, last dock, reset, availability and modal occlusion",
         ["--", "--exact", "Application modals preserve Preview and displace siblings"]));
     }
     if ([
