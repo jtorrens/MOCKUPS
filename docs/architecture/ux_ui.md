@@ -171,7 +171,11 @@ Releasing outside both destinations floats the tab. Each group's shared header
 action floats its selected tab. Right-clicking a tab or floating content header
 exposes Move to Preview panel, Move to Editor panel, Float tab and Restore
 default tool layout. The same commands are available through the tab's keyboard
-context menu. Restore returns every tool to its original group. Closing a
+context menu. The common Suki window content template supplies Avalonia’s
+`VisualLayerManager` and its light-dismiss overlay: clicking outside the menu
+inside the window closes it through the native popup behavior. This applies
+to the main window and floating tools. Moving the pointer away alone does not
+close it. Restore returns every tool to its original group. Closing a
 floating window or using Return to panel docks that tab in its last dock site.
 Escape cancels a header drag. Remaining tabs retain their original order.
 The Preview title and rendered frame remain in the right panel. When no

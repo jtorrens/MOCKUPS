@@ -3,6 +3,7 @@
              xmlns:converters="using:Avalonia.Controls.Converters"
              xmlns:pc="using:Avalonia.Controls.Primitives.Converters"
              xmlns:suki="clr-namespace:SukiUI;assembly=SukiUI"
+             xmlns:sukiControls="clr-namespace:SukiUI.Controls;assembly=SukiUI"
              x:Class="Mockups.DesktopEditorShell.App"
              RequestedThemeVariant="Dark">
 
@@ -41,6 +42,15 @@
 
     <Application.Styles>
         <suki:SukiTheme ThemeColor="Blue" />
+        <Style Selector=":is(sukiControls|SukiWindow)">
+            <Setter Property="ContentTemplate">
+                <DataTemplate>
+                    <VisualLayerManager>
+                        <ContentPresenter Content="{Binding}" />
+                    </VisualLayerManager>
+                </DataTemplate>
+            </Setter>
+        </Style>
         <Style Selector="Control">
             <Setter Property="Transitions" Value="{x:Null}" />
         </Style>

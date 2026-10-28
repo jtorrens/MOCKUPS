@@ -264,6 +264,13 @@ export function planScopedValidation(
         "tree actions must separate preparation, confirmation and execution in one modal, suppress background progress, preserve Preview and refresh only after mutation",
         ["--", "--exact", name]));
     }
+    if (["src/Mockups.Desktop/App.axaml", "src/Mockups.Desktop/Common/EditorSukiWindowTheme.cs",
+      "src/Mockups.Desktop/Common/EditorContextMenuBehavior.cs"].includes(file)) {
+      desktopUi = true;
+      add(npmStep("desktop:context-menu-dismissal", "test:focus:desktop",
+        "Suki window content must supply the native popup light-dismiss layer",
+        ["--", "--exact", "Suki windows dismiss context menus on outside clicks"]));
+    }
     if ([
       "src/Mockups.Desktop/EditorShell/PreviewControlsDockController.cs",
       "src/Mockups.Desktop/MainWindow.axaml.cs",

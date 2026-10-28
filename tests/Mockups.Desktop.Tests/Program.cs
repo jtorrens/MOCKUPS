@@ -260,6 +260,7 @@ var tests = new (string Name, Action Run)[]
     ("same-owner editor refresh keeps root and embedded cards mounted", SameOwnerEditorRefreshKeepsCardsMounted),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("Application modals preserve Preview and displace siblings", ApplicationModalsPreservePreviewAndDisplaceSiblings),
+    ("Suki windows dismiss context menus on outside clicks", SukiWindowsDismissContextMenusOnOutsideClicks),
     ("tree deletion prepares its dialog immediately and refreshes once", TreeActionFeedbackRegressionTests.DeletePreparationAndCompletion),
     ("presented editor operations own the shared loading scrim", PresentedEditorOperationsOwnSharedLoadingScrim),
     ("navigation panel restores its width and opens for routed selection", NavigationPanelRestoresWidthAndOpensForRoutedSelection),
@@ -7908,6 +7909,36 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
     {
         File.Delete(temporary);
     }
+}
+
+static void SukiWindowsDismissContextMenusOnOutsideClicks()
+{
+    using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        foreach (var floating in new[] { false, true })
+        {
+            var target = new Border { Width = 120, Height = 40, Background = Brushes.Transparent };
+            var menu = new ContextMenu { Items = { new MenuItem { Header = "Move tool" } } };
+            target.ContextMenu = menu;
+            var content = new StackPanel { Children = { target, new Button { Content = "Outside" } } };
+            var window = new SukiWindow { Width = 500, Height = 400, Content = content };
+            if (floating) EditorSukiWindowTheme.ApplyUtilityWindowChrome(window);
+            else EditorContextMenuBehavior.Configure(window);
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            True(target.FindAncestorOfType<VisualLayerManager>() is not null);
+            menu.Open(target);
+            Dispatcher.UIThread.RunJobs();
+            True(menu.IsOpen);
+            window.MouseDown(new Point(450, 300), MouseButton.Left);
+            window.MouseUp(new Point(450, 300), MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            True(!menu.IsOpen);
+            Equal(content, window.Content);
+            window.Close();
+        }
+    }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
 static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
@@ -22692,6 +22723,7 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "Suki windows dismiss context menus on outside clicks",
     "tree deletion prepares its dialog immediately and refreshes once",
     "Application modals preserve Preview and displace siblings",
     "animation actions acknowledge pending writes and recover after failure",
