@@ -8189,7 +8189,7 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         secondTab.IsVisible = true;
         True(secondFloating.IsVisible);
         secondFloating.GetVisualDescendants().OfType<Button>()
-            .Single(button => Avalonia.Automation.AutomationProperties.GetName(button) == "Return to panel")
+            .Single(button => Avalonia.Automation.AutomationProperties.GetName(button) == "Return to Preview panel")
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
         True(!controller.IsDetached(secondTab));
@@ -8263,8 +8263,20 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         secondTab.IsVisible = true;
         True(centralSurface.IsVisible);
         Equal(350d, centralLayout.RowDefinitions[2].Height.Value);
-        CenterDrop(firstTab, utilitySurface);
-        CenterDrop(secondTab, utilitySurface);
+        // The triangle restores each declared home, even after floating from the center.
+        foreach (var tab in new[] { firstTab, secondTab })
+        {
+            controller.SelectTab(tab);
+            centralToggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Required(controller.FloatingWindow(tab)).GetVisualDescendants().OfType<Button>()
+                .Single(button => Avalonia.Automation.AutomationProperties.GetName(button) == "Return to Preview panel")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            True(tabs.Items.Contains(tab));
+            True(!centralTabs.Items.Contains(tab));
+            True(!controller.IsDetached(tab));
+        }
         Dispatcher.UIThread.RunJobs();
         True(!centralSurface.IsVisible);
         True(!centralSplitter.IsVisible);

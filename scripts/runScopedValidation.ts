@@ -287,7 +287,7 @@ export function planScopedValidation(
         "shell preferences persist only their declared visual contract",
         ["--", "--exact", "shell window state persists only its exact visual contract"]));
       add(npmStep("desktop:independent-utility-tabs", "test:focus:desktop",
-        "declared tool docks preserve live controls, deferred pointer gestures, Escape selection, stable geometry, vertical edge insertion, central tab merge, last group, availability and modal occlusion",
+        "declared tool docks preserve live controls, deferred pointer gestures, Escape selection, stable geometry, vertical edge insertion, central tab merge, last group on Close, declared home on return, availability and modal occlusion",
         ["--", "--exact", "Application modals preserve Preview and displace siblings"]));
     }
     if ([

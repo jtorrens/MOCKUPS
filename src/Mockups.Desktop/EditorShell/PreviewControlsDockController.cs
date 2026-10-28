@@ -454,9 +454,10 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
     {
         if (entry.Window is not null) return;
         entry.Label = new TextBlock { Text = entry.Tab.Header?.ToString(), VerticalAlignment = VerticalAlignment.Center };
-        var dock = EditorTimelineTransport.CreateNavigationButton(EditorIcons.Create(EditorIcons.Back, 15), "Return to panel");
-        ToolTip.SetTip(dock, "Return to panel");
-        dock.Click += (_, _) => Place(entry, entry.LastDock);
+        var returnLabel = $"Return to {entry.Home.Definition.Label}";
+        var dock = EditorTimelineTransport.CreateNavigationButton(EditorIcons.Create(EditorIcons.Back, 15), returnLabel);
+        ToolTip.SetTip(dock, returnLabel);
+        dock.Click += (_, _) => Place(entry, entry.Home);
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Children = { entry.Label, dock } };
         Grid.SetColumn(dock, 1);
         entry.Handle = new Border { Padding = new Thickness(12, 6), Background = Brushes.Transparent, Child = header };
@@ -792,6 +793,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         public SukiWindow? Window;
         public Border? Handle;
         public TextBlock? Label;
+        public DockSite Home { get; } = home;
         public DockSite LastDock = home;
         public DockSite? Dock = home;
         public bool Detached => Dock is null;

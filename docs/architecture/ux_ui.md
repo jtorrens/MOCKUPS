@@ -174,14 +174,16 @@ Each stacked group has its own selected tab and adjustable height. The shared
 layout policy reserves a 120 px minimum for central groups; row proportions
 share the available height with the editor. Empty groups collapse without
 leaving a splitter targeting an invisible row. A temporarily empty group is
-retained only while a floating or unavailable tool still references it, so Return
+retained only while a floating or unavailable tool still references it, so window Close
 can restore its exact last group. Unreferenced dynamic groups are removed.
 Releasing outside all destinations floats or repositions the tool while
 preserving the pointer’s grab offset. Escape or lost pointer capture removes
 the drag preview and restores original group selections; no intermediate
 placement is committed. Unavailability or a modal cancels an active drag.
-Floating tools have one content header for dragging and docking. Return to panel
-and window Close restore the last group. Each dock group retains its detach
+Floating tools have one content header for dragging and docking. The return triangle
+always restores the tab to its declared original Preview panel, independently of
+the saved layout or last central group. Its tooltip names that destination.
+Window Close restores the last group. Each dock group retains its detach
 button. Tabs and floating headers have no placement context menu; insertion and
 grouping are expressed directly through drop zones. Remaining tabs retain their
 original order. The editor stays above the groups with its breadcrumb, cards and
