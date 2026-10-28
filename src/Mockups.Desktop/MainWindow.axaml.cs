@@ -193,7 +193,7 @@ public partial class MainWindow : SukiWindow
                 new PreviewUtilityDockSite("Preview panel", PreviewUtilitySurface, PreviewUtilityTabs,
                     PreviewPanelGrid, 0, 1, PreviewUtilitySplitter, PreviewControlsDetachButton, 48),
                 new PreviewUtilityDockSite("Editor panel", EditorUtilitySurface, EditorUtilityTabs,
-                    EditorPanelLayout, 2, 1, EditorUtilitySplitter, EditorUtilityDetachButton, 0, EditorPanelLayout));
+                    EditorPanelLayout, 2, 1, EditorUtilitySplitter, EditorUtilityDetachButton, 0, EditorPanelLayout, AllowVerticalGroups: true));
         _previewControlsDock.PreviewKeyDown +=
             _previewController.OnDetachedPreviewKeyDown;
         EditorModalWindowScope.RegisterHost(

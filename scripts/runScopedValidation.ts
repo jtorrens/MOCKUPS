@@ -273,12 +273,13 @@ export function planScopedValidation(
     }
     if ([
       "src/Mockups.Desktop/EditorShell/PreviewControlsDockController.cs",
+      "src/Mockups.Desktop/EditorShell/PreviewPanelLayoutPolicy.cs",
       "src/Mockups.Desktop/MainWindow.axaml.cs",
       "src/Mockups.Desktop/MainWindow.axaml",
     ].includes(file)) {
       desktopUi = true;
       add(npmStep("desktop:independent-utility-tabs", "test:focus:desktop",
-        "declared tool docks preserve live controls, deferred pointer gestures, Escape selection, stable geometry, last dock, reset, availability and modal occlusion",
+        "declared tool docks preserve live controls, deferred pointer gestures, Escape selection, stable geometry, vertical edge insertion, central tab merge, last group, availability and modal occlusion",
         ["--", "--exact", "Application modals preserve Preview and displace siblings"]));
     }
     if ([

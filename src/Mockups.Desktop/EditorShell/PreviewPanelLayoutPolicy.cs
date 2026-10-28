@@ -29,6 +29,7 @@ internal static class PreviewPanelLayoutPolicy
     public const double DefaultWindowWidth = 1440;
     public const double MinimumPreviewColumnWidth = 520;
     public const double MinimumPreviewUtilityHeight = 320;
+    public const double MinimumStackedUtilityHeight = 120;
     public const double MinimumTimelineSliderWidth = 240;
     public const double MinimumHeaderStripWidth = 320;
     public const double MinimumEditorColumnWidth = 280;

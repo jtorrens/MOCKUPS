@@ -8041,7 +8041,7 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
                 new PreviewUtilityDockSite("Preview panel", utilitySurface, tabs,
                     previewGrid, 0, 1, splitter, toggle, 48),
                 new PreviewUtilityDockSite("Editor panel", centralSurface, centralTabs,
-                    centralLayout, 2, 1, centralSplitter, centralToggle, 0, centralLayout));
+                    centralLayout, 2, 1, centralSplitter, centralToggle, 0, centralLayout, AllowVerticalGroups: true));
         EditorModalWindowScope.RegisterHost(
             owner,
             modalOcclusion,
@@ -8206,12 +8206,23 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         Dispatcher.UIThread.RunJobs();
         True(!controller.IsDetached(firstTab));
 
-        void Place(TabItem tab, string action) => Required(tab.ContextMenu).Items.OfType<MenuItem>()
-            .Single(item => Equals(item.Header, action))
-            .RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+        void Drop(TabItem tab, Control destination, Point local)
+        {
+            owner.UpdateLayout();
+            var start = owner.PointToClient(tab.PointToScreen(new Point(12, 12)));
+            var end = owner.PointToClient(destination.PointToScreen(local));
+            owner.MouseDown(start, MouseButton.Left);
+            owner.MouseMove(end, RawInputModifiers.LeftMouseButton);
+            owner.MouseUp(end, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+        }
+        void CenterDrop(TabItem tab, Control destination) => Drop(tab, destination,
+            new Point(destination.Bounds.Width / 2, destination.Bounds.Height / 2));
+        True(firstTab.ContextMenu is null);
+        True(secondTab.ContextMenu is null);
         True(!centralSurface.IsVisible);
         var retainedEditor = centralLayout.Children[0];
-        Place(firstTab, "Move to Editor panel");
+        Drop(firstTab, centralLayout, new Point(centralLayout.Bounds.Width / 2, centralLayout.Bounds.Height - 80));
         Dispatcher.UIThread.RunJobs();
         True(centralSurface.IsVisible);
         True(centralSplitter.IsVisible);
@@ -8221,7 +8232,7 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         Equal("Retained draft", firstContent.Text);
         True(ReferenceEquals(retainedEditor, centralLayout.Children[0]));
         Equal("Independent editor", centralEditor.Text);
-        Place(secondTab, "Move to Editor panel");
+        CenterDrop(secondTab, centralSurface);
         Dispatcher.UIThread.RunJobs();
         Equal(2, centralTabs.Items.Count);
         Equal(0, tabs.Items.Count);
@@ -8234,7 +8245,7 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         Equal(firstTab, selectedUtility);
         centralLayout.RowDefinitions[2].Height = new GridLength(350);
         owner.UpdateLayout();
-        Place(firstTab, "Float tab");
+        centralToggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
         True(controller.IsDetached(firstTab));
         True(centralTabs.Items.Contains(secondTab));
@@ -8251,7 +8262,8 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         secondTab.IsVisible = true;
         True(centralSurface.IsVisible);
         Equal(350d, centralLayout.RowDefinitions[2].Height.Value);
-        Place(firstTab, "Restore default tool layout");
+        CenterDrop(firstTab, utilitySurface);
+        CenterDrop(secondTab, utilitySurface);
         Dispatcher.UIThread.RunJobs();
         True(!centralSurface.IsVisible);
         True(!centralSplitter.IsVisible);
@@ -8263,6 +8275,20 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         True(ReferenceEquals(firstTab.Content, firstContent));
         True(ReferenceEquals(secondTab.Content, secondContent));
         Equal(37d, secondContent.Value);
+        // An edge creates a separate stacked group; its center merges tabs again.
+        Drop(firstTab, centralLayout, new Point(centralLayout.Bounds.Width / 2, centralLayout.Bounds.Height - 80));
+        Drop(secondTab, centralSurface, new Point(centralSurface.Bounds.Width / 2, centralSurface.Bounds.Height - 4));
+        var firstGroup = Required(firstTab.FindAncestorOfType<TabControl>());
+        var secondGroup = Required(secondTab.FindAncestorOfType<TabControl>());
+        True(!ReferenceEquals(firstGroup, secondGroup));
+        True(ReferenceEquals(firstTab.Content, firstContent));
+        True(ReferenceEquals(secondTab.Content, secondContent));
+        True(centralLayout.RowDefinitions.Count >= 5);
+        CenterDrop(secondTab, firstGroup);
+        True(ReferenceEquals(firstTab.FindAncestorOfType<TabControl>(), secondTab.FindAncestorOfType<TabControl>()));
+        CenterDrop(firstTab, utilitySurface);
+        CenterDrop(secondTab, utilitySurface);
+        True(!centralSurface.IsVisible);
         // Exercise routed pointer gestures, not just placement commands.
         foreach (var dragged in new[] { firstTab, secondTab })
         {
@@ -8292,7 +8318,8 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
             var tool = Required(controller.FloatingWindow(dragged));
             True(!((SukiWindow)tool).IsTitleBarVisible);
             var handle = tool.GetVisualDescendants().OfType<Border>()
-                .Single(border => border.ContextMenu is not null);
+                .Single(border => border.Child is Grid grid && grid.Children.OfType<TextBlock>()
+                    .Any(label => Equals(label.Text, dragged.Header?.ToString())));
             var toolPress = tool.PointToClient(handle.PointToScreen(new Point(12, 12)));
             var originalPosition = tool.Position;
             tool.MouseDown(toolPress, MouseButton.Left);
