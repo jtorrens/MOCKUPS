@@ -160,7 +160,8 @@ panel, vertically stacked groups below the central editor and its own resizable 
 window. `PreviewControlsDockController` owns placement through declared dock
 sites and one transfer operation. It moves the exact live content without
 creating another authoring controller, Preview session or clock.
-Tab and floating-header drags use one transaction. Below an eight-logical-pixel
+Tab and floating-header drags use one transaction. The header captures the pointer
+on press so a fast move outside its bounds is still received. Below an eight-logical-pixel
 threshold, input remains a click. Beyond it, a nonactivating lightweight header
 preview follows the cursor; the live content, floating window and panel sizes
 remain unchanged until release. A central group’s top/bottom edge and adjacent

@@ -517,6 +517,9 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         var origin = entry.Detached ? entry.Window!.Position : handle.PointToScreen(default);
         _drag = new Drag(entry, handle, args.Pointer, start, start - origin,
             _sites.Select(site => (site, site.Definition.Tabs.SelectedItem)).ToArray());
+        // Own the stream before a fast move can leave the header. The threshold
+        // still distinguishes a click from a drag without consuming selection.
+        args.Pointer.Capture(handle);
     }
 
     private void OnPointerMoved(object? sender, PointerEventArgs args)
@@ -632,7 +635,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
     private void FinishDrag(Drag drag)
     {
         _drag = null;
-        if (drag.Started) drag.Pointer.Capture(null);
+        if (drag.Pointer.Captured == drag.Handle) drag.Pointer.Capture(null);
         drag.Preview?.Close();
     }
 
