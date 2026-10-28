@@ -1,7 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
-using Avalonia.Controls.Primitives.PopupPositioning;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
@@ -543,31 +541,24 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
             args.Pointer.Capture(drag.Handle);
             if (_drag != drag) return;
             drag.Preview = CreateDragPreview(drag);
-            PositionDragPreview(drag, point);
-            drag.Preview.IsOpen = true;
+            drag.Preview.Position = point - drag.GrabOffset;
+            drag.Preview.Show(_owner);
         }
         drag.Target = DockAt(point);
-        PositionDragPreview(drag, point);
+        drag.Preview!.Position = point - drag.GrabOffset;
         RefreshLayout();
         args.Handled = true;
     }
 
-    private void PositionDragPreview(Drag drag, PixelPoint point)
+    private Window CreateDragPreview(Drag drag) => new()
     {
-        drag.Preview!.PlacementRect = new Rect(_owner.PointToClient(point - drag.GrabOffset), default(Size));
-    }
-
-    private Popup CreateDragPreview(Drag drag)
-    {
-        var popup = new Popup
-        {
         Width = Math.Max(180, drag.Handle.Bounds.Width),
         Height = 40,
-        PlacementTarget = _owner, Placement = PlacementMode.AnchorAndGravity,
-        PlacementAnchor = PopupAnchor.TopLeft, PlacementGravity = PopupGravity.BottomRight,
-        PlacementConstraintAdjustment = PopupPositionerConstraintAdjustment.None,
-        IsLightDismissEnabled = false, IsHitTestVisible = false, Topmost = true,
-        Child = new Border
+        WindowDecorations = WindowDecorations.None,
+        CanResize = false, ShowActivated = false, ShowInTaskbar = false, Topmost = true,
+        IsHitTestVisible = false,
+        WindowStartupLocation = WindowStartupLocation.Manual,
+        Content = new Border
         {
             Background = EditorSukiWindowTheme.NeutralBackgroundBrush(_isDark()),
             BorderBrush = EditorUiVisuals.FocusBrush(_isDark()), BorderThickness = new Thickness(1),
@@ -579,10 +570,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
                 VerticalAlignment = VerticalAlignment.Center,
             },
         },
-        };
-        Popup.SetTakesFocusFromNativeControl(popup, false);
-        return popup;
-    }
+    };
 
     private DropTarget? DockAt(PixelPoint point)
     {
@@ -724,7 +712,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         public PixelVector GrabOffset { get; } = grabOffset;
         public DockSite? OriginDock { get; } = entry.Dock;
         public (DockSite Site, object? Selection)[] Selections { get; } = selections;
-        public Popup? Preview;
+        public Window? Preview;
         public bool Started;
         public DropTarget? Target;
     }
