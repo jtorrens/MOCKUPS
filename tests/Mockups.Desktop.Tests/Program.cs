@@ -25503,6 +25503,19 @@ static void KeyframeMovesPreservePayloadAndReorderAcrossZero()
 
 static void KeyframeDragSnapsToScreenGrid()
 {
+    foreach (var width in new double[] { 180, 600, 1312 })
+    foreach (var frame in new[] { -10, 0, 19, 50, 99 })
+    {
+        var center = AnimationTimelineCoordinateSpace.PixelForFrame(frame, width, -10, 99);
+        True(Math.Abs(AnimationTimelineCoordinateSpace.FrameForPixel(center, width, -10, 99) - frame) < 0.000001);
+        foreach (var markerWidth in new[] { 12, 18 })
+        {
+            var left = center - markerWidth / 2d;
+            True(left >= 0 && left + markerWidth <= width);
+            Equal(center, left + markerWidth / 2d);
+        }
+    }
+
     Equal(12, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: false, -20, 100, 500, []));
     Equal(12, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: true, -20, 100, 500, []));
     Equal(13, TimelineKeyframeDrag.ResolveScreenFrame(12.8, precise: false, -20, 100, 500, [13]));

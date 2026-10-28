@@ -292,6 +292,10 @@ export function planScopedValidation(
         ["--", "--exact", "Application modals preserve Preview and displace siblings"]));
     }
     if ([
+      "src/Mockups.Desktop/EditorShell/AnimationTimelineCoordinateSpace.cs",
+      "src/Mockups.Desktop/EditorShell/TimelineKeyframeDrag.cs",
+      "src/Mockups.Desktop/EditorShell/TimelineSliderMagnet.cs",
+      "src/Mockups.Desktop/EditorShell/PreviewScreenTimeline.cs",
       "src/Mockups.Desktop/EditorShell/EditorTimelineTransport.cs",
       "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
       "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
@@ -300,6 +304,7 @@ export function planScopedValidation(
     ].includes(file)) {
       desktopUi = true;
       for (const name of [
+        "keyframe drag snaps to the Screen authoring grid",
         "Module Instance animation store preserves current documents and explicit writes",
         "animation actions acknowledge pending writes and recover after failure",
         "Production animation activation keeps Payload and navigation mounted",

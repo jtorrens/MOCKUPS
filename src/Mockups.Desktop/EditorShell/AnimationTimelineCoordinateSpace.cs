@@ -4,6 +4,16 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class AnimationTimelineCoordinateSpace
 {
+    public const double MarkerInset = 9;
+
+    public static double PixelSpan(double width) => Math.Max(1, width - 2 * MarkerInset);
+
+    public static double PixelForFrame(double frame, double width, int minimum, int maximum) =>
+        MarkerInset + Math.Clamp((frame - minimum) / Math.Max(1, maximum - minimum), 0, 1) * PixelSpan(width);
+
+    public static double FrameForPixel(double pixel, double width, int minimum, int maximum) =>
+        minimum + Math.Clamp((pixel - MarkerInset) / PixelSpan(width), 0, 1) * Math.Max(0, maximum - minimum);
+
     public static int TimelineFrameForScreenFrame(
         bool usesOwnerTimeline,
         int screenFrame,

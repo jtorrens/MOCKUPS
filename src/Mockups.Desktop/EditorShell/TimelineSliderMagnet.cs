@@ -60,7 +60,7 @@ internal sealed class TimelineSliderMagnet
         var hasNearest = keyframes.Count > 0 && Math.Abs(nearest - rawValue) <= captureDistance;
         if (!hasNearest && _lastRawValue is double previous)
         {
-            var crossed = keyframes.Cast<int?>().FirstOrDefault((frame) =>
+            var crossed = keyframes.OrderBy(frame => Math.Abs(frame - previous)).Cast<int?>().FirstOrDefault((frame) =>
                 frame is not null
                 && frame.Value >= Math.Min(previous, rawValue)
                 && frame.Value <= Math.Max(previous, rawValue));

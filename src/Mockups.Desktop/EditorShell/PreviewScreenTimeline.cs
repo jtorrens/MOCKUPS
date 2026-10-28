@@ -1585,6 +1585,15 @@ internal sealed class PreviewScreenTimelineSurface : Border
         lane.AuthoringExtentChanged += (_, pointerX) =>
             RefreshPreviewContentDuration(lane, pointerX);
         lane.BoundaryDragCompleted += (_, _) => CompleteBoundaryDrag();
+        lane.DragCancelled += (_, _) =>
+        {
+            if (_snapshot is null) return;
+            _previewContentDurationFrames = _snapshot.ContentDurationFrames;
+            _generalLane?.SetAuthoringEndFrame(_previewContentDurationFrames);
+            _backdrop?.SetContentEndFrame(_previewContentDurationFrames);
+            RefreshHorizontalScrollBar();
+            UpdateFrameText();
+        };
         lane.SelectionRequested += (_, _) => SelectLaneFromPointer(lane);
         lane.SnapGuideChanged += (_, snapFrame) =>
             _overlay?.SetSnapGuide(snapFrame);
@@ -2636,7 +2645,14 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         {
             PointerMoved += OnPointerMoved;
             PointerReleased += OnPointerReleased;
-            PointerCaptureLost += (_, _) => EndDrag();
+            PointerCaptureLost += (_, _) => CancelDrag();
+            Focusable = true;
+            KeyDown += (_, args) =>
+            {
+                if (args.Key != Avalonia.Input.Key.Escape || _dragMode == DragMode.None) return;
+                CancelDrag();
+                args.Handled = true;
+            };
         }
     }
 
@@ -2660,6 +2676,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     public event EventHandler? BoundaryDragStarted;
     public event Action<object?, double>? AuthoringExtentChanged;
     public event EventHandler? BoundaryDragCompleted;
+    public event EventHandler? DragCancelled;
     public event EventHandler<int?>? SnapGuideChanged;
     public event EventHandler? SelectionRequested;
 
@@ -2932,6 +2949,9 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         }
         if (_dragMode == DragMode.None) return;
         _dragStartFrame = RawFrameAt(x);
+        Focus();
+        _startFrame = selected.StartFrame;
+        _endFrame = selected.EndFrame;
         _dragStartValue = selected.StartFrame;
         _dragEndValue = selected.EndFrame;
         _dragInterval = selected;
@@ -3024,6 +3044,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
             StartFrame = _startFrame,
             EndFrame = _endFrame,
         };
+        if (snapFrame != _startFrame && snapFrame != _endFrame) snapFrame = null;
         SnapGuideChanged?.Invoke(this, snapFrame);
         _activeSnapFrame = snapFrame;
         InvalidateVisual();
@@ -3038,6 +3059,26 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         EndDrag();
         args.Pointer.Capture(null);
         args.Handled = true;
+    }
+
+    private void CancelDrag()
+    {
+        if (_dragMode == DragMode.None) return;
+        if (_dragInterval is { } original && _activeIntervalIndex >= 0)
+        {
+            _intervals[_activeIntervalIndex] = original;
+            _startFrame = original.StartFrame;
+            _endFrame = original.EndFrame;
+        }
+        var boundary = _dragMode is DragMode.Exit or DragMode.StateStart or DragMode.StateEnd;
+        _dragMode = DragMode.None;
+        _activeSnapFrame = null;
+        _dragInterval = null;
+        _activeIntervalIndex = -1;
+        SnapGuideChanged?.Invoke(this, null);
+        if (boundary) BoundaryDragCompleted?.Invoke(this, EventArgs.Empty);
+        DragCancelled?.Invoke(this, EventArgs.Empty);
+        InvalidateVisual();
     }
 
     private void EndDrag()

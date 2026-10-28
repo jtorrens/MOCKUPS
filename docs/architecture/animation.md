@@ -479,6 +479,13 @@ Inserting a keyframe within a segment captures that exact resolved value and
 inherits the destination interpolation, preserving the segment before further
 editing.
 
+The compact ruler and keyframe glyph centers share the frame/pixel transform
+in `AnimationTimelineCoordinateSpace`, independently of glyph size. The ruler
+uses the same keyframe capture policy as keyframe dragging. Capture loss and
+Escape cancel block edits without persistence; a snap guide is retained only
+when an effective block boundary still coincides with the snapped frame.
+Keyframe drag updates Preview without rebuilding the captured marker.
+
 During drag:
 
 - the keyframe keeps its stable track and owner;

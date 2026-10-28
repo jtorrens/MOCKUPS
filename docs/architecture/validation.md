@@ -869,3 +869,13 @@ A revision is ready for review only when:
   array-order and local-keyframe preservation; name substitution alone is not
   visual validation. `scripts/runScopedValidation.ts` explicitly selects the
   nested identity regression when the shared identity or Screen commit changes.
+
+### Timeline gesture geometry
+
+`KeyframeDragSnapsToScreenGrid` covers the shared frame/pixel round trip at
+multiple widths, signed frames and both marker sizes. The scoped animation
+selection includes coordinate, drag, slider magnet and Screen timeline owners
+and retains real UI animation publication cases. Geometry assertions alone do
+not validate native capture loss, Escape or rendered alignment; manual review
+must also drag Conversation and another collection owner, cancel both marker
+and block gestures, and compare marker centers at several zoom levels.
