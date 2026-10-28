@@ -190,9 +190,9 @@ public partial class MainWindow : SukiWindow
             new PreviewControlsDockController(
                 this,
                 () => _themeController.IsDark,
-                new PreviewUtilityDockSite("Preview panel", PreviewUtilitySurface, PreviewUtilityTabs,
+                new PreviewUtilityDockSite("preview", "Preview panel", PreviewUtilitySurface, PreviewUtilityTabs,
                     PreviewPanelGrid, 0, 1, PreviewUtilitySplitter, PreviewControlsDetachButton, 48),
-                new PreviewUtilityDockSite("Editor panel", EditorUtilitySurface, EditorUtilityTabs,
+                new PreviewUtilityDockSite("editor", "Editor panel", EditorUtilitySurface, EditorUtilityTabs,
                     EditorPanelLayout, 2, 1, EditorUtilitySplitter, EditorUtilityDetachButton, 0, EditorPanelLayout, AllowVerticalGroups: true));
         _previewControlsDock.PreviewKeyDown +=
             _previewController.OnDetachedPreviewKeyDown;
@@ -550,6 +550,10 @@ public partial class MainWindow : SukiWindow
         EditorAccessibility.Describe(BackupHubButton, "Create Backup Hub backup");
         EditorAccessibility.Describe(ShellSettingsButton, "Settings");
         _shellState.Restore();
+        Opened += (_, _) =>
+        {
+            if (_shellState.UtilityLayout is { } layout) _previewControlsDock.RestoreLayout(layout);
+        };
         _navigationPanel.Restore(
             _shellState.IsNavigationPanelCollapsed,
             _shellState.NavigationPanelExpandedWidth,
@@ -630,7 +634,7 @@ public partial class MainWindow : SukiWindow
             return;
         }
         _sessionDisposed = true;
-        _shellState.Save(_navigationPanel.Snapshot());
+        _shellState.Save(_navigationPanel.Snapshot(), _previewControlsDock.CaptureLayout());
         _activeProjectStore.Save(Session.ProductionId);
         _productionNavigationActions.Dispose();
         _previewControlsDock.Dispose();
@@ -1295,7 +1299,8 @@ public partial class MainWindow : SukiWindow
             PreviewAuthoringDataTab.Header = authoringSurface?.Header ?? "Authoring Data";
             PreviewAuthoringDataTab.IsVisible = authoringSurface is not null;
             PreviewTimelineTab.IsVisible = supportsTimeline;
-            _previewControlsDock.SelectTab(selectedTab);
+            if (selectedId is not null || _shellState.UtilityLayout is null)
+                _previewControlsDock.SelectTab(selectedTab);
             if (authoringSurface is not null)
             {
                 if (_authoringFocusController.ApplyPreviewAuthoring(

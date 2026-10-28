@@ -149,6 +149,7 @@ var tests = new (string Name, Action Run)[]
     ("Production Output generates exact Shot names and portable render routes", ProductionOutputGeneratesExactShotPlans),
     ("Shot Manager output captures exact associations and resolves offline", ShotManagerOutputResolvesExactAssociations),
     ("local workstation documents reject partial and extended contracts", LocalWorkstationDocumentsAreStrict),
+    ("utility layout survives a new session", UtilityLayoutSurvivesNewSession),
     ("shell window state persists only its exact visual contract", ShellWindowStateIsExactAndVisualOnly),
     ("active Project state persists one exact local identity", ActiveProjectStatePersistsExactIdentity),
     ("Render Queue creation defaults to Light ProRes 4444 alpha", RenderQueueCreationDefaultsAreExplicit),
@@ -8038,9 +8039,9 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
             new PreviewControlsDockController(
                 owner,
                 () => true,
-                new PreviewUtilityDockSite("Preview panel", utilitySurface, tabs,
+                new PreviewUtilityDockSite("preview", "Preview panel", utilitySurface, tabs,
                     previewGrid, 0, 1, splitter, toggle, 48),
-                new PreviewUtilityDockSite("Editor panel", centralSurface, centralTabs,
+                new PreviewUtilityDockSite("editor", "Editor panel", centralSurface, centralTabs,
                     centralLayout, 2, 1, centralSplitter, centralToggle, 0, centralLayout, AllowVerticalGroups: true));
         EditorModalWindowScope.RegisterHost(
             owner,
@@ -20075,6 +20076,97 @@ static void LocalWorkstationDocumentsAreStrict()
     }
 }
 
+static void UtilityLayoutSurvivesNewSession()
+{
+    using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        (Window Window, PreviewControlsDockController Dock, TabItem[] Tabs, Grid Editor) Create()
+        {
+            var tabs = new[]
+            {
+                new TabItem { Name = "payload", Header = "Payload", Content = new TextBox { Text = "Fresh content" } },
+                new TabItem { Name = "timeline", Header = "Timeline", Content = new Slider(), IsVisible = false },
+                new TabItem { Name = "setup", Header = "Preview", Content = new TextBlock { Text = "Setup" } },
+            };
+            var host = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*") };
+            var window = new Window { Width = 1440, Height = 1000, Content = host };
+            PreviewUtilityDockSite Site(string id, bool stacked)
+            {
+                var grid = new Grid { RowDefinitions = new RowDefinitions("*,10,320") };
+                var control = new TabControl();
+                if (!stacked) foreach (var tab in tabs) control.Items.Add(tab);
+                var surface = new Border { Child = control };
+                var splitter = new GridSplitter();
+                var detach = new Button();
+                Grid.SetRow(surface, 2);
+                Grid.SetRow(splitter, 1);
+                Grid.SetRow(detach, 2);
+                grid.Children.Add(surface);
+                grid.Children.Add(splitter);
+                grid.Children.Add(detach);
+                host.Children.Add(grid);
+                if (!stacked) Grid.SetColumn(grid, 1);
+                return new PreviewUtilityDockSite(id, id, surface, control, grid, 2, 1,
+                    splitter, detach, stacked ? 0 : 48, stacked ? grid : null, stacked);
+            }
+            var editor = Site("editor", true);
+            var preview = Site("preview", false);
+            var dock = new PreviewControlsDockController(window, () => true, preview, editor);
+            window.Show();
+            window.UpdateLayout();
+            return (window, dock, tabs, editor.Layout);
+        }
+        var desired = new PreviewUtilityLayoutState(
+            [new("preview", "preview", 320, null), new("upper", "editor", 240, "payload"),
+                new("editor", "editor", 180, "timeline")],
+            [new("payload", "upper", "upper", null, null, 720, 420),
+                new("timeline", "editor", "editor", null, null, 720, 420),
+                new("setup", null, "upper", -100000, -100000, 720, 420)],
+            new() { ["editor"] = 400 });
+        var first = Create();
+        first.Dock.RestoreLayout(desired);
+        Dispatcher.UIThread.RunJobs();
+        first.Window.UpdateLayout();
+        var saved = JsonSerializer.Deserialize<PreviewUtilityLayoutState>(
+            JsonSerializer.Serialize(first.Dock.CaptureLayout()))!;
+        first.Dock.Dispose();
+        first.Window.Close();
+        var next = Create();
+        try
+        {
+            next.Dock.RestoreLayout(saved);
+            Dispatcher.UIThread.RunJobs();
+            next.Window.UpdateLayout();
+            var restored = next.Dock.CaptureLayout();
+            True(saved.Groups.Select(group => group.Id).SequenceEqual(restored.Groups.Select(group => group.Id)));
+            True(saved.Tabs.Select(tab => (tab.Id, tab.GroupId, tab.ReturnGroupId))
+                .SequenceEqual(restored.Tabs.Select(tab => (tab.Id, tab.GroupId, tab.ReturnGroupId))));
+            True(next.Dock.IsDetached(next.Tabs[2]));
+            var floating = Required(next.Dock.FloatingWindow(next.Tabs[2]));
+            True(floating.IsVisible);
+            True(ReferenceEquals(TopLevel.GetTopLevel((Control)next.Tabs[0].Content!), next.Window));
+            True(floating.Position.X > -100000 && floating.Position.Y > -100000);
+            next.Tabs[1].IsVisible = true;
+            next.Window.UpdateLayout();
+            Equal(2, next.Editor.Children.OfType<Border>().Count(surface => surface.IsVisible));
+            True(next.Dock.CaptureLayout().Groups.Any(group => group.SelectedTabId == "timeline"));
+            floating.Close();
+            Dispatcher.UIThread.RunJobs();
+            Equal("upper", next.Dock.CaptureLayout().Tabs.Single(tab => tab.Id == "setup").GroupId);
+            var duplicate = desired with { Tabs = [desired.Tabs[0], desired.Tabs[0], desired.Tabs[2]] };
+            Throws<InvalidDataException>(() => duplicate.Validate(["payload", "timeline", "setup"], ["preview", "editor"], ["editor"]));
+            var missing = desired with { Tabs = [desired.Tabs[0] with { ReturnGroupId = "missing" }, desired.Tabs[1], desired.Tabs[2]] };
+            Throws<InvalidDataException>(() => missing.Validate(["payload", "timeline", "setup"], ["preview", "editor"], ["editor"]));
+        }
+        finally
+        {
+            next.Dock.Dispose();
+            next.Window.Close();
+        }
+    }, CancellationToken.None).GetAwaiter().GetResult();
+}
+
 static void ShellWindowStateIsExactAndVisualOnly()
 {
     var root = Path.Combine(
@@ -20107,7 +20199,13 @@ static void ShellWindowStateIsExactAndVisualOnly()
                 false,
                 300,
                 500,
-                400));
+                400), new PreviewUtilityLayoutState(
+                    [new("preview", "preview", 320, "payload")],
+                    [new("payload", "preview", "preview", null, null, 720, 420)],
+                    new()));
+            var restored = new EditorShellStateService(window, columns, statePath);
+            restored.Restore();
+            Equal("payload", restored.UtilityLayout!.Groups.Single().SelectedTabId);
 
             var document = JsonNode.Parse(File.ReadAllText(statePath))!
                 .AsObject();
@@ -22793,6 +22891,7 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "utility layout survives a new session",
     "Suki windows dismiss context menus on outside clicks",
     "tree deletion prepares its dialog immediately and refreshes once",
     "Application modals preserve Preview and displace siblings",

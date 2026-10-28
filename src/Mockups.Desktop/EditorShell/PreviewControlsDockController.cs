@@ -15,7 +15,7 @@ using System.Collections.Generic;
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record PreviewUtilityDockSite(
-    string Label, Border Surface, TabControl Tabs, Grid Layout,
+    string Id, string Label, Border Surface, TabControl Tabs, Grid Layout,
     int ContentRow, int SplitterRow, GridSplitter Splitter, Button DetachButton,
     double EmptyHeight, Grid? EmptyDropOverlay = null, bool AllowVerticalGroups = false);
 
@@ -31,6 +31,8 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
     private bool _disposed;
     private bool _occluded;
     private Drag? _drag;
+    private bool _restoringLayout;
+    private bool _ensuringSelections;
 
     public PreviewControlsDockController(Window owner, Func<bool> isDark,
         params PreviewUtilityDockSite[] sites)
@@ -49,6 +51,72 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         }
         _owner.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel, true);
         RefreshLayout();
+    }
+
+    public PreviewUtilityLayoutState CaptureLayout()
+    {
+        CancelDrag();
+        foreach (var entry in _entries) CaptureGeometry(entry);
+        return new PreviewUtilityLayoutState(
+            _sites.Select(site => new PreviewUtilityGroupState(site.Id, site.StackRoot.Definition.Id,
+                !site.Collapsed && site.Definition.Layout.RowDefinitions[site.Definition.ContentRow].ActualHeight > 0
+                    ? site.Definition.Layout.RowDefinitions[site.Definition.ContentRow].ActualHeight : site.DockedHeight,
+                site.PreferredTab?.Name ?? (site.Definition.Tabs.SelectedItem is TabItem selected ? selected.Name : null))).ToArray(),
+            _entries.Select(entry => new PreviewUtilityTabState(entry.Tab.Name!, entry.Dock?.Id,
+                entry.LastDock.Id, entry.Position?.X, entry.Position?.Y, entry.Width, entry.Height)).ToArray(),
+            _sites.Where(site => site == site.StackRoot && site.Definition.AllowVerticalGroups)
+                .ToDictionary(site => site.Definition.Id,
+                    site => Math.Max(180, site.Definition.Layout.RowDefinitions[0].ActualHeight)));
+    }
+
+    public void RestoreLayout(PreviewUtilityLayoutState state)
+    {
+        var roots = _sites.Where(site => site == site.StackRoot).ToDictionary(site => site.Definition.Id);
+        state.Validate(_entries.Select(entry => entry.Tab.Name!).ToArray(),
+            roots.Keys.ToArray(), roots.Values.Where(site => site.Definition.AllowVerticalGroups)
+                .Select(site => site.Definition.Id).ToArray());
+        _restoringLayout = true;
+        try
+        {
+            var groups = new Dictionary<string, DockSite>();
+            foreach (var group in state.Groups)
+            {
+                var root = roots[group.RootId];
+                var site = group.Id == group.RootId ? root : InsertGroup(root, 1);
+                site.Id = group.Id;
+                groups.Add(group.Id, site);
+            }
+            foreach (var saved in state.Tabs)
+            {
+                var entry = _entries.Single(entry => entry.Tab.Name == saved.Id);
+                Move(entry, saved.GroupId is { } id ? groups[id] : null);
+                entry.LastDock = groups[saved.ReturnGroupId];
+                entry.Position = saved.X is { } x && saved.Y is { } y ? new PixelPoint(x, y) : null;
+                entry.Width = saved.Width;
+                entry.Height = saved.Height;
+            }
+            _sites.Clear();
+            _sites.AddRange(state.Groups.Select(group => groups[group.Id]));
+            foreach (var root in roots.Values.Where(site => site.Definition.AllowVerticalGroups))
+            {
+                RebuildStack(root);
+                root.Definition.Layout.RowDefinitions[0].Height =
+                    new GridLength(state.EditorHeights[root.Definition.Id], GridUnitType.Star);
+            }
+            foreach (var group in state.Groups)
+            {
+                var site = groups[group.Id];
+                site.DockedHeight = group.Height;
+                site.Initialized = false;
+                site.Collapsed = !_entries.Any(entry => entry.Dock == site && entry.Tab.IsVisible);
+                site.PreferredTab = _entries.SingleOrDefault(entry => entry.Tab.Name == group.SelectedTabId)?.Tab;
+                site.Definition.Tabs.SelectedItem = site.PreferredTab;
+            }
+        }
+        finally { _restoringLayout = false; }
+        EnsureDockSelections();
+        RefreshLayout();
+        foreach (var entry in _entries.Where(entry => entry.Detached && entry.Tab.IsVisible)) Show(entry);
     }
 
     private void RegisterSite(DockSite site)
@@ -162,7 +230,9 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
 
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs args)
     {
-        if (!_sites.Any(site => ReferenceEquals(args.Source, site.Definition.Tabs))) return;
+        if (_restoringLayout || !_sites.Any(site => ReferenceEquals(args.Source, site.Definition.Tabs))) return;
+        if (!_ensuringSelections && sender is TabControl { SelectedItem: TabItem active })
+            _sites.Single(site => site.Definition.Tabs == sender).PreferredTab = active;
         RefreshLayout();
         if (sender is TabControl { SelectedItem: TabItem selected }) SelectedTabChanged?.Invoke(selected);
     }
@@ -194,12 +264,20 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
 
     private void EnsureDockSelections()
     {
-        foreach (var site in _sites)
+        if (_restoringLayout) return;
+        _ensuringSelections = true;
+        try
         {
-            var tabs = site.Definition.Tabs;
-            if (tabs.SelectedItem is TabItem current && current.IsVisible && EntryFor(current).Dock == site) continue;
-            tabs.SelectedItem = _entries.FirstOrDefault(entry => entry.Dock == site && entry.Tab.IsVisible)?.Tab;
+            foreach (var site in _sites)
+            {
+                var tabs = site.Definition.Tabs;
+                if (site.PreferredTab is { IsVisible: true } preferred && EntryFor(preferred).Dock == site)
+                    tabs.SelectedItem = preferred;
+                else if (tabs.SelectedItem is not TabItem current || !current.IsVisible || EntryFor(current).Dock != site)
+                    tabs.SelectedItem = _entries.FirstOrDefault(entry => entry.Dock == site && entry.Tab.IsVisible)?.Tab;
+            }
         }
+        finally { _ensuringSelections = false; }
     }
 
     private void Place(Entry entry, DockSite? destination)
@@ -221,6 +299,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         entry.Host.Content = null;
         CaptureGeometry(entry);
         entry.Dock = destination;
+        if (source?.PreferredTab == entry.Tab) source.PreferredTab = null;
         source?.Definition.Tabs.Items.Remove(entry.Tab);
         entry.Window?.Hide();
         if (destination is not null)
@@ -235,13 +314,13 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         {
             EnsureWindow(entry);
             if (position is { } dropPosition) entry.Position = dropPosition;
-            if (entry.Tab.IsVisible)
+            if (entry.Tab.IsVisible && !_restoringLayout)
             {
                 Show(entry);
                 entry.Window!.Activate();
             }
         }
-        PruneEmptyGroups();
+        if (!_restoringLayout) PruneEmptyGroups();
         EnsureDockSelections();
         RefreshLayout();
         Transfer(entry, () =>
@@ -283,7 +362,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         {
             Surface = surface, Tabs = tabs, Splitter = splitter, DetachButton = button,
             EmptyDropOverlay = null,
-        }) { StackRoot = root, Collapsed = true };
+        }) { Id = Guid.NewGuid().ToString("N"), StackRoot = root, Collapsed = true };
         var height = Math.Max(PreviewPanelLayoutPolicy.MinimumStackedUtilityHeight,
             target.Definition.Surface.Bounds.Height / 2);
         target.DockedHeight = height;
@@ -408,9 +487,20 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
     private void Show(Entry entry)
     {
         var window = entry.Window!;
+        var position = entry.Position ?? new PixelPoint(_owner.Position.X + 48, _owner.Position.Y + 72);
+        var screen = _owner.Screens.ScreenFromPoint(position) ?? _owner.Screens.ScreenFromWindow(_owner);
+        if (screen is not null)
+        {
+            var bounds = screen.WorkingArea;
+            entry.Width = Math.Max(window.MinWidth, Math.Min(entry.Width, bounds.Width / screen.Scaling));
+            entry.Height = Math.Max(window.MinHeight, Math.Min(entry.Height, bounds.Height / screen.Scaling));
+            position = new PixelPoint(
+                Math.Clamp(position.X, bounds.X, Math.Max(bounds.X, bounds.Right - (int)Math.Ceiling(entry.Width * screen.Scaling))),
+                Math.Clamp(position.Y, bounds.Y, Math.Max(bounds.Y, bounds.Bottom - (int)Math.Ceiling(entry.Height * screen.Scaling))));
+        }
         window.Width = entry.Width;
         window.Height = entry.Height;
-        window.Position = entry.Position ?? new PixelPoint(_owner.Position.X + 48, _owner.Position.Y + 72);
+        window.Position = position;
         window.Show(_owner);
     }
 
@@ -424,6 +514,7 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
 
     private void RefreshLayout()
     {
+        if (_restoringLayout) return;
         foreach (var root in _sites.Where(site => site == site.StackRoot && site.Definition.AllowVerticalGroups))
         {
             var groups = StackSites(root).ToArray();
@@ -659,11 +750,13 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
     private sealed class DockSite(PreviewUtilityDockSite definition)
     {
         public PreviewUtilityDockSite Definition { get; set; } = definition;
+        public string Id { get; set; } = definition.Id;
         private DockSite? _stackRoot;
         public DockSite StackRoot { get => _stackRoot ?? this; set => _stackRoot = value; }
         public Border Cue { get; } = CreateCue(definition.Label);
         public Border EmptyCue { get; } = CreateCue(definition.Label);
         public double DockedHeight = PreviewPanelLayoutPolicy.MinimumPreviewUtilityHeight;
+        public TabItem? PreferredTab;
         public bool Collapsed;
         public bool Initialized;
 

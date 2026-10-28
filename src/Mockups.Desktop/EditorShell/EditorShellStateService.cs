@@ -33,6 +33,8 @@ internal sealed class EditorShellStateService
             : Path.GetFullPath(statePath);
     }
 
+    public PreviewUtilityLayoutState? UtilityLayout { get; private set; }
+
     public bool IsDark { get; private set; } = true;
     public string SukiColor { get; private set; } = "Blue";
     public double UiTextScale { get; private set; } = 1;
@@ -67,6 +69,7 @@ internal sealed class EditorShellStateService
                 exception);
         }
         RequireCurrent(state);
+        UtilityLayout = state.UtilityLayout;
 
         _window.Width = state.Width;
         _window.Height = state.Height;
@@ -108,7 +111,7 @@ internal sealed class EditorShellStateService
             1.5,
             "UI card padding scale");
 
-    public void Save(EditorNavigationPanelState? navigationPanel = null)
+    public void Save(EditorNavigationPanelState? navigationPanel = null, PreviewUtilityLayoutState? utilityLayout = null)
     {
         var directory = Path.GetDirectoryName(_statePath)
             ?? throw new InvalidOperationException(
@@ -122,6 +125,7 @@ internal sealed class EditorShellStateService
                 _shellColumns.ColumnDefinitions[4].ActualWidth);
         var state = new ShellWindowState
         {
+            UtilityLayout = utilityLayout,
             Schema = CurrentSchema,
             Version = CurrentVersion,
             Width = _window.Width,
@@ -183,6 +187,7 @@ internal sealed class EditorShellStateService
 
     private sealed class ShellWindowState
     {
+        public PreviewUtilityLayoutState? UtilityLayout { get; init; }
         public required string Schema { get; init; }
         public required int Version { get; init; }
         public required double Width { get; init; }

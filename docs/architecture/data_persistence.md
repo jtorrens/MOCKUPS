@@ -979,3 +979,13 @@ content is materialized through `RuntimePreviewDocumentContract` so persisted
 nested Runtime rows match their exact selected Variant. There are no old-name
 aliases or startup transformations. Existing databases require explicit scoped
 maintenance; the canonical workstation remains the only write authority.
+
+### Utility window layout preferences
+
+`window-state.json` remains a workstation visual preference, outside authored
+SQLite data. Its optional `UtilityLayout` is owned by the shell placement
+controller and serialized by `EditorShellStateService`. The current shape stores
+ordered groups with exact root ids, tab ids with dock and return-group references,
+selected tab ids, group/editor heights and floating geometry. See
+[utility placement](ux_ui.md) for restoration and monitor constraints. No card
+expansion, editor scroll, internal selection or authored payload is persisted here.

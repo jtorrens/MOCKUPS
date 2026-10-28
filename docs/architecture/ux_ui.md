@@ -199,8 +199,18 @@ their location and return in that group. The title follows the current
 Payload/Test Values or Timeline context. Explicit authoring focus selects the
 tab in its current group or activates its floating window; ordinary navigation
 does not move it. Utility selection memory observes both dock groups.
-Dock locations, dividers and floating geometry remain session-only. Every new
-application session starts with all tools in the original Preview panel.
+Utility placement is workstation-local visual state in `window-state.json`.
+`PreviewControlsDockController` captures and restores exact tab identities,
+ordered central groups, selected tabs, divider heights and each floating tab's
+return group and geometry. `EditorShellStateService` owns file serialization;
+the shell only wires restore after opening and capture before disposal. The
+optional `UtilityLayout` preference is absent until a layout has been saved;
+without a saved layout the declared initial docks apply. A present layout must
+contain every declared tab/root exactly once with valid group references.
+Unavailable tabs retain their placement and preferred selection. Session editor
+history may explicitly select a tab, but an absent history entry does not replace
+the restored group selection. Editor cards, internal selections and scroll are
+never part of this preference.
 
 Application modals always take precedence over those topmost utility windows.
 Before native presentation, the common modal presenter closes application
@@ -212,10 +222,11 @@ and detached state are restored when the modal closes. `ShowDialog` then present
 modal with its exact visible owner. Closing or failed presentation restores the
 captured sibling topmost and interaction state once.
 
-Floating position and size are remembered per tab only for repeated detachments in the
-current application session. A new application session always starts docked,
-so a tool window cannot reopen outside the available displays after a monitor
-change.
+Floating position and size survive application sessions. Before showing a utility
+window, the placement owner constrains its size and screen-pixel position to the
+current monitor working area, accounting for display scaling. If its saved origin
+is no longer on a connected display, it uses the owner's current display. Native
+minimum sizes still apply. This also applies after modal occlusion.
 In Production, Fit, playback route, markers, canonical frame, reference mode
 and the unlabelled Orientation selector share one compact responsive row.
 Shot navigation follows directly below. The timeline slider occupies the
