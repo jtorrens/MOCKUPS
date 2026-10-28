@@ -189,10 +189,8 @@ public partial class MainWindow : SukiWindow
         _previewControlsDock =
             new PreviewControlsDockController(
                 this,
-                PreviewPanelDock,
-                PreviewHeaderSurface,
-                PreviewPanelGrid,
                 PreviewUtilitySurface,
+                PreviewUtilityTabs,
                 PreviewPanelGrid,
                 PreviewUtilitySplitter,
                 PreviewControlsDetachButton,
@@ -1299,15 +1297,14 @@ public partial class MainWindow : SukiWindow
             PreviewAuthoringDataTab.Header = authoringSurface?.Header ?? "Authoring Data";
             PreviewAuthoringDataTab.IsVisible = authoringSurface is not null;
             PreviewTimelineTab.IsVisible = supportsTimeline;
-            PreviewUtilityTabs.SelectedItem = selectedTab;
+            _previewControlsDock.SelectTab(selectedTab);
             if (authoringSurface is not null)
             {
                 if (_authoringFocusController.ApplyPreviewAuthoring(
                         node,
                         authoringSurface.Content))
                 {
-                    PreviewUtilityTabs.SelectedItem =
-                        PreviewAuthoringDataTab;
+                    _previewControlsDock.SelectTab(PreviewAuthoringDataTab, activate: true);
                     _editorSessionUiState.Select(
                         _previewUtilityTabStateKey,
                         PreviewUtilityAuthoringDataId);

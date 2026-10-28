@@ -252,7 +252,6 @@ export function planScopedValidation(
       "src/Mockups.Desktop/EditorShell/RecordCreationDialog.cs",
       "src/Mockups.Desktop/EditorShell/ShotModulePickerDialog.cs",
       "src/Mockups.Desktop/EditorShell/EditorOperationActivityPresenter.cs",
-      "src/Mockups.Desktop/EditorShell/PreviewControlsDockController.cs",
       "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
       "tests/Mockups.Desktop.Tests/TreeActionFeedbackRegressionTests.cs",
     ].includes(file)) {
@@ -264,6 +263,16 @@ export function planScopedValidation(
       ]) add(npmStep(`desktop:tree-action-feedback:${name}`, "test:focus:desktop",
         "tree actions must separate preparation, confirmation and execution in one modal, suppress background progress, preserve Preview and refresh only after mutation",
         ["--", "--exact", name]));
+    }
+    if ([
+      "src/Mockups.Desktop/EditorShell/PreviewControlsDockController.cs",
+      "src/Mockups.Desktop/MainWindow.axaml.cs",
+      "src/Mockups.Desktop/MainWindow.axaml",
+    ].includes(file)) {
+      desktopUi = true;
+      add(npmStep("desktop:independent-utility-tabs", "test:focus:desktop",
+        "independent tab hosts preserve live controls, context availability, order and modal occlusion",
+        ["--", "--exact", "Application modals preserve Preview and displace siblings"]));
     }
     if ([
       "src/Mockups.Desktop/EditorShell/EditorTimelineTransport.cs",

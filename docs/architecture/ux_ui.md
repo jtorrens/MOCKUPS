@@ -155,24 +155,36 @@ Preview combines the visual-context setup and the generic Preview controls in
 one scrollable Design surface. Both sections retain their existing semantic
 owners and state. Production uses the same combined Preview surface; its
 production context and Shot transport remain visible within that tab.
-That complete upper Preview surface can move between its dock and one shared
-resizable tool window. The floating window is topmost and uses the same live
-controls and state in Design and Production; detaching never creates a second
-controller or a second Preview session. While detached, the main Preview
-receives the released vertical space. Closing the tool window or using its dock
-action returns the surface and its prior dock height.
+Each utility tab can move independently into its own resizable topmost window.
+`PreviewControlsDockController` owns only placement: it moves the exact live
+content without creating another authoring controller, Preview session or clock.
+Dragging a tab header outside its original panel and releasing detaches that
+tab. The shared header action detaches the selected docked tab as a keyboard-
+accessible alternative. Remaining tabs keep their original order and stay usable.
+Dragging a floating window's content header over the original utility panel
+highlights the drop zone; releasing docks only that tab. Its Return to panel
+action and window close do the same. Escape cancels a header drag.
+The Preview title and rendered frame remain in the main window. When every
+available tab is detached, the utility region contracts to a small labelled
+drop zone and releases the remaining height to the frame. Redocking restores
+its prior height. Content, internal selection and scroll survive host transfers;
+playback continues through the existing shared owner.
+Availability remains context-owned: an unavailable detached tab is hidden and
+returns in its own window when available again. Its title follows the current
+Payload/Test Values or Timeline context. Explicit authoring focus activates its
+floating window; ordinary navigation does not redock it.
 
-Application modals always take precedence over that topmost utility window.
+Application modals always take precedence over those topmost utility windows.
 Before native presentation, the common modal presenter closes application
 tooltips, flyouts and popups, temporarily removes topmost from every auxiliary
-application window and disables those siblings. The detached Preview window is
+application window and disables those siblings. Every detached utility window is
 also hidden for the modal lifetime because its native owner relationship would
-otherwise keep it above the owner's modal surface; its exact session geometry
+otherwise keep it above the owner's modal surface; each window’s exact session geometry
 and detached state are restored when the modal closes. `ShowDialog` then presents the
 modal with its exact visible owner. Closing or failed presentation restores the
 captured sibling topmost and interaction state once.
 
-Floating position and size are remembered only for repeated detachments in the
+Floating position and size are remembered per tab only for repeated detachments in the
 current application session. A new application session always starts docked,
 so a tool window cannot reopen outside the available displays after a monitor
 change.

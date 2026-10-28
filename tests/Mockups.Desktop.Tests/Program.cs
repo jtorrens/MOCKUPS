@@ -7951,13 +7951,15 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
             RowDefinitions =
                 new RowDefinitions("240,10,*,Auto"),
         };
+        var firstContent = new TextBox { Text = "Retained draft" };
+        var secondContent = new Slider { Value = 37 };
+        var firstTab = new TabItem { Header = "Payload", Content = firstContent };
+        var secondTab = new TabItem { Header = "Timeline", Content = secondContent };
+        var tabs = new TabControl { Items = { firstTab, secondTab }, SelectedItem = firstTab };
         var utilitySurface = new Border
         {
             MinHeight = 180,
-            Child = new TextBlock
-            {
-                Text = "Shared Preview controls",
-            },
+            Child = tabs,
         };
         previewGrid.Children.Add(utilitySurface);
         var splitter = new GridSplitter
@@ -7988,10 +7990,8 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         using var controller =
             new PreviewControlsDockController(
                 owner,
-                root,
-                headerSurface,
-                previewGrid,
                 utilitySurface,
+                tabs,
                 previewGrid,
                 splitter,
                 toggle,
@@ -8004,28 +8004,30 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
             new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
-        True(controller.IsDetached);
-        True(!root.Children.Contains(
-            headerSurface));
-        True(!previewGrid.Children.Contains(
-            utilitySurface));
-        Equal(
-            0d,
-            previewGrid.RowDefinitions[0].Height.Value);
-        Equal(
-            0d,
-            previewGrid.RowDefinitions[1].Height.Value);
-        True(!splitter.IsVisible);
-        var floating = Required(controller.FloatingWindow);
+        True(controller.IsDetached(firstTab));
+        True(!controller.IsDetached(secondTab));
+        True(root.Children.Contains(headerSurface));
+        True(previewGrid.Children.Contains(utilitySurface));
+        True(splitter.IsVisible);
+        True(ReferenceEquals(tabs.SelectedItem, secondTab));
+        var floating = Required(controller.FloatingWindow(firstTab));
         True(floating.Topmost);
         True(!floating.ShowInTaskbar);
         True(floating.CanResize);
-        True(ReferenceEquals(
-            TopLevel.GetTopLevel(headerSurface),
-            floating));
-        True(ReferenceEquals(
-            TopLevel.GetTopLevel(utilitySurface),
-            floating));
+        True(ReferenceEquals(TopLevel.GetTopLevel(headerSurface), owner));
+        True(ReferenceEquals(TopLevel.GetTopLevel(firstContent), floating));
+        True(ReferenceEquals(TopLevel.GetTopLevel(secondContent), owner));
+        Equal("Retained draft", firstContent.Text);
+        toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        var secondFloating = Required(controller.FloatingWindow(secondTab));
+        True(controller.IsDetached(secondTab));
+        True(!ReferenceEquals(floating, secondFloating));
+        True(ReferenceEquals(TopLevel.GetTopLevel(secondContent), secondFloating));
+        Equal(37d, secondContent.Value);
+        Equal(48d, previewGrid.RowDefinitions[0].Height.Value);
+        Equal(0d, previewGrid.RowDefinitions[1].Height.Value);
+        True(!splitter.IsVisible);
 
         var dialog = new SukiWindow
         {
@@ -8064,6 +8066,7 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         True(!floating.Topmost);
         True(!floating.IsEnabled);
         True(!floating.IsVisible);
+        True(!secondFloating.IsVisible);
         True(!auxiliary.IsEnabled);
 
         var childDialog = new SukiWindow
@@ -8089,6 +8092,7 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         True(!floating.Topmost);
         True(!floating.IsEnabled);
         True(!floating.IsVisible);
+        True(!secondFloating.IsVisible);
         True(!auxiliary.IsEnabled);
         EditorModalWindowScope.Close(childDialog, false);
         Equal(false, CompleteModal(childResult));
@@ -8111,34 +8115,50 @@ static void ApplicationModalsPreservePreviewAndDisplaceSiblings()
         True(floating.Topmost);
         True(floating.IsEnabled);
         True(floating.IsVisible);
+        True(secondFloating.IsVisible);
         True(auxiliary.IsEnabled);
         auxiliary.Close();
 
         floating.Position = new PixelPoint(420, 240);
         floating.Close();
         Dispatcher.UIThread.RunJobs();
-        True(!controller.IsDetached);
+        True(!controller.IsDetached(firstTab));
+        True(controller.IsDetached(secondTab));
+        True(secondFloating.IsVisible);
         True(!floating.IsVisible);
-        True(root.Children.Contains(
-            headerSurface));
-        True(previewGrid.Children.Contains(
-            utilitySurface));
+        True(ReferenceEquals(firstTab.Content, firstContent));
+        True(ReferenceEquals(TopLevel.GetTopLevel(firstContent), owner));
+        Equal("Retained draft", firstContent.Text);
         True(splitter.IsVisible);
-        True(
-            previewGrid.RowDefinitions[0]
-                .Height.Value > 0);
+        True(previewGrid.RowDefinitions[0].Height.Value > 48);
 
-        controller.Toggle();
+        // Availability follows the declared tab, independently of its placement.
+        secondTab.IsVisible = false;
+        True(!secondFloating.IsVisible);
+        firstTab.IsVisible = false;
+        Equal(48d, previewGrid.RowDefinitions[0].Height.Value);
+        secondTab.Header = "Shot Timeline";
+        Equal("Shot Timeline", secondFloating.Title);
+        secondTab.IsVisible = true;
+        True(secondFloating.IsVisible);
+        secondFloating.GetVisualDescendants().OfType<Button>()
+            .Single(button => Avalonia.Automation.AutomationProperties.GetName(button) == "Return to panel")
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
-        True(controller.IsDetached);
-        Equal(
-            new PixelPoint(420, 240),
-            Required(controller.FloatingWindow)
-                .Position);
-        controller.Toggle();
+        True(!controller.IsDetached(secondTab));
+        True(ReferenceEquals(secondTab.Content, secondContent));
+        Equal(37d, secondContent.Value);
+        firstTab.IsVisible = true;
+        Equal(firstTab, tabs.Items[0]);
+        Equal(secondTab, tabs.Items[1]);
+        controller.SelectTab(firstTab);
+        toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
-        True(!controller.IsDetached);
-
+        True(controller.IsDetached(firstTab));
+        Equal(new PixelPoint(420, 240), Required(controller.FloatingWindow(firstTab)).Position);
+        floating.Close();
+        Dispatcher.UIThread.RunJobs();
+        True(!controller.IsDetached(firstTab));
         owner.Close();
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
@@ -22618,7 +22638,6 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "rapid visual selection commits only the latest prepared editor",
     "new Shot reload prepares Preview before selection",
     "obsolete Preview authoring preparation cannot replace the latest selection",
-    "Preview controls detach into one topmost session window",
     "navigation panel restores its width and opens for routed selection",
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",
