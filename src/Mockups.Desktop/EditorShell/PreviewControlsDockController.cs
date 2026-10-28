@@ -636,7 +636,13 @@ internal sealed class PreviewControlsDockController : IDisposable, IEditorModalO
         drag.Preview?.Close();
     }
 
-    private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs args) => CancelDrag();
+    private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs args)
+    {
+        // Capture loss bubbles from descendants while capture is being transferred
+        // to the header. That transfer belongs to this drag, rather than cancelling it.
+        if (_drag is { } drag && args.Pointer == drag.Pointer && args.Pointer.Captured != drag.Handle)
+            CancelDrag();
+    }
 
     private void CancelDrag()
     {
