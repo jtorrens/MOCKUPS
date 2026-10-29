@@ -250,10 +250,10 @@ stable Actor reference. The chat Actor is Screen-owner-relative, resolves
 through the prepared Runtime record-reference catalog and remains independent
 from the Shot Actor. A message also owns the animatable Boolean
 `keepCursorAfterWrite`. It uses `hold`, originates at that message's `text`
-completion and does not extend collection sequencing or owner duration. When
-the Text Input Bar is active, a true effective value keeps only that outgoing
-message unsent; later messages retain their independently resolved timing. The
-first effective false releases the retained message Bubble.
+completion and does not extend collection sequencing or owner duration. It
+controls only cursor presentation through Bubble and Text Box. Message presence,
+Enter/Exit Motion, reflow and the composer write interval remain governed by
+their timeline; changing this Boolean never hides or reintroduces a message.
 
 Discrete path values use that same generic parameter-animation contract. A
 `MediaFilePath` keyframe is validated through its declared Runtime Input

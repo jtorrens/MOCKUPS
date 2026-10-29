@@ -208,6 +208,7 @@ export function planScopedValidation(
     if (file === "src/desktop-preview/conversationModuleResolver.ts"
       || file === "docs/architecture/animation.md") {
       previewTests.add("tests/animation/conversationModuleResolver.test.ts");
+      previewTests.add("tests/animation/bubbleComponent.test.ts");
       typecheck = true;
     }
     if (file === "src/Mockups.Application/BubbleComponentConfigContract.cs"

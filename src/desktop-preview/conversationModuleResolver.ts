@@ -67,12 +67,10 @@ export function resolveConversationModule(
     "messageMotion",
     "module.core.chat.messageMotion",
   );
-  const textInputComposerEnabled = timing.showTextInput && showTextInputBar;
   const composer = composerState(
     resolvedMessages,
     screenFrame,
     timing,
-    textInputComposerEnabled,
   );
   const conversationType = requiredString(
     preview,
@@ -105,7 +103,6 @@ export function resolveConversationModule(
     messageMotion,
     automaticEndFrame,
     !showKeyboard && !showTextInputBar,
-    textInputComposerEnabled,
   ).map(decorateMessage);
   const motionElapsedMs = screenFrame / Math.max(1, payload.frameRate) * 1000;
   const viewportMotion = conversation.messageViewportMotion
@@ -147,7 +144,6 @@ export function resolveConversationModule(
     messageMotion,
     automaticEndFrame,
     !showKeyboard && !showTextInputBar,
-    textInputComposerEnabled,
     reflowTiming,
     reflowAtMessageOutStart,
     decorateMessage,
@@ -328,17 +324,6 @@ export function resolveConversationModuleFrame(
       optionalNumber(message, "writeOnDurationFrames", 0),
       `${targetId}:${messageText}`,
     );
-    const keepCursorAfterWrite = resolve("keepCursorAfterWrite");
-    delete message.keepCursorReleaseFrame;
-    if (keepCursorAfterWrite.value === false
-        && keepCursorAfterWrite.previousValue === true
-        && keepCursorAfterWrite.sourceKeyframeFrame !== undefined) {
-      message.keepCursorReleaseFrame = timeline.screenFrame(
-        "keepCursorAfterWrite",
-        targetId,
-        keepCursorAfterWrite.sourceKeyframeFrame,
-      );
-    }
     const composerElapsedFrame = Math.max(
       0,
       timeline.temporalLocalFrame(
@@ -451,7 +436,6 @@ type ResolvedConversationMessage = Omit<
   timelineRevealAtFrame: number;
   presenceEndFrame: number;
   hasExplicitPresenceEnd: boolean;
-  keepCursorReleaseFrame?: number;
   playbackMode: "once" | "loop";
   playbackFrame: number;
   currentTimeSeconds: number;
@@ -575,13 +559,6 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
         "keepCursorAfterWrite",
         `${path}.keepCursorAfterWrite`,
       ),
-      ...(Object.hasOwn(message, "keepCursorReleaseFrame")
-        ? {
-            keepCursorReleaseFrame: Math.floor(
-              optionalNumber(message, "keepCursorReleaseFrame", 0),
-            ),
-          }
-        : {}),
       statusVisible: requiredBoolean(message, "statusVisible", `${path}.statusVisible`),
       visibleAtFrame: 0,
       mediaType: messageMediaType(message, path),
@@ -660,7 +637,6 @@ function resolveMessageReflow(
   messageMotion: ComponentMotionContract,
   automaticEndFrame: number,
   writesInBubble: boolean,
-  textInputComposerEnabled: boolean,
   reflowTiming: { durationMs: number; easing: string; intensity: number },
   reflowAtMessageOutStart: boolean,
   decorateMessage: (
@@ -679,7 +655,6 @@ function resolveMessageReflow(
       message,
       timing,
       writesInBubble,
-      textInputComposerEnabled,
     );
     const appearance = visibleAt > 0
       ? [{
@@ -716,7 +691,6 @@ function resolveMessageReflow(
     messageMotion,
     automaticEndFrame,
     writesInBubble,
-    textInputComposerEnabled,
   ).map(decorateMessage);
   const toMessages = visibleMessages(
     messages,
@@ -726,7 +700,6 @@ function resolveMessageReflow(
     messageMotion,
     automaticEndFrame,
     writesInBubble,
-    textInputComposerEnabled,
   ).map(decorateMessage);
   return {
     progress: resolveReflowProgress(
@@ -742,20 +715,13 @@ function messageVisibleAtFrame(
   message: ResolvedConversationMessage,
   timing: ConversationTimingContract,
   writesInBubble: boolean,
-  textInputComposerEnabled: boolean,
 ) {
-  if (messageRetainsComposer(message, textInputComposerEnabled)) {
-    return Number.POSITIVE_INFINITY;
-  }
   const revealAfterWriteOn = message.state === "outgoing"
     && timing.bubbleRevealMode === "afterWriteOn"
     && !writesInBubble;
-  const revealAt = revealAfterWriteOn
+  return revealAfterWriteOn
     ? message.timelineRevealAtFrame
     : message.timelineStartFrame;
-  return message.keepCursorReleaseFrame === undefined
-    ? revealAt
-    : Math.max(revealAt, message.keepCursorReleaseFrame);
 }
 
 function visibleMessages(
@@ -766,7 +732,6 @@ function visibleMessages(
   messageMotion: ComponentMotionContract,
   automaticEndFrame: number,
   writesInBubble: boolean,
-  textInputComposerEnabled: boolean,
 ) {
   return messages.flatMap((message) => {
     const isSystemMessage = message.state === "system";
@@ -781,7 +746,6 @@ function visibleMessages(
       message,
       timing,
       writesInBubble,
-      textInputComposerEnabled,
     );
     if (frame < visibleAt || frame >= message.presenceEndFrame) return [];
     const motionDurationFrames = Math.ceil(
@@ -854,7 +818,6 @@ function composerState(
   messages: ResolvedConversationMessage[],
   frame: number,
   timing: ConversationTimingContract,
-  textInputComposerEnabled: boolean,
 ) {
   for (const message of messages) {
     const startFrame = message.timelineTextStartFrame;
@@ -865,8 +828,7 @@ function composerState(
     const composerVisible = message.state === "outgoing"
       && frame >= startFrame
       && frame < message.presenceEndFrame
-      && (frame < holdEndFrame
-        || messageRetainsComposer(message, textInputComposerEnabled));
+      && frame < holdEndFrame;
     if (composerVisible) {
       const graphemes = textGraphemes(message.text);
       const writeOnInProgress = message.timelineTemporalFrame < effectiveWriteOnFrames;
@@ -891,15 +853,6 @@ function composerState(
     textInputVisible: timing.showTextInput,
     keyboardVisible: false,
   };
-}
-
-function messageRetainsComposer(
-  message: ResolvedConversationMessage,
-  textInputComposerEnabled: boolean,
-) {
-  return textInputComposerEnabled
-    && message.state === "outgoing"
-    && message.keepCursorAfterWrite;
 }
 
 function messageMediaType(
