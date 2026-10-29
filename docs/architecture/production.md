@@ -444,6 +444,18 @@ enabled; it does not change Shot Theme, Shot ownership or message direction.
 Design sample Actors are fixtures and never repair persisted Production
 messages.
 
+Bubble's Actor label owns Variant-authored Boolean `showIncoming`,
+`showOutgoing` and `showSystem` fields under `bubble.actorLabelSlot`, exposed
+through Dictionary controls and local Overrides. `showLabel` is the master
+switch. Existing Variants start with incoming enabled and outgoing/system
+disabled. Bubble requires all three explicit values and combines the selected
+direction with the master switch and the parent's identity visibility gate.
+Conversation supplies that gate by conversation type (group visible, individual
+hidden); it does not suppress a direction before Bubble applies its policy.
+The label uses the exact message Actor's name and optional Actor color for all
+three directions. Avatar visibility remains independently incoming-only.
+
+
 Each message owns an independent Boolean `Actions revealed` Runtime Input. It
 uses `hold` and changes only the presentation of the Conversation-owned external
 actions Icon Row. That row and Bubble are siblings within the message temporal

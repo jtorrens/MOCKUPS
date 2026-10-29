@@ -758,3 +758,57 @@ function approximatelyEqual(actual: number, expected: number) {
     `Expected ${actual} to approximately equal ${expected}.`,
   );
 }
+
+
+test("Bubble Actor label direction switches cross Variant Overrides and respect both visibility gates", () => {
+  for (const variantId of ["default", "default_copy"]) {
+    const source = committedComponentFixture("bubble", variantId);
+    const catalog = JSON.parse(source.componentBaseConfigsJson);
+    const reference = `component_project_foqn_s2_bubble::variant::${variantId}`;
+    const baseline = catalog.variants[reference].bubble.actorLabelSlot;
+    assert.equal(baseline.showIncoming, true);
+    assert.equal(baseline.showOutgoing, false);
+    assert.equal(baseline.showSystem, false);
+    for (const direction of ["incoming", "outgoing", "system"]) {
+      for (const showLabel of [true, false]) {
+        for (const actorIdentityVisible of [true, false]) {
+          const config = prepareComponentConfiguration(catalog, "bubble", reference, {
+            bubble: { actorLabelSlot: {
+              showLabel, showIncoming: direction === "incoming",
+              showOutgoing: direction === "outgoing", showSystem: direction === "system",
+              useActorColor: true,
+            } },
+          });
+          source.configJson = JSON.stringify(config);
+          for (const state of ["incoming", "outgoing", "system"]) {
+            const preview = JSON.parse(source.designPreviewJson);
+            Object.assign(preview, { state, actorIdentityVisible });
+            source.designPreviewJson = JSON.stringify(preview);
+            const resolved = resolveBubbleComponent(source);
+            const expected = showLabel && actorIdentityVisible && state === direction;
+            assert.equal(resolved.actorLabelSlot.showLabel, expected);
+            assert.equal(Boolean(resolved.actorLabelSlot.label), expected);
+            if (expected) {
+              assert.ok(resolved.actorLabelSlot.label!.text.length > 0);
+              assert.ok(resolved.actorLabelSlot.textColorOverride);
+              requiredNode(bubbleComponentToRenderable(source, resolved), "component.bubble.actorLabel");
+            }
+          }
+        }
+      }
+    }
+  }
+});
+
+test("Bubble rejects missing or nonboolean label direction switches even when disabled", () => {
+  for (const key of ["showIncoming", "showOutgoing", "showSystem"]) {
+    for (const value of [undefined, "true", 1]) {
+      const source = committedComponentFixture("bubble");
+      const config = JSON.parse(source.configJson);
+      config.bubble.actorLabelSlot.showLabel = false;
+      config.bubble.actorLabelSlot[key] = value;
+      source.configJson = JSON.stringify(config);
+      assert.throws(() => resolveBubbleComponent(source), new RegExp(key));
+    }
+  }
+});

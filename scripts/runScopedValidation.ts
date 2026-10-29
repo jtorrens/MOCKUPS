@@ -211,16 +211,17 @@ export function planScopedValidation(
       previewTests.add("tests/animation/bubbleComponent.test.ts");
       typecheck = true;
     }
-    if (file === "src/Mockups.Application/BubbleComponentConfigContract.cs"
+    if (file === "src/desktop-preview/bubbleComponentResolver.ts"
+      || file === "src/Mockups.Application/BubbleComponentConfigContract.cs"
       || file === "scaffolding/components/bubble.json") {
       add(npmStep(
         "preview:bubble-direction-sizes", "test:focus:preview",
-        "Bubble persisted direction sizes must reach Text Box through shared preparation",
+        "Bubble direction sizes and Actor label switches must cross Variant and Overrides",
         ["--", "tests/animation/bubbleComponent.test.ts"],
       ));
       add(npmStep(
         "application:bubble-direction-sizes", "test:focus:application",
-        "Bubble configuration requires all three valid direction tokens",
+        "Bubble configuration requires direction tokens and Boolean Actor label switches",
         ["--", "--exact", "Bubble requires valid message size tokens for every direction"],
       ));
     }

@@ -99,7 +99,10 @@
         "componentSlot": {
           "variantReference": "component_project_foqn_s2_label::variant::default",
           "overrides": {}
-        }
+        },
+        "showIncoming": true,
+        "showOutgoing": false,
+        "showSystem": false
       },
       "incomingBackground": "gray_020|gray_080",
       "incomingText": "gray_010|gray_100",
@@ -232,7 +235,10 @@
           "componentSlot": {
             "variantReference": "component_project_foqn_s2_label::variant::default",
             "overrides": {}
-          }
+          },
+          "showIncoming": true,
+          "showOutgoing": false,
+          "showSystem": false
         },
         "incomingBackground": "gray_020|gray_080",
         "incomingText": "gray_010|gray_100",
@@ -398,7 +404,10 @@
                   "subtextHorizontalAlign": "center"
                 }
               }
-            }
+            },
+            "showIncoming": true,
+            "showOutgoing": false,
+            "showSystem": false
           },
           "incomingBackground": "gray_090|gray_010",
           "incomingText": "gray_010|gray_100",
@@ -2235,6 +2244,78 @@
         "bubble",
         "actorLabelSlot",
         "showLabel"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.actorLabel.showIncoming",
+      "label": "Incoming",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "bubble",
+        "actorLabelSlot",
+        "showIncoming"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.actorLabel.showOutgoing",
+      "label": "Outgoing",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "bubble",
+        "actorLabelSlot",
+        "showOutgoing"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.actorLabel.showSystem",
+      "label": "System",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "bubble",
+        "actorLabelSlot",
+        "showSystem"
       ],
       "defaultValue": "false",
       "isEditable": true,
@@ -5078,18 +5159,33 @@
                 "visible": true
               },
               {
-                "id": "component.bubble.actorLabel.useActorColor",
+                "id": "component.bubble.actorLabel.showIncoming",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "component.bubble.actorLabel.placement",
+                "id": "component.bubble.actorLabel.showOutgoing",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "component.bubble.actorLabel.editor",
+                "id": "component.bubble.actorLabel.showSystem",
                 "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.actorLabel.useActorColor",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.actorLabel.placement",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.actorLabel.editor",
+                "order": 70,
                 "visible": true
               }
             ]

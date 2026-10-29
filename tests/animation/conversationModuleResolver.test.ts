@@ -182,11 +182,21 @@ function track(fieldId: string, targetId: string, keyframes: Array<Record<string
   return { id: `${fieldId}-${targetId || "screen"}`, fieldId, targetId, keyframes };
 }
 
-test("only group incoming messages expose per-message Actor identity", () => {
-  assert.equal(conversationMessageActorIdentityVisible("group", "incoming"), true);
-  assert.equal(conversationMessageActorIdentityVisible("group", "outgoing"), false);
-  assert.equal(conversationMessageActorIdentityVisible("group", "system"), false);
-  assert.equal(conversationMessageActorIdentityVisible("individual", "incoming"), false);
+test("group identity availability leaves message direction visibility to Bubble", () => {
+  assert.equal(conversationMessageActorIdentityVisible("group"), true);
+  assert.equal(conversationMessageActorIdentityVisible("individual"), false);
+  for (const conversationType of ["group", "individual"]) {
+    for (const direction of ["incoming", "outgoing", "system"]) {
+      const source = payload(40, [], [{ id: "message", direction, text: "Actor label", writeOnDurationFrames: 1 }]);
+      const preview = JSON.parse(source.designPreviewJson);
+      preview.conversationType = conversationType;
+      source.designPreviewJson = JSON.stringify(preview);
+      const messages = resolveConversationModule(source).visibleMessages;
+      assert.equal(messages.length, 1);
+      assert.equal(messages[0]!.actorIdentityVisible, conversationType === "group");
+      assert.ok(messages[0]!.actor?.displayName);
+    }
+  }
 });
 
 test("a message owner phase freezes incoming content at its initial write state", () => {

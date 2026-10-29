@@ -91,7 +91,6 @@ export function resolveConversationModule(
     ...message,
     actorIdentityVisible: conversationMessageActorIdentityVisible(
       conversationType,
-      message.state,
     ),
     playbackTimeSeconds: messagePlaybackTimeSeconds(message, payload.frameRate),
   });
@@ -415,9 +414,8 @@ export function resolveConversationModuleFrame(
 
 export function conversationMessageActorIdentityVisible(
   conversationType: string,
-  direction: string,
 ) {
-  return conversationType === "group" && direction === "incoming";
+  return conversationType === "group";
 }
 
 type ResolvedConversationMessage = Omit<

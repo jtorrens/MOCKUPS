@@ -200,13 +200,14 @@ export function resolveBubbleComponent(
     size: `${maxWidth}|1`,
     maxWidth,
   };
-  const actorLabelVisible = actorIdentityVisible
-    && state === "incoming"
-    && requiredBoolean(
-      actorLabelSlot,
-      "showLabel",
-      "component.bubble.actorLabel.showLabel",
-    );
+  const actorLabelDirections = {
+    incoming: requiredBoolean(actorLabelSlot, "showIncoming", "component.bubble.actorLabel"),
+    outgoing: requiredBoolean(actorLabelSlot, "showOutgoing", "component.bubble.actorLabel"),
+    system: requiredBoolean(actorLabelSlot, "showSystem", "component.bubble.actorLabel"),
+  };
+  const showActorLabel = requiredBoolean(actorLabelSlot, "showLabel", "component.bubble.actorLabel");
+  const actorLabelVisible = actorIdentityVisible && showActorLabel && actorLabelDirections[state];
+  const labelActorPreview = actorLabelVisible ? resolveBubbleActorPreview(preview) : undefined;
   const actorLabelUseActorColor = requiredBoolean(
     actorLabelSlot,
     "useActorColor",
@@ -368,12 +369,12 @@ export function resolveBubbleComponent(
         "component.bubble.actorLabel.placement",
       ),
       textColorOverride: actorLabelVisible && actorLabelUseActorColor
-        ? actorPreview!.avatar.backgroundColor
+        ? labelActorPreview!.avatar.backgroundColor
         : undefined,
       label: actorLabelConfig
         ? resolveLabelComponentFromRecords(
             actorLabelConfig,
-            literalLabelPreview(actorPreview!.displayName),
+            literalLabelPreview(labelActorPreview!.displayName),
             componentBaseConfigs,
             "component.bubble.actorLabel",
             staticLabelFrameContext,
