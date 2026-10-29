@@ -401,6 +401,15 @@ retain their own declared contracts; they do not stretch parameter keyframes.
 
 ## Action transport
 
+Every Test Values action uses the same frame transport. Dragging its slider
+selects integer frames and pauses on the resolved frame. Pause retains that
+frame and the existing action target; Play resumes there without recapturing
+the origin or toggling the target again. Only Play at the completed endpoint
+restarts from the captured origin. A held interior frame is not completion.
+While ordered frame requests are pending, transport feedback cannot move the
+slider away from the latest requested position; after publication it follows
+the common owner playhead again.
+
 Loop belongs only to the shared Preview playback session, starts disabled and
 is never serialized into action, Screen, Shot or Render documents. Both Design
 and Production clocks consume `PreviewPlaybackTiming.ResolveFrame` for inclusive

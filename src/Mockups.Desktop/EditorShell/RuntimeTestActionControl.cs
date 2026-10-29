@@ -34,6 +34,7 @@ internal sealed class RuntimeTestActionControl : Border
     private string? _pendingTargetValue;
     private bool _wasBusy;
     private bool _isUpdatingFrame;
+    private int _pendingFrameRequests;
 
     public RuntimeTestActionControl(
         string label,
@@ -157,10 +158,7 @@ internal sealed class RuntimeTestActionControl : Border
                 return;
             }
 
-            await _setFrame(
-                _targetCombo?.SelectedItem?.Value,
-                decimal.ToInt32(decimal.Truncate(value)));
-            RefreshState();
+            await SetFrameAsync(decimal.ToInt32(decimal.Truncate(value)));
         };
         Grid.SetColumn(_frameInput, 4);
         layout.Children.Add(_frameInput);
@@ -197,6 +195,7 @@ internal sealed class RuntimeTestActionControl : Border
             Maximum = 0,
             Value = 0,
             TickFrequency = 1,
+            IsSnapToTickEnabled = true,
             SmallChange = 1,
             LargeChange = 10,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -216,13 +215,10 @@ internal sealed class RuntimeTestActionControl : Border
                 return;
             }
 
-            await _setFrame(
-                _targetCombo?.SelectedItem?.Value,
-                Convert.ToInt32(
+            await SetFrameAsync(Convert.ToInt32(
                     Math.Round(
                         _frameSlider.Value,
                         MidpointRounding.AwayFromZero)));
-            RefreshState();
         };
         var content = new Grid
         {
@@ -253,6 +249,27 @@ internal sealed class RuntimeTestActionControl : Border
         button.CornerRadius = new CornerRadius(6);
         ToolTip.SetTip(button, accessibleName);
         return button;
+    }
+
+    private async Task SetFrameAsync(int frame)
+    {
+        _pendingFrameRequests++;
+        try
+        {
+            // Keep both controls at the user's latest request while the ordered
+            // transport queue publishes earlier frames.
+            _isUpdatingFrame = true;
+            _frameInput.Value = frame;
+            _frameSlider.Value = frame;
+            _isUpdatingFrame = false;
+            await _setFrame(_targetCombo?.SelectedItem?.Value, frame);
+        }
+        finally
+        {
+            _isUpdatingFrame = false;
+            _pendingFrameRequests--;
+            RefreshState();
+        }
     }
 
     private void OnPlaybackStateChanged()
@@ -293,9 +310,12 @@ internal sealed class RuntimeTestActionControl : Border
         var currentFrame = Math.Clamp(_currentFrame(), 0, maximumFrame);
         _isUpdatingFrame = true;
         _frameInput.Maximum = maximumFrame;
-        _frameInput.Value = currentFrame;
         _frameSlider.Maximum = maximumFrame;
-        _frameSlider.Value = currentFrame;
+        if (_pendingFrameRequests == 0)
+        {
+            _frameInput.Value = currentFrame;
+            _frameSlider.Value = currentFrame;
+        }
         _maximumFrameText.Text = $"/ {maximumFrame}";
         _isUpdatingFrame = false;
     }

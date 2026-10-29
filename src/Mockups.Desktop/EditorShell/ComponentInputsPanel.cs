@@ -206,10 +206,15 @@ internal sealed class ComponentPreviewInputSession
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
         if (action is not null)
         {
+            if (IsActionPlaying(actionId))
+            {
+                return SetActionFrame(actionId, CurrentPlaybackFrame(action));
+            }
             ResetCompletedActionForReplay(action);
             CaptureActionSnapshot(action);
-            ApplyActionTarget(action, targetValue);
-            TogglePlayback(action);
+            if (!_values.ContainsKey(ActionTargetStorageKey(action)))
+                ApplyActionTarget(action, targetValue);
+            _ = StartPlaybackAsync(action);
             return true;
         }
 
@@ -596,32 +601,9 @@ internal sealed class ComponentPreviewInputSession
         if (_playbackTimer.Interval != interval) _playbackTimer.Interval = interval;
     }
 
-    private void TogglePlayback(ComponentPreviewActionDefinition action)
-    {
-        var startsPlayback = !IsPlaying(action) || HeldFinalActionId == action.Id;
-        PreviewDebugLog.Write(
-            "preview.playback.toggle",
-            ("scope", _scopeKey),
-            ("action", action.Id),
-            ("label", action.Label),
-            ("startsPlayback", startsPlayback),
-            ("fps", _playbackFrameRate),
-            ("durationSec", DurationSeconds(action)),
-            ("durationFrames", DurationFrames(action)),
-            ("timeUnit", action.TimeUnit));
-        if (startsPlayback)
-        {
-            _ = StartPlaybackAsync(action);
-            return;
-        }
-
-        SetPlaybackState(action, false);
-        SyncPlaybackTimer();
-        _refreshPreview();
-    }
-
     private async Task StartPlaybackAsync(ComponentPreviewActionDefinition action)
     {
+        var startSeconds = CurrentPlaybackSeconds(action);
         StopPlayback();
         var scope = _scopeKey;
         var snapshotKey = ActionSnapshotKey(action.Id);
@@ -693,10 +675,11 @@ internal sealed class ComponentPreviewInputSession
         SetPlaybackState(action, true);
         HeldFinalActionId = "";
         SyncDeactivatedPlaybackInputs(action);
-        _values[ActionTimeKey(action)] = "0";
-        _playbackStartedAtSeconds = 0;
+        _playbackSecondsByActionKey[ActionTimeKey(action)] = startSeconds;
+        _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(action, startSeconds);
+        _playbackStartedAtSeconds = startSeconds;
         _playbackStartedTimestamp = Stopwatch.GetTimestamp();
-        _lastPlaybackRefreshFrame = 0;
+        _lastPlaybackRefreshFrame = CurrentPlaybackFrame(action);
         _awaitingPlaybackPresentation = _presentEveryPlaybackFrame;
         PreviewDebugLog.Write(
             "preview.playback.start",
@@ -1021,7 +1004,8 @@ internal sealed class ComponentPreviewInputSession
         {
             return;
         }
-        var holdsFinal = HeldFinalActionId == action.Id;
+        var holdsFinal = HeldFinalActionId == action.Id
+            && CurrentPlaybackFrame(action) >= DurationFrames(action);
         var completedReset = !IsPlaying(action)
             && CurrentPlaybackSeconds(action) >= DurationSeconds(action);
         if (!holdsFinal && !completedReset)

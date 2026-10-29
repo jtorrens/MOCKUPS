@@ -293,6 +293,22 @@ export function planScopedValidation(
         ["--", "--exact", "Application modals preserve Preview and displace siblings"]));
     }
     if ([
+      "src/Mockups.Desktop/EditorShell/RuntimeTestActionControl.cs",
+      "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
+      "src/Mockups.Desktop/Common/PreviewPlaybackStateBinding.cs",
+      "src/Mockups.Desktop/EditorShell/EditorSliderBehavior.cs",
+    ].includes(file)) {
+      desktopUi = true;
+      for (const name of [
+        "Runtime action controls reactivate after playback and visual-tree reattachment",
+        "Preview Loop shares controls and repeats prepared Design actions",
+        "Media Design actions consume queued edits and retain exact ownership",
+        "Notification Design actions consume queued edits and retain exact ownership",
+      ]) add(npmStep(`desktop:design-transport:${name}`, "test:focus:desktop",
+        "all Test Values actions share frame scrubbing, pause/resume and exact owner state",
+        ["--", "--exact", name]));
+    }
+    if ([
       "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationValueResolver.cs",
       "src/Mockups.Desktop/EditorShell/AnimationTimelineCoordinateSpace.cs",
       "src/Mockups.Desktop/EditorShell/TimelineKeyframeDrag.cs",

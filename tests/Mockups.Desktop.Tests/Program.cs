@@ -10523,6 +10523,37 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 commands.GetAwaiter().GetResult();
                 Equal(3, controller.CurrentDesignPreviewActionFrame(owner, actionId));
 
+                var actionControl = playButton.GetVisualAncestors().OfType<RuntimeTestActionControl>().Single();
+                var slider = actionControl.GetVisualDescendants().OfType<Slider>().Single();
+                var frameEntered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var frameRelease = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var frameBlocker = operations.ExecuteAsync(async _ =>
+                {
+                    frameEntered.SetResult(true);
+                    await frameRelease.Task;
+                    return true;
+                });
+                Task<bool> frameDrained;
+                try
+                {
+                    Wait(() => frameEntered.Task.IsCompleted);
+                    slider.Value = 2;
+                    slider.Value = 1;
+                    controller.PlaybackState.NotifyFrameChanged();
+                    Equal(1d, slider.Value); // Published old frames cannot pull back the user's thumb.
+                    Equal(3, controller.CurrentDesignPreviewActionFrame(owner, actionId));
+                    frameDrained = operations.ExecuteAsync(_ => Task.FromResult(true));
+                }
+                finally { frameRelease.TrySetResult(true); }
+                Wait(() => frameDrained.IsCompleted);
+                frameBlocker.GetAwaiter().GetResult();
+                frameDrained.GetAwaiter().GetResult();
+                Equal(1, controller.CurrentDesignPreviewActionFrame(owner, actionId));
+                Equal(1d, slider.Value);
+                var restoreFrame = controller.SetDesignPreviewActionFrame(owner, actionId, 3);
+                Wait(() => restoreFrame.IsCompleted);
+                restoreFrame.GetAwaiter().GetResult();
+
                 // An old control must not redirect an action to the new owner,
                 // even when that owner declares the same action id (fullScreen).
                 var other = nodes.Single(node => node.Id == "component_project_foqn_s2_bubble::variant::default");
@@ -26734,9 +26765,34 @@ static void PreviewLoopSharesControlsAndDesignActions()
                 void Tick() { input.NotifyPlaybackFramePresented(); advance.Invoke(input, null); }
                 try
                 {
+                    var end = input.MaximumActionFrame(actionId);
+                    True(end > 2);
+                    True(input.SetActionFrame(actionId, 2));
+                    var scrubbed = input.CaptureTransientState(owner, false);
+                    True(!input.IsActionPlaying(actionId));
+                    True(input.TriggerAction(actionId));
+                    Equal(2, input.CurrentActionFrame(actionId));
+                    True(input.IsActionPlaying(actionId));
+                    Tick();
+                    Equal(3, input.CurrentActionFrame(actionId));
+                    True(input.TriggerAction(actionId)); // Pause must hold, not toggle the target.
+                    Equal(3, input.CurrentActionFrame(actionId));
+                    True(!input.IsActionPlaying(actionId));
+                    Equal(scrubbed.Values[ComponentPreviewTransientValues.ActionTargetValueKey(scrubbed.ScopeKey, actionId)],
+                        input.CaptureTransientState(owner, false).Values[
+                            ComponentPreviewTransientValues.ActionTargetValueKey(scrubbed.ScopeKey, actionId)]);
+                    True(input.TriggerAction(actionId));
+                    Equal(3, input.CurrentActionFrame(actionId));
+                    True(input.IsActionPlaying(actionId));
+                    True(input.SetActionFrame(actionId, end));
+                    True(input.TriggerAction(actionId));
+                    Equal(0, input.CurrentActionFrame(actionId)); // Completed actions replay from their origin.
+                    True(input.RestoreAction(actionId));
+                    Equal(0, input.CurrentActionFrame(actionId));
+                    preparedCount = 0;
+                    stopped = 0;
                     state.SetLooping(true);
                     True(input.TriggerAction(actionId));
-                    var end = input.MaximumActionFrame(actionId);
                     for (var cycle = 0; cycle < 3; cycle++)
                     {
                         for (var frame = 1; frame <= end; frame++)
@@ -26866,6 +26922,7 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         Equal(0d, frameSlider.Value);
         Equal(10d, frameSlider.Maximum);
         Equal(1d, frameSlider.TickFrequency);
+        True(frameSlider.IsSnapToTickEnabled);
         Equal(32d, frameSlider.Height);
         Equal(new Thickness(0, -12, 0, -8), frameSlider.Margin);
         True(EditorSliderBehavior.IsConfigured(frameSlider));
@@ -26933,7 +26990,13 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         Dispatcher.UIThread.RunJobs();
         Equal(4, currentFrame);
 
-        frameSlider.Value = 7;
+        var thumbCenter = (frameThumb.TranslatePoint(
+            new Point(frameThumb.Bounds.Width / 2, frameThumb.Bounds.Height / 2), window) ?? throw new InvalidOperationException("Slider thumb is detached."));
+        var travel = frameTrack.Bounds.Width - frameThumb.Bounds.Width;
+        var destination = thumbCenter + new Vector(travel * 0.3, 0);
+        window.MouseDown(thumbCenter, MouseButton.Left);
+        window.MouseMove(destination, RawInputModifiers.LeftMouseButton);
+        window.MouseUp(destination, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
         Equal(7, currentFrame);
         Equal(7m, frameInput.Value ?? -1);
