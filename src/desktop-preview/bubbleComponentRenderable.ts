@@ -420,7 +420,7 @@ export function bubbleComponentToRenderable(
                     stateColors.background,
                     bubble.actorLabelSlot.label!.surface.backgroundAlpha,
                   ),
-                  textColor: bubble.actorLabelSlot.textColorOverride,
+                  textColor: bubble.actorLabelSlot.textColorOverride ?? textColor,
                 },
               ),
             ),

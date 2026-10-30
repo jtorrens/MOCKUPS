@@ -212,11 +212,12 @@ export function planScopedValidation(
       typecheck = true;
     }
     if (file === "src/desktop-preview/bubbleComponentResolver.ts"
+      || file === "src/desktop-preview/bubbleComponentRenderable.ts"
       || file === "src/Mockups.Application/BubbleComponentConfigContract.cs"
       || file === "scaffolding/components/bubble.json") {
       add(npmStep(
         "preview:bubble-direction-sizes", "test:focus:preview",
-        "Bubble direction sizes and Actor label switches must cross Variant and Overrides",
+        "Bubble direction sizes, Actor label visibility and direction text colors must cross Variant and Overrides",
         ["--", "tests/animation/bubbleComponent.test.ts"],
       ));
       add(npmStep(

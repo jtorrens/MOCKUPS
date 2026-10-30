@@ -452,8 +452,11 @@ disabled. Bubble requires all three explicit values and combines the selected
 direction with the master switch and the parent's identity visibility gate.
 Conversation supplies that gate by conversation type (group visible, individual
 hidden); it does not suppress a direction before Bubble applies its policy.
-The label uses the exact message Actor's name and optional Actor color for all
-three directions. Avatar visibility remains independently incoming-only.
+The label uses the exact message Actor's name for all three directions. With
+`useActorColor` enabled it uses that Actor's color; otherwise Bubble supplies
+its current direction's text color, resolved for Light/Dark, to the embedded
+Label. The Label's own text color does not replace this Bubble-owned choice.
+Avatar visibility remains independently incoming-only.
 
 
 Each message owns an independent Boolean `Actions revealed` Runtime Input. It

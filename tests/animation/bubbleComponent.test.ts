@@ -10,6 +10,53 @@ import {
 import type { RenderableNode } from "../../src/visual/renderable/types.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 import { prepareComponentConfiguration } from "../../src/desktop-preview/runtimePreviewDocumentContract.js";
+import { selectedPaletteColor } from "../../src/desktop-preview/componentRenderableCommon.js";
+
+test("Bubble Actor name uses direction text colors unless Actor color is enabled", () => {
+  const pairs = {
+    incoming: ["gray_010", "gray_100"],
+    outgoing: ["gray_100", "gray_010"],
+    system: ["gray_010", "gray_010"],
+  } as const;
+  for (const variantId of ["default", "default_copy"]) {
+    const source = committedComponentFixture("bubble", variantId);
+    const catalog = JSON.parse(source.componentBaseConfigsJson);
+    const reference = `component_project_foqn_s2_bubble::variant::${variantId}`;
+    for (const useActorColor of [false, true]) {
+      source.configJson = JSON.stringify(prepareComponentConfiguration(catalog, "bubble", reference, {
+        bubble: {
+          incomingText: pairs.incoming.join("|"),
+          outgoingText: pairs.outgoing.join("|"),
+          systemText: pairs.system.join("|"),
+          actorLabelSlot: {
+            showLabel: true, showIncoming: true, showOutgoing: true, showSystem: true,
+            useActorColor,
+          },
+        },
+      }));
+      for (const themeMode of ["light", "dark"]) {
+        source.themeMode = themeMode;
+        for (const state of ["incoming", "outgoing", "system"] as const) {
+          const preview = JSON.parse(source.designPreviewJson);
+          Object.assign(preview, { state, actorIdentityVisible: true, writeOnTrigger: false,
+            sampleText: "Message", mediaType: "none" });
+          source.designPreviewJson = JSON.stringify(preview);
+          const resolved = resolveBubbleComponent(source);
+          const rendered = bubbleComponentToRenderable(source, resolved);
+          const expected = useActorColor
+            ? resolved.actorLabelSlot.textColorOverride
+            : selectedPaletteColor(source, pairs[state][themeMode === "dark" ? 1 : 0]);
+          assert.ok(expected);
+          assert.equal(requiredNode(rendered, "component.bubble.actorLabel.text").style?.textColor,
+            expected, `${variantId}/${state}/${themeMode}/actor=${useActorColor}`);
+          if (!useActorColor) {
+            assert.equal(requiredNode(rendered, "component.bubble.textBox.text.0").style?.textColor, expected);
+          }
+        }
+      }
+    }
+  }
+});
 
 test("Bubble selects message text size by direction through its prepared Variant and Overrides", () => {
   for (const variantId of ["default", "default_copy"]) {
