@@ -201,9 +201,9 @@ export function resolveBubbleComponent(
     maxWidth,
   };
   const actorLabelDirections = {
-    incoming: requiredBoolean(actorLabelSlot, "showIncoming", "component.bubble.actorLabel"),
-    outgoing: requiredBoolean(actorLabelSlot, "showOutgoing", "component.bubble.actorLabel"),
-    system: requiredBoolean(actorLabelSlot, "showSystem", "component.bubble.actorLabel"),
+    incoming: requiredBoolean(actorLabelSlot, "showIncoming", "component.bubble.actorLabel.showIncoming"),
+    outgoing: requiredBoolean(actorLabelSlot, "showOutgoing", "component.bubble.actorLabel.showOutgoing"),
+    system: requiredBoolean(actorLabelSlot, "showSystem", "component.bubble.actorLabel.showSystem"),
   };
   const showActorLabel = requiredBoolean(actorLabelSlot, "showLabel", "component.bubble.actorLabel");
   const actorLabelVisible = actorIdentityVisible && showActorLabel && actorLabelDirections[state];

@@ -14,9 +14,9 @@ import { selectedPaletteColor } from "../../src/desktop-preview/componentRendera
 
 test("Bubble Actor name uses direction text colors unless Actor color is enabled", () => {
   const pairs = {
-    incoming: ["gray_010", "gray_100"],
-    outgoing: ["gray_100", "gray_010"],
-    system: ["gray_010", "gray_010"],
+    incoming: ["palette_project_foqn_s2_gray_010", "palette_project_foqn_s2_gray_100"],
+    outgoing: ["palette_project_foqn_s2_gray_100", "palette_project_foqn_s2_gray_010"],
+    system: ["palette_project_foqn_s2_gray_010", "palette_project_foqn_s2_gray_010"],
   } as const;
   for (const variantId of ["default", "default_copy"]) {
     const source = committedComponentFixture("bubble", variantId);

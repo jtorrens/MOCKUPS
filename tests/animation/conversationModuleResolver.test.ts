@@ -187,7 +187,8 @@ test("group identity availability leaves message direction visibility to Bubble"
   assert.equal(conversationMessageActorIdentityVisible("individual"), false);
   for (const conversationType of ["group", "individual"]) {
     for (const direction of ["incoming", "outgoing", "system"]) {
-      const source = payload(40, [], [{ id: "message", direction, text: "Actor label", writeOnDurationFrames: 1 }]);
+      const source = payload(40, [], [{ id: "message", direction, text: "Actor label",
+        writeOnDurationFrames: 1, postWriteOnHoldFrames: 60 }]);
       const preview = JSON.parse(source.designPreviewJson);
       preview.conversationType = conversationType;
       source.designPreviewJson = JSON.stringify(preview);

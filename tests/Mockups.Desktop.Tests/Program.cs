@@ -26793,6 +26793,10 @@ static void PreviewLoopSharesControlsAndDesignActions()
                     stopped = 0;
                     state.SetLooping(true);
                     True(input.TriggerAction(actionId));
+                    True(input.IsPlaybackActive);
+                    // Starting after Restore closes the prior held presentation.
+                    // Only stops emitted during the repeating run violate Loop.
+                    var stoppedAtLoopStart = stopped;
                     for (var cycle = 0; cycle < 3; cycle++)
                     {
                         for (var frame = 1; frame <= end; frame++)
@@ -26805,7 +26809,7 @@ static void PreviewLoopSharesControlsAndDesignActions()
                         Equal(0, input.CurrentActionFrame(actionId));
                     }
                     Equal(1, preparedCount);
-                    Equal(0, stopped);
+                    Equal(stoppedAtLoopStart, stopped);
                     state.SetLooping(false);
                     for (var frame = 1; frame <= end; frame++) Tick();
                     Tick();
@@ -26813,7 +26817,7 @@ static void PreviewLoopSharesControlsAndDesignActions()
                     True(!input.IsPlaybackActive);
                     Equal(end, input.CurrentActionFrame(actionId));
                     Equal(1, preparedCount);
-                    True(stopped > 0);
+                    True(stopped > stoppedAtLoopStart);
                 }
                 finally { input.StopActivePlayback(); }
             }
