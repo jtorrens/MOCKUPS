@@ -13,6 +13,7 @@ export interface ButtonAppearanceContract {
 }
 
 export interface ButtonDesignContract {
+  accent: import("./visualAccent.js").VisualAccentFrame;
   id: string;
   contentMode: ButtonContentMode;
   enabled: boolean;

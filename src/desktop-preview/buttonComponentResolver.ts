@@ -1,3 +1,4 @@
+import { resolveVisualAccent } from "./visualAccent.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { embeddedComponentConfig, prepareRuntimeValues, projectRuntimeValues } from "./runtimePreviewDocumentContract.js";
 import { buttonRuntimeValueBindings, buttonLabelValueLinks, buttonSurfaceValueLinks } from "./buttonComponentContract.js";
@@ -21,7 +22,7 @@ export function resolveButtonComponent(payload: DesignPreviewPayload): ButtonDes
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const bases = parseObject(payload.componentBaseConfigsJson);
-  return resolveButtonComponentFromRecords(config, preview, bases, "component.button");
+  return resolveButtonComponentFromRecords(config, preview, bases, "component.button", payload);
 }
 
 export function resolveButtonComponentFromRecords(
@@ -29,6 +30,7 @@ export function resolveButtonComponentFromRecords(
   preview: Record<string, unknown>,
   bases: Record<string, unknown>,
   id: string,
+  frameContext: import("./visualAccent.js").VisualAccentClock,
 ): ButtonDesignContract {
   preview = prepareRuntimeValues(config, preview, buttonRuntimeValueBindings, bases);
   const button = requiredRecord(config, "button", "component.button");
@@ -59,6 +61,7 @@ export function resolveButtonComponentFromRecords(
   return {
     id,
     contentMode,
+    accent: resolveVisualAccent(preview, frameContext),
     enabled,
     pressed,
     opacity: enabled ? 1 : disabledOpacity,

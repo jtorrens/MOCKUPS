@@ -2,6 +2,7 @@ import type { ComponentStackLayoutContract } from "./componentStackComponentCont
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface SurfaceStackDesignContract {
+  accent: import("./visualAccent.js").VisualAccentFrame;
   id: "surfaceStack";
   width: number;
   height: number;

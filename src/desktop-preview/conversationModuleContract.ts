@@ -25,6 +25,7 @@ export interface ConversationComposerContract {
 }
 
 export interface ConversationMessageContract {
+  localFrame: number;
   id: string;
   actor: JsonRecord;
   actorIdentityVisible: boolean;
@@ -65,6 +66,8 @@ export interface ConversationMessageContract {
 
 export interface ConversationModuleContract {
   id: "conversation";
+  messageActionsIconRow: import("./iconRowComponentContract.js").IconRowDesignContract;
+  headerIconRows: { left: import("./iconRowComponentContract.js").IconRowDesignContract; right: import("./iconRowComponentContract.js").IconRowDesignContract };
   preview: JsonRecord;
   conversationType: "individual" | "group";
   frame: number;

@@ -272,6 +272,7 @@ export function resolveBubbleComponent(
     ),
     componentBaseConfigs,
     "component.bubble.iconRow",
+    payload,
   );
 
   const surface = bubbleSurfaceForAlignment(

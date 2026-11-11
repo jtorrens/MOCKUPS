@@ -116,6 +116,7 @@ export function resolveIncomingCallNotificationComponent(
       exactChildRuntime(preview, "iconRowRuntime"),
       bases,
       "component.incomingCallNotification.iconRow",
+    payload,
     ),
     iconRowPlacement: requiredPlacement(
       owner,

@@ -26,6 +26,7 @@ export function resolveIconBarComponent(
     preview,
     componentBaseConfigs,
     "component.iconBar",
+    payload,
   );
 }
 
@@ -34,6 +35,7 @@ export function resolveIconBarComponentFromRecords(
   inputs: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
+  frameContext: import("./visualAccent.js").VisualAccentClock,
 ): IconBarDesignContract {
   const iconBar = requiredRecord(config, "iconBar", "component.iconBar");
   const state = iconBarState(requiredString(
@@ -70,6 +72,7 @@ export function resolveIconBarComponentFromRecords(
         "left",
         componentBaseConfigs,
         `${id}.${state}.left`,
+        frameContext,
         sharedSizes,
       ),
       center: resolveIconBarRow(
@@ -78,6 +81,7 @@ export function resolveIconBarComponentFromRecords(
         "center",
         componentBaseConfigs,
         `${id}.${state}.center`,
+        frameContext,
         sharedSizes,
       ),
       right: resolveIconBarRow(
@@ -86,6 +90,7 @@ export function resolveIconBarComponentFromRecords(
         "right",
         componentBaseConfigs,
         `${id}.${state}.right`,
+        frameContext,
         sharedSizes,
       ),
     },
@@ -98,6 +103,7 @@ function resolveIconBarRow(
   zone: IconBarZone,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
+  frameContext: import("./visualAccent.js").VisualAccentClock,
   sharedSizes?: { iconSizeToken: string; textSizeToken: string },
 ) {
   const slotKey = `${state}${capitalize(zone)}IconRowSlot`;
@@ -118,6 +124,7 @@ function resolveIconBarRow(
     },
     componentBaseConfigs,
     id,
+    frameContext,
   );
 }
 

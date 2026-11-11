@@ -84,7 +84,7 @@ function renderAlternativeBase(
 ): RenderableNode {
   const component = alternative.component!;
   const childPayload = embeddedVariantComponentPayload(
-    { ...payload, localFrame: alternative.localFrame },
+    { ...payload, localFrame: component.localFrame },
     component.componentType,
     component.variantReference,
     component.config,

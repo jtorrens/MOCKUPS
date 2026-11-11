@@ -19,10 +19,7 @@ import {
 } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { iconRowComponentToRenderableAt, measureIconRowComponent } from "./iconRowComponentRenderable.js";
-import {
-  resolveConfiguredIconRowComponentFromRecords,
-  resolveIconRowComponentFromRecords,
-} from "./iconRowComponentResolver.js";
+import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import {
   cssColorWithAlpha,
   numberToken,
@@ -169,6 +166,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         preview,
         (status?.box?.height ?? 0),
         requiredNumber(conversation, "headerHeight", "module.core.chat.headerHeight") * scale,
+        contract.headerIconRows,
       )
     : undefined;
   if (header) children.push(header);
@@ -210,6 +208,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       timing,
       contract.motionElapsedMs,
       contract.messageReflow,
+      contract.messageActionsIconRow,
     ),
   });
 
@@ -239,6 +238,7 @@ function messageNodes(
   timing: ConversationTimingContract,
   motionElapsedMs: number,
   messageReflow: ConversationModuleContract["messageReflow"],
+  messageActionsIconRow: IconRowDesignContract,
 ) {
   const gap = numberToken(payload, optionalString(conversation, "messageGap") || "theme.spacing.m")
     * renderScale(payload);
@@ -248,21 +248,6 @@ function messageNodes(
     conversation,
     "bubbleSlot",
     "module.core.chat.bubbleSlot",
-  );
-  const messageActionsIconRowSlot = requiredRecord(
-    conversation,
-    "messageActionsIconRowSlot",
-    "module.core.chat.messageActionsIconRowSlot",
-  );
-  const messageActionsIconRow = resolveConfiguredIconRowComponentFromRecords(
-    embeddedComponentConfig(
-      componentBaseConfigs,
-      messageActionsIconRowSlot,
-      "iconRow",
-      "module.core.chat.messageActionsIconRowSlot",
-    ),
-    componentBaseConfigs,
-    "module.core.chat.messageActionsIconRow",
   );
   const messageActionsIconRowSize = measureIconRowComponent(
     payload,
@@ -281,7 +266,7 @@ function messageNodes(
   );
   const bubbleNode = (message: ConversationMessageContract, writeOnTrigger: boolean) => {
     const messagePayload = authoringCollectionItemPayload(
-      payload,
+      { ...payload, localFrame: message.localFrame },
       "module.core.chat",
       "messages",
       message.id,
@@ -472,7 +457,7 @@ function messageWithActions(
   message: ConversationMessageContract,
   bubble: RenderableNode,
   bubbleBounds: RenderableBox,
-  iconRow: ReturnType<typeof resolveConfiguredIconRowComponentFromRecords>,
+  iconRow: IconRowDesignContract,
   iconRowSize: ReturnType<typeof measureIconRowComponent>,
   gap: number,
 ): RenderableNode {
@@ -593,6 +578,7 @@ function headerNode(
   preview: JsonRecord,
   offsetY: number,
   height: number,
+  headerRows: ConversationModuleContract["headerIconRows"],
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
@@ -602,48 +588,7 @@ function headerNode(
     "headerSurfaceSlot",
     "module.conversation",
   );
-  const leftSlot = requiredRecord(
-    conversation,
-    "headerLeftIconRowSlot",
-    "module.conversation",
-  );
-  const rightSlot = requiredRecord(
-    conversation,
-    "headerRightIconRowSlot",
-    "module.conversation",
-  );
-  const leftInputs = requiredRecord(
-    conversation,
-    "headerLeftIconRowInputs",
-    "module.conversation",
-  );
-  const rightInputs = requiredRecord(
-    conversation,
-    "headerRightIconRowInputs",
-    "module.conversation",
-  );
-  const leftRow = resolveIconRowComponentFromRecords(
-    embeddedComponentConfig(
-      componentBaseConfigs,
-      leftSlot,
-      "iconRow",
-      "module.core.chat.headerLeftIconRowSlot",
-    ),
-    leftInputs,
-    componentBaseConfigs,
-    "module.core.chat.header.left",
-  );
-  const rightRow = resolveIconRowComponentFromRecords(
-    embeddedComponentConfig(
-      componentBaseConfigs,
-      rightSlot,
-      "iconRow",
-      "module.core.chat.headerRightIconRowSlot",
-    ),
-    rightInputs,
-    componentBaseConfigs,
-    "module.core.chat.header.right",
-  );
+  const { left: leftRow, right: rightRow } = headerRows;
   const leftSize = measureIconRowComponent(payload, leftRow);
   const rightSize = measureIconRowComponent(payload, rightRow);
   const edgePadding = 12 * scale;

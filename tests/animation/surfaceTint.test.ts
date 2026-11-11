@@ -57,10 +57,10 @@ test("Button tint follows exact Surface Variant and Override before explicit Run
   delete runtime.surfaceTintPaletteColor;
   delete runtime.surfaceTintAmount;
   config.button.appearance.surfaceSlot.overrides = { surface: { tintAmount: -0.6 } };
-  const configured = resolveButtonComponentFromRecords(config, runtime, catalog, "button");
+  const configured = resolveButtonComponentFromRecords(config, runtime, catalog, "button", source);
   assert.equal(configured.appearance.surface.tintAmount, -0.6);
   assert.equal(configured.appearance.surface.tintPaletteColor, paletteId);
-  const explicit = resolveButtonComponentFromRecords(config, { ...runtime, surfaceTintAmount: 0 }, catalog, "button");
+  const explicit = resolveButtonComponentFromRecords(config, { ...runtime, surfaceTintAmount: 0 }, catalog, "button", source);
   assert.equal(explicit.appearance.surface.tintAmount, 0);
 });
 

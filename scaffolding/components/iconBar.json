@@ -84,7 +84,9 @@
             "enabled": true,
             "pressed": false,
             "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-            "surfaceTintAmount": 0
+            "surfaceTintAmount": 0,
+            "accentType": "pulse",
+            "accentActive": false
           }
         ]
       },
@@ -126,7 +128,9 @@
             "enabled": true,
             "pressed": false,
             "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-            "surfaceTintAmount": 0
+            "surfaceTintAmount": 0,
+            "accentType": "pulse",
+            "accentActive": false
           }
         ]
       },
@@ -168,7 +172,9 @@
             "enabled": true,
             "pressed": false,
             "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-            "surfaceTintAmount": 0
+            "surfaceTintAmount": 0,
+            "accentType": "pulse",
+            "accentActive": false
           }
         ]
       },
@@ -210,7 +216,9 @@
             "enabled": true,
             "pressed": false,
             "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-            "surfaceTintAmount": 0
+            "surfaceTintAmount": 0,
+            "accentType": "pulse",
+            "accentActive": false
           }
         ]
       },
@@ -252,7 +260,9 @@
             "enabled": true,
             "pressed": false,
             "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-            "surfaceTintAmount": 0
+            "surfaceTintAmount": 0,
+            "accentType": "pulse",
+            "accentActive": false
           }
         ]
       },
@@ -294,7 +304,9 @@
             "enabled": true,
             "pressed": false,
             "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-            "surfaceTintAmount": 0
+            "surfaceTintAmount": 0,
+            "accentType": "pulse",
+            "accentActive": false
           }
         ]
       },
@@ -361,7 +373,9 @@
               "enabled": true,
               "pressed": false,
               "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-              "surfaceTintAmount": 0
+              "surfaceTintAmount": 0,
+              "accentType": "pulse",
+              "accentActive": false
             }
           ]
         },
@@ -403,7 +417,9 @@
               "enabled": true,
               "pressed": false,
               "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-              "surfaceTintAmount": 0
+              "surfaceTintAmount": 0,
+              "accentType": "pulse",
+              "accentActive": false
             }
           ]
         },
@@ -445,7 +461,9 @@
               "enabled": true,
               "pressed": false,
               "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-              "surfaceTintAmount": 0
+              "surfaceTintAmount": 0,
+              "accentType": "pulse",
+              "accentActive": false
             }
           ]
         },
@@ -487,7 +505,9 @@
               "enabled": true,
               "pressed": false,
               "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-              "surfaceTintAmount": 0
+              "surfaceTintAmount": 0,
+              "accentType": "pulse",
+              "accentActive": false
             }
           ]
         },
@@ -529,7 +549,9 @@
               "enabled": true,
               "pressed": false,
               "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-              "surfaceTintAmount": 0
+              "surfaceTintAmount": 0,
+              "accentType": "pulse",
+              "accentActive": false
             }
           ]
         },
@@ -571,7 +593,9 @@
               "enabled": true,
               "pressed": false,
               "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-              "surfaceTintAmount": 0
+              "surfaceTintAmount": 0,
+              "accentType": "pulse",
+              "accentActive": false
             }
           ]
         },
@@ -640,7 +664,9 @@
                 "enabled": true,
                 "pressed": false,
                 "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-                "surfaceTintAmount": 0
+                "surfaceTintAmount": 0,
+                "accentType": "pulse",
+                "accentActive": false
               }
             ]
           },
@@ -702,7 +728,9 @@
                 "enabled": true,
                 "pressed": false,
                 "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-                "surfaceTintAmount": 0
+                "surfaceTintAmount": 0,
+                "accentType": "pulse",
+                "accentActive": false
               },
               {
                 "id": "item_29c87880b8dd459c866025e4a76d6c7f",
@@ -722,7 +750,9 @@
                 "enabled": true,
                 "pressed": false,
                 "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-                "surfaceTintAmount": 0
+                "surfaceTintAmount": 0,
+                "accentType": "pulse",
+                "accentActive": false
               }
             ]
           },
@@ -764,7 +794,9 @@
                 "enabled": true,
                 "pressed": false,
                 "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-                "surfaceTintAmount": 0
+                "surfaceTintAmount": 0,
+                "accentType": "pulse",
+                "accentActive": false
               }
             ]
           },
@@ -817,7 +849,9 @@
                 "enabled": true,
                 "pressed": false,
                 "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-                "surfaceTintAmount": 0
+                "surfaceTintAmount": 0,
+                "accentType": "pulse",
+                "accentActive": false
               }
             ]
           },
@@ -885,7 +919,9 @@
                 "enabled": true,
                 "pressed": false,
                 "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-                "surfaceTintAmount": 0
+                "surfaceTintAmount": 0,
+                "accentType": "pulse",
+                "accentActive": false
               }
             ]
           },
@@ -938,7 +974,9 @@
                 "enabled": true,
                 "pressed": false,
                 "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-                "surfaceTintAmount": 0
+                "surfaceTintAmount": 0,
+                "accentType": "pulse",
+                "accentActive": false
               }
             ]
           },
@@ -980,7 +1018,9 @@
                 "enabled": true,
                 "pressed": false,
                 "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-                "surfaceTintAmount": 0
+                "surfaceTintAmount": 0,
+                "accentType": "pulse",
+                "accentActive": false
               }
             ]
           },
@@ -1033,7 +1073,9 @@
                 "enabled": true,
                 "pressed": false,
                 "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-                "surfaceTintAmount": 0
+                "surfaceTintAmount": 0,
+                "accentType": "pulse",
+                "accentActive": false
               }
             ]
           },

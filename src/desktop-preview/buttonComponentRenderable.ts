@@ -1,3 +1,4 @@
+import { wrapVisualAccent } from "./visualAccent.js";
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { ButtonDesignContract } from "./buttonComponentContract.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
@@ -75,7 +76,7 @@ export function buttonComponentToRenderableAt(
   }
   if (button.badge) children.push(badgeComponentToRenderableAt(payload, button.badge, box));
 
-  return {
+  return wrapVisualAccent({
     id: button.id,
     type: "group",
     frame: 0,
@@ -88,5 +89,5 @@ export function buttonComponentToRenderableAt(
       overflow: "visible",
     },
     children,
-  };
+  }, button.accent, scale);
 }

@@ -24,6 +24,7 @@ export function resolveIconRowComponent(payload: DesignPreviewPayload): IconRowD
     },
     parseObject(payload.componentBaseConfigsJson),
     "component.iconRow",
+    payload,
   );
 }
 
@@ -31,6 +32,7 @@ export function resolveConfiguredIconRowComponentFromRecords(
   config: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
+  frameContext: import("./visualAccent.js").VisualAccentClock,
 ): IconRowDesignContract {
   const iconRow = requiredRecord(config, "iconRow", "component.iconRow");
   return resolveIconRowComponentFromRecords(
@@ -56,6 +58,7 @@ export function resolveConfiguredIconRowComponentFromRecords(
     },
     componentBaseConfigs,
     id,
+    frameContext,
   );
 }
 
@@ -64,6 +67,7 @@ export function resolveIconRowComponentFromRecords(
   inputs: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
+  frameContext: import("./visualAccent.js").VisualAccentClock,
 ): IconRowDesignContract {
   const inheritedSizes = projectRuntimeValues(inputs, iconRowSharedSizeLinks);
   inputs = prepareRuntimeValues(config, inputs, iconRowRuntimeValueBindings);
@@ -100,6 +104,7 @@ export function resolveIconRowComponentFromRecords(
         projectRuntimeCollectionItemInputs(runtime, contextualSizes),
         componentBaseConfigs,
         `${id}.${itemId}`,
+        frameContext,
       ),
     };
   });

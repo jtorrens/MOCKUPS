@@ -105,6 +105,7 @@ export function resolveMediaComponentFromRecords(
     },
     componentBaseConfigs,
     "component.media.topIconBar",
+    payload,
   );
   const centerIconBar = resolveMediaIconBar(
     media,
@@ -116,6 +117,7 @@ export function resolveMediaComponentFromRecords(
     },
     componentBaseConfigs,
     "component.media.centerIconBar",
+    payload,
   );
   const bottomIconBar = resolveMediaIconBar(
     media,
@@ -127,6 +129,7 @@ export function resolveMediaComponentFromRecords(
     },
     componentBaseConfigs,
     "component.media.bottomIconBar",
+    payload,
   );
   const surfaceSlot = requiredRecord(media, "surfaceSlot", "component.media");
   const surfaceConfig = embeddedComponentConfig(
@@ -316,6 +319,7 @@ function resolveMediaIconBar(
   inputs: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
+  frameContext: import("./visualAccent.js").VisualAccentClock,
 ) {
   const slot = requiredRecord(media, slotKey, "component.media");
   const config = embeddedComponentConfig(
@@ -324,7 +328,7 @@ function resolveMediaIconBar(
     "iconBar",
     `component.media.${slotKey}`,
   );
-  return resolveIconBarComponentFromRecords(config, inputs, componentBaseConfigs, id);
+  return resolveIconBarComponentFromRecords(config, inputs, componentBaseConfigs, id, frameContext);
 }
 
 function mediaKind(value: string): MediaKind {

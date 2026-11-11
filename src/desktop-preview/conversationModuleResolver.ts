@@ -1,3 +1,5 @@
+import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
+import { resolveConfiguredIconRowComponentFromRecords, resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import {
   optionalBoolean,
   optionalNumber,
@@ -89,6 +91,7 @@ export function resolveConversationModule(
     message: UndecoratedConversationMessage,
   ): ConversationMessageContract => ({
     ...message,
+    localFrame: message.timelineTemporalFrame,
     actorIdentityVisible: conversationMessageActorIdentityVisible(
       conversationType,
     ),
@@ -154,8 +157,63 @@ export function resolveConversationModule(
   const textInputConfig = textInputVisible
     ? resolvedTextInputConfig(payload, conversation, composer.text)
     : undefined;
+  const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
+  const messageActionsIconRowSlot = requiredRecord(
+    conversation,
+    "messageActionsIconRowSlot",
+    "module.core.chat.messageActionsIconRowSlot",
+  );
+  const messageActionsIconRow = resolveConfiguredIconRowComponentFromRecords(
+    embeddedComponentConfig(
+      componentBaseConfigs,
+      messageActionsIconRowSlot,
+      "iconRow",
+      "module.core.chat.messageActionsIconRowSlot",
+    ),
+    componentBaseConfigs,
+    "module.core.chat.messageActionsIconRow",
+    payload,
+  );
+  const leftSlot = requiredRecord(conversation, "headerLeftIconRowSlot", "module.conversation");
+  const rightSlot = requiredRecord(conversation, "headerRightIconRowSlot", "module.conversation");
+  const leftInputs = requiredRecord(
+    conversation,
+    "headerLeftIconRowInputs",
+    "module.conversation",
+  );
+  const rightInputs = requiredRecord(
+    conversation,
+    "headerRightIconRowInputs",
+    "module.conversation",
+  );
+  const leftRow = resolveIconRowComponentFromRecords(
+    embeddedComponentConfig(
+      componentBaseConfigs,
+      leftSlot,
+      "iconRow",
+      "module.core.chat.headerLeftIconRowSlot",
+    ),
+    leftInputs,
+    componentBaseConfigs,
+    "module.core.chat.header.left",
+    payload,
+  );
+  const rightRow = resolveIconRowComponentFromRecords(
+    embeddedComponentConfig(
+      componentBaseConfigs,
+      rightSlot,
+      "iconRow",
+      "module.core.chat.headerRightIconRowSlot",
+    ),
+    rightInputs,
+    componentBaseConfigs,
+    "module.core.chat.header.right",
+    payload,
+  );
   return {
     id: "conversation",
+    messageActionsIconRow,
+    headerIconRows: { left: leftRow, right: rightRow },
     preview,
     conversationType,
     frame: screenFrame,
@@ -421,6 +479,7 @@ export function conversationMessageActorIdentityVisible(
 type ResolvedConversationMessage = Omit<
   ConversationMessageContract,
   | "actorIdentityVisible"
+  | "localFrame"
   | "playbackTimeSeconds"
   | "presenceMotion"
   | "presenceMotionKind"

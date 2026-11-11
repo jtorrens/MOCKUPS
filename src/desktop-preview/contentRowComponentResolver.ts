@@ -1,5 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
+import { embeddedComponentConfig, prepareComponentInputValues } from "./runtimePreviewDocumentContract.js";
 import {
   parseObject,
   requiredBoolean,
@@ -10,6 +10,7 @@ import {
   requiredStringPair,
 } from "./componentResolverCommon.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
+import { buttonRuntimeValueBindings } from "./buttonComponentContract.js";
 import { resolveButtonComponentFromRecords } from "./buttonComponentResolver.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 import type {
@@ -83,13 +84,15 @@ function resolveSlot(
     return {
       id, order: index,
       kind,
-      content: resolveButtonComponentFromRecords(buttonConfig, {
+      content: resolveButtonComponentFromRecords(buttonConfig, prepareComponentInputValues(
+        bases, requiredString(requiredRecord(slot, "iconSlot", path), "variantReference", path),
+        buttonConfig, buttonRuntimeValueBindings, {
         enabled: requiredBoolean(runtime, "enabled", `${path}.runtime.enabled`),
         pressed: requiredBoolean(runtime, "pressed", `${path}.runtime.pressed`),
         sampleText: label,
         iconSizeToken: requiredString(slot, "iconSizeToken", `${path}.iconSizeToken`),
         showBadge: false,
-      }, bases, `${path}.icon`),
+      }), bases, `${path}.icon`, payload),
     };
   }
   const actor = structuredClone(requiredRecord(runtime, "actor", `${path}.runtime.actor`));

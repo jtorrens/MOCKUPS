@@ -107,6 +107,7 @@ export function resolvePasswordComponent(payload: DesignPreviewPayload): Passwor
       { state: progress.state === "initial" ? "idle" : "active", size: `${availableWidth}|${iconBarHeight}` },
       bases,
       "component.password.iconBar",
+    payload,
     ),
   };
 }

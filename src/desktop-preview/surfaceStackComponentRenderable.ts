@@ -1,3 +1,4 @@
+import { wrapVisualAccent } from "./visualAccent.js";
 import type { RenderableNode } from "../visual/renderable/types.js";
 import {
   numberToken,
@@ -34,7 +35,7 @@ export function surfaceStackComponentToRenderable(
   const surface = surfaceComponentToRenderableAt(payload, stack.surface, outerBox);
   const content = componentStackLayoutToRenderable(payload, stack.layout, renderChild, innerBox);
   const radius = Math.max(0, numberToken(payload, stack.surface.surface.cornerRadiusToken) * scale);
-  return {
+  return wrapVisualAccent({
     id: stack.id,
     type: "group",
     frame: 0,
@@ -51,5 +52,5 @@ export function surfaceStackComponentToRenderable(
         children: [content],
       },
     ],
-  };
+  }, stack.accent, scale);
 }

@@ -17,6 +17,7 @@ export type DesktopPreviewFrameCapability =
   | "passwordEntry"
   | "presenceMotion"
   | "stateMotion"
+  | "visualAccent"
   | "writeOn";
 
 export interface DesktopPreviewOwnerCapabilities {
@@ -42,7 +43,7 @@ export const desktopPreviewComponentCapabilities = {
   textBox: capabilities([], [], ["cursorBlink"]),
   iconRow: capabilities(),
   iconBar: capabilities(),
-  surfaceStack: capabilities([], [], ["stateMotion"]),
+  surfaceStack: capabilities([], [], ["stateMotion", "visualAccent"]),
   collectionStack: capabilities(
     ["changeDistribution"],
     ["items.togglePresent"],
@@ -59,7 +60,7 @@ export const desktopPreviewComponentCapabilities = {
   list: capabilities([], ["items.togglePresent"], ["presenceMotion"]),
   codeIndicator: capabilities(),
   avatar: capabilities(),
-  button: capabilities([], [], ["pressedState"]),
+  button: capabilities([], [], ["pressedState", "visualAccent"]),
   audio: capabilities(["play"], [], ["mediaPlayback"]),
   textInputBar: capabilities([], [], ["cursorBlink"]),
   keyboard: capabilities(

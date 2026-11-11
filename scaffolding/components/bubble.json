@@ -1430,7 +1430,7 @@
               "jsonKey": "buttonInputs",
               "kind": "collection",
               "valueKind": "StructuredCollection",
-              "defaultValue": "[{\"id\":\"item_dd466805c6484b728e4b02264b463518\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\",\"enabled\":true,\"pressed\":false,\"surfaceTintPaletteColor\":\"palette_project_foqn_s2_gray_050\",\"surfaceTintAmount\":0}]",
+              "defaultValue": "[{\"id\":\"item_dd466805c6484b728e4b02264b463518\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\",\"enabled\":true,\"pressed\":false,\"surfaceTintPaletteColor\":\"palette_project_foqn_s2_gray_050\",\"surfaceTintAmount\":0,\"accentType\":\"pulse\",\"accentActive\":false}]",
               "minimum": 0,
               "maximum": 9999,
               "increment": 1,
@@ -2119,6 +2119,93 @@
                       }
                     },
                     "useSlider": true
+                  },
+                  {
+                    "id": "accentType",
+                    "label": "Type",
+                    "jsonKey": "accentType",
+                    "kind": "option",
+                    "valueKind": "OptionToken",
+                    "defaultValue": "pulse",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [
+                      {
+                        "value": "pulse",
+                        "label": "Pulse"
+                      },
+                      {
+                        "value": "vibrate",
+                        "label": "Vibration"
+                      },
+                      {
+                        "value": "rock",
+                        "label": "Rock"
+                      }
+                    ],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "self",
+                    "uiGroupId": "accent",
+                    "uiGroupLabel": "Accent",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 12,
+                    "animatable": true,
+                    "animationInterpolations": [
+                      "hold"
+                    ],
+                    "animationTimeline": {
+                      "origin": {
+                        "kind": "ownerStart"
+                      },
+                      "extendsOwnerDuration": false
+                    }
+                  },
+                  {
+                    "id": "accentActive",
+                    "label": "Active",
+                    "jsonKey": "accentActive",
+                    "kind": "boolean",
+                    "valueKind": "Boolean",
+                    "defaultValue": "false",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "self",
+                    "uiGroupId": "accent",
+                    "uiGroupLabel": "Accent",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 13,
+                    "animatable": true,
+                    "animationInterpolations": [
+                      "hold"
+                    ],
+                    "animationTimeline": {
+                      "origin": {
+                        "kind": "ownerStart"
+                      },
+                      "extendsOwnerDuration": false
+                    }
                   }
                 ],
                 "itemPresentation": {
@@ -2164,7 +2251,9 @@
               "enabled": true,
               "pressed": false,
               "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
-              "surfaceTintAmount": 0
+              "surfaceTintAmount": 0,
+              "accentType": "pulse",
+              "accentActive": false
             }
           ],
           "collections": [],

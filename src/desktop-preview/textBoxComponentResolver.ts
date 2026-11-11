@@ -172,11 +172,13 @@ export function resolveTextBoxComponentFromRecords(
       leftIconRowSlot,
       componentBaseConfigs,
       `${id}.leftIconRow`,
+      frameContext,
     ),
     rightIconRow: resolveTextBoxIconRowComponentFromRecords(
       rightIconRowSlot,
       componentBaseConfigs,
       `${id}.rightIconRow`,
+      frameContext,
     ),
     textAnimation: {
       mode: textAnimationMode(optionalString(inputs, "textAnimationMode")),
@@ -195,11 +197,13 @@ function resolveTextBoxIconRowComponentFromRecords(
   iconRowSlot: { variantReference: string; overrides: Record<string, unknown> },
   componentBaseConfigs: Record<string, unknown>,
   id: string,
+  frameContext: import("./visualAccent.js").VisualAccentClock,
 ) {
   return resolveConfiguredIconRowComponentFromRecords(
     prepareComponentConfiguration(componentBaseConfigs, "iconRow", iconRowSlot.variantReference, iconRowSlot.overrides),
     componentBaseConfigs,
     id,
+    frameContext,
   );
 }
 

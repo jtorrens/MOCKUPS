@@ -148,6 +148,7 @@ export function resolveTextInputBarComponent(
       },
       componentBaseConfigs,
       "component.textInputBar.iconBar",
+    payload,
     ),
     textBox: {
       ...resolvedTextBox,

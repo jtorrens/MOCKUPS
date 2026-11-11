@@ -102,9 +102,9 @@ export function resolveComponentCollectionItem(
     );
     const reflowStartFrame = presence.reflowStartFrame ?? inputResolution.changeFrame;
     const activationFrame = presence.activationFrame;
-    const localFrame = exitFrame === undefined
-      ? Math.max(0, frame - (activationFrame ?? 0))
-      : Math.max(0, exitFrame - (activationFrame ?? 0));
+    const localFrame = timeline.ownsTarget(rawId)
+      ? Math.max(0, timeline.temporalOwnerFrame(rawId, frame, presence.exitEndFrame))
+      : payload.localFrame;
     const resolvedPresenceMotion = presence.motionKind && presence.motionFrame
       ? { kind: presence.motionKind, frame: presence.motionFrame }
       : undefined;

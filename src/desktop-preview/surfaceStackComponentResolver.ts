@@ -1,3 +1,4 @@
+import { resolveVisualAccent } from "./visualAccent.js";
 import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import {
   parseObject,
@@ -23,6 +24,7 @@ export function resolveSurfaceStackComponent(
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   return {
     id: "surfaceStack",
+    accent: resolveVisualAccent(preview, payload),
     width: Math.max(0, size.first),
     height: Math.max(0, size.second),
     horizontalPaddingToken: padding.first,

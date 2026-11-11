@@ -234,11 +234,11 @@ test("Button and Label consume the same prepared color precedence across embedde
   preview.inputs = preview.inputs.filter((field: { id: string }) => !["iconColorToken", "textColorToken"].includes(field.id));
   delete preview.iconColorToken;
   delete preview.textColorToken;
-  const configured = resolveButtonComponentFromRecords(config, preview, bases, "button-01");
+  const configured = resolveButtonComponentFromRecords(config, preview, bases, "button-01", { localFrame: 0, frameRate: 25 });
   assert.equal(configured.appearance.iconColorToken, "theme.icons.variant");
   assert.equal(configured.appearance.label?.textColorToken, "theme.text.override");
   const runtime = { ...preview, iconColorToken: "theme.icons.runtime", textColorToken: "theme.text.runtime" };
-  const button = resolveButtonComponentFromRecords(config, runtime, bases, "button-01");
+  const button = resolveButtonComponentFromRecords(config, runtime, bases, "button-01", { localFrame: 0, frameRate: 25 });
   assert.equal(button.appearance.iconColorToken, "theme.icons.runtime");
   assert.equal(button.appearance.label?.textColorToken, "theme.text.runtime");
   const animated = resolveRuntimeDocumentAnimationValues({
@@ -250,7 +250,7 @@ test("Button and Label consume the same prepared color precedence across embedde
   }, { schemaVersion: 2, tracks: ["iconColorToken", "textColorToken"].map((fieldId) => ({
     fieldId, targetId: "", keyframes: [{ frame: 4, value: "theme.colors.animated", interpolation: "hold" }],
   })) }, () => 4);
-  const animatedButton = resolveButtonComponentFromRecords(config, animated.values, bases, "button-01");
+  const animatedButton = resolveButtonComponentFromRecords(config, animated.values, bases, "button-01", { localFrame: 0, frameRate: 25 });
   assert.equal(animatedButton.appearance.iconColorToken, "theme.colors.animated");
   assert.equal(animatedButton.appearance.label?.textColorToken, "theme.colors.animated");
   const label = committedComponentFixture("label");

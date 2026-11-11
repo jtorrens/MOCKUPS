@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `30` is the only current schema. Authored Production rows belong
+Schema version `31` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -996,3 +996,14 @@ fails without creating an empty replacement, including a late canceled read
 at shutdown. Only explicit bootstrap/creation and snapshot destinations may
 create files. The Desktop regression `SQLite context connections never create
 a missing database` checks both connection kinds and file absence.
+
+### Decorative accent maintenance (schema 31)
+
+Explicit maintenance adds `accentType: "pulse"` and `accentActive: false` to
+Button and Surface Stack Runtime defaults and their declarations. Icon Row's
+complete Button fields, nested declared Runtime documents, configured inputs
+and existing Screen payloads receive the same values. Stable identities,
+Variant references, local Overrides and animation tracks remain authored.
+Only the canonical workstation database is migrated, after its Backup Hub
+pre-migration publication; the validated result is checkpointed into parity.
+Startup accepts schema 31 read-only and performs no repair.

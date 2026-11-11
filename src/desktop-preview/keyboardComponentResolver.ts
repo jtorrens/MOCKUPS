@@ -167,6 +167,7 @@ export function resolveKeyboardComponent(
       },
       componentBaseConfigs,
       "component.keyboard.iconBar",
+    payload,
     ),
     rows,
     motion,

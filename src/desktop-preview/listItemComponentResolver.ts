@@ -138,6 +138,7 @@ export function resolveListItemComponent(
         contentSetId,
         preview,
         bases,
+        payload,
       ));
 
   return {
@@ -163,6 +164,7 @@ function resolveComponent(
   contentSetId: string,
   preview: Record<string, unknown>,
   bases: Record<string, unknown>,
+  frameContext: import("./visualAccent.js").VisualAccentClock,
 ): ListItemElement {
   const path = `component.listItem.components.${componentType}`;
   const componentSlot = requiredRecord(slot, "componentSlot", `${path}.componentSlot`);
@@ -248,6 +250,7 @@ function resolveComponent(
       runtime,
       bases,
       "component.listItem.iconRow",
+      frameContext,
     ),
   };
 }

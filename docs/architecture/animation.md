@@ -616,3 +616,36 @@ The Screen boundary clock is signed. A child track may begin before Screen or
 Shot frame zero; that negative child-owned time remains authored and Motion
 holds at boundary progress zero until its parent-owned appearance. Preparation
 never clamps or rewrites the child track to satisfy Screen transition timing.
+
+## Decorative accents
+
+Button and Surface Stack expose the same two Dictionary Runtime values:
+`accentType` (`pulse`, `vibrate`, `rock`) and Boolean `accentActive`. Both use
+hold-only parameter tracks and the ordinary Runtime document preparation.
+They can be saved as Design defaults; Icon Row forwards the complete Button
+Runtime fields through its existing stable-item contract. No accent editor,
+new temporal entity, lifecycle collection or renderer animation is introduced.
+
+`visualAccent.ts` owns the closed recipes. Pulse scales from 1 to 1.08 and back
+over 1.2 seconds. Vibration moves horizontally up to 3 design units; rocking
+rotates up to 10 degrees. Both ring for the first half of that same cycle with
+neutral endpoints and rest for its second half. There are no editable speed,
+intensity, repetition or easing controls. Disabled is exactly neutral.
+
+A cycle samples the resolved temporal owner's local frame and frame rate.
+Activation gates that continuous phase; it does not create or restart a clock.
+Moving the temporal owner moves the accent with it. Enter/Exit remains on its
+parent event clock; re-entry does not restart the internal property clock.
+Collection child payloads therefore receive the common timeline's property
+frame, separately from the Stack State's event-relative Motion frame.
+Conversation likewise forwards its resolved message-local frame to Bubble's
+children. Configured header rows are resolved before painting.
+The cycle contributes no duration and never advances a collection's sequence;
+explicit authored keyframes retain the existing duration policy.
+
+The Component resolver produces only scale, displacement and rotation for the
+requested frame. A separate generic transform group applies these to the
+complete Button or Surface Stack, preserving pressed scale, opacity, child
+geometry and the component's measured box. The group applies one transform to
+all descendants together. Brilliance, icon-only targets, staggered child
+animation and per-effect parameters are outside this contract.
