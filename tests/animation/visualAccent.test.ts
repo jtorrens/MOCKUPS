@@ -23,7 +23,7 @@ test("three accents sample the owner clock deterministically and return to neutr
     assert.deepEqual(sample, resolveVisualAccent(values, clock)); // random access has no playback state
   }
   assert.throws(() => resolveVisualAccent({ accentType: "unknown", accentActive: false }, { localFrame: 0, frameRate: 25 }), /Unsupported visual accent/);
-  assert.throws(() => resolveVisualAccent({ accentType: "pulse" }, { localFrame: 0, frameRate: 25 }), /accentActive/);
+  assert.throws(() => resolveVisualAccent({ accentType: "pulse" }, { localFrame: 0, frameRate: 25 }), /Missing boolean value visual accent/);
 });
 
 test("accent transforms preserve existing placement, pressed scale and layout bounds", () => {
@@ -37,37 +37,47 @@ test("accent transforms preserve existing placement, pressed scale and layout bo
 });
 
 for (const type of ["button", "surfaceStack"]) {
-  test(`${type} uses declared hold activation and the same prepared accent for a button and a complete group`, () => {
-    const payload = committedComponentFixture(type);
-    const values = JSON.parse(payload.designPreviewJson);
-    values.accentType = "pulse";
-    values.accentActive = false;
-    const animation = { schemaVersion: 2, tracks: [{ id: "accent-track", fieldId: "accentActive", targetId: "", keyframes: [
-      { id: "off", frame: 0, value: false, interpolation: "hold", enabled: true },
-      { id: "on", frame: 3, value: true, interpolation: "hold", enabled: true },
-      { id: "stop", frame: 20, value: false, interpolation: "hold", enabled: true },
-    ] }] };
-    const source = JSON.stringify(values);
-    const at = (frame: number) => {
-      const prepared = prepareRuntimePreviewPayload({ ...payload, localFrame: frame, frameRate: 25,
-        designPreviewJson: source, runtimeContractJson: source, instanceJson: JSON.stringify({ animation }) });
-      if (type === "button") {
-        const resolved = resolveButtonComponent(prepared);
-        return { accent: resolved.accent, node: buttonComponentToRenderable(prepared, resolved) };
+  for (const accentType of ["pulse", "vibrate", "rock"]) {
+    test(`${type} plays ${accentType} through declared hold activation and stops at neutral`, () => {
+      const payload = committedComponentFixture(type);
+      const values = JSON.parse(payload.designPreviewJson);
+      values.accentType = accentType;
+      values.accentActive = false;
+      const animation = { schemaVersion: 2, tracks: [{ id: "accent-track", fieldId: "accentActive", targetId: "", keyframes: [
+        { id: "off", frame: 0, value: false, interpolation: "hold", enabled: true },
+        { id: "on", frame: 3, value: true, interpolation: "hold", enabled: true },
+        { id: "stop", frame: 20, value: false, interpolation: "hold", enabled: true },
+      ] }] };
+      const source = JSON.stringify(values);
+      const at = (frame: number) => {
+        const prepared = prepareRuntimePreviewPayload({ ...payload, localFrame: frame, frameRate: 25,
+          designPreviewJson: source, runtimeContractJson: source, instanceJson: JSON.stringify({ animation }) });
+        if (type === "button") {
+          const resolved = resolveButtonComponent(prepared);
+          return { accent: resolved.accent, node: buttonComponentToRenderable(prepared, resolved) };
+        }
+        const resolved = resolveSurfaceStackComponent(prepared);
+        return { accent: resolved.accent, node: surfaceStackComponentToRenderable(prepared, resolved, componentClassToRenderable) };
+      };
+      const idle = at(0), running = at(8), stopped = at(21);
+      assert.equal(idle.accent.scale, 1);
+      assert.notDeepEqual(running.accent, idle.accent);
+      assert.deepEqual(stopped.accent, idle.accent);
+      for (let frame = 0; frame <= 30; frame++) {
+        const sample = at(frame);
+        assert.deepEqual(sample.accent, resolveVisualAccent(
+          { accentType, accentActive: frame >= 3 && frame < 20 },
+          { localFrame: frame, frameRate: 25 },
+        ));
+        assert.deepEqual(sample.node.box, idle.node.box);
       }
-      const resolved = resolveSurfaceStackComponent(prepared);
-      return { accent: resolved.accent, node: surfaceStackComponentToRenderable(prepared, resolved, componentClassToRenderable) };
-    };
-    const idle = at(0), running = at(8), stopped = at(21);
-    assert.equal(idle.accent.scale, 1);
-    assert.ok(running.accent.scale > 1);
-    assert.equal(stopped.accent.scale, 1);
-    assert.deepEqual(running.node.box, idle.node.box);
-    assert.equal(running.node.children?.[0]?.id, idle.node.id);
-    assert.equal(JSON.stringify(values), source);
-    // An enabled decorative loop never creates an infinite or longer action.
-    const inactive = new RuntimeOwnerTimeline(values, values, { schemaVersion: 2, tracks: [] });
-    const active = new RuntimeOwnerTimeline(values, { ...values, accentActive: true }, { schemaVersion: 2, tracks: [] });
-    assert.equal(inactive.durationFrames, active.durationFrames);
-  });
+      assert.deepEqual(running.node.box, idle.node.box);
+      assert.equal(running.node.children?.[0]?.id, idle.node.id);
+      assert.equal(JSON.stringify(values), source);
+      // An enabled decorative loop never creates an infinite or longer action.
+      const inactive = new RuntimeOwnerTimeline(values, values, { schemaVersion: 2, tracks: [] });
+      const active = new RuntimeOwnerTimeline(values, { ...values, accentActive: true }, { schemaVersion: 2, tracks: [] });
+      assert.equal(inactive.durationFrames, active.durationFrames);
+    });
+  }
 }
