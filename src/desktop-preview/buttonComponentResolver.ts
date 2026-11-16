@@ -37,6 +37,10 @@ export function resolveButtonComponentFromRecords(
   const contentMode = buttonContentMode(
     requiredString(button, "contentMode", "component.button.contentMode"),
   );
+  const labelPosition = requiredString(button, "labelPosition", "component.button.labelPosition");
+  if (labelPosition !== "top" && labelPosition !== "bottom" && labelPosition !== "left" && labelPosition !== "right") {
+    throw new Error(`Unsupported button label position ${labelPosition}`);
+  }
   const enabled = requiredBoolean(preview, "enabled", "component.button.input.enabled");
   const pressed = requiredBoolean(preview, "pressed", "component.button.input.pressed");
   const disabledOpacity = unitInterval(
@@ -61,6 +65,7 @@ export function resolveButtonComponentFromRecords(
   return {
     id,
     contentMode,
+    labelPosition,
     accent: resolveVisualAccent(preview, frameContext),
     enabled,
     pressed,

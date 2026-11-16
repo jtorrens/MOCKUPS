@@ -207,11 +207,19 @@ reference and explicit local `buttonOverrides`. The editor shows Variant,
 navigation to Button and the shared Overrides action. It does not show a
 Component selector.
 
-Button Variants own their content layout (icon, text or icon with text), one
+Button Variants own their content layout (icon, text or icon with text), required
+`labelPosition` (`top`, `bottom`, `left`, `right`) relative to the icon, one
 base appearance, `disabledOpacity` and `pressedScale`. The appearance is the
 former Normal appearance and remains authoritative for every Runtime value.
 Content layout is not a Runtime Input and therefore changes with the exact
-Button Variant without rewriting current content values.
+Button Variant without rewriting current content values. The dictionary exposes
+label position through the same Variant/Override path. Button owns one content
+geometry for intrinsic measurement and painting: vertical positions stack icon
+and Label; horizontal positions place them side by side. The content gap applies
+only when both are present. The complete content is centered inside fixed boxes;
+content-sized boxes include the measured content and token padding. Icon Row
+orientation remains independent. Reel uses Button Overrides with `iconText` and
+`bottom`, and its items own the editable label text.
 
 Surface owns a Palette color identity (`surface.tintPaletteColor`) and signed
 intensity (`surface.tintAmount`, -1 to 1). Zero is an exact visual no-op;

@@ -5662,7 +5662,7 @@
                     "id": "item_f1b16ad3f9c84b2d897fd8020a201a01",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                     "iconToken": "heart",
-                    "text": "",
+                    "text": "Me gusta",
                     "iconSizeToken": "theme.iconSizes.l",
                     "textSizeToken": "theme.typography.sizes.s",
                     "buttonOverrides": {
@@ -5680,8 +5680,19 @@
                                 "reliefEnabled": false
                               }
                             }
+                          },
+                          "labelSlot": {
+                            "overrides": {
+                              "label": {
+                                "textColorToken": "theme.colors.onAction"
+                              }
+                            }
                           }
-                        }
+                        },
+                        "contentMode": "iconText",
+                        "labelPosition": "bottom",
+                        "dimensionMode": "content",
+                        "contentGapToken": "theme.spacing.xs"
                       }
                     }
                   },
@@ -5689,7 +5700,7 @@
                     "id": "item_f1b16ad3f9c84b2d897fd8020a201a02",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                     "iconToken": "chat_bubble",
-                    "text": "",
+                    "text": "Comentar",
                     "iconSizeToken": "theme.iconSizes.l",
                     "textSizeToken": "theme.typography.sizes.s",
                     "buttonOverrides": {
@@ -5707,8 +5718,19 @@
                                 "reliefEnabled": false
                               }
                             }
+                          },
+                          "labelSlot": {
+                            "overrides": {
+                              "label": {
+                                "textColorToken": "theme.colors.onAction"
+                              }
+                            }
                           }
-                        }
+                        },
+                        "contentMode": "iconText",
+                        "labelPosition": "bottom",
+                        "dimensionMode": "content",
+                        "contentGapToken": "theme.spacing.xs"
                       }
                     }
                   },
@@ -5716,7 +5738,7 @@
                     "id": "item_f1b16ad3f9c84b2d897fd8020a201a03",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
                     "iconToken": "app_share",
-                    "text": "",
+                    "text": "Compartir",
                     "iconSizeToken": "theme.iconSizes.l",
                     "textSizeToken": "theme.typography.sizes.s",
                     "buttonOverrides": {
@@ -5734,8 +5756,19 @@
                                 "reliefEnabled": false
                               }
                             }
+                          },
+                          "labelSlot": {
+                            "overrides": {
+                              "label": {
+                                "textColorToken": "theme.colors.onAction"
+                              }
+                            }
                           }
-                        }
+                        },
+                        "contentMode": "iconText",
+                        "labelPosition": "bottom",
+                        "dimensionMode": "content",
+                        "contentGapToken": "theme.spacing.xs"
                       }
                     }
                   }

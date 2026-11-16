@@ -5,6 +5,7 @@ import type { BadgeDesignContract } from "./badgeComponentContract.js";
 import type { RuntimeValueBinding, RuntimeValueLink } from "./runtimePreviewDocumentContract.js";
 
 export type ButtonContentMode = "icon" | "text" | "iconText";
+export type ButtonLabelPosition = "top" | "bottom" | "left" | "right";
 
 export interface ButtonAppearanceContract {
   iconColorToken: string;
@@ -16,6 +17,7 @@ export interface ButtonDesignContract {
   accent: import("./visualAccent.js").VisualAccentFrame;
   id: string;
   contentMode: ButtonContentMode;
+  labelPosition: ButtonLabelPosition;
   enabled: boolean;
   pressed: boolean;
   opacity: number;

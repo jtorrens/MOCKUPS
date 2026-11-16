@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `32` is the only current schema. Authored Production rows belong
+Schema version `33` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -1017,3 +1017,12 @@ Icon Row actions boundary. Existing Variants retain their flow layout and curren
 Runtime values; Reel is an additional complete Variant. Message, Text Input and
 Keyboard visibility remain independent. Only the protected, checkpointed canonical
 workstation database is migrated; startup never supplies missing fields.
+
+### Button label position maintenance (schema 33)
+
+The explicit maintenance transaction adds `button.labelPosition: "right"` to
+all current Button configs and complete Variants, preserving their layout.
+Sparse embedded Overrides continue to inherit from their exact Button Variant.
+The Button dictionary/layout and development seed expose top/bottom/left/right.
+Reel's action Button Overrides use `bottom` and `iconText`; Icon Row items retain
+stable ids and supply editable text. Startup does not supply missing positions.

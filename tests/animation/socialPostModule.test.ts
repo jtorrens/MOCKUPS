@@ -576,6 +576,11 @@ test("Reel fills the Screen below optional floating sections and vertical action
   const contract = resolveSocialPostModule(source);
   assert.equal(contract.actions.orientation, "vertical");
   assert.equal(contract.actions.items.length, 3);
+  for (const item of contract.actions.items) {
+    assert.equal(item.button.labelPosition, "bottom");
+    assert.equal(item.button.contentMode, "iconText");
+    assert.ok(item.button.appearance.label?.text);
+  }
   const node = socialPostModuleToRenderable(source);
   const media = requiredNode(node, "module.core.socialPost.media.page.0");
   assert.deepEqual(media.box, node.box);

@@ -22,6 +22,7 @@ internal static class GeneratedComponentScaffoldConfigRegistry
                 BubbleComponentConfigContract.Validate(config, context);
                 return true;
             case "button":
+                ButtonComponentConfigContract.Validate(config, context);
                 return true;
             case "callParticipant":
                 CallParticipantComponentConfigContract.Validate(config, context);

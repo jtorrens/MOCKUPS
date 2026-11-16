@@ -468,6 +468,12 @@ export function planScopedValidation(
       desktopUi = true;
       continue;
     }
+    if (file.startsWith("src/desktop-preview/buttonComponent")
+      || file === "src/Mockups.Application/ButtonComponentConfigContract.cs"
+      || file === "scaffolding/components/button.json") {
+      previewTests.add("tests/animation/atomicTemporalComponents.test.ts");
+      previewTests.add("tests/animation/socialPostModule.test.ts");
+    }
     if (file === "src/desktop-preview/moduleSectionLayout.ts"
       || file === "src/Mockups.Application/ModuleSectionLayoutContract.cs") {
       // Shared placement must retain both concrete consumers in the plan.

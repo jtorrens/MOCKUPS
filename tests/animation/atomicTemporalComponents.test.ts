@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { resolveAudioComponent } from "../../src/desktop-preview/audioComponentResolver.js";
 import { resolveBubbleComponent } from "../../src/desktop-preview/bubbleComponentResolver.js";
+import { buttonComponentToRenderableAt, measureButtonComponent } from "../../src/desktop-preview/buttonComponentRenderable.js";
 import { resolveButtonComponent } from "../../src/desktop-preview/buttonComponentResolver.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { resolveDrawPasswordComponent } from "../../src/desktop-preview/drawPasswordComponentResolver.js";
@@ -330,3 +331,44 @@ function withDocument(
     runtimeContractJson: serialized,
   };
 }
+
+
+test("Button positions the Label on four sides with matching content measurement", () => {
+  for (const position of ["top", "bottom", "left", "right"] as const) {
+    for (const dimensionMode of ["content", "fixed"] as const) {
+      const source = withValues(withInputDefaults(committedComponentFixture("button")), {
+        sampleText: "Label", iconToken: "heart", showBadge: false,
+      });
+      const config = JSON.parse(source.configJson);
+      Object.assign(config.button, { contentMode: "iconText", labelPosition: position, dimensionMode, size: "180|120" });
+      const payload = { ...source, configJson: JSON.stringify(config) };
+      const button = resolveButtonComponent(payload);
+      const measured = measureButtonComponent(payload, button);
+      const box = { x: 17, y: 29, ...measured };
+      const node = buttonComponentToRenderableAt(payload, button, box);
+      const icon = node.children!.find(child => child.id === `${button.id}.glyph`)!.box;
+      const label = node.children!.find(child => child.id === button.appearance.label!.id)!.box;
+      if (position === "top") assert.ok(label.y + label.height <= icon.y);
+      if (position === "bottom") assert.ok(icon.y + icon.height <= label.y);
+      if (position === "left") assert.ok(label.x + label.width <= icon.x);
+      if (position === "right") assert.ok(icon.x + icon.width <= label.x);
+      const left = Math.min(icon.x, label.x), right = Math.max(icon.x + icon.width, label.x + label.width);
+      const top = Math.min(icon.y, label.y), bottom = Math.max(icon.y + icon.height, label.y + label.height);
+      assert.ok(Math.abs((left + right) / 2 - (box.x + box.width / 2)) < 0.001);
+      assert.ok(Math.abs((top + bottom) / 2 - (box.y + box.height / 2)) < 0.001);
+      if (dimensionMode === "content") {
+        assert.ok(left >= box.x && right <= box.x + box.width);
+        assert.ok(top >= box.y && bottom <= box.y + box.height);
+      }
+    }
+  }
+});
+
+test("Button rejects missing and unknown Label positions", () => {
+  const source = withInputDefaults(committedComponentFixture("button"));
+  for (const position of [undefined, "diagonal"]) {
+    const config = JSON.parse(source.configJson);
+    config.button.labelPosition = position;
+    assert.throws(() => resolveButtonComponent({ ...source, configJson: JSON.stringify(config) }), /labelPosition|label position/);
+  }
+});
