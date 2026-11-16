@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `31` is the only current schema. Authored Production rows belong
+Schema version `32` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -1007,3 +1007,13 @@ Variant references, local Overrides and animation tracks remain authored.
 Only the canonical workstation database is migrated, after its Backup Hub
 pre-migration publication; the validated result is checkpointed into parity.
 Startup accepts schema 31 read-only and performs no repair.
+
+### Module section layout maintenance (schema 32)
+
+Explicit maintenance converts Video Call header/footer placement into the shared
+`ModuleSectionLayout` document, preserving its mode, inset and edge offset. Social
+Post receives explicit section layouts, footer/gallery visibility and an exact
+Icon Row actions boundary. Existing Variants retain their flow layout and current
+Runtime values; Reel is an additional complete Variant. Message, Text Input and
+Keyboard visibility remain independent. Only the protected, checkpointed canonical
+workstation database is migrated; startup never supplies missing fields.

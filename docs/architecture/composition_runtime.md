@@ -591,3 +591,25 @@ Post forwards `mediaCutout` to its main media and `galleryMediaCutout` to Galler
 Design Test Values and Production Screen Runtime use the same declarations;
 existing authored documents receive explicit `false` during maintenance, never
 through reader defaults or startup repair.
+
+
+## Module sections in flow and floating
+
+`ModuleSectionLayoutContract` and `moduleSectionLayout.ts` own the current
+section document: exactly `mode` (`stack` or `float`), a spacing-token pair
+`padding`, and Dictionary `AlignmentPlacement` `placement`. Video Call and
+Social Post consume that same contract. The common geometry owner applies the
+floating margins and placement and excludes floating or absent sections from
+flow reservation. Stack preserves the Module's declared ordering. Placement
+never changes a child's Component Variant or Runtime values.
+
+Social Post can assign Media the complete Screen as its background plane;
+its section layers remain above that plane. This layout mode is independent
+of Media's Runtime fullscreen playback operation. Header, footer, gallery,
+message, actions, Text Input and Keyboard declare their own layout. Message,
+Text Input and Keyboard visibility remain independent. Gallery additionally
+retains its Runtime visibility gate, combined with Variant enablement. The
+optional actions boundary consumes a complete exact Icon Row Variant plus local
+Overrides through the existing configured-Icon-Row preparation, as cosmetic
+Variant content. It owns no command schema or independent collection lifecycle.
+Reel is a complete Social Post Variant, not another implementation or route.

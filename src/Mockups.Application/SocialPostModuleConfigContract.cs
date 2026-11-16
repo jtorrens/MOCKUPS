@@ -19,6 +19,8 @@ internal static class SocialPostModuleConfigContract
         RequireExactKeys(
             socialPost,
             [
+                "headerLayout", "footerLayout", "messageLayout", "galleryLayout", "actionsLayout", "textInputLayout", "keyboardLayout",
+                "showFooter", "showActions", "showGallery", "actionsSlot", "galleryFloatHeight",
                 "useAppWallpaper",
                 "showHeader",
                 "headerHeight",
@@ -53,6 +55,7 @@ internal static class SocialPostModuleConfigContract
 
         foreach (var key in new[]
         {
+            "showFooter", "showActions", "showGallery",
             "useAppWallpaper",
             "showHeader",
             "showStatusBar",
@@ -66,6 +69,11 @@ internal static class SocialPostModuleConfigContract
         {
             JsonPath.RequiredBoolean(socialPost, key, owner);
         }
+        foreach (var key in new[] { "headerLayout", "footerLayout", "messageLayout", "galleryLayout", "actionsLayout", "textInputLayout", "keyboardLayout" })
+            ModuleSectionLayoutContract.Validate(socialPost, key, owner);
+        ValidateSlot(socialPost, "actionsSlot", owner);
+        if (JsonPath.RequiredNumber(socialPost, "galleryFloatHeight", owner) <= 0)
+            throw new InvalidOperationException($"{owner}.galleryFloatHeight must be positive.");
         var headerHeight = JsonPath.RequiredNumber(socialPost, "headerHeight", owner);
         if (headerHeight < 0)
         {
@@ -85,10 +93,10 @@ internal static class SocialPostModuleConfigContract
         ValidateSlot(socialPost, "mediaSlot", owner);
         JsonPath.RequiredString(socialPost, "mediaPadding", owner);
         var mediaHeightMode = JsonPath.RequiredString(socialPost, "mediaHeightMode", owner);
-        if (mediaHeightMode is not ("fixed" or "fill"))
+        if (mediaHeightMode is not ("fixed" or "fill" or "screen"))
         {
             throw new InvalidOperationException(
-                $"{owner}.mediaHeightMode must be 'fixed' or 'fill'.");
+                $"{owner}.mediaHeightMode must be 'fixed', 'fill' or 'screen'.");
         }
         if (JsonPath.RequiredNumber(socialPost, "mediaHeight", owner) <= 0)
         {

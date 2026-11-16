@@ -243,7 +243,7 @@ internal static class CurrentSqliteSchema
           last_error TEXT NOT NULL
         );
 
-        PRAGMA user_version = 31;
+        PRAGMA user_version = 32;
         """;
 
 }

@@ -9,8 +9,8 @@
     "sortOrder": 2
   },
   "intent": {
-    "responsibility": "Own the Social Post header, Media and fixed Message composition.",
-    "visualBoundary": "Render a Surface-backed header, padded Media boundary and a flexible Message zone composed from Bubble, Text Input Bar and Keyboard.",
+    "responsibility": "Own Social Post and Reel through optional sections and a shared Module section layout.",
+    "visualBoundary": "Media may fill the complete Screen; each section independently participates in flow or floats over it.",
     "runtimeBehavior": "The Variant owns structure, Component Variants, padding and separators; Runtime owns row content, the Gallery directory and selected index, Media framing and height, message text, write-on and composer visibility.",
     "forwarding": "The selected Gallery index explicitly drives both the Gallery position and the paged Media source. The selected Media alone receives the declared playback and full-screen Runtime values and actions. Message text is explicitly supplied to the selected Bubble, Text Input Bar and Keyboard boundaries.",
     "temporalOwnership": "The Screen owns message write-on while child Components retain their local rendering behavior.",
@@ -30,7 +30,8 @@
       "navigation_bar",
       "status_bar",
       "surface",
-      "textInputBar"
+      "textInputBar",
+      "iconRow"
     ]
   },
   "owners": {
@@ -1438,7 +1439,92 @@
           }
         }
       ],
-      "footerHeight": 130
+      "footerHeight": 130,
+      "headerLayout": {
+        "mode": "stack",
+        "padding": "theme.spacing.none|theme.spacing.none",
+        "placement": {
+          "mode": "insideEdge",
+          "alignX": 0.5,
+          "alignY": 0,
+          "offsetX": 0,
+          "offsetY": 0
+        }
+      },
+      "footerLayout": {
+        "mode": "stack",
+        "padding": "theme.spacing.none|theme.spacing.none",
+        "placement": {
+          "mode": "insideEdge",
+          "alignX": 0.5,
+          "alignY": 1,
+          "offsetX": 0,
+          "offsetY": 0
+        }
+      },
+      "galleryLayout": {
+        "mode": "stack",
+        "padding": "theme.spacing.none|theme.spacing.none",
+        "placement": {
+          "mode": "insideEdge",
+          "alignX": 0.5,
+          "alignY": 0,
+          "offsetX": 0,
+          "offsetY": 0
+        }
+      },
+      "messageLayout": {
+        "mode": "stack",
+        "padding": "theme.spacing.none|theme.spacing.none",
+        "placement": {
+          "mode": "insideEdge",
+          "alignX": 0.5,
+          "alignY": 1,
+          "offsetX": 0,
+          "offsetY": 0
+        }
+      },
+      "actionsLayout": {
+        "mode": "stack",
+        "padding": "theme.spacing.none|theme.spacing.none",
+        "placement": {
+          "mode": "insideEdge",
+          "alignX": 1,
+          "alignY": 1,
+          "offsetX": 0,
+          "offsetY": 0
+        }
+      },
+      "textInputLayout": {
+        "mode": "stack",
+        "padding": "theme.spacing.none|theme.spacing.none",
+        "placement": {
+          "mode": "insideEdge",
+          "alignX": 0.5,
+          "alignY": 1,
+          "offsetX": 0,
+          "offsetY": 0
+        }
+      },
+      "keyboardLayout": {
+        "mode": "stack",
+        "padding": "theme.spacing.none|theme.spacing.none",
+        "placement": {
+          "mode": "insideEdge",
+          "alignX": 0.5,
+          "alignY": 1,
+          "offsetX": 0,
+          "offsetY": 0
+        }
+      },
+      "showFooter": true,
+      "showActions": false,
+      "showGallery": true,
+      "galleryFloatHeight": 160,
+      "actionsSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {}
+      }
     }
   },
   "designPreview": {
@@ -3872,11 +3958,1795 @@
             }
           }
         ],
-        "footerHeight": 130
+        "footerHeight": 130,
+        "headerLayout": {
+          "mode": "stack",
+          "padding": "theme.spacing.none|theme.spacing.none",
+          "placement": {
+            "mode": "insideEdge",
+            "alignX": 0.5,
+            "alignY": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        },
+        "footerLayout": {
+          "mode": "stack",
+          "padding": "theme.spacing.none|theme.spacing.none",
+          "placement": {
+            "mode": "insideEdge",
+            "alignX": 0.5,
+            "alignY": 1,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        },
+        "galleryLayout": {
+          "mode": "stack",
+          "padding": "theme.spacing.none|theme.spacing.none",
+          "placement": {
+            "mode": "insideEdge",
+            "alignX": 0.5,
+            "alignY": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        },
+        "messageLayout": {
+          "mode": "stack",
+          "padding": "theme.spacing.none|theme.spacing.none",
+          "placement": {
+            "mode": "insideEdge",
+            "alignX": 0.5,
+            "alignY": 1,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        },
+        "actionsLayout": {
+          "mode": "stack",
+          "padding": "theme.spacing.none|theme.spacing.none",
+          "placement": {
+            "mode": "insideEdge",
+            "alignX": 1,
+            "alignY": 1,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        },
+        "textInputLayout": {
+          "mode": "stack",
+          "padding": "theme.spacing.none|theme.spacing.none",
+          "placement": {
+            "mode": "insideEdge",
+            "alignX": 0.5,
+            "alignY": 1,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        },
+        "keyboardLayout": {
+          "mode": "stack",
+          "padding": "theme.spacing.none|theme.spacing.none",
+          "placement": {
+            "mode": "insideEdge",
+            "alignX": 0.5,
+            "alignY": 1,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        },
+        "showFooter": true,
+        "showActions": false,
+        "showGallery": true,
+        "galleryFloatHeight": 160,
+        "actionsSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        }
       }
     }
   },
-  "additionalVariants": [],
+  "additionalVariants": [
+    {
+      "id": "reel",
+      "name": "Reel",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "appearanceMode": "inherit",
+        "socialPost": {
+          "useAppWallpaper": false,
+          "showHeader": true,
+          "showStatusBar": false,
+          "showNavigationBar": false,
+          "headerSurfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default",
+            "overrides": {
+              "surface": {
+                "backgroundAlpha": 0
+              },
+              "style": {
+                "borderWidth": 0,
+                "shadowEnabled": false,
+                "reliefEnabled": false,
+                "cornerRadiusToken": "theme.radii.none"
+              }
+            }
+          },
+          "rowGapToken": "theme.spacing.s",
+          "rows": [
+            {
+              "id": "item_690ab7d988ef466c8d6b20406ef2e024",
+              "label": "Row 1",
+              "visible": true,
+              "rowSlot": {
+                "variantReference": "component_project_foqn_s2_content_row::variant::default",
+                "overrides": {
+                  "contentRow": {
+                    "padding": "theme.spacing.xl|theme.spacing.m",
+                    "verticalAlignment": "center",
+                    "showSeparator": false,
+                    "slots": [
+                      {
+                        "id": "item_d703140004a540299cd4f6b31e1dd754",
+                        "kind": "avatar",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {
+                            "avatar": {
+                              "defaultSize": 50
+                            }
+                          }
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_e68fb7f9294f4c0a864560ac9c0c3591",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_f1f6224987ed4109858c88a9d2a8edd5",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_40a23b9da0e14edda5c3107e36160861",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_99091298943c42ae88565f1cfe8e2135",
+                        "kind": "none",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "id": "item_d2a1bd7aeb5f49c49501136b62bc4389",
+              "label": "Row 2",
+              "visible": false,
+              "rowSlot": {
+                "variantReference": "component_project_foqn_s2_content_row::variant::default",
+                "overrides": {
+                  "contentRow": {
+                    "padding": "theme.spacing.l|theme.spacing.s",
+                    "verticalAlignment": "center",
+                    "showSeparator": false,
+                    "slots": [
+                      {
+                        "id": "item_93403f58daa5461ebd97f6500c310a18",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_b4419610a41f47d9a9ec85989f6e285f",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_5247adbf5f9f4bf59935d1be38fd72db",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_67a972293b584262b4b8e942d49ac44e",
+                        "kind": "none",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_0c8add96f6a341b49d5bae5de8783365",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "headerHeight": 80,
+          "mediaSlot": {
+            "variantReference": "component_project_foqn_s2_media::variant::media_video_copy",
+            "overrides": {
+              "style": {
+                "cornerRadiusToken": "theme.radii.none",
+                "borderWidth": 0
+              },
+              "media": {
+                "surfaceSlot": {
+                  "overrides": {
+                    "style": {
+                      "cornerRadiusToken": "theme.radii.none",
+                      "borderWidth": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "mediaPadding": "theme.spacing.none|theme.spacing.none",
+          "showMedia": true,
+          "mediaHeightMode": "screen",
+          "mediaHeight": 300,
+          "mediaInputs": {
+            "mediaType": "image",
+            "mediaScale": 1,
+            "mediaOffset": "0|0",
+            "isPlaying": false,
+            "currentTimeSeconds": 0,
+            "durationSeconds": 0,
+            "isFullScreen": false,
+            "fullScreenTransition": false,
+            "fullframeOrientation": "portrait",
+            "controlsElapsedMs": 0,
+            "motionElapsedMs": 0,
+            "mediaCutout": false
+          },
+          "showMediaSeparator": false,
+          "gallerySlot": {
+            "variantReference": "component_project_foqn_s2_gallery::variant::default",
+            "overrides": {
+              "gallery": {
+                "widthMode": "fill",
+                "heightMode": "fill"
+              }
+            }
+          },
+          "showGallerySeparator": true,
+          "messageMinHeight": 160,
+          "showMessage": false,
+          "messageBubbleSlot": {
+            "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
+            "overrides": {
+              "bubble": {
+                "dimensionMode": "fixed",
+                "outgoingBackground": "palette_project_foqn_s2_gray_100|palette_project_foqn_s2_gray_100",
+                "outgoingText": "palette_project_foqn_s2_gray_010|palette_project_foqn_s2_gray_010",
+                "surfaceSlot": {
+                  "overrides": {
+                    "style": {
+                      "borderWidth": 1
+                    },
+                    "surface": {
+                      "tail": {
+                        "enabled": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "messageTextInputBarSlot": {
+            "variantReference": "component_project_foqn_s2_textInputBar::variant::default_copy",
+            "overrides": {}
+          },
+          "messageKeyboardSlot": {
+            "variantReference": "component_project_foqn_s2_keyboard::variant::default_copy",
+            "overrides": {}
+          },
+          "messagePadding": "theme.spacing.s|theme.spacing.s",
+          "messageBubbleInputs": {
+            "state": "outgoing",
+            "actorId": "",
+            "actorName": "",
+            "actor": {},
+            "actorIdentityVisible": false,
+            "mediaType": "none",
+            "mediaSource": "",
+            "viewportSize": "1|1",
+            "mediaScale": 1,
+            "mediaOffset": "0|0",
+            "isPlaying": false,
+            "currentTimeSeconds": 0,
+            "durationSeconds": 0,
+            "playbackMode": "once",
+            "isFullScreen": false,
+            "fullScreenTransition": false,
+            "fullframeOrientation": "portrait",
+            "controlsElapsedMs": 0,
+            "motionElapsedMs": 0,
+            "statusState": "none",
+            "statusText": "",
+            "typingIndicator": false,
+            "iconRowRuntime": [
+              {
+                "id": "item_759f71d5c6374b3bae6f071434d56958",
+                "runtimeInputs": {
+                  "componentType": "iconRow",
+                  "sampleText": "Sample",
+                  "sampleSubtext": "",
+                  "sampleSize": 256,
+                  "inputs": [
+                    {
+                      "id": "buttonInputs",
+                      "label": "Buttons",
+                      "jsonKey": "buttonInputs",
+                      "kind": "collection",
+                      "valueKind": "StructuredCollection",
+                      "defaultValue": "[{\"id\":\"item_dd466805c6484b728e4b02264b463518\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\",\"enabled\":true,\"pressed\":false,\"surfaceTintPaletteColor\":\"palette_project_foqn_s2_gray_050\",\"surfaceTintAmount\":0,\"accentType\":\"pulse\",\"accentActive\":false}]",
+                      "minimum": 0,
+                      "maximum": 9999,
+                      "increment": 1,
+                      "tableId": "",
+                      "resolvedJsonKey": "",
+                      "componentType": "",
+                      "options": [],
+                      "pairFirstLabel": "W",
+                      "pairSecondLabel": "H",
+                      "visibleWhenPath": "",
+                      "visibleWhenValue": "",
+                      "source": "runtime",
+                      "uiOrigin": "self",
+                      "uiGroupId": "",
+                      "uiGroupLabel": "",
+                      "uiParentGroupId": "",
+                      "transition": null,
+                      "unit": "",
+                      "structuredCollection": {
+                        "id": "buttonInputs",
+                        "label": "Buttons",
+                        "jsonKey": "buttonInputs",
+                        "itemLabel": "Button",
+                        "fields": [
+                          {
+                            "id": "enabled",
+                            "label": "Enabled",
+                            "jsonKey": "enabled",
+                            "kind": "boolean",
+                            "valueKind": "Boolean",
+                            "defaultValue": "true",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "state",
+                            "uiGroupLabel": "State",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 10,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "pressed",
+                            "label": "Pressed",
+                            "jsonKey": "pressed",
+                            "kind": "boolean",
+                            "valueKind": "Boolean",
+                            "defaultValue": "false",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "state",
+                            "uiGroupLabel": "State",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 11,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "sampleText",
+                            "label": "Text",
+                            "jsonKey": "sampleText",
+                            "kind": "text",
+                            "valueKind": "StringSingleLine",
+                            "defaultValue": "Action",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "content",
+                            "uiGroupLabel": "Content",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 21,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "iconToken",
+                            "label": "Icon",
+                            "jsonKey": "iconToken",
+                            "kind": "icon",
+                            "valueKind": "IconToken",
+                            "defaultValue": "media_play_fill",
+                            "allowEmpty": true,
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "content",
+                            "uiGroupLabel": "Content",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 22,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "iconSizeToken",
+                            "label": "Icon size",
+                            "jsonKey": "iconSizeToken",
+                            "kind": "themeToken",
+                            "valueKind": "ThemeToken",
+                            "defaultValue": "theme.iconSizes.m",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [
+                              {
+                                "value": "theme.iconSizes.xs",
+                                "label": "iconSizes.xs"
+                              },
+                              {
+                                "value": "theme.iconSizes.s",
+                                "label": "iconSizes.s"
+                              },
+                              {
+                                "value": "theme.iconSizes.m",
+                                "label": "iconSizes.m"
+                              },
+                              {
+                                "value": "theme.iconSizes.l",
+                                "label": "iconSizes.l"
+                              },
+                              {
+                                "value": "theme.iconSizes.xl",
+                                "label": "iconSizes.xl"
+                              }
+                            ],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "content",
+                            "uiGroupLabel": "Content",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 23,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "textSizeToken",
+                            "label": "Text size",
+                            "jsonKey": "textSizeToken",
+                            "kind": "themeToken",
+                            "valueKind": "ThemeToken",
+                            "defaultValue": "theme.typography.sizes.s",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [
+                              {
+                                "value": "theme.typography.sizes.xs",
+                                "label": "typography.sizes.xs"
+                              },
+                              {
+                                "value": "theme.typography.sizes.s",
+                                "label": "typography.sizes.s"
+                              },
+                              {
+                                "value": "theme.typography.sizes.m",
+                                "label": "typography.sizes.m"
+                              },
+                              {
+                                "value": "theme.typography.sizes.l",
+                                "label": "typography.sizes.l"
+                              },
+                              {
+                                "value": "theme.typography.sizes.xl",
+                                "label": "typography.sizes.xl"
+                              }
+                            ],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "content",
+                            "uiGroupLabel": "Content",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 24,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "showBadge",
+                            "label": "Show badge",
+                            "jsonKey": "showBadge",
+                            "kind": "boolean",
+                            "valueKind": "Boolean",
+                            "defaultValue": "false",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "badge",
+                            "uiGroupLabel": "Badge",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 40,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "badgeContentMode",
+                            "label": "Badge content",
+                            "jsonKey": "badgeContentMode",
+                            "kind": "option",
+                            "valueKind": "OptionToken",
+                            "defaultValue": "icon",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [
+                              {
+                                "value": "icon",
+                                "label": "Icon"
+                              },
+                              {
+                                "value": "text",
+                                "label": "Text"
+                              }
+                            ],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "badge",
+                            "uiGroupLabel": "Badge",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 41,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "badgeIconToken",
+                            "label": "Badge icon",
+                            "jsonKey": "badgeIconToken",
+                            "kind": "icon",
+                            "valueKind": "IconToken",
+                            "defaultValue": "system_check",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "badge",
+                            "uiGroupLabel": "Badge",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 42,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "badgeText",
+                            "label": "Badge text",
+                            "jsonKey": "badgeText",
+                            "kind": "text",
+                            "valueKind": "StringSingleLine",
+                            "defaultValue": "1",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "badge",
+                            "uiGroupLabel": "Badge",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 43,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "badgeSize",
+                            "label": "Badge size",
+                            "jsonKey": "badgeSize",
+                            "kind": "number",
+                            "valueKind": "Integer",
+                            "defaultValue": "20",
+                            "minimum": 1,
+                            "maximum": 512,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "badge",
+                            "uiGroupLabel": "Badge",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 44,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "badgeBackgroundPaletteColor",
+                            "label": "Badge background",
+                            "jsonKey": "badgeBackgroundPaletteColor",
+                            "kind": "text",
+                            "valueKind": "PaletteColorToken",
+                            "defaultValue": "blue",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "badge",
+                            "uiGroupLabel": "Badge",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 45,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "badgeContentPaletteColor",
+                            "label": "Badge icon / text color",
+                            "jsonKey": "badgeContentPaletteColor",
+                            "kind": "text",
+                            "valueKind": "PaletteColorToken",
+                            "defaultValue": "gray_100",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "embedded",
+                            "uiGroupId": "badge",
+                            "uiGroupLabel": "Badge",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 46,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "iconColorToken",
+                            "label": "Icon color",
+                            "jsonKey": "iconColorToken",
+                            "kind": "themeToken",
+                            "valueKind": "ThemeToken",
+                            "defaultValue": "theme.colors.icon",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "self",
+                            "uiGroupId": "",
+                            "uiGroupLabel": "",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 22,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "textColorToken",
+                            "label": "Text color",
+                            "jsonKey": "textColorToken",
+                            "kind": "themeToken",
+                            "valueKind": "ThemeToken",
+                            "defaultValue": "theme.colors.textPrimary",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "self",
+                            "uiGroupId": "",
+                            "uiGroupLabel": "",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 22,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "surfaceTintPaletteColor",
+                            "label": "Surface tint color",
+                            "jsonKey": "surfaceTintPaletteColor",
+                            "kind": "text",
+                            "valueKind": "PaletteColorToken",
+                            "defaultValue": "palette_project_foqn_s2_gray_050",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "self",
+                            "uiGroupId": "surfaceTint",
+                            "uiGroupLabel": "Surface tint",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 30,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            }
+                          },
+                          {
+                            "id": "surfaceTintAmount",
+                            "label": "Surface tint amount",
+                            "jsonKey": "surfaceTintAmount",
+                            "kind": "number",
+                            "valueKind": "Decimal",
+                            "defaultValue": "0",
+                            "minimum": -1,
+                            "maximum": 1,
+                            "increment": 0.01,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "self",
+                            "uiGroupId": "surfaceTint",
+                            "uiGroupLabel": "Surface tint",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 31,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              }
+                            },
+                            "useSlider": true
+                          },
+                          {
+                            "id": "accentType",
+                            "label": "Type",
+                            "jsonKey": "accentType",
+                            "kind": "option",
+                            "valueKind": "OptionToken",
+                            "defaultValue": "pulse",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [
+                              {
+                                "value": "pulse",
+                                "label": "Pulse"
+                              },
+                              {
+                                "value": "vibrate",
+                                "label": "Vibration"
+                              },
+                              {
+                                "value": "rock",
+                                "label": "Rock"
+                              }
+                            ],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "self",
+                            "uiGroupId": "accent",
+                            "uiGroupLabel": "Accent",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 12,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              },
+                              "extendsOwnerDuration": false
+                            }
+                          },
+                          {
+                            "id": "accentActive",
+                            "label": "Active",
+                            "jsonKey": "accentActive",
+                            "kind": "boolean",
+                            "valueKind": "Boolean",
+                            "defaultValue": "false",
+                            "minimum": 0,
+                            "maximum": 9999,
+                            "increment": 1,
+                            "tableId": "",
+                            "resolvedJsonKey": "",
+                            "componentType": "",
+                            "options": [],
+                            "pairFirstLabel": "W",
+                            "pairSecondLabel": "H",
+                            "visibleWhenPath": "",
+                            "visibleWhenValue": "",
+                            "source": "runtime",
+                            "uiOrigin": "self",
+                            "uiGroupId": "accent",
+                            "uiGroupLabel": "Accent",
+                            "uiParentGroupId": "",
+                            "transition": null,
+                            "unit": "",
+                            "uiOrder": 13,
+                            "animatable": true,
+                            "animationInterpolations": [
+                              "hold"
+                            ],
+                            "animationTimeline": {
+                              "origin": {
+                                "kind": "ownerStart"
+                              },
+                              "extendsOwnerDuration": false
+                            }
+                          }
+                        ],
+                        "itemPresentation": {
+                          "subtitleFieldIds": [
+                            "sampleText",
+                            "iconToken"
+                          ],
+                          "subtitleMaxCharacters": 72,
+                          "fallbackIcon": "component"
+                        },
+                        "canEditStructure": false,
+                        "structureProjection": {
+                          "sourceConfigPath": "iconRow.items",
+                          "sourceIdJsonKey": "id",
+                          "runtimeIdJsonKey": "id",
+                          "fieldBindings": {
+                            "sampleText": "text",
+                            "iconToken": "iconToken",
+                            "iconSizeToken": "iconSizeToken",
+                            "textSizeToken": "textSizeToken"
+                          }
+                        }
+                      },
+                      "uiOrder": 10
+                    }
+                  ],
+                  "buttonInputs": [
+                    {
+                      "id": "item_dd466805c6484b728e4b02264b463518",
+                      "sampleText": "",
+                      "iconToken": "system_check",
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "textSizeToken": "theme.typography.sizes.s",
+                      "showBadge": false,
+                      "badgeContentMode": "text",
+                      "badgeIconToken": "system_check",
+                      "badgeText": "1",
+                      "badgeSize": 20,
+                      "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+                      "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+                      "iconColorToken": "theme.colors.icon",
+                      "textColorToken": "theme.colors.textPrimary",
+                      "enabled": true,
+                      "pressed": false,
+                      "surfaceTintPaletteColor": "palette_project_foqn_s2_gray_050",
+                      "surfaceTintAmount": 0,
+                      "accentType": "pulse",
+                      "accentActive": false
+                    }
+                  ],
+                  "collections": [],
+                  "actions": []
+                },
+                "iconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {}
+                }
+              }
+            ],
+            "showIconRow": false,
+            "mediaCutout": false
+          },
+          "showMessageSeparator": true,
+          "footerSurfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default",
+            "overrides": {
+              "surface": {
+                "backgroundAlpha": 0
+              },
+              "style": {
+                "borderWidth": 0,
+                "shadowEnabled": false,
+                "reliefEnabled": false,
+                "cornerRadiusToken": "theme.radii.none"
+              }
+            }
+          },
+          "footerRowGapToken": "theme.spacing.s",
+          "footerRows": [
+            {
+              "id": "item_9df0890d96604176aca0bb0a6e7889e2",
+              "label": "Row 1",
+              "visible": true,
+              "rowSlot": {
+                "variantReference": "component_project_foqn_s2_content_row::variant::default",
+                "overrides": {
+                  "contentRow": {
+                    "padding": "theme.spacing.xl|theme.spacing.m",
+                    "verticalAlignment": "center",
+                    "showSeparator": false,
+                    "slots": [
+                      {
+                        "id": "item_3a5f8a29b07b43f6a589286bd1463ce7",
+                        "kind": "avatar",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {
+                            "avatar": {
+                              "defaultSize": 50
+                            }
+                          }
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_5e50e44e80724c6e920f7acf97311125",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_21bcc88049a242f08301248deef83e16",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_836067d4bcc645cca099c2967a9a2cc0",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_2b2df52efb084e53ba43840ab1e661c4",
+                        "kind": "none",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "id": "item_1729c03bec80498bb124f253df1c1709",
+              "label": "Row 2",
+              "visible": true,
+              "rowSlot": {
+                "variantReference": "component_project_foqn_s2_content_row::variant::default",
+                "overrides": {
+                  "contentRow": {
+                    "padding": "theme.spacing.l|theme.spacing.s",
+                    "verticalAlignment": "center",
+                    "showSeparator": false,
+                    "slots": [
+                      {
+                        "id": "item_e2066917e7204c6f8243f986db7aab65",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_ae6039ebf04340e7aad16f9b28287a2c",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_cf299db22f8647d98a069e3bd0af6d78",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_158e39bf056d42dcaf3978a577a439b9",
+                        "kind": "none",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "item_a8188689baf84fb9856701a1b2588206",
+                        "kind": "label",
+                        "avatarSlot": {
+                          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                          "overrides": {}
+                        },
+                        "iconSlot": {
+                          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "overrides": {}
+                        },
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "labelSlot": {
+                          "variantReference": "component_project_foqn_s2_label::variant::default",
+                          "overrides": {
+                            "label": {
+                              "textColorToken": "palette_project_foqn_s2_gray_100",
+                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "footerHeight": 100,
+          "headerLayout": {
+            "mode": "float",
+            "padding": "theme.spacing.m|theme.spacing.l",
+            "placement": {
+              "mode": "insideEdge",
+              "alignX": 0.5,
+              "alignY": 0,
+              "offsetX": 0,
+              "offsetY": 0
+            }
+          },
+          "footerLayout": {
+            "mode": "float",
+            "padding": "theme.spacing.m|theme.spacing.l",
+            "placement": {
+              "mode": "insideEdge",
+              "alignX": 0.5,
+              "alignY": 1,
+              "offsetX": 0,
+              "offsetY": 0
+            }
+          },
+          "galleryLayout": {
+            "mode": "float",
+            "padding": "theme.spacing.m|theme.spacing.l",
+            "placement": {
+              "mode": "insideEdge",
+              "alignX": 0.5,
+              "alignY": 1,
+              "offsetX": 0,
+              "offsetY": 0
+            }
+          },
+          "messageLayout": {
+            "mode": "float",
+            "padding": "theme.spacing.m|theme.spacing.l",
+            "placement": {
+              "mode": "insideEdge",
+              "alignX": 0.5,
+              "alignY": 1,
+              "offsetX": 0,
+              "offsetY": -110
+            }
+          },
+          "actionsLayout": {
+            "mode": "float",
+            "padding": "theme.spacing.m|theme.spacing.l",
+            "placement": {
+              "mode": "insideEdge",
+              "alignX": 1,
+              "alignY": 0.65,
+              "offsetX": 0,
+              "offsetY": 0
+            }
+          },
+          "textInputLayout": {
+            "mode": "float",
+            "padding": "theme.spacing.m|theme.spacing.l",
+            "placement": {
+              "mode": "insideEdge",
+              "alignX": 0.5,
+              "alignY": 1,
+              "offsetX": 0,
+              "offsetY": 0
+            }
+          },
+          "keyboardLayout": {
+            "mode": "float",
+            "padding": "theme.spacing.m|theme.spacing.l",
+            "placement": {
+              "mode": "insideEdge",
+              "alignX": 0.5,
+              "alignY": 1,
+              "offsetX": 0,
+              "offsetY": 0
+            }
+          },
+          "showFooter": true,
+          "showActions": true,
+          "showGallery": false,
+          "galleryFloatHeight": 160,
+          "actionsSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {
+              "iconRow": {
+                "orientation": "vertical",
+                "gap": "theme.spacing.l",
+                "items": [
+                  {
+                    "id": "item_f1b16ad3f9c84b2d897fd8020a201a01",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "iconToken": "heart",
+                    "text": "",
+                    "iconSizeToken": "theme.iconSizes.l",
+                    "textSizeToken": "theme.typography.sizes.s",
+                    "buttonOverrides": {
+                      "button": {
+                        "appearance": {
+                          "iconColorToken": "palette_project_foqn_s2_gray_100",
+                          "surfaceSlot": {
+                            "overrides": {
+                              "surface": {
+                                "backgroundAlpha": 0
+                              },
+                              "style": {
+                                "borderWidth": 0,
+                                "shadowEnabled": false,
+                                "reliefEnabled": false
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "id": "item_f1b16ad3f9c84b2d897fd8020a201a02",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "iconToken": "chat_bubble",
+                    "text": "",
+                    "iconSizeToken": "theme.iconSizes.l",
+                    "textSizeToken": "theme.typography.sizes.s",
+                    "buttonOverrides": {
+                      "button": {
+                        "appearance": {
+                          "iconColorToken": "palette_project_foqn_s2_gray_100",
+                          "surfaceSlot": {
+                            "overrides": {
+                              "surface": {
+                                "backgroundAlpha": 0
+                              },
+                              "style": {
+                                "borderWidth": 0,
+                                "shadowEnabled": false,
+                                "reliefEnabled": false
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "id": "item_f1b16ad3f9c84b2d897fd8020a201a03",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "iconToken": "app_share",
+                    "text": "",
+                    "iconSizeToken": "theme.iconSizes.l",
+                    "textSizeToken": "theme.typography.sizes.s",
+                    "buttonOverrides": {
+                      "button": {
+                        "appearance": {
+                          "iconColorToken": "palette_project_foqn_s2_gray_100",
+                          "surfaceSlot": {
+                            "overrides": {
+                              "surface": {
+                                "backgroundAlpha": 0
+                              },
+                              "style": {
+                                "borderWidth": 0,
+                                "shadowEnabled": false,
+                                "reliefEnabled": false
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "dictionaryFields": [
     {
       "id": "module.core.socialPost.useAppWallpaper",
@@ -4331,6 +6201,10 @@
         {
           "value": "fill",
           "label": "Fill available"
+        },
+        {
+          "value": "screen",
+          "label": "Full screen background"
         }
       ],
       "optionSource": "None",
@@ -4994,6 +6868,1014 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.showFooter",
+      "label": "Show footer",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "socialPost",
+        "showFooter"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.showGallery",
+      "label": "Enable gallery",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "socialPost",
+        "showGallery"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.showActions",
+      "label": "Show actions",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "socialPost",
+        "showActions"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.actions",
+      "label": "Icon Row",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "actionsSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "iconRow",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Actions",
+        "recordClassId": "component.iconRow"
+      },
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.galleryFloatHeight",
+      "label": "Floating height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "socialPost",
+        "galleryFloatHeight"
+      ],
+      "defaultValue": "160",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 1,
+        "maximum": 4096,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "px",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.headerLayout.mode",
+      "label": "Layout",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "headerLayout",
+        "mode"
+      ],
+      "defaultValue": "stack",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "stack",
+          "label": "Stack",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "float",
+          "label": "Float",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.headerLayout.padding",
+      "label": "Floating margins",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "socialPost",
+        "headerLayout",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.none|theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.headerLayout.placement",
+      "label": "Floating placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "socialPost",
+        "headerLayout",
+        "placement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0.5,\"alignY\":0,\"offsetX\":0,\"offsetY\":0}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.footerLayout.mode",
+      "label": "Layout",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "footerLayout",
+        "mode"
+      ],
+      "defaultValue": "stack",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "stack",
+          "label": "Stack",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "float",
+          "label": "Float",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.footerLayout.padding",
+      "label": "Floating margins",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "socialPost",
+        "footerLayout",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.none|theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.footerLayout.placement",
+      "label": "Floating placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "socialPost",
+        "footerLayout",
+        "placement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0.5,\"alignY\":1,\"offsetX\":0,\"offsetY\":0}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.galleryLayout.mode",
+      "label": "Layout",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "galleryLayout",
+        "mode"
+      ],
+      "defaultValue": "stack",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "stack",
+          "label": "Stack",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "float",
+          "label": "Float",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.galleryLayout.padding",
+      "label": "Floating margins",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "socialPost",
+        "galleryLayout",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.none|theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.galleryLayout.placement",
+      "label": "Floating placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "socialPost",
+        "galleryLayout",
+        "placement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0.5,\"alignY\":0,\"offsetX\":0,\"offsetY\":0}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.messageLayout.mode",
+      "label": "Layout",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "messageLayout",
+        "mode"
+      ],
+      "defaultValue": "stack",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "stack",
+          "label": "Stack",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "float",
+          "label": "Float",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.messageLayout.padding",
+      "label": "Floating margins",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "socialPost",
+        "messageLayout",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.none|theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.messageLayout.placement",
+      "label": "Floating placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "socialPost",
+        "messageLayout",
+        "placement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0.5,\"alignY\":1,\"offsetX\":0,\"offsetY\":0}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.actionsLayout.mode",
+      "label": "Layout",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "actionsLayout",
+        "mode"
+      ],
+      "defaultValue": "stack",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "stack",
+          "label": "Stack",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "float",
+          "label": "Float",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.actionsLayout.padding",
+      "label": "Floating margins",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "socialPost",
+        "actionsLayout",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.none|theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.actionsLayout.placement",
+      "label": "Floating placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "socialPost",
+        "actionsLayout",
+        "placement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":1,\"alignY\":1,\"offsetX\":0,\"offsetY\":0}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.textInputLayout.mode",
+      "label": "Layout",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "textInputLayout",
+        "mode"
+      ],
+      "defaultValue": "stack",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "stack",
+          "label": "Stack",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "float",
+          "label": "Float",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.textInputLayout.padding",
+      "label": "Floating margins",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "socialPost",
+        "textInputLayout",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.none|theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.textInputLayout.placement",
+      "label": "Floating placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "socialPost",
+        "textInputLayout",
+        "placement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0.5,\"alignY\":1,\"offsetX\":0,\"offsetY\":0}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.keyboardLayout.mode",
+      "label": "Layout",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "keyboardLayout",
+        "mode"
+      ],
+      "defaultValue": "stack",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "stack",
+          "label": "Stack",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "float",
+          "label": "Float",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.keyboardLayout.padding",
+      "label": "Floating margins",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "socialPost",
+        "keyboardLayout",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.none|theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.keyboardLayout.placement",
+      "label": "Floating placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "socialPost",
+        "keyboardLayout",
+        "placement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0.5,\"alignY\":1,\"offsetX\":0,\"offsetY\":0}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {
@@ -5104,6 +7986,38 @@
                 "visible": true
               }
             ]
+          },
+          {
+            "id": "header-layout",
+            "label": "Header layout",
+            "order": 90,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
+              {
+                "id": "module.core.socialPost.headerLayout.mode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.headerLayout.padding",
+                "order": 20,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.headerLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.headerLayout.placement",
+                "order": 30,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.headerLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -5173,6 +8087,11 @@
             "visible": true,
             "fields": [
               {
+                "id": "module.core.socialPost.showGallery",
+                "order": 1,
+                "visible": true
+              },
+              {
                 "id": "module.core.socialPost.gallery",
                 "order": 10,
                 "visible": true
@@ -5181,9 +8100,46 @@
                 "id": "module.core.socialPost.showGallerySeparator",
                 "order": 20,
                 "visible": true
+              },
+              {
+                "id": "module.core.socialPost.galleryFloatHeight",
+                "order": 30,
+                "visible": true
               }
             ],
             "presentation": "separatedSections"
+          },
+          {
+            "id": "gallery-layout",
+            "label": "Gallery layout",
+            "order": 90,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
+              {
+                "id": "module.core.socialPost.galleryLayout.mode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.galleryLayout.padding",
+                "order": 20,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.galleryLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.galleryLayout.placement",
+                "order": 30,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.galleryLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -5239,6 +8195,102 @@
               }
             ],
             "presentation": "separatedSections"
+          },
+          {
+            "id": "message-layout",
+            "label": "Message layout",
+            "order": 90,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
+              {
+                "id": "module.core.socialPost.messageLayout.mode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.messageLayout.padding",
+                "order": 20,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.messageLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.messageLayout.placement",
+                "order": 30,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.messageLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "textInput-layout",
+            "label": "Textinput layout",
+            "order": 90,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
+              {
+                "id": "module.core.socialPost.textInputLayout.mode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.textInputLayout.padding",
+                "order": 20,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.textInputLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.textInputLayout.placement",
+                "order": 30,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.textInputLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              }
+            ]
+          },
+          {
+            "id": "keyboard-layout",
+            "label": "Keyboard layout",
+            "order": 90,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
+              {
+                "id": "module.core.socialPost.keyboardLayout.mode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.keyboardLayout.padding",
+                "order": 20,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.keyboardLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.keyboardLayout.placement",
+                "order": 30,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.keyboardLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -5306,6 +8358,11 @@
             "visible": true,
             "fields": [
               {
+                "id": "module.core.socialPost.showFooter",
+                "order": 1,
+                "visible": true
+              },
+              {
                 "id": "module.core.socialPost.footerHeight",
                 "order": 10,
                 "visible": true
@@ -5335,6 +8392,100 @@
                 "id": "module.core.socialPost.footerRows",
                 "order": 10,
                 "visible": true
+              }
+            ]
+          },
+          {
+            "id": "footer-layout",
+            "label": "Footer layout",
+            "order": 90,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
+              {
+                "id": "module.core.socialPost.footerLayout.mode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.footerLayout.padding",
+                "order": 20,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.footerLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.footerLayout.placement",
+                "order": 30,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.footerLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "actions",
+        "label": "Actions",
+        "subtitle": "Icon Row",
+        "icon": "button-icon",
+        "order": 55,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "actions",
+            "label": "Actions",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.socialPost.showActions",
+                "order": 1,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.actions",
+                "order": 10,
+                "visible": true
+              }
+            ],
+            "presentation": "separatedSections"
+          },
+          {
+            "id": "actions-layout",
+            "label": "Actions layout",
+            "order": 90,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
+              {
+                "id": "module.core.socialPost.actionsLayout.mode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.actionsLayout.padding",
+                "order": 20,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.actionsLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.actionsLayout.placement",
+                "order": 30,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.actionsLayout.mode",
+                "visibleWhenValues": [
+                  "float"
+                ]
               }
             ]
           }

@@ -85,6 +85,12 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "component.iconBar",
             ["chatList", "topIconBarSlot"]),
         new(
+            "module.core.socialPost.actions",
+            "iconRow",
+            "Actions",
+            "component.iconRow",
+            ["socialPost", "actionsSlot"]),
+        new(
             "module.core.socialPost.footerSurface",
             "surface",
             "Header surface",

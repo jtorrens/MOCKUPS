@@ -1,3 +1,5 @@
+import { requiredModuleSectionLayout } from "./moduleSectionLayout.js";
+import { resolveConfiguredIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { naturalWriteOnFrame, resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import {
@@ -99,6 +101,20 @@ export function resolveSocialPostModule(
 
   return {
     id: "module.core.socialPost",
+    headerLayout: requiredModuleSectionLayout(socialPost, "headerLayout", "module.core.socialPost"),
+    footerLayout: requiredModuleSectionLayout(socialPost, "footerLayout", "module.core.socialPost"),
+    messageLayout: requiredModuleSectionLayout(socialPost, "messageLayout", "module.core.socialPost"),
+    galleryLayout: requiredModuleSectionLayout(socialPost, "galleryLayout", "module.core.socialPost"),
+    actionsLayout: requiredModuleSectionLayout(socialPost, "actionsLayout", "module.core.socialPost"),
+    textInputLayout: requiredModuleSectionLayout(socialPost, "textInputLayout", "module.core.socialPost"),
+    keyboardLayout: requiredModuleSectionLayout(socialPost, "keyboardLayout", "module.core.socialPost"),
+    showFooter: requiredBoolean(socialPost, "showFooter", "module.core.socialPost"),
+    showActions: requiredBoolean(socialPost, "showActions", "module.core.socialPost"),
+    actions: resolveConfiguredIconRowComponentFromRecords(
+      embeddedComponentConfig(componentBaseConfigs, requiredTypedSlot(socialPost, componentBaseConfigs, "actionsSlot", "iconRow"), "iconRow", "module.core.socialPost.actionsSlot"),
+      componentBaseConfigs, "module.core.socialPost.actions", payload,
+    ),
+    galleryFloatHeight: requiredNumber(socialPost, "galleryFloatHeight", "module.core.socialPost"),
     useAppWallpaper: requiredBoolean(
       socialPost,
       "useAppWallpaper",
@@ -210,7 +226,7 @@ export function resolveSocialPostModule(
       "showMediaSeparator",
       "module.core.socialPost.showMediaSeparator",
     ),
-    showGallery,
+    showGallery: requiredBoolean(socialPost, "showGallery", "module.core.socialPost") && showGallery,
     gallerySlot,
     showGallerySeparator: requiredBoolean(
       socialPost,
@@ -254,13 +270,13 @@ export function resolveSocialPostModule(
   };
 }
 
-function requiredMediaHeightMode(socialPost: Record<string, unknown>): "fixed" | "fill" {
+function requiredMediaHeightMode(socialPost: Record<string, unknown>): "fixed" | "fill" | "screen" {
   const value = requiredString(
     socialPost,
     "mediaHeightMode",
     "module.core.socialPost.mediaHeightMode",
   );
-  if (value === "fixed" || value === "fill") return value;
+  if (value === "fixed" || value === "fill" || value === "screen") return value;
   throw new Error(`Unsupported Social Post Media height mode '${value}'`);
 }
 

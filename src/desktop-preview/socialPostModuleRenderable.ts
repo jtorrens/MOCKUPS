@@ -1,3 +1,5 @@
+import { placeModuleSection, sectionContentBox, sectionFlowEdge } from "./moduleSectionLayout.js";
+import { iconRowComponentToRenderableAt, measureIconRowComponent } from "./iconRowComponentRenderable.js";
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
@@ -54,8 +56,10 @@ export function socialPostModuleToRenderable(
       }, {})
     : undefined;
   const contentY = screen.y + (status?.box?.height ?? 0);
+  const contentBottom = screen.y + screen.height - (navigation?.box?.height ?? 0);
+  const sectionBounds = { ...screen, y: contentY, height: Math.max(1, contentBottom - contentY) };
   const header = contract.showHeader
-      ? rowsSectionNode(payload, componentBaseConfigs, {
+      ? placeModuleSection(payload, contract.headerLayout, sectionBounds, rowsSectionNode(payload, componentBaseConfigs, {
         ownerId: "module.core.socialPost",
         section: "header",
         rows: contract.rows,
@@ -70,13 +74,14 @@ export function socialPostModuleToRenderable(
         ),
         edge: "top",
         contentEdge: contentY,
+        horizontalInset: sectionContentBox(payload, contract.headerLayout, sectionBounds).x - screen.x,
+        bleedToScreenEdge: contract.headerLayout.mode === "stack",
         rowHasContent: contentRowHasRenderableContent,
         renderRow: contentRowComponentToRenderable,
-      })
+      }))
     : undefined;
-  const bodyTop = header?.box ? header.box.y + header.box.height : contentY;
-  const contentBottom = screen.y + screen.height - (navigation?.box?.height ?? 0);
-  const footer = rowsSectionNode(payload, componentBaseConfigs, {
+  const bodyTop = sectionFlowEdge(contract.headerLayout, header, "top", contentY);
+  const footer = contract.showFooter ? placeModuleSection(payload, contract.footerLayout, sectionBounds, rowsSectionNode(payload, componentBaseConfigs, {
     ownerId: "module.core.socialPost",
     section: "footer",
     rows: contract.footerRows,
@@ -91,25 +96,28 @@ export function socialPostModuleToRenderable(
     ),
     edge: "bottom",
     contentEdge: contentBottom,
+    horizontalInset: sectionContentBox(payload, contract.footerLayout, sectionBounds).x - screen.x,
+    bleedToScreenEdge: contract.footerLayout.mode === "stack",
     rowHasContent: contentRowHasRenderableContent,
     renderRow: contentRowComponentToRenderable,
-  });
+  })) : undefined;
   const composer = composerLayoutNode(
     payload,
     componentBaseConfigs,
     contract,
-    contentBottom,
+    sectionBounds,
   );
-  const bodyBottom = contract.message.keyboardVisible || contract.message.textInputVisible
-    ? composer.top
-    : footer.box?.y ?? contentBottom;
+  const bodyBottom = Math.min(composer.top, sectionFlowEdge(contract.footerLayout, footer, "bottom", contentBottom));
   const scale = renderScale(payload);
   const bodyHeight = Math.max(0, bodyBottom - bodyTop);
   const minimumMessageHeight = Math.min(
     bodyHeight,
-    contract.message.show ? contract.messageMinHeight * scale : 0,
+    contract.message.show && contract.messageLayout.mode === "stack" ? contract.messageMinHeight * scale : 0,
   );
-  const sectionCapacity = Math.max(0, bodyHeight - minimumMessageHeight);
+  const actionsSize = measureIconRowComponent(payload, contract.actions);
+  const actionsFlowHeight = contract.showActions && contract.actionsLayout.mode === "stack" ? actionsSize.height : 0;
+  const sectionCapacity = Math.max(0, bodyHeight - minimumMessageHeight - actionsFlowHeight);
+  const galleryInFlow = contract.showGallery && contract.galleryLayout.mode === "stack";
   const mediaChrome = contract.showMedia
     ? mediaSectionNode(
         payload,
@@ -120,7 +128,7 @@ export function socialPostModuleToRenderable(
       )
     : undefined;
   const mediaChromeHeight = Math.max(0, (mediaChrome?.box?.height ?? 0) - scale);
-  const provisionalGallery = contract.showGallery
+  const provisionalGallery = galleryInFlow
     ? gallerySectionNode(
         payload,
         componentBaseConfigs,
@@ -130,7 +138,7 @@ export function socialPostModuleToRenderable(
       )
     : undefined;
   const galleryRequiredHeight = provisionalGallery?.box?.height ?? 0;
-  const mediaHeightLimit = contract.showGallery
+  const mediaHeightLimit = galleryInFlow
     ? contract.galleryMode === "carousel"
       ? Math.max(0, sectionCapacity - galleryRequiredHeight)
       : Math.max(0, sectionCapacity - 1)
@@ -144,46 +152,52 @@ export function socialPostModuleToRenderable(
         payload,
         componentBaseConfigs,
         contract,
-        bodyTop,
-        contract.mediaHeightMode === "fill"
+        contract.mediaHeightMode === "screen" ? screen.y : bodyTop,
+        contract.mediaHeightMode === "screen" ? screen.height / scale : contract.mediaHeightMode === "fill"
           ? availableMediaContentHeight
           : Math.min(contract.mediaHeight, availableMediaContentHeight),
       )
     : undefined;
-  const galleryTop = media?.box ? media.box.y + media.box.height : bodyTop;
+  const galleryTop = contract.mediaHeightMode !== "screen" && media?.box ? media.box.y + media.box.height : bodyTop;
   const finalGalleryHeight = contract.galleryMode === "carousel"
     ? galleryRequiredHeight
-    : Math.max(1, sectionCapacity - (media?.box?.height ?? 0));
+    : Math.max(1, sectionCapacity - (contract.mediaHeightMode === "screen" ? 0 : media?.box?.height ?? 0));
   const gallery = contract.showGallery
-    ? gallerySectionNode(
-        payload,
+    ? placeModuleSection(payload, contract.galleryLayout, sectionBounds, gallerySectionNode(
+        previewPayloadInBox(payload, sectionContentBox(payload, contract.galleryLayout, sectionBounds)),
         componentBaseConfigs,
         contract,
         galleryTop,
-        galleryTop + Math.max(1, finalGalleryHeight),
-      )
+        galleryTop + (galleryInFlow ? Math.max(1, finalGalleryHeight) : contract.galleryFloatHeight * scale),
+      ))
     : undefined;
-  const messageTop = gallery?.box
-    ? gallery.box.y + gallery.box.height
-    : galleryTop;
+  const actionsTop = sectionFlowEdge(contract.galleryLayout, gallery, "top", galleryTop);
+  const actions = contract.showActions
+    ? placeModuleSection(payload, contract.actionsLayout, sectionBounds, iconRowComponentToRenderableAt(payload, contract.actions, {
+        x: screen.x + (screen.width - actionsSize.width) / 2, y: actionsTop,
+        width: actionsSize.width, height: actionsSize.height,
+      }))
+    : undefined;
+  const messageTop = sectionFlowEdge(contract.actionsLayout, actions, "top", actionsTop);
   const message = contract.message.show
-    ? messageSectionNode(
-        payload,
+    ? placeModuleSection(payload, contract.messageLayout, sectionBounds, messageSectionNode(
+        previewPayloadInBox(payload, sectionContentBox(payload, contract.messageLayout, sectionBounds)),
         componentBaseConfigs,
         contract,
         messageTop,
-        bodyBottom,
-      )
+        contract.messageLayout.mode === "float" ? messageTop + contract.messageMinHeight * scale : bodyBottom,
+      ))
     : undefined;
   const backgroundNode = contract.useAppWallpaper
     ? wallpaperRenderable(payload, screen) ?? background(payload)
     : background(payload);
   const children: RenderableNode[] = [backgroundNode];
-  if (header) children.push(header);
   if (media) children.push(media);
+  if (header) children.push(header);
   if (gallery) children.push(gallery);
   if (message) children.push(message);
-  children.push(footer);
+  if (actions) children.push(actions);
+  if (footer) children.push(footer);
   if (composer.textInput) children.push(withZIndex(composer.textInput, 40));
   if (composer.keyboard) children.push(withZIndex(composer.keyboard, 50));
   if (status) children.push(withZIndex(status, 20));
@@ -275,7 +289,7 @@ function composerLayoutNode(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
   contract: SocialPostModuleContract,
-  bottom: number,
+  bounds: RenderableBox,
 ): SocialPostComposerLayout {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
@@ -283,6 +297,7 @@ function composerLayoutNode(
   const [horizontalPadding] = spacingPair(payload, message.padding);
   const innerWidth = Math.max(1, screen.width - horizontalPadding * 2);
   const innerWidthDesign = innerWidth / scale;
+  const bottom = bounds.y + bounds.height;
   const keyboard = message.keyboardVisible
     ? componentNode(
         payload,
@@ -298,12 +313,12 @@ function composerLayoutNode(
       )
     : undefined;
   const keyboardNode = keyboard?.box
-    ? translateRenderableNode(keyboard, {
+    ? placeModuleSection(payload, contract.keyboardLayout, bounds, translateRenderableNode(keyboard, {
         x: screen.x - keyboard.box.x,
         y: bottom - keyboard.box.height - keyboard.box.y,
-      })
+      }))
     : keyboard;
-  const keyboardTop = keyboardNode?.box?.y ?? bottom;
+  const keyboardTop = sectionFlowEdge(contract.keyboardLayout, keyboardNode, "bottom", bottom);
   const textInputConfig = message.textInputVisible
     ? resolvedTextInputBarRuntimeConfig(
         payload,
@@ -330,13 +345,13 @@ function composerLayoutNode(
       )
     : undefined;
   const textInputNode = textInput?.box
-    ? translateRenderableNode(textInput, {
+    ? placeModuleSection(payload, contract.textInputLayout, bounds, translateRenderableNode(textInput, {
         x: screen.x + horizontalPadding - textInput.box.x,
         y: keyboardTop - textInput.box.height - textInput.box.y,
-      })
+      }))
     : textInput;
   return {
-    top: textInputNode?.box?.y ?? keyboardTop,
+    top: sectionFlowEdge(contract.textInputLayout, textInputNode, "bottom", keyboardTop),
     keyboard: keyboardNode,
     textInput: textInputNode,
   };
@@ -411,7 +426,7 @@ function mediaSectionNode(
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
-  const [horizontalPadding, verticalPadding] = spacingPair(payload, contract.mediaPadding);
+  const [horizontalPadding, verticalPadding] = contract.mediaHeightMode === "screen" ? [0, 0] : spacingPair(payload, contract.mediaPadding);
   const mediaHeight = mediaHeightDesign * scale;
   const mediaBox = {
     x: screen.x + horizontalPadding,

@@ -1,3 +1,4 @@
+import { requiredModuleSectionLayout } from "./moduleSectionLayout.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { requireComponentVariantType, prepareComponentConfiguration } from "./runtimePreviewDocumentContract.js";
 import { parseObject, requiredBoolean, requiredComponentVariantSlot, requiredNumber, requiredNumberPair, requiredPlacement, requiredPossiblyEmptyString, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
@@ -154,9 +155,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     useAppWallpaper: requiredBoolean(owner, "useAppWallpaper", "module.core.videoCall.useAppWallpaper"),
     backgroundColorToken: requiredString(owner, "backgroundColorToken", "module.core.videoCall.backgroundColorToken"),
     showHeader: requiredBoolean(owner, "showHeader", "module.core.videoCall.showHeader"),
-    headerLayoutMode: sectionLayoutMode(requiredString(owner, "headerLayoutMode", "module.core.videoCall.headerLayoutMode")),
-    headerFloatHorizontalPaddingToken: requiredString(owner, "headerFloatHorizontalPaddingToken", "module.core.videoCall.headerFloatHorizontalPaddingToken"),
-    headerFloatOffsetY: nonNegative(requiredNumber(owner, "headerFloatOffsetY", "module.core.videoCall.headerFloatOffsetY"), "headerFloatOffsetY"),
+    headerLayout: requiredModuleSectionLayout(owner, "headerLayout", "module.core.videoCall"),
     headerHeight: nonNegative(requiredNumber(owner, "headerHeight", "module.core.videoCall.headerHeight"), "headerHeight"),
     headerSurfaceSlot: typedSlot(owner, bases, "headerSurfaceSlot", "surface"),
     headerRowGapToken: requiredString(owner, "headerRowGapToken", "module.core.videoCall.headerRowGapToken"),
@@ -165,9 +164,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
       resolveRow(payload, "module.core.videoCall", "header", 2, headerRows[1], headerRuntimeRows[1], bases, "contentRow", resolveContentRowComponent),
     ],
     showFooter: requiredBoolean(owner, "showFooter", "module.core.videoCall.showFooter"),
-    footerLayoutMode: sectionLayoutMode(requiredString(owner, "footerLayoutMode", "module.core.videoCall.footerLayoutMode")),
-    footerFloatHorizontalPaddingToken: requiredString(owner, "footerFloatHorizontalPaddingToken", "module.core.videoCall.footerFloatHorizontalPaddingToken"),
-    footerFloatOffsetY: nonNegative(requiredNumber(owner, "footerFloatOffsetY", "module.core.videoCall.footerFloatOffsetY"), "footerFloatOffsetY"),
+    footerLayout: requiredModuleSectionLayout(owner, "footerLayout", "module.core.videoCall"),
     footerHeight: nonNegative(requiredNumber(owner, "footerHeight", "module.core.videoCall.footerHeight"), "footerHeight"),
     footerSurfaceSlot: typedSlot(owner, bases, "footerSurfaceSlot", "surface"),
     footerRowGapToken: requiredString(owner, "footerRowGapToken", "module.core.videoCall.footerRowGapToken"),
@@ -244,7 +241,6 @@ function typedSlot(owner: Record<string, unknown>, bases: Record<string, unknown
 function slotConfig(bases: Record<string, unknown>, slot: VideoCallComponentSlot, type: string, path: string) { return prepareComponentConfiguration(bases, type, requiredString(slot, "variantReference", `${path}.variantReference`), requiredRecord(slot, "overrides", `${path}.overrides`)); }
 function pair(owner: Record<string, unknown>, key: string) { const value = requiredStringPair(owner, key, `module.core.videoCall.${key}`); return { xToken: value.first, yToken: value.second }; }
 function participantRole(value: string): VideoCallParticipantRole { if (value === "main" || value === "pip" || value === "grid") return value; throw new Error(`Unsupported participant role '${value}'`); }
-function sectionLayoutMode(value: string): "stack" | "float" { if (value === "stack" || value === "float") return value; throw new Error(`Unsupported section layout mode '${value}'`); }
 function gridHeightMode(value: string): VideoCallModuleContract["gridHeightMode"] { if (value === "percent" || value === "fill") return value; throw new Error(`Unsupported grid height mode '${value}'`); }
 function positive(value: number, path: string) { if (!Number.isFinite(value) || value <= 0) throw new Error(`${path} must be positive`); return value; }
 function percentage(value: number, path: string) { if (!Number.isFinite(value) || value <= 0 || value > 100) throw new Error(`${path} must be greater than 0 and at most 100`); return value; }

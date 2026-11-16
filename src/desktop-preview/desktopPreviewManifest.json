@@ -488,7 +488,8 @@
         "navigation_bar",
         "status_bar",
         "surface",
-        "textInputBar"
+        "textInputBar",
+        "iconRow"
       ]
     },
     "module.core.videoCall": {

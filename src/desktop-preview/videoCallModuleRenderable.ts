@@ -1,3 +1,4 @@
+import { placeModuleSection, sectionContentBox, sectionFlowEdge } from "./moduleSectionLayout.js";
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
@@ -30,38 +31,31 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
   const navigation = call.showNavigationBar ? chrome(payload, bases, "navigation_bar", call.navigationBarSlot) : undefined;
   const contentTop = screen.y + (status?.box?.height ?? 0);
   const contentBottom = screen.y + screen.height - (navigation?.box?.height ?? 0);
-  const headerFloats = call.headerLayoutMode === "float";
-  const footerFloats = call.footerLayoutMode === "float";
-  const header = call.showHeader ? rowsSectionNode(payload, bases, {
+  const sectionBounds = { ...screen, y: contentTop, height: Math.max(1, contentBottom - contentTop) };
+  const header = call.showHeader ? placeModuleSection(payload, call.headerLayout, sectionBounds, rowsSectionNode(payload, bases, {
     ownerId: call.id, section: "header", rows: call.headerRows, rowGapToken: call.headerRowGapToken,
     height: call.headerHeight,
     renderSurface: (box) => sectionSurfaceNode(payload, bases, call.headerSurfaceSlot, "module.core.videoCall.headerSurfaceSlot", box),
     edge: "top", contentEdge: contentTop,
-    horizontalInset: headerFloats ? numberToken(payload, call.headerFloatHorizontalPaddingToken) * scale : 0,
-    edgeOffset: headerFloats ? call.headerFloatOffsetY * scale : 0,
-    bleedToScreenEdge: !headerFloats,
+    horizontalInset: sectionContentBox(payload, call.headerLayout, sectionBounds).x - screen.x,
+    bleedToScreenEdge: call.headerLayout.mode === "stack",
     contentAlignment: "center",
     rowHasContent: contentRowHasRenderableContent,
     renderRow: contentRowComponentToRenderable,
-  }) : undefined;
-  const footer = call.showFooter ? rowsSectionNode(payload, bases, {
+  })) : undefined;
+  const footer = call.showFooter ? placeModuleSection(payload, call.footerLayout, sectionBounds, rowsSectionNode(payload, bases, {
     ownerId: call.id, section: "footer", rows: call.footerRows, rowGapToken: call.footerRowGapToken,
     height: call.footerHeight,
     renderSurface: (box) => sectionSurfaceNode(payload, bases, call.footerSurfaceSlot, "module.core.videoCall.footerSurfaceSlot", box),
     edge: "bottom", contentEdge: contentBottom,
-    horizontalInset: footerFloats ? numberToken(payload, call.footerFloatHorizontalPaddingToken) * scale : 0,
-    edgeOffset: footerFloats ? call.footerFloatOffsetY * scale : 0,
-    bleedToScreenEdge: !footerFloats,
+    horizontalInset: sectionContentBox(payload, call.footerLayout, sectionBounds).x - screen.x,
+    bleedToScreenEdge: call.footerLayout.mode === "stack",
     contentAlignment: "center",
     rowHasContent: contentRowHasRenderableContent,
     renderRow: contentRowComponentToRenderable,
-  }) : undefined;
-  const bodyTop = header?.box && !headerFloats
-    ? header.box.y + header.box.height
-    : contentTop;
-  const bodyBottom = footer?.box && !footerFloats
-    ? footer.box.y
-    : contentBottom;
+  })) : undefined;
+  const bodyTop = sectionFlowEdge(call.headerLayout, header, "top", contentTop);
+  const bodyBottom = sectionFlowEdge(call.footerLayout, footer, "bottom", contentBottom);
   const body: RenderableBox = {
     x: screen.x,
     y: bodyTop,

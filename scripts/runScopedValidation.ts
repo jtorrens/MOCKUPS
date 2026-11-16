@@ -468,6 +468,12 @@ export function planScopedValidation(
       desktopUi = true;
       continue;
     }
+    if (file === "src/desktop-preview/moduleSectionLayout.ts"
+      || file === "src/Mockups.Application/ModuleSectionLayoutContract.cs") {
+      // Shared placement must retain both concrete consumers in the plan.
+      previewTests.add("tests/animation/socialPostModule.test.ts");
+      previewTests.add("tests/animation/videoCallModule.test.ts");
+    }
     if (file.startsWith("src/desktop-preview/")) {
       typecheck = true;
       const owner = previewOwnerForFile(file, manifest);

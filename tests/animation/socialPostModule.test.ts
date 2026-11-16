@@ -15,7 +15,7 @@ type ModuleRow = {
   metadata_json: string;
 };
 
-function fixture() {
+function fixture(variantId = "default") {
   const bubble = committedComponentFixture("bubble", "default");
   const avatar = committedComponentFixture("avatar", "default");
   const database = new Database(parityDatabasePath(), { readonly: true, fileMustExist: true });
@@ -30,7 +30,7 @@ function fixture() {
     const metadata = JSON.parse(module.metadata_json) as {
       variants: Array<{ id: string; config: Record<string, unknown> }>;
     };
-    const defaultVariant = metadata.variants.find((variant) => variant.id === "default");
+    const defaultVariant = metadata.variants.find((variant) => variant.id === variantId);
     assert.ok(defaultVariant);
     const runtime = JSON.parse(module.design_preview_json) as Record<string, unknown>;
     const avatarRuntime = JSON.parse(avatar.designPreviewJson) as Record<string, unknown>;
@@ -569,3 +569,66 @@ function requiredNode(root: RenderableNode, id: string): RenderableNode {
   assert.ok(node, `Missing renderable node '${id}'.`);
   return node;
 }
+
+
+test("Reel fills the Screen below optional floating sections and vertical actions", () => {
+  const source = fixture("reel");
+  const contract = resolveSocialPostModule(source);
+  assert.equal(contract.actions.orientation, "vertical");
+  assert.equal(contract.actions.items.length, 3);
+  const node = socialPostModuleToRenderable(source);
+  const media = requiredNode(node, "module.core.socialPost.media.page.0");
+  assert.deepEqual(media.box, node.box);
+  const children = node.children!;
+  assert.ok(children.findIndex(child => child.id === "module.core.socialPost.media") < children.findIndex(child => child.id === "module.core.socialPost.header"));
+  assert.ok(requiredNode(node, "module.core.socialPost.actions").box);
+  assert.equal(findNode(node, "module.core.socialPost.message"), undefined);
+  assert.equal(findNode(node, "module.core.socialPost.gallery"), undefined);
+  const config = JSON.parse(source.configJson);
+  config.socialPost.showHeader = false;
+  config.socialPost.showFooter = false;
+  config.socialPost.showActions = false;
+  const hidden = socialPostModuleToRenderable({ ...source, configJson: JSON.stringify(config) });
+  for (const section of ["header", "footer", "actions"]) assert.equal(findNode(hidden, `module.core.socialPost.${section}`), undefined);
+  assert.deepEqual(requiredNode(hidden, "module.core.socialPost.media.page.0").box, media.box);
+});
+
+test("Social Post message, input and keyboard have independent presence and floating flow", () => {
+  const source = fixture();
+  const config = JSON.parse(source.configJson);
+  config.socialPost.mediaHeightMode = "fill";
+  const runtime = JSON.parse(source.designPreviewJson);
+  for (const showMessage of [false, true]) {
+    for (const textInputVisible of [false, true]) {
+      for (const keyboardVisible of [false, true]) {
+        config.socialPost.showMessage = showMessage;
+        runtime.messageTextInputVisible = textInputVisible;
+        runtime.messageKeyboardVisible = keyboardVisible;
+        runtime.messageBubbleRevealMode = "duringWriteOn";
+        const payload = { ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(runtime) };
+        const node = socialPostModuleToRenderable(payload);
+        assert.equal(!!findNode(node, "module.core.socialPost.message"), showMessage);
+        assert.equal(!!findNode(node, "component.textInputBar"), textInputVisible);
+        assert.equal(!!findNode(node, "component.keyboard"), keyboardVisible);
+      }
+    }
+  }
+  config.socialPost.messageLayout.mode = "float";
+  config.socialPost.textInputLayout.mode = "float";
+  config.socialPost.keyboardLayout.mode = "float";
+  const floating = socialPostModuleToRenderable({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(runtime) });
+  config.socialPost.showMessage = false;
+  runtime.messageTextInputVisible = false;
+  runtime.messageKeyboardVisible = false;
+  const absent = socialPostModuleToRenderable({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(runtime) });
+  assert.deepEqual(requiredNode(floating, "module.core.socialPost.media").box, requiredNode(absent, "module.core.socialPost.media").box);
+});
+
+test("Social Post rejects incomplete or unknown shared section layouts", () => {
+  const source = fixture();
+  for (const value of [{ mode: "float" }, { mode: "unknown", padding: "theme.spacing.none|theme.spacing.none", placement: {} }]) {
+    const config = JSON.parse(source.configJson);
+    config.socialPost.headerLayout = value;
+    assert.throws(() => resolveSocialPostModule({ ...source, configJson: JSON.stringify(config) }), /requires exactly|must be stack or float/);
+  }
+});

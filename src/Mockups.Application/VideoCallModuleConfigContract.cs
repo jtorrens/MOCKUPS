@@ -18,8 +18,8 @@ internal static class VideoCallModuleConfigContract
         var owner = JsonPath.RequiredObject(config, "videoCall", context);
         RequireExactKeys(owner, [
             "useAppWallpaper", "backgroundColorToken",
-            "showHeader", "headerLayoutMode", "headerFloatHorizontalPaddingToken", "headerFloatOffsetY", "headerHeight", "headerSurfaceSlot", "headerRowGapToken", "headerRows",
-            "showFooter", "footerLayoutMode", "footerFloatHorizontalPaddingToken", "footerFloatOffsetY", "footerHeight", "footerSurfaceSlot", "footerRowGapToken", "footerRows",
+            "showHeader", "headerLayout", "headerHeight", "headerSurfaceSlot", "headerRowGapToken", "headerRows",
+            "showFooter", "footerLayout", "footerHeight", "footerSurfaceSlot", "footerRowGapToken", "footerRows",
             "showMainVideo", "mainSurfaceSlot", "participantOuterPadding", "mainRows",
             "showPip", "pipSurfaceSlot", "pipSize", "pipPlacement",
             "showGridParticipants", "gridSurfaceSlot", "gridGapToken", "gridHeightMode", "gridHeightPercent", "gridRows",
@@ -31,14 +31,11 @@ internal static class VideoCallModuleConfigContract
         ], $"{context}.videoCall");
         foreach (var key in new[] { "useAppWallpaper", "showHeader", "showFooter", "showMainVideo", "showPip", "showGridParticipants", "showParticipantSurface", "showParticipantMedia", "showFallbackAvatar", "showFallbackStatus", "showStatusBar", "showNavigationBar" })
             JsonPath.RequiredBoolean(owner, key, context);
-        RequireOneOf(JsonPath.RequiredString(owner, "headerLayoutMode", context), ["stack", "float"], $"{context}.videoCall.headerLayoutMode");
-        RequireOneOf(JsonPath.RequiredString(owner, "footerLayoutMode", context), ["stack", "float"], $"{context}.videoCall.footerLayoutMode");
+        ModuleSectionLayoutContract.Validate(owner, "headerLayout", context);
+        ModuleSectionLayoutContract.Validate(owner, "footerLayout", context);
         RequireOneOf(JsonPath.RequiredString(owner, "gridHeightMode", context), ["percent", "fill"], $"{context}.videoCall.gridHeightMode");
         JsonPath.RequiredString(owner, "backgroundColorToken", context);
-        foreach (var key in new[] { "headerFloatHorizontalPaddingToken", "footerFloatHorizontalPaddingToken", "headerRowGapToken", "footerRowGapToken", "gridGapToken" }) JsonPath.RequiredString(owner, key, context);
-        foreach (var key in new[] { "headerFloatOffsetY", "footerFloatOffsetY" })
-            if (JsonPath.RequiredNumber(owner, key, context) < 0)
-                throw new InvalidOperationException($"{context}.videoCall.{key} must be non-negative.");
+        foreach (var key in new[] { "headerRowGapToken", "footerRowGapToken", "gridGapToken" }) JsonPath.RequiredString(owner, key, context);
         foreach (var key in new[] { "participantOuterPadding", "participantContentPadding" })
             _ = RuntimeInputValueKindContract.ParseValue(ValueKind.ThemeTokenPair, JsonPath.RequiredString(owner, key, context), $"{context}.videoCall.{key}");
         _ = RuntimeInputValueKindContract.ParseValue(ValueKind.IntegerPair, JsonPath.RequiredString(owner, "pipSize", context), $"{context}.videoCall.pipSize");

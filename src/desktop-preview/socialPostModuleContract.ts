@@ -1,3 +1,5 @@
+import type { ModuleSectionLayout } from "./moduleSectionLayout.js";
+import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import type {
   ModuleRow,
   ModuleRowComponentSlot,
@@ -28,6 +30,17 @@ export interface SocialPostMessageContract {
 
 export interface SocialPostModuleContract {
   id: "module.core.socialPost";
+  headerLayout: ModuleSectionLayout;
+  footerLayout: ModuleSectionLayout;
+  messageLayout: ModuleSectionLayout;
+  galleryLayout: ModuleSectionLayout;
+  actionsLayout: ModuleSectionLayout;
+  textInputLayout: ModuleSectionLayout;
+  keyboardLayout: ModuleSectionLayout;
+  showFooter: boolean;
+  showActions: boolean;
+  actions: IconRowDesignContract;
+  galleryFloatHeight: number;
   useAppWallpaper: boolean;
   showHeader: boolean;
   headerHeight: number;
@@ -41,7 +54,7 @@ export interface SocialPostModuleContract {
   mediaPadding: string;
   mediaInputs: Record<string, unknown>;
   mediaSources: string[];
-  mediaHeightMode: "fixed" | "fill";
+  mediaHeightMode: "fixed" | "fill" | "screen";
   mediaHeight: number;
   mediaCutout: boolean;
   galleryMediaCutout: boolean;

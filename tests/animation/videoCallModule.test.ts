@@ -464,3 +464,31 @@ test("Video Call excludes invisible rows while preserving the remaining row plac
     header.box.y + header.box.height * 0.5,
   );
 });
+
+
+test("Video Call shares floating placement and leaves its body unreserved", () => {
+  const source = fixture();
+  const config = JSON.parse(source.configJson);
+  config.videoCall.showStatusBar = false;
+  config.videoCall.showNavigationBar = false;
+  config.videoCall.headerLayout = {
+    mode: "float", padding: "theme.spacing.m|theme.spacing.s",
+    placement: { mode: "insideEdge", alignX: 0.5, alignY: 0, offsetX: 0, offsetY: 17 },
+  };
+  config.videoCall.footerLayout.mode = "float";
+  const payload = { ...source, configJson: JSON.stringify(config) };
+  const node = videoCallModuleToRenderable(payload);
+  const header = node.children!.find(child => child.id === "module.core.videoCall.header")!;
+  const scale = renderScale(payload);
+  assert.equal(header.box!.y, node.box!.y + numberToken(payload, "theme.spacing.s") * scale + 17 * scale);
+  assert.equal(header.box!.width, node.box!.width - 2 * numberToken(payload, "theme.spacing.m") * scale);
+  config.videoCall.showHeader = false;
+  config.videoCall.showFooter = false;
+  const hidden = videoCallModuleToRenderable({ ...source, configJson: JSON.stringify(config) });
+  const participants = resolveVideoCallModule(payload).participants;
+  for (const participant of participants) {
+    assert.deepEqual(node.children!.find(child => child.id === participant.id)?.box, hidden.children!.find(child => child.id === participant.id)?.box);
+  }
+  config.videoCall.headerLayout.mode = "invalid";
+  assert.throws(() => resolveVideoCallModule({ ...source, configJson: JSON.stringify(config) }), /must be stack or float/);
+});

@@ -1,3 +1,4 @@
+import type { ModuleSectionLayout } from "./moduleSectionLayout.js";
 import type { AvatarDesignContract } from "./avatarComponentContract.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
 import type { MediaDesignContract } from "./mediaComponentContract.js";
@@ -42,17 +43,13 @@ export interface VideoCallModuleContract {
   useAppWallpaper: boolean;
   backgroundColorToken: string;
   showHeader: boolean;
-  headerLayoutMode: "stack" | "float";
-  headerFloatHorizontalPaddingToken: string;
-  headerFloatOffsetY: number;
+  headerLayout: ModuleSectionLayout;
   headerHeight: number;
   headerSurfaceSlot: VideoCallComponentSlot;
   headerRowGapToken: string;
   headerRows: [ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>];
   showFooter: boolean;
-  footerLayoutMode: "stack" | "float";
-  footerFloatHorizontalPaddingToken: string;
-  footerFloatOffsetY: number;
+  footerLayout: ModuleSectionLayout;
   footerHeight: number;
   footerSurfaceSlot: VideoCallComponentSlot;
   footerRowGapToken: string;
