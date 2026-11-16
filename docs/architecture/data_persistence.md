@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `33` is the only current schema. Authored Production rows belong
+Schema version `34` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -1026,3 +1026,14 @@ Sparse embedded Overrides continue to inherit from their exact Button Variant.
 The Button dictionary/layout and development seed expose top/bottom/left/right.
 Reel's action Button Overrides use `bottom` and `iconText`; Icon Row items retain
 stable ids and supply editable text. Startup does not supply missing positions.
+
+### Social Post Runtime labels maintenance (schema 34)
+
+Explicit maintenance adds the `socialPostActions` collection declaration to
+Social Post and current values to every existing Social Post Screen, seeded once
+from the exact selected Variant's Icon Row items. Design Test Values contain
+Reel's action defaults. Text has no structure binding, so subsequent Screen
+edits survive preparation and structure reconciliation. Existing Content Row
+Runtime label descriptors enable icon slots; existing text is preserved.
+Reel's footer Buttons receive local iconText/bottom Overrides. Startup remains
+read-only and never adds these fields or rewrites values.

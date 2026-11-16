@@ -1065,7 +1065,8 @@
                   "enabledWhenItemJsonKey": "kind",
                   "enabledWhenItemValues": [
                     "avatar",
-                    "label"
+                    "label",
+                    "icon"
                   ]
                 },
                 {
@@ -1239,7 +1240,8 @@
                   "enabledWhenItemJsonKey": "kind",
                   "enabledWhenItemValues": [
                     "avatar",
-                    "label"
+                    "label",
+                    "icon"
                   ]
                 },
                 {
@@ -1413,7 +1415,8 @@
                   "enabledWhenItemJsonKey": "kind",
                   "enabledWhenItemValues": [
                     "avatar",
-                    "label"
+                    "label",
+                    "icon"
                   ]
                 },
                 {

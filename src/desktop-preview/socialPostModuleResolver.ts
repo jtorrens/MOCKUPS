@@ -1,5 +1,5 @@
 import { requiredModuleSectionLayout } from "./moduleSectionLayout.js";
-import { resolveConfiguredIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
+import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { naturalWriteOnFrame, resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import {
@@ -110,8 +110,9 @@ export function resolveSocialPostModule(
     keyboardLayout: requiredModuleSectionLayout(socialPost, "keyboardLayout", "module.core.socialPost"),
     showFooter: requiredBoolean(socialPost, "showFooter", "module.core.socialPost"),
     showActions: requiredBoolean(socialPost, "showActions", "module.core.socialPost"),
-    actions: resolveConfiguredIconRowComponentFromRecords(
+    actions: resolveIconRowComponentFromRecords(
       embeddedComponentConfig(componentBaseConfigs, requiredTypedSlot(socialPost, componentBaseConfigs, "actionsSlot", "iconRow"), "iconRow", "module.core.socialPost.actionsSlot"),
+      { buttonInputs: requiredObjectArray(preview, "socialPostActions", "module.core.socialPost") },
       componentBaseConfigs, "module.core.socialPost.actions", payload,
     ),
     galleryFloatHeight: requiredNumber(socialPost, "galleryFloatHeight", "module.core.socialPost"),

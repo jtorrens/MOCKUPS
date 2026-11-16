@@ -33,6 +33,11 @@ function fixture(variantId = "default") {
     const defaultVariant = metadata.variants.find((variant) => variant.id === variantId);
     assert.ok(defaultVariant);
     const runtime = JSON.parse(module.design_preview_json) as Record<string, unknown>;
+    // Explicit prepared fixture for the Default Icon Row boundary; Reel uses
+    // its authored action identities and Runtime values from the Module fixture.
+    if (variantId === "default") {
+      runtime.socialPostActions = JSON.parse(committedComponentFixture("iconRow").designPreviewJson).buttonInputs;
+    }
     const avatarRuntime = JSON.parse(avatar.designPreviewJson) as Record<string, unknown>;
     const runtimeRows = runtime.socialPostRows as Array<Record<string, unknown>>;
     const footerRuntimeRows = runtime.socialPostFooterRows as Array<Record<string, unknown>>;
@@ -109,6 +114,7 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.deepEqual(runtime.collections.map(({ id }) => id), [
     "socialPostRows",
     "socialPostFooterRows",
+    "socialPostActions",
   ]);
   assert.deepEqual(contract.rows.map(({ id }) => id), ["item_690ab7d988ef466c8d6b20406ef2e024", "item_d2a1bd7aeb5f49c49501136b62bc4389"]);
   assert.equal(contract.rows[0].content.slots[0].kind, "avatar");
@@ -636,4 +642,28 @@ test("Social Post rejects incomplete or unknown shared section layouts", () => {
     config.socialPost.headerLayout = value;
     assert.throws(() => resolveSocialPostModule({ ...source, configJson: JSON.stringify(config) }), /requires exactly|must be stack or float/);
   }
+});
+
+test("Reel action and footer labels consume independent Screen Runtime values", () => {
+  const source = fixture("reel");
+  const configBefore = source.configJson;
+  for (const label of ["Screen A", "Screen B", ""]) {
+    const runtime = JSON.parse(source.designPreviewJson);
+    runtime.socialPostActions[0].sampleText = label;
+    const footer = runtime.socialPostFooterRows[0].slotInputs.find((slot: { kind: string }) => slot.kind === "icon");
+    footer.label = label;
+    const payload = { ...source, designPreviewJson: JSON.stringify(runtime), runtimeContractJson: JSON.stringify(runtime) };
+    const contract = resolveSocialPostModule(payload);
+    assert.equal(contract.actions.items[0].button.appearance.label?.text ?? "", label);
+    const button = contract.footerRows[0].content.slots.find(slot => slot.id === footer.id)!.content;
+    assert.ok(button && "contentMode" in button);
+    assert.equal(button.contentMode, "iconText");
+    assert.equal(button.appearance.label?.text ?? "", label);
+    const node = socialPostModuleToRenderable(payload);
+    assert.ok(node.box.height > 0);
+    assert.equal(payload.configJson, configBefore);
+  }
+  const runtime = JSON.parse(source.designPreviewJson);
+  runtime.socialPostActions[0].id = "item_00000000000000000000000000000000";
+  assert.throws(() => resolveSocialPostModule({ ...source, designPreviewJson: JSON.stringify(runtime), runtimeContractJson: JSON.stringify(runtime) }), /missing|unknown|match/i);
 });

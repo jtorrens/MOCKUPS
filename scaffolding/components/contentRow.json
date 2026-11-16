@@ -377,7 +377,8 @@
               "enabledWhenItemJsonKey": "kind",
               "enabledWhenItemValues": [
                 "avatar",
-                "label"
+                "label",
+                "icon"
               ]
             },
             {

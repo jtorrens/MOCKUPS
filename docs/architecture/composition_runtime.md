@@ -621,3 +621,20 @@ optional actions boundary consumes a complete exact Icon Row Variant plus local
 Overrides through the existing configured-Icon-Row preparation, as cosmetic
 Variant content. It owns no command schema or independent collection lifecycle.
 Reel is a complete Social Post Variant, not another implementation or route.
+
+### Social Post action and row Runtime labels
+
+Social Post declares `socialPostActions` as a structure-projected Runtime
+collection through its exact `socialPost.actionsSlot`. Icon Row owns item ids,
+order, icons and sizes. Each Screen owns `sampleText` independently; the
+projection deliberately has no text binding to Variant data. Design Test Values
+use the same declaration. The shared projection owner reconciles stable ids and
+preserves Screen text, including an explicit empty string. Social Post forwards
+this prepared collection as Icon Row `buttonInputs` through its normal resolver.
+
+Content Row forwards each slot's Runtime `label` to Button `sampleText` and
+respects the selected Button's `contentMode` and `labelPosition`. Label editing
+is enabled for icon slots as well as Label and Avatar slots. It never forces
+icon-only content. Reel footer Buttons declare icon+text below in their local
+Overrides; footer text remains in the existing `socialPostFooterRows` Runtime
+collection. No Module-specific text editor or second mutation path exists.

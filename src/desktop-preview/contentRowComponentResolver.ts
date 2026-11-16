@@ -79,8 +79,6 @@ function resolveSlot(
   }
   if (kind === "icon") {
     const buttonConfig = embeddedComponentConfig(bases, requiredRecord(slot, "iconSlot", `${path}.iconSlot`), "button", `${path}.iconSlot`);
-    const buttonOwner = requiredRecord(buttonConfig, "button", `${path}.button`);
-    buttonOwner.contentMode = "icon";
     return {
       id, order: index,
       kind,

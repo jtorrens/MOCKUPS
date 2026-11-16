@@ -35,11 +35,21 @@ test("Content Row keeps separator and vertical alignment in Variant state", () =
   assert.equal(row.verticalAlignment, "bottom");
   assert.ok(node.children?.some(child => child.id === "component.contentRow.separator"));
 });
-import assert from "node:assert/strict";
-import test from "node:test";
 
-import { resolveContentRowComponent } from "../../src/desktop-preview/contentRowComponentResolver.js";
-
-test("contentRow scaffold remains explicitly unregistered until semantics exist", () => {
-  assert.equal(typeof resolveContentRowComponent, "function");
+test("Content Row preserves Button content mode and renders Screen-owned labels", () => {
+  for (const contentMode of ["icon", "text", "iconText"]) {
+    const source = committedComponentFixture("contentRow", "default");
+    const config = JSON.parse(source.configJson);
+    const preview = JSON.parse(source.designPreviewJson);
+    const slot = config.contentRow.slots[0];
+    slot.kind = "icon";
+    slot.iconSlot.overrides.button = { contentMode, labelPosition: "bottom" };
+    preview.slotInputs[0].label = "Screen label";
+    const row = resolveContentRowComponent({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(preview) });
+    const button = row.slots[0].content;
+    assert.ok(button && "contentMode" in button);
+    assert.equal(button.contentMode, contentMode);
+    assert.equal(button.labelPosition, "bottom");
+    assert.equal(button.appearance.label?.text, contentMode === "icon" ? undefined : "Screen label");
+  }
 });

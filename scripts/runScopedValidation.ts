@@ -468,6 +468,13 @@ export function planScopedValidation(
       desktopUi = true;
       continue;
     }
+    if (file.startsWith("src/desktop-preview/contentRowComponent")
+      || file === "scaffolding/components/contentRow.json") {
+      previewTests.add("tests/animation/contentRowComponent.test.ts");
+      previewTests.add("tests/animation/socialPostModule.test.ts");
+      previewTests.add("tests/animation/videoCallModule.test.ts");
+      application = true;
+    }
     if (file.startsWith("src/desktop-preview/buttonComponent")
       || file === "src/Mockups.Application/ButtonComponentConfigContract.cs"
       || file === "scaffolding/components/button.json") {
