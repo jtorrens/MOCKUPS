@@ -53,11 +53,15 @@ test("Button declares every scalar Runtime field as independently hold-animatabl
     "textColorToken",
     "surfaceTintPaletteColor",
     "surfaceTintAmount",
+    "accentType",
+    "accentActive",
   ]);
   for (const input of preview.inputs) {
     assert.equal(input.animatable, true);
     assert.deepEqual(input.animationInterpolations, ["hold"]);
-    assert.deepEqual(input.animationTimeline, { origin: { kind: "ownerStart" } });
+    assert.deepEqual(input.animationTimeline, input.id === "accentType" || input.id === "accentActive"
+      ? { origin: { kind: "ownerStart" }, extendsOwnerDuration: false }
+      : { origin: { kind: "ownerStart" } });
   }
   assert.equal(preview.inputs.some((input) =>
     input.id === "state" || input.id === "pushTrigger" || input.id === "pushElapsedMs"), false);

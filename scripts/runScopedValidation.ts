@@ -410,6 +410,17 @@ export function planScopedValidation(
         ));
       }
     }
+    if (file.startsWith("src/desktop-preview/socialPostModule")
+      || file.startsWith("src/desktop-preview/contentRowComponent")
+      || file === "scaffolding/modules/module_core_socialPost.json"
+      || file === "src/Mockups.Application/StructuredRuntimeCollectionProjection.cs") {
+      add(npmStep(
+        "desktop:reel-screen-labels",
+        "test:focus:desktop",
+        "two persisted Reel Screens must render independent labels without changing their shared Variant",
+        ["--", "--exact", "Social Post two Reel Screens persist independent labels without changing Variant"],
+      ));
+    }
     if (file === "data/mockups.sqlite") {
       database = true;
       desktopCore = true;

@@ -390,6 +390,7 @@ var tests = new (string Name, Action Run)[]
     ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Social Post composes two structure-projected header and footer rows", SocialPostComposesHeaderRows),
+    ("Social Post two Reel Screens persist independent labels without changing Variant", SocialPostReelScreenLabelsAreIndependent),
     ("Social Post Screen creation persists projected Runtime rows atomically", SocialPostScreenCreationIsAtomic),
     ("Social Post editor exposes its current generic header contract", SocialPostEditorExposesCurrentHeaderContract),
     ("Production animation activation keeps Payload and navigation mounted", () => ProductionScalarCommitKeepsScreenPayloadMounted(false, true)),
@@ -28736,10 +28737,10 @@ static void SocialPostComposesHeaderRows()
         inputs.Select((input) => input.Id).ToList());
     var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
     SequenceEqual(
-        ["socialPostRows", "socialPostFooterRows"],
+        ["socialPostRows", "socialPostFooterRows", "socialPostActions"],
         collections.Select((collection) => collection.Id).ToList());
     SequenceEqual(
-        ["socialPostRows", "socialPostFooterRows"],
+        ["socialPostRows", "socialPostFooterRows", "socialPostActions"],
         collections.Select((collection) => collection.JsonKey).ToList());
     var runtimeRows = JsonPath.RequiredArray(preview, "socialPostRows", "Social Post Runtime");
     Equal(2, runtimeRows.Count);
@@ -28818,6 +28819,78 @@ static void SocialPostComposesHeaderRows()
             }
         }
     }
+}
+
+static void SocialPostReelScreenLabelsAreIndependent()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-reel-labels-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var shot = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
+            .First(node => node.Kind == ProjectTreeNodeKind.Shot);
+        var module = ModuleInstances(database).GetAvailableShotModules(shot.Id)
+            .Single(candidate => candidate.RecordClassId == "module.core.socialPost");
+        var variant = ModuleInstances(database).GetModuleVariantOptions(module.Id)
+            .Single(candidate => candidate.Value.EndsWith("::variant::reel", StringComparison.Ordinal));
+        var before = ModuleSnapshot();
+        var screens = Enumerable.Range(0, 2).Select(index => AddPreparedModuleInstance(
+            Children(database), shot, new ShotModuleInstanceDraft(module, variant.Value, variant.Label, $"Reel {index}"))).ToArray();
+        var labels = new[] { "ReelAlphaLikes", "ReelBetaLikes" };
+        var footers = new[] { "ReelAlphaFooter", "ReelBetaFooter" };
+        for (var index = 0; index < screens.Length; index++)
+        {
+            var content = JsonNode.Parse(database.GetModuleInstanceSettings(screens[index].Id).ContentJson)!.AsObject();
+            var actionId = content["socialPostActions"]![0]!["id"]!.GetValue<string>();
+            database.UpdateModuleInstanceRuntimeCollectionValue(screens[index].Id,
+                "socialPostActions", actionId, "sampleText", JsonValue.Create(labels[index]));
+            var footer = content["socialPostFooterRows"]![0]!;
+            var slots = footer["slotInputs"]!.DeepClone().AsArray();
+            slots[0]!["label"] = footers[index];
+            database.UpdateModuleInstanceRuntimeCollectionValue(screens[index].Id,
+                "socialPostFooterRows", footer["id"]!.GetValue<string>(), "slotInputs", slots);
+        }
+        // Reopen persistence: neither Preview session state nor shared Variant
+        // defaults can supply the distinct authored values checked below.
+        database = new SqliteProjectTestContext(temporary);
+        for (var index = 0; index < screens.Length; index++)
+        {
+            var stored = JsonNode.Parse(database.GetModuleInstanceSettings(screens[index].Id).ContentJson)!;
+            Equal(labels[index], stored["socialPostActions"]![0]!["sampleText"]!.GetValue<string>());
+            Equal(footers[index], stored["socialPostFooterRows"]![0]!["slotInputs"]![0]!["label"]!.GetValue<string>());
+            var payloadData = new DesignPreviewPayloadDataSource(database.PreviewInputs,
+                database.Production, database.Resources, database.Resources, database.ProjectPaths);
+            var payload = new ProductionPreviewPayloadPreparer(payloadData,
+                new ProductionPreviewRuntimeResolver(database.Resources, database.ProjectPaths))
+                .PrepareRequired(screens[index], null, "light", 0);
+            var prepared = JsonNode.Parse(payload.DesignPreviewJson)!;
+            Equal(labels[index], prepared["socialPostActions"]![0]!["sampleText"]!.GetValue<string>());
+            Equal(footers[index], prepared["socialPostFooterRows"]![0]!["slotInputs"]![0]!["label"]!.GetValue<string>());
+            var html = WebDesignPreviewRenderer.RenderBodyAsync(
+                database.GetDevicePreviewMetrics(database.GetShotSettings(shot.Id).DeviceOverrideId
+                    ?? database.GetActorSettings(database.GetShotSettings(shot.Id).OwnerActorId).DefaultDeviceId), false, payload).GetAwaiter().GetResult();
+            True(html.Contains(labels[index], StringComparison.Ordinal));
+            True(html.Contains(footers[index], StringComparison.Ordinal));
+            True(!html.Contains(labels[1 - index], StringComparison.Ordinal));
+            True(!html.Contains(footers[1 - index], StringComparison.Ordinal));
+            True(!html.Contains("preview-error", StringComparison.Ordinal));
+        }
+        Equal(before, ModuleSnapshot());
+
+        string ModuleSnapshot()
+        {
+            using var connection = new SqliteConnection($"Data Source={temporary};Mode=ReadOnly");
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT config_json, metadata_json, design_preview_json FROM modules WHERE id=$id";
+            command.Parameters.AddWithValue("$id", module.Id);
+            using var reader = command.ExecuteReader();
+            True(reader.Read());
+            return string.Join("\n", reader.GetString(0), reader.GetString(1), reader.GetString(2));
+        }
+    }
+    finally { File.Delete(temporary); }
 }
 
 static void SocialPostScreenCreationIsAtomic()

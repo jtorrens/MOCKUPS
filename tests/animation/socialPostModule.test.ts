@@ -36,7 +36,11 @@ function fixture(variantId = "default") {
     // Explicit prepared fixture for the Default Icon Row boundary; Reel uses
     // its authored action identities and Runtime values from the Module fixture.
     if (variantId === "default") {
-      runtime.socialPostActions = JSON.parse(committedComponentFixture("iconRow").designPreviewJson).buttonInputs;
+      const buttonValues = JSON.parse(committedComponentFixture("iconRow").designPreviewJson).buttonInputs;
+      const actionContract = (runtime.collections as Array<{ id: string; fields: Array<{ jsonKey: string }> }>).find(item => item.id === "socialPostActions")!;
+      const declaredKeys = new Set(["id", ...actionContract.fields.map(field => field.jsonKey)]);
+      runtime.socialPostActions = buttonValues.map((item: Record<string, unknown>) =>
+        Object.fromEntries(Object.entries(item).filter(([key]) => declaredKeys.has(key))));
     }
     const avatarRuntime = JSON.parse(avatar.designPreviewJson) as Record<string, unknown>;
     const runtimeRows = runtime.socialPostRows as Array<Record<string, unknown>>;
