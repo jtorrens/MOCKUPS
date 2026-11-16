@@ -4108,8 +4108,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -4130,8 +4130,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -4152,8 +4152,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -4174,8 +4174,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -4196,8 +4196,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -4235,8 +4235,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -4257,8 +4257,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -4279,8 +4279,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -4301,8 +4301,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -4323,8 +4323,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5342,8 +5342,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5364,8 +5364,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5386,8 +5386,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5408,8 +5408,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5430,8 +5430,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5469,8 +5469,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5491,8 +5491,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5513,8 +5513,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5535,8 +5535,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5557,8 +5557,8 @@
                           "variantReference": "component_project_foqn_s2_label::variant::default",
                           "overrides": {
                             "label": {
-                              "textColorToken": "palette_project_foqn_s2_gray_100",
-                              "subtextColorToken": "palette_project_foqn_s2_gray_100"
+                              "textColorToken": "theme.colors.onAction",
+                              "subtextColorToken": "theme.colors.onAction"
                             }
                           }
                         }
@@ -5668,7 +5668,7 @@
                     "buttonOverrides": {
                       "button": {
                         "appearance": {
-                          "iconColorToken": "palette_project_foqn_s2_gray_100",
+                          "iconColorToken": "theme.colors.onAction",
                           "surfaceSlot": {
                             "overrides": {
                               "surface": {
@@ -5695,7 +5695,7 @@
                     "buttonOverrides": {
                       "button": {
                         "appearance": {
-                          "iconColorToken": "palette_project_foqn_s2_gray_100",
+                          "iconColorToken": "theme.colors.onAction",
                           "surfaceSlot": {
                             "overrides": {
                               "surface": {
@@ -5722,7 +5722,7 @@
                     "buttonOverrides": {
                       "button": {
                         "appearance": {
-                          "iconColorToken": "palette_project_foqn_s2_gray_100",
+                          "iconColorToken": "theme.colors.onAction",
                           "surfaceSlot": {
                             "overrides": {
                               "surface": {
