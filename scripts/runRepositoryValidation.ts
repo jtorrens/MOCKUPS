@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  cpSync,
   mkdtempSync,
   rmSync,
   symlinkSync,
@@ -39,6 +40,8 @@ export function runStagedRepositoryValidation(
       validationAssets,
       process.platform === "win32" ? "junction" : "dir",
     );
+    cpSync(path.join(repositoryRoot, "data", "icon-library"),
+      path.join(temporaryDirectory, "icon-library"), { recursive: true });
     const stagedParity = options.readStagedParity?.()
       ?? readStagedFile(repositoryRoot);
     if (stagedParity.length === 0) {

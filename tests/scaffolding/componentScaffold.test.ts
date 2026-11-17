@@ -75,6 +75,7 @@ function inventory(
       "Integer",
       "StringSingleLine",
       "ThemeToken",
+      "ThemeTokenPair",
     ]),
     ...overrides,
   };
@@ -649,7 +650,7 @@ test("Component scaffold validates current dictionary and Runtime Input contract
   unfilteredSpacing.dictionaryFields[0]!.defaultValue =
     "theme.spacing.l|theme.spacing.m";
   unfilteredSpacing.dictionaryFields[0]!.options = [];
-  expectInvalid(unfilteredSpacing, "requires explicit options");
+  expectInvalid(unfilteredSpacing, "requires a declared themeTokenFamily");
 
   const unknownInputKind = validSpec();
   (unknownInputKind.designPreview.inputs as Array<Record<string, unknown>>)[0]!.valueKind = "Unknown";

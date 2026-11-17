@@ -3323,7 +3323,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "center"
           },
           {
             "id": "item_d2a1bd7aeb5f49c49501136b62bc4389",
@@ -3425,7 +3426,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "center"
           }
         ],
         "headerHeight": 130,
@@ -4448,7 +4450,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "center"
           },
           {
             "id": "item_1729c03bec80498bb124f253df1c1709",
@@ -4550,7 +4553,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "center"
           }
         ],
         "footerHeight": 130,

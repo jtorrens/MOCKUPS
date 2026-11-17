@@ -2250,7 +2250,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "center"
           },
           {
             "id": "item_d2a1bd7aeb5f49c49501136b62bc4389",
@@ -2352,7 +2353,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "center"
           }
         ],
         "showFooter": true,
@@ -2471,7 +2473,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "center"
           },
           {
             "id": "item_1729c03bec80498bb124f253df1c1709",
@@ -2573,7 +2576,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "center"
           }
         ],
         "showMainVideo": true,
@@ -2835,7 +2839,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "top"
           },
           {
             "id": "item_29f0dbd15fd34b1a85890be5c6777312",
@@ -2941,7 +2946,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "center"
           },
           {
             "id": "item_9da03395fe2749f3bad029e13f8bb975",
@@ -3051,7 +3057,8 @@
                   ]
                 }
               }
-            }
+            },
+            "placement": "bottom"
           }
         ],
         "headerLayout": {

@@ -117,7 +117,7 @@ export function committedComponentFixture(
         screenHeight: 720,
         moduleTransparency: { enabled: false, mode: "fixed", paletteColor: "gray_000", backgroundOpacity: 1, fixedStart: 0, minimumOpaqueExtent: 0, gradientHeight: 1, variableOffset: 0 },
       },
-      iconAssetRoot: path.resolve("assets/system", iconTheme.asset_root),
+      iconAssetRoot: path.resolve(path.dirname(parityDatabasePath()), "icon-library", iconTheme.asset_root),
       iconMappingJson: iconTheme.mapping_json,
       fontFaces: [
         {

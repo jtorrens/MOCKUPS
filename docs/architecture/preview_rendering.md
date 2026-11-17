@@ -101,7 +101,14 @@ original data. Static embedded inputs use declared, typed definition defaults
 prepared by Application for the exact Variant; configured bindings and explicit
 Runtime values take precedence. No Component manufactures a private set of
 default Runtime values. Prepared configuration is isolated from its source
-Variant and local Overrides, including nested objects and arrays.
+Variant and local Overrides, including nested objects and arrays. Static and
+Runtime collection items cross the same `prepareComponentInputValues` boundary
+before child dispatch; both use the exact child catalog, with explicit false,
+zero and empty values preserved.
+
+Production session preparation loads each Screen timeline source once per
+snapshot and uses that source for both its range and keyframes. It does not
+retain a cache across authoring refreshes.
 
 A Theme-owned Component boundary receives its exact prepared Theme Variant
 reference from the payload and its sparse owner-local Overrides from the

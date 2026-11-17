@@ -101,13 +101,17 @@ function payload(
     { id: "fullScreen", jsonKey: "isFullScreen", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
     { id: "keepCursorAfterWrite", jsonKey: "keepCursorAfterWrite", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
   ];
+  const base = committedConversationPayload();
+  const baseConfig = JSON.parse(base.configJson!);
   return {
+    ...base,
     kind: "moduleInstance",
     componentType: "conversation",
     frameRate: 30,
     localFrame,
     configJson: JSON.stringify({
       conversation: {
+        ...baseConfig.conversation,
         showKeyboard: false,
         showTextInputBar: false,
         messageMotion: {
@@ -232,6 +236,7 @@ test("a message owner phase freezes incoming content at its initial write state"
     ...current,
     configJson: JSON.stringify({
       conversation: {
+        ...JSON.parse(current.configJson!).conversation,
         showKeyboard: false,
         showTextInputBar: false,
         messageMotion: motion,

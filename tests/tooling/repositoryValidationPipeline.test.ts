@@ -7,6 +7,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  writeFileSync,
 } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -168,7 +169,10 @@ test("repository validation uses staged parity in a disposable isolated root", (
   const repositoryRoot = path.join(fixtureRoot, "repository");
   const temporaryParent = path.join(fixtureRoot, "temporary");
   mkdirSync(path.join(repositoryRoot, "assets"), { recursive: true });
+  mkdirSync(path.join(repositoryRoot, "data", "icon-library"), { recursive: true });
   mkdirSync(temporaryParent);
+  const sourceIcon = path.join(repositoryRoot, "data", "icon-library", "test.svg");
+  writeFileSync(sourceIcon, "original-svg");
   const stagedParity = Buffer.from("staged-parity-fixture");
   let validationDatabase = "";
 
@@ -189,6 +193,11 @@ test("repository validation uses staged parity in a disposable isolated root", (
           lstatSync(path.join(isolatedRoot, "assets")).isSymbolicLink(),
           process.platform !== "win32",
         );
+        const icon = path.join(isolatedRoot, "icon-library", "test.svg");
+        assert.equal(readFileSync(icon, "utf8"), "original-svg");
+        assert.equal(lstatSync(icon).isSymbolicLink(), false);
+        writeFileSync(icon, "changed-in-test");
+        assert.equal(readFileSync(sourceIcon, "utf8"), "original-svg");
         return 23;
       },
     });
@@ -209,6 +218,7 @@ test("repository validation cleans its isolated root after gate exceptions", () 
   const repositoryRoot = path.join(fixtureRoot, "repository");
   const temporaryParent = path.join(fixtureRoot, "temporary");
   mkdirSync(path.join(repositoryRoot, "assets"), { recursive: true });
+  mkdirSync(path.join(repositoryRoot, "data", "icon-library"), { recursive: true });
   mkdirSync(temporaryParent);
   let validationDatabase = "";
 

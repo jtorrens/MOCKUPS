@@ -33,7 +33,7 @@ internal sealed class SqliteProjectTestContext
             context,
             Production.ProjectEpisodeRepository,
             Production.ModuleInstanceThemeContextService,
-            SystemAssetPathResolver.Discover());
+            new SystemAssetPathResolver(IconLibraryPaths.ForDatabase(context.DatabasePath)));
         Animations = new SqliteModuleInstanceAnimationStore(context, Production);
         var componentFieldOptions =
             new ComponentFieldOptionResolver(

@@ -20,6 +20,17 @@ reorder, delayed confirmation, failed edit/Restore, deleted items and replaced
 Variant/Theme references. Real shared controls must restore without emitting a
 second save event, and flat Overrides must consume that same owner path.
 
+Validation workspaces pair their disposable database with a copied external
+icon library. Mutating an isolated icon must not change repository or workstation
+resources (`repositoryValidationPipeline.test.ts`). Desktop fixture contexts
+resolve that library from their database, using the same path contract as the app.
+
+Nested Runtime preparation is covered by `textInputBarRuntimeConfig.test.ts`,
+`conversationModuleResolver.test.ts` and `runtimePreviewDocumentContract.test.ts`;
+removing the common child preparation fails both Text Input Bar and Conversation.
+Production snapshot preparation is exercised by the isolated pinned Preview,
+workspace navigation and responsive shell tests.
+
 ### Contract-to-test coverage map
 
 This is a navigation map to executable owners, not a claim that every possible

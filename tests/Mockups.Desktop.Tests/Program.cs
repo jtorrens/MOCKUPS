@@ -56,7 +56,7 @@ AppDomain.CurrentDomain.ProcessExit += (_, _) =>
 {
     if (File.Exists(desktopTestDatabasePath))
     {
-        File.Delete(desktopTestDatabasePath);
+        Directory.Delete(Path.GetDirectoryName(desktopTestDatabasePath)!, recursive: true);
     }
 };
 
@@ -26588,6 +26588,8 @@ static void AnimatableFieldVocabularyIsConstrained()
         "textColorToken",
         "surfaceTintPaletteColor",
         "surfaceTintAmount",
+        "accentType",
+        "accentActive",
     };
     foreach (var message in JsonPath.RequiredArray(
                  preview,
@@ -27821,7 +27823,7 @@ static void SurfaceStackSeedOpensAndRenders()
         settings.DesignPreviewJson,
         "Surface Stack Runtime contract");
     SequenceEqual(
-        ["size"],
+        ["size", "accentType", "accentActive"],
         RuntimeInputDefinitionReader.ReadInputs(preview, config)
             .Select((input) => input.Id)
             .ToList());
@@ -28737,6 +28739,7 @@ static void SocialPostComposesHeaderRows()
             "messageWriteOnFrame",
             "mediaCutout",
             "galleryMediaCutout",
+            "mediaSource",
         ],
         inputs.Select((input) => input.Id).ToList());
     var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
@@ -29927,9 +29930,18 @@ static string CreateDesktopTestDatabase(
 {
     _ = new SqliteProjectTestContext(sourcePath)
         .LoadProjectTree();
-    var temporary = Path.Combine(
+    var workspace = Path.Combine(
         Path.GetTempPath(),
-        $"mockups-desktop-test-source-{Guid.NewGuid():N}.sqlite");
+        $"mockups-desktop-test-source-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(workspace);
+    var sourceLibrary = Path.Combine(Path.GetDirectoryName(sourcePath)!, "icon-library");
+    foreach (var sourceFile in Directory.EnumerateFiles(sourceLibrary, "*", SearchOption.AllDirectories))
+    {
+        var target = Path.Combine(workspace, "icon-library", Path.GetRelativePath(sourceLibrary, sourceFile));
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        File.Copy(sourceFile, target);
+    }
+    var temporary = Path.Combine(workspace, "mockups.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
     {

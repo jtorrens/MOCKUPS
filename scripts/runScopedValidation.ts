@@ -547,6 +547,13 @@ export function planScopedValidation(
     if (file === "src/desktop-preview/previewAssetResolver.ts") {
       previewTests.add("tests/animation/previewAssetResolver.test.ts");
     }
+    if (file === "src/desktop-preview/iconRowComponentResolver.ts"
+      || file === "src/desktop-preview/runtimePreviewDocumentContract.ts") {
+      previewTests.add("tests/animation/textInputBarRuntimeConfig.test.ts");
+      previewTests.add("tests/animation/conversationModuleResolver.test.ts");
+      previewTests.add("tests/animation/runtimePreviewDocumentContract.test.ts");
+      desktopCore = true;
+    }
     if (file.startsWith("src/desktop-preview/")) {
       typecheck = true;
       const owner = previewOwnerForFile(file, manifest);

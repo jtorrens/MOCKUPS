@@ -39,18 +39,7 @@ export function resolveConfiguredIconRowComponentFromRecords(
     config,
     {
       buttonInputs: requiredObjectArray(iconRow, "items", "component.iconRow").map((item) => ({
-        ...prepareComponentInputValues(
-          componentBaseConfigs,
-          requiredString(item, "buttonVariantReference", "component.iconRow.item"),
-          prepareComponentConfiguration(
-            componentBaseConfigs,
-            "button",
-            requiredString(item, "buttonVariantReference", "component.iconRow.item"),
-            requiredRecord(item, "buttonOverrides", "component.iconRow.item"),
-          ),
-          buttonRuntimeValueBindings,
-          projectRuntimeValues(item, iconRowButtonValueLinks),
-        ),
+        ...projectRuntimeValues(item, iconRowButtonValueLinks),
         id: requiredString(item, "id", "component.iconRow.item"),
       })),
       gap: requiredString(iconRow, "gap", "component.iconRow.gap"),
@@ -101,7 +90,13 @@ export function resolveIconRowComponentFromRecords(
       id: itemId,
       button: resolveButtonComponentFromRecords(
         baseButtonConfig,
-        projectRuntimeCollectionItemInputs(runtime, contextualSizes),
+        prepareComponentInputValues(
+          componentBaseConfigs,
+          buttonVariantReference,
+          baseButtonConfig,
+          buttonRuntimeValueBindings,
+          projectRuntimeCollectionItemInputs(runtime, contextualSizes),
+        ),
         componentBaseConfigs,
         `${id}.${itemId}`,
         frameContext,

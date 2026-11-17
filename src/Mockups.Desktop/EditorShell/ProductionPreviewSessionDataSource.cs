@@ -138,15 +138,11 @@ internal sealed class ProductionPreviewSessionDataSource
                 _database.GetDeviceSettings(shotDeviceId));
             var shotScreens =
                 new List<ProductionPreviewScreenSnapshot>();
-            foreach (var range in
-                     ModuleInstanceTimeline.ScreenRanges(
-                         _timelineDataSource,
-                         shotNode.Id))
+            foreach (var screenId in _timelineDataSource.ShotSlotIds(shotNode.Id))
             {
-                var screenId =
-                    range.ScreenId;
-                var source =
-                    _timelineDataSource.Load(screenId);
+                var source = _timelineDataSource.Load(screenId);
+                var range = ModuleInstanceTimeline.ScreenRange(
+                    _timelineDataSource, screenId, source);
                 var screenSettings = _timeline.GetModuleInstanceSettings(screenId);
                 var deviceId = shotDeviceId;
                 if (string.IsNullOrWhiteSpace(deviceId))
