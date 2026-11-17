@@ -37,6 +37,25 @@ public static class DesktopChildProcess
         return candidates.FirstOrDefault(File.Exists) ?? executableName;
     }
 
+    public static ProcessStartInfo CreateNodeStartInfo(
+        string workingDirectory,
+        bool redirectStandardInput = false)
+    {
+        var executable = ResolveNodeExecutable();
+        var startInfo = CreateHiddenStartInfo(executable, workingDirectory, redirectStandardInput);
+        if (Path.IsPathFullyQualified(executable))
+        {
+            // npm and its Node shebang must use the same installation as the
+            // worker, including when Finder supplies only the system PATH.
+            var executableDirectory = Path.GetDirectoryName(executable)!;
+            startInfo.Environment.TryGetValue("PATH", out var inheritedPath);
+            startInfo.Environment["PATH"] = string.IsNullOrEmpty(inheritedPath)
+                ? executableDirectory
+                : executableDirectory + Path.PathSeparator + inheritedPath;
+        }
+        return startInfo;
+    }
+
     public static ProcessStartInfo CreateHiddenStartInfo(
         string fileName,
         string workingDirectory,

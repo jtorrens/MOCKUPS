@@ -117,8 +117,7 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
         if (_process is not null && !_process.HasExited) return;
         var script = ResolveScript();
         var workingDirectory = ResolveRepositoryRoot(script);
-        var startInfo = DesktopChildProcess.CreateHiddenStartInfo(
-            DesktopChildProcess.ResolveNodeExecutable(),
+        var startInfo = DesktopChildProcess.CreateNodeStartInfo(
             workingDirectory,
             redirectStandardInput: true);
         var bundledBrowsers = ResolveBundledBrowserPath();

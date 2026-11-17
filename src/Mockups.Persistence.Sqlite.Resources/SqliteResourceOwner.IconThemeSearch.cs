@@ -129,7 +129,7 @@ internal sealed partial class SqliteResourceOwner
         var scriptPath = scriptCandidates.FirstOrDefault(File.Exists)
             ?? throw new InvalidOperationException($"Icon theme script not found. Checked: {string.Join(", ", scriptCandidates)}");
         var workingDirectory = Directory.GetParent(scriptPath)?.Parent?.Parent?.FullName ?? AppContext.BaseDirectory;
-        var startInfo = DesktopChildProcess.CreateHiddenStartInfo("node", workingDirectory);
+        var startInfo = DesktopChildProcess.CreateNodeStartInfo(workingDirectory);
         startInfo.ArgumentList.Add(scriptPath);
         foreach (var argument in arguments)
         {

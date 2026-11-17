@@ -73,6 +73,14 @@ creation step to Module base config must break preparation or completion.
 The production Runtime and Variant owners select this regression through
 `runScopedValidation.ts`; execution requires explicit test authorization.
 
+Application regression `Node workers share their installation with child tools`
+checks the resolved executable and child-only PATH, then starts a nested Node
+process with only the resolved installation directory in PATH. A missing
+directory prefix fails the PATH assertion; a different executable fails the
+child identity check. Icon search and Chromium use that same process owner.
+Their changes select the Application suite; native packaged icon search remains
+a manual check. Suite execution requires explicit authorization.
+
 The shared SVG media reader is covered by `previewAssetResolver.test.ts` with
 Project and System Preview roots, exact file bytes and explicit missing-file
 notices. The asset owner is selected by `runScopedValidation.ts`. Removing SVG

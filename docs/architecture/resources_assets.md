@@ -323,6 +323,13 @@ duplication assigns its new id to that snapshot. Invalid directory names and occ
 fail explicitly. Case-only aliases require a distinct intermediate name; they
 are never implemented with an unjournaled temporary move.
 
+Icon search and import launch their provider script through
+`DesktopChildProcess.CreateNodeStartInfo`, shared with Chromium raster workers.
+It resolves the Node executable and prefixes that installation's directory to
+the child PATH so npm and its Node shebang work when launched from Finder.
+It does not alter the editor's process environment. Resources never launches a
+bare `node` independently of this common owner.
+
 Icon search requires at least one selected valid source, not a pair. When both
 providers have equivalents, each collection receives its native SVG. When a
 collection has no equivalent, import explicitly copies an available selected

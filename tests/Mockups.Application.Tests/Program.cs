@@ -11,6 +11,7 @@ var tests = new (string Name, Action Run)[]
     ("Bubble requires valid message size tokens for every direction", BubbleConfigTests.DirectionSizesAreRequired),
     ("SVG fill transforms keep direct reusable geometry", SvgFillTransformsKeepDirectReusableGeometry),
     ("redirected child-process text round-trips exact UTF-8", RedirectedChildProcessTextRoundTripsExactUtf8),
+    ("Node workers share their installation with child tools", NodeWorkersShareInstallation),
     ("initial tree load resolves a selectable Design context", InitialTreeLoadSelectsDesignContext),
     ("workspace changes restore each workspace selection", WorkspaceChangesRestoreSelection),
     ("Design and Production share one exact active Project", WorkspacesShareActiveProject),
@@ -819,6 +820,38 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
             },
         },
     };
+}
+
+static void NodeWorkersShareInstallation()
+{
+    var inheritedPath = Environment.GetEnvironmentVariable("PATH");
+    var start = DesktopChildProcess.CreateNodeStartInfo(Directory.GetCurrentDirectory());
+    Equal(DesktopChildProcess.ResolveNodeExecutable(), start.FileName);
+    Equal(inheritedPath, Environment.GetEnvironmentVariable("PATH"));
+    if (Path.IsPathFullyQualified(start.FileName))
+    {
+        var directory = Path.GetDirectoryName(start.FileName)!;
+        Equal(string.IsNullOrEmpty(inheritedPath) ? directory
+            : directory + Path.PathSeparator + inheritedPath, start.Environment["PATH"]);
+        // The nested tool must work without any inherited shell search path.
+        start.Environment["PATH"] = directory;
+    }
+    start.ArgumentList.Add("-e");
+    start.ArgumentList.Add("const cp=require('node:child_process');"
+        + "const child=cp.execFileSync('node',['-p','process.execPath'],{encoding:'utf8'}).trim();"
+        + "if(child!==process.execPath) throw new Error('Node installation changed');"
+        + "process.stdout.write('same-runtime');");
+    using var process = Process.Start(start) ?? throw new InvalidOperationException("Node did not start");
+    var output = process.StandardOutput.ReadToEndAsync();
+    var error = process.StandardError.ReadToEndAsync();
+    if (!process.WaitForExit(10000))
+    {
+        process.Kill(entireProcessTree: true);
+        throw new TimeoutException("Nested Node worker timed out");
+    }
+    Equal(0, process.ExitCode);
+    Equal("", error.GetAwaiter().GetResult());
+    Equal("same-runtime", output.GetAwaiter().GetResult());
 }
 
 static void RedirectedChildProcessTextRoundTripsExactUtf8()

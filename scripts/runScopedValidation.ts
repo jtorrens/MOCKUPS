@@ -435,6 +435,13 @@ export function planScopedValidation(
         ["--", "--exact", "Screen creation requires Actors only from the selected Variant"],
       ));
     }
+    if ([
+      "src/Mockups.Application/DesktopChildProcess.cs",
+      "src/Mockups.Persistence.Sqlite.Resources/SqliteResourceOwner.IconThemeSearch.cs",
+      "src/Mockups.Desktop/EditorShell/ChromiumPreviewRasterizer.cs",
+    ].includes(file)) {
+      application = true;
+    }
     if (file === "data/mockups.sqlite") {
       database = true;
       desktopCore = true;
