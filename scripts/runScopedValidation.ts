@@ -255,6 +255,14 @@ export function planScopedValidation(
         ["--", "tests/tooling/workstationProject.test.ts"],
       ));
     }
+    if (file.startsWith("src/Mockups.Desktop.Host/BackupHub")
+      || file.endsWith("/IconLibrarySnapshot.cs") || file.endsWith("/IconLibraryPaths.cs")
+      || file === "scripts/workstationProject.mjs") {
+      desktopCompile = true;
+      add(npmStep("desktop:backup-icons", "test:focus:desktop",
+        "backup and interrupted restoration preserve the database and complete editable icon library",
+        ["--", "--filter", "Backup Hub"]));
+    }
     if ([
       "src/Mockups.Application/EditorOperationCoordinator.cs",
       "src/Mockups.Desktop/Common/EditorModalWindowScope.cs",

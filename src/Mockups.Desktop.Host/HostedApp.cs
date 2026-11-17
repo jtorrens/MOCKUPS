@@ -56,7 +56,7 @@ internal sealed class HostedApp : App
                     "desktop-preview"),
                 () => new BackupHubApplicationLifecycle(
                     backups,
-                    backups.CaptureDatabaseFingerprint()));
+                    backups.CaptureSnapshotFingerprint()));
             var result = await coordinator.StartAsync(
                 databasePath,
                 cancellation.Token);

@@ -22,13 +22,16 @@ internal enum BackupReason
 internal sealed record BackupPublication(
     Guid PackageId,
     string PackagePath,
-    string DatabaseSha256);
+    string DatabaseSha256,
+    string SnapshotSha256);
 
 internal sealed class BackupHubBackupService
 {
     internal const string ApplicationId = "mockups";
     internal const string SnapshotFormat = "mockups-production";
     internal const string PayloadPath = "mockups.sqlite";
+    internal const string IconPayloadPath = "icon-library.zip";
+    internal string LibraryRoot => IconLibraryPaths.ForDatabase(_databasePath);
 
     private readonly string _databasePath;
 
@@ -41,7 +44,10 @@ internal sealed class BackupHubBackupService
         Vault = vault;
     }
 
-    public string CaptureDatabaseFingerprint()
+    internal static string SnapshotFingerprint(string databaseHash, string iconHash) =>
+        BackupHubContract.HashBytes(System.Text.Encoding.UTF8.GetBytes(databaseHash + "\n" + iconHash));
+
+    public string CaptureSnapshotFingerprint()
     {
         var temporary = Path.Combine(
             Path.GetTempPath(),
@@ -51,7 +57,8 @@ internal sealed class BackupHubBackupService
             _ = SqliteDatabaseSnapshotService.CreateValidated(
                 _databasePath,
                 temporary);
-            return BackupHubContract.HashFile(temporary);
+            return SnapshotFingerprint(BackupHubContract.HashFile(temporary),
+                IconLibrarySnapshot.Fingerprint(LibraryRoot));
         }
         finally
         {
@@ -61,7 +68,7 @@ internal sealed class BackupHubBackupService
 
     public BackupPublication? Publish(
         BackupReason reason,
-        string? unchangedDatabaseSha256 = null)
+        string? unchangedSnapshotSha256 = null)
     {
         var inbox = Vault.RequireInbox();
         var packageId = Guid.NewGuid();
@@ -88,10 +95,14 @@ internal sealed class BackupHubBackupService
                     snapshotPath);
             var databaseHash = BackupHubContract.HashFile(
                 snapshotPath);
+            var iconPath = Path.Combine(payload, IconPayloadPath);
+            IconLibrarySnapshot.Create(LibraryRoot, iconPath);
+            var iconHash = BackupHubContract.HashFile(iconPath);
+            var snapshotHash = SnapshotFingerprint(databaseHash, iconHash);
             if (reason == BackupReason.CleanExit
                 && string.Equals(
-                    databaseHash,
-                    unchangedDatabaseSha256,
+                    snapshotHash,
+                    unchangedSnapshotSha256,
                     StringComparison.Ordinal))
             {
                 Directory.Delete(staging, recursive: true);
@@ -117,6 +128,7 @@ internal sealed class BackupHubBackupService
                         PayloadPath,
                         new FileInfo(snapshotPath).Length,
                         databaseHash),
+                    new BackupFile(IconPayloadPath, new FileInfo(iconPath).Length, iconHash),
                 ]);
             var manifestPath = Path.Combine(
                 staging,
@@ -134,7 +146,8 @@ internal sealed class BackupHubBackupService
             return new BackupPublication(
                 packageId,
                 published,
-                databaseHash);
+                databaseHash,
+                snapshotHash);
         }
         catch
         {
@@ -308,7 +321,7 @@ internal static class BackupPackageValidator
                 manifest.Producer.Version)
             || manifest.Producer.Platform
                 is not ("macos" or "windows")
-            || manifest.Files.Length != 1)
+            || manifest.Files.Length != 2)
         {
             throw new InvalidDataException(
                 "manifest.json does not satisfy the MOCKUPS Backup Package v1 contract.");
@@ -326,42 +339,32 @@ internal static class BackupPackageValidator
                 "*",
                 SearchOption.AllDirectories)
             .ToArray();
-        if (payloadEntries.Length != 1)
+        var expectedPaths = new[] { BackupHubBackupService.PayloadPath, BackupHubBackupService.IconPayloadPath };
+        if (!payloadEntries.Select(Path.GetFileName).Order(StringComparer.Ordinal)
+                .SequenceEqual(expectedPaths.Order(StringComparer.Ordinal), StringComparer.Ordinal)
+            || !manifest.Files.Select(file => file.Path).Order(StringComparer.Ordinal)
+                .SequenceEqual(expectedPaths.Order(StringComparer.Ordinal), StringComparer.Ordinal))
+            throw new InvalidDataException("The MOCKUPS payload must contain exactly its database and icon library.");
+        foreach (var file in manifest.Files)
         {
-            throw new InvalidDataException(
-                "The MOCKUPS payload must contain exactly one file.");
+            if (!BackupHubContract.IsLowercaseSha256(file.Sha256) || file.ByteLength < 0)
+                throw new InvalidDataException("The MOCKUPS payload declaration is invalid.");
+            var path = Path.Combine(payload, file.Path);
+            BackupHubContract.RequireRegularFile(path, file.Path);
+            if (new FileInfo(path).Length != file.ByteLength || BackupHubContract.HashFile(path) != file.Sha256)
+                throw new InvalidDataException("The MOCKUPS payload length or hash does not match its manifest.");
         }
-        var file = manifest.Files[0];
-        if (file.Path != BackupHubBackupService.PayloadPath
-            || !BackupHubContract.IsLowercaseSha256(
-                file.Sha256)
-            || file.ByteLength < 0)
+        var iconArchive = Path.Combine(payload, BackupHubBackupService.IconPayloadPath);
+        IconLibrarySnapshot.Validate(iconArchive);
+        var temporary = Path.Combine(Path.GetTempPath(), $"mockups-backup-icons-{Guid.NewGuid():N}");
+        SqliteDatabaseSnapshot snapshot;
+        try
         {
-            throw new InvalidDataException(
-                "The MOCKUPS payload declaration is invalid.");
+            IconLibrarySnapshot.Extract(iconArchive, temporary, durable: false);
+            snapshot = SqliteDatabaseSnapshotService.Validate(
+                Path.Combine(payload, BackupHubBackupService.PayloadPath), temporary);
         }
-        var snapshotPath = Path.Combine(
-            payload,
-            BackupHubBackupService.PayloadPath);
-        BackupHubContract.RequireRegularFile(
-            snapshotPath,
-            BackupHubBackupService.PayloadPath);
-        var snapshotInfo = new FileInfo(snapshotPath);
-        if (snapshotInfo.Length != file.ByteLength)
-        {
-            throw new InvalidDataException(
-                "The MOCKUPS payload byte length does not match its manifest.");
-        }
-        if (!string.Equals(
-                BackupHubContract.HashFile(snapshotPath),
-                file.Sha256,
-                StringComparison.Ordinal))
-        {
-            throw new InvalidDataException(
-                "The MOCKUPS payload hash does not match its manifest.");
-        }
-        var snapshot = SqliteDatabaseSnapshotService.Validate(
-            snapshotPath);
+        finally { if (Directory.Exists(temporary)) Directory.Delete(temporary, recursive: true); }
         if (!string.Equals(
                 snapshot.SchemaVersion.ToString(
                     CultureInfo.InvariantCulture),

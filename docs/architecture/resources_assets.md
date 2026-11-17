@@ -243,7 +243,7 @@ imports supply their complete explicit mapping in the manifest; discovery does
 not rewrite other collections to make their token sets match.
 
 An Icon Theme owns one global current mapping document plus metadata. Every
-token maps explicitly to one asset under `assets/system/icon-themes`. The full
+token maps explicitly to one asset under `icon-library/icon-themes` beside the canonical workstation database. The full
 set catalog is shared by every Production: stable Icon Theme ids and token ids
 are never copied or remapped when a Production is created. Editing a mapped SVG
 therefore changes every Production that resolves that Icon Theme and token.
@@ -375,3 +375,14 @@ A behavior or Preview change that alters icons, fonts, media, wallpaper or
 seeded Theme/Component data commits every required asset and the parity
 database together. Validation checks both stored references and filesystem
 presence.
+
+### Editable library persistence (schema 37)
+
+`IconLibraryPaths` owns the library root beside each database. On macOS this is
+`~/Library/Application Support/MOCKUPS/icon-library`. Persistence injects this
+exact root into the resource owner; editable SVGs are never application bundle
+content. The shell's immutable `system_icons` remain packaged resources.
+Create-only workstation bootstrap seeds `data/icon-library`; maintenance copies
+the canonical library back to that parity snapshot, never over an existing
+workstation library. Backup Hub includes and restores the complete library with
+the database through the journal described in data persistence.

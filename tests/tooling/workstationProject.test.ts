@@ -44,7 +44,8 @@ test("one maintenance cycle snapshots only the canonical workstation database", 
   const temporary = mkdtempSync(path.join(tmpdir(), "mockups-workstation-test-"));
   const repository = path.join(temporary, "repository");
   const workstation = path.join(temporary, "workstation");
-  mkdirSync(path.join(repository, "data"), { recursive: true });
+  mkdirSync(path.join(repository, "data", "icon-library", "icon-themes"), { recursive: true });
+
   mkdirSync(
     path.join(repository, "assets", "system", "preview-fixtures"),
     { recursive: true },
@@ -68,6 +69,8 @@ test("one maintenance cycle snapshots only the canonical workstation database", 
     assert.equal(requireDatabaseParity(paths).length, 64);
 
     writeFileSync(paths.workstationDatabase, "authored");
+    const authoredIcon = path.join(workstation, "icon-library", "icon-themes", "custom.svg");
+    writeFileSync(authoredIcon, "custom authored icon");
     writeFileSync(path.join(repository, "assets", "fixture.txt"), "external asset");
     assert.throws(() => requireDatabaseParity(paths), /snapshot differ/u);
     assert.throws(
@@ -86,8 +89,13 @@ test("one maintenance cycle snapshots only the canonical workstation database", 
     assert.equal(readFileSync(paths.repositoryDatabase, "utf8"), "authored");
     bootstrapWorkstationProject(repository, workstation, () => {});
     assert.equal(readFileSync(paths.workstationDatabase, "utf8"), "authored");
+    assert.equal(readFileSync(authoredIcon, "utf8"), "custom authored icon");
+    assert.equal(readFileSync(path.join(repository, "data", "icon-library", "icon-themes", "custom.svg"), "utf8"), "custom authored icon");
     assert.equal(existsSync(paths.workstationUpdateLock), true);
 
+    writeFileSync(authoredIcon, "updated icon without a database edit");
+    assert.throws(() => requireDatabaseParity(paths), /icon library and repository snapshot differ/u);
+    assert.equal(workstationUpdateStatus(paths).librariesAligned, false);
     writeFileSync(paths.workstationDatabase, "authored-final");
     checkpointWorkstationUpdate(repository, workstation, () => {});
     assert.equal(
@@ -106,6 +114,7 @@ test("one maintenance cycle snapshots only the canonical workstation database", 
         repositoryExists: true,
         workstationExists: true,
         databasesAligned: true,
+        librariesAligned: true,
         paths,
       },
     );
@@ -126,7 +135,8 @@ test("failed maintenance begin removes its update marker", () => {
   const temporary = mkdtempSync(path.join(tmpdir(), "mockups-update-failure-"));
   const repository = path.join(temporary, "repository");
   const workstation = path.join(temporary, "workstation");
-  mkdirSync(path.join(repository, "data"), { recursive: true });
+  mkdirSync(path.join(repository, "data", "icon-library", "icon-themes"), { recursive: true });
+  mkdirSync(path.join(workstation, "icon-library", "icon-themes"), { recursive: true });
   mkdirSync(workstation, { recursive: true });
   writeFileSync(path.join(repository, "data", "mockups.sqlite"), "repository");
   writeFileSync(path.join(workstation, "mockups.sqlite"), "workstation");
@@ -151,7 +161,8 @@ test("maintenance cannot begin from a dirty repository", () => {
   const temporary = mkdtempSync(path.join(tmpdir(), "mockups-dirty-update-"));
   const repository = path.join(temporary, "repository");
   const workstation = path.join(temporary, "workstation");
-  mkdirSync(path.join(repository, "data"), { recursive: true });
+  mkdirSync(path.join(repository, "data", "icon-library", "icon-themes"), { recursive: true });
+  mkdirSync(path.join(workstation, "icon-library", "icon-themes"), { recursive: true });
   mkdirSync(workstation, { recursive: true });
   writeFileSync(path.join(repository, "data", "mockups.sqlite"), "database");
   writeFileSync(path.join(workstation, "mockups.sqlite"), "database");
@@ -176,7 +187,8 @@ test("an active application prevents maintenance from acquiring the database", (
   const temporary = mkdtempSync(path.join(tmpdir(), "mockups-active-app-"));
   const repository = path.join(temporary, "repository");
   const workstation = path.join(temporary, "workstation");
-  mkdirSync(path.join(repository, "data"), { recursive: true });
+  mkdirSync(path.join(repository, "data", "icon-library", "icon-themes"), { recursive: true });
+  mkdirSync(path.join(workstation, "icon-library", "icon-themes"), { recursive: true });
   mkdirSync(workstation, { recursive: true });
   writeFileSync(path.join(repository, "data", "mockups.sqlite"), "database");
   writeFileSync(path.join(workstation, "mockups.sqlite"), "database");

@@ -1,4 +1,6 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
+using System.IO.Compression;
 using Mockups.DesktopEditorShell;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
@@ -6,6 +8,66 @@ using System.Text.Json;
 
 internal static class BackupHubIntegrationTests
 {
+    public static void IconLibraryRoundTrip(string source)
+    {
+        using var fixture = new Fixture(source);
+        var one = Path.Combine(fixture.Backups.LibraryRoot, "icon-themes", "fixture-a", "custom.svg");
+        var two = Path.Combine(fixture.Backups.LibraryRoot, "icon-themes", "fixture-b", "custom.svg");
+        Directory.CreateDirectory(Path.GetDirectoryName(one)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(two)!);
+        File.WriteAllText(one, "<svg xmlns='http://www.w3.org/2000/svg'><path d='M1 1h2'/></svg>");
+        File.WriteAllText(two, "<svg xmlns='http://www.w3.org/2000/svg'><circle r='2'/></svg>");
+        var expectedOne = File.ReadAllText(one);
+        var baseline = fixture.Backups.CaptureSnapshotFingerprint();
+        Equal(null, fixture.Backups.Publish(BackupReason.CleanExit, baseline));
+        var databaseHash = BackupHubContract.HashFile(fixture.Database);
+        File.WriteAllText(one, expectedOne.Replace("h2", "h3"));
+        var changed = fixture.Backups.Publish(BackupReason.CleanExit, baseline)!;
+        Equal(databaseHash, BackupHubContract.HashFile(fixture.Database));
+        Equal(true, changed is not null);
+        Equal(null, fixture.Backups.Publish(BackupReason.CleanExit, changed!.SnapshotSha256));
+        var savedOne = File.ReadAllText(one);
+        var request = fixture.Prepare();
+        File.WriteAllText(one, "later edit");
+        File.Delete(two);
+        var later = Path.Combine(Path.GetDirectoryName(two)!, "later.svg");
+        File.WriteAllText(later, "added after backup");
+        fixture.Run(_ => true);
+        Equal("applied", fixture.Result(request).State);
+        Equal(savedOne, File.ReadAllText(one));
+        Equal(true, File.Exists(two));
+        Equal(false, File.Exists(later));
+    }
+
+    public static void InterruptedIconLibraryRestore(string source)
+    {
+        using var fixture = new Fixture(source);
+        var (request, transaction, _, _) = fixture.PrepareReplacement();
+        var original = IconLibrarySnapshot.Fingerprint(fixture.Backups.LibraryRoot);
+        // Simulate interruption between the two directory renames, after SQLite replacement.
+        Directory.Move(fixture.Backups.LibraryRoot, Path.Combine(transaction, "previous-library"));
+        fixture.Run(_ => throw new Exception("Recovery must not reconfirm."));
+        Equal("failed", fixture.Result(request).State);
+        Equal(original, IconLibrarySnapshot.Fingerprint(fixture.Backups.LibraryRoot));
+    }
+
+    public static void IconArchiveRejectsUnsafePaths(string source)
+    {
+        using var fixture = new Fixture(source);
+        foreach (var name in new[] { "../escape.svg", "icon-themes/../../escape.svg", "icon-themes/a/../b.svg", "icon-themes/evil\\path.svg" })
+        {
+            var archive = Path.Combine(fixture.Root, Guid.NewGuid() + ".zip");
+            using (var zip = ZipFile.Open(archive, ZipArchiveMode.Create))
+            {
+                zip.CreateEntry("icon-themes/");
+                using var writer = new StreamWriter(zip.CreateEntry(name).Open());
+                writer.Write("invalid path");
+            }
+            Throws<InvalidDataException>(() => IconLibrarySnapshot.Validate(archive));
+        }
+        Equal(false, File.Exists(Path.Combine(fixture.Root, "escape.svg")));
+    }
+
     public static void CloseWaitsForWrite(string source) =>
         Task.Run(() => CloseWaitsForWriteAsync(source)).GetAwaiter().GetResult();
 
@@ -13,7 +75,7 @@ internal static class BackupHubIntegrationTests
     {
         using var fixture = new Fixture(source);
         using var operations = new EditorOperationCoordinator();
-        var lifecycle = new BackupHubApplicationLifecycle(fixture.Backups, fixture.Backups.CaptureDatabaseFingerprint());
+        var lifecycle = new BackupHubApplicationLifecycle(fixture.Backups, fixture.Backups.CaptureSnapshotFingerprint());
         using var entered = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
         var writer = operations.ExecuteAsync(() =>
@@ -45,7 +107,7 @@ internal static class BackupHubIntegrationTests
         var id = Guid.Parse(Path.GetFileNameWithoutExtension(result.PackageName!));
         var manifest = BackupPackageValidator.Validate(packagePath, id);
         Equal("clean-exit", manifest.Reason);
-        Equal(fixture.Backups.CaptureDatabaseFingerprint(), manifest.Files.Single().Sha256);
+        Equal(fixture.Backups.CaptureSnapshotFingerprint(), BackupHubBackupService.SnapshotFingerprint(manifest.Files.Single(file => file.Path == "mockups.sqlite").Sha256, manifest.Files.Single(file => file.Path == "icon-library.zip").Sha256));
         Equal(1, Directory.GetFileSystemEntries(fixture.Inbox).Length);
     }
 
@@ -56,7 +118,7 @@ internal static class BackupHubIntegrationTests
     {
         using var fixture = new Fixture(source);
         using var operations = new EditorOperationCoordinator();
-        var lifecycle = new BackupHubApplicationLifecycle(fixture.Backups, fixture.Backups.CaptureDatabaseFingerprint());
+        var lifecycle = new BackupHubApplicationLifecycle(fixture.Backups, fixture.Backups.CaptureSnapshotFingerprint());
         Directory.Delete(fixture.Inbox);
         try
         {
@@ -75,7 +137,7 @@ internal static class BackupHubIntegrationTests
         Equal(ApplicationBackupOutcome.Published, result.Outcome);
         var path = Path.Combine(fixture.Inbox, result.PackageName!);
         var manifest = BackupPackageValidator.Validate(path, Guid.Parse(Path.GetFileNameWithoutExtension(result.PackageName!)));
-        Equal(fixture.Backups.CaptureDatabaseFingerprint(), manifest.Files.Single().Sha256);
+        Equal(fixture.Backups.CaptureSnapshotFingerprint(), BackupHubBackupService.SnapshotFingerprint(manifest.Files.Single(file => file.Path == "mockups.sqlite").Sha256, manifest.Files.Single(file => file.Path == "icon-library.zip").Sha256));
         Equal(1, Directory.GetFileSystemEntries(fixture.Inbox).Length);
     }
 
@@ -100,7 +162,7 @@ internal static class BackupHubIntegrationTests
     {
         using var fixture = new Fixture(source);
         var original = BackupHubContract.HashFile(fixture.Database);
-        var fingerprint = fixture.Backups.CaptureDatabaseFingerprint();
+        var fingerprint = fixture.Backups.CaptureSnapshotFingerprint();
         // Vault Location v1 publication supports macOS and Windows only. Linux CI
         // verifies the explicit rejection and cleanup, never invents a producer.
         if (!OperatingSystem.IsMacOS() && !OperatingSystem.IsWindows())
@@ -111,7 +173,7 @@ internal static class BackupHubIntegrationTests
             return;
         }
         var manual = fixture.Backups.Publish(BackupReason.Manual)!;
-        Equal(fingerprint, manual.DatabaseSha256);
+        Equal(fingerprint, manual.SnapshotSha256);
         Equal("manual", BackupPackageValidator.Validate(manual.PackagePath, manual.PackageId).Reason);
         Equal(null, fixture.Backups.Publish(BackupReason.CleanExit, fingerprint));
         Equal(1, Directory.GetFileSystemEntries(fixture.Inbox).Length);
@@ -264,8 +326,11 @@ internal static class BackupHubIntegrationTests
                 File.Copy(fixture.CandidatePath(request), fixture.Database, overwrite: true);
             }
             else File.Copy(fixture.CandidatePath(request), Path.Combine(transaction, "replacement.sqlite"));
+            IconLibrarySnapshot.Create(IconLibraryPaths.ForDatabase(fixture.Database), Path.Combine(transaction, "previous-icons.zip"));
             BackupHubContract.WriteJsonDurably(Path.Combine(transaction, "journal.json"), new RestoreJournal(
-                request.ToString("D"), fixture.PackageId.ToString("D"), preId.ToString("D"), previous, fixture.CandidateHash));
+                request.ToString("D"), fixture.PackageId.ToString("D"), preId.ToString("D"), previous, fixture.CandidateHash,
+                BackupHubContract.HashFile(Path.Combine(transaction, "previous-icons.zip")),
+                IconLibrarySnapshot.Fingerprint(IconLibraryPaths.ForDatabase(fixture.Database))));
             Directory.Move(fixture.ClaimPath(request, fixture.Locations.Outbox), fixture.ClaimPath(request, fixture.Locations.Processing));
             if (completed)
             {
@@ -490,6 +555,14 @@ internal static class BackupHubIntegrationTests
         {
             Directory.CreateDirectory(Inbox);
             File.Copy(source, Database);
+            // A bounded multi-collection library keeps durable restore tests independent
+            // of the size of the user's authored SVG catalog.
+            foreach (var collection in new[] { "fixture-a", "fixture-b" })
+            {
+                var directory = Path.Combine(IconLibraryPaths.ForDatabase(Database), "icon-themes", collection);
+                Directory.CreateDirectory(directory);
+                File.WriteAllText(Path.Combine(directory, "original.svg"), "<svg xmlns='http://www.w3.org/2000/svg'/>");
+            }
             BackupHubContract.WriteJsonDurably(Path.Combine(VaultPath, "vault-layout.json"), new { layoutVersion = 1, vaultId = BackupHubVaultLocation.VaultIdentifier });
             Backups = new BackupHubBackupService(Database, new BackupHubVaultLocation(VaultPath));
             Locations = new RestoreLocations(VaultPath);
@@ -504,16 +577,19 @@ internal static class BackupHubIntegrationTests
             var candidate = CandidatePath(id);
             var snapshot = SqliteDatabaseSnapshotService.CreateValidated(Database, candidate);
             CandidateHash = BackupHubContract.HashFile(candidate);
+            var iconArchive = Path.Combine(package, "payload", "icon-library.zip");
+            IconLibrarySnapshot.Create(Backups.LibraryRoot, iconArchive);
             // Portable external handoff fixture; publication itself is tested separately.
             var manifest = new BackupManifest(1, PackageId.ToString("D"), "mockups", BackupHubContract.TimestampNow(), "manual",
                 new BackupProducer("integration-fixture", "macos"), new BackupSnapshot("mockups-production", snapshot.SchemaVersion.ToString(System.Globalization.CultureInfo.InvariantCulture)),
-                [new BackupFile("mockups.sqlite", new FileInfo(candidate).Length, CandidateHash)]);
+                [new BackupFile("mockups.sqlite", new FileInfo(candidate).Length, CandidateHash),
+                 new BackupFile("icon-library.zip", new FileInfo(iconArchive).Length, BackupHubContract.HashFile(iconArchive))]);
             var manifestPath = Path.Combine(package, "manifest.json");
             BackupHubContract.WriteJsonDurably(manifestPath, manifest);
             _ = BackupPackageValidator.Validate(package, PackageId);
             BackupHubContract.WriteJsonDurably(Path.Combine(ClaimPath(id, Locations.Outbox), "request.json"), new RestoreRequest(
                 2, id.ToString("D"), "mockups", PackageId.ToString("D"), BackupHubContract.TimestampNow(), new string('a', 64), BackupHubContract.HashFile(manifestPath),
-                new RestoreBackupSummary(manifest.CreatedAt, manifest.Reason, manifest.Snapshot.Format, manifest.Snapshot.SchemaVersion, 1, manifest.Files[0].ByteLength), "prepared"));
+                new RestoreBackupSummary(manifest.CreatedAt, manifest.Reason, manifest.Snapshot.Format, manifest.Snapshot.SchemaVersion, manifest.Files.Length, manifest.Files.Sum(file => file.ByteLength)), "prepared"));
             WriteApplicationId(123);
             return id;
         }
@@ -535,9 +611,12 @@ internal static class BackupHubIntegrationTests
             var transaction = Path.Combine(Root, $".mockups-restore-{request:D}.txn");
             Directory.CreateDirectory(transaction);
             File.Copy(Database, Path.Combine(transaction, "previous.sqlite"));
+            var previousIcons = Path.Combine(transaction, "previous-icons.zip");
+            IconLibrarySnapshot.Create(Backups.LibraryRoot, previousIcons);
             File.Copy(CandidatePath(request), Database, overwrite: true);
             BackupHubContract.WriteJsonDurably(Path.Combine(transaction, "journal.json"), new RestoreJournal(
-                request.ToString("D"), PackageId.ToString("D"), preId.ToString("D"), previous, CandidateHash));
+                request.ToString("D"), PackageId.ToString("D"), preId.ToString("D"), previous, CandidateHash, BackupHubContract.HashFile(previousIcons),
+                BackupHubContract.HashFile(Path.Combine(Path.GetDirectoryName(CandidatePath(request))!, "icon-library.zip"))));
             Directory.Move(ClaimPath(request, Locations.Outbox), ClaimPath(request, Locations.Processing));
             return (request, transaction, previous, preId);
         }

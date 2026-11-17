@@ -928,3 +928,12 @@ guard; catalog initialization and Runtime definition reads enforce it. Scoped
 validation includes this regression for token, field, Runtime definition and
 scaffold changes. Manual UI review must open the actual shared picker for spacing
 and another family; a metadata-only test does not prove dialog publication.
+
+Editable icon library persistence is guarded by the Host content graph (no
+packaged editable icons), workstation maintenance tests (authored SVG survives
+bootstrap/update and parity snapshot), and focused `Backup Hub` regressions:
+SVG-only changes publish a backup; restore replaces multiple collections; an
+interrupted directory swap restores both resources; unsafe archive paths fail
+before extraction. `runScopedValidation.ts` selects these on either library
+owner, Backup Hub or workstation lifecycle changes. All restore fixtures are
+disposable and never target canonical authoring data.

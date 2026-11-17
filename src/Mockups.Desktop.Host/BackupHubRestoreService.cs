@@ -213,7 +213,8 @@ internal sealed class BackupHubRestoreService
                     claimed,
                     "package",
                     "payload",
-                    BackupHubBackupService.PayloadPath));
+                    BackupHubBackupService.PayloadPath),
+                Path.Combine(claimed, "package", "payload", BackupHubBackupService.IconPayloadPath));
             result = RestoreResult.Applied(requestId, Guid.Parse(request.PackageId), preRestore.PackageId);
         }
         catch (Exception exception)
@@ -226,7 +227,7 @@ internal sealed class BackupHubRestoreService
         PublishTerminal(result, claimed, locations, notifications);
         notifications.Add(new RestoreNotification(
             result.State == "applied" ? "Backup restaurado" : "La restauración no se aplicó",
-            result.Error?.Message ?? "MOCKUPS restauró y verificó la base de datos. La versión reemplazada está guardada en Backup Hub.",
+            result.Error?.Message ?? "MOCKUPS restauró y verificó la base de datos y la biblioteca de iconos. La versión reemplazada está guardada en Backup Hub.",
             IsError: result.State != "applied"));
     }
 
@@ -377,7 +378,7 @@ internal sealed class BackupHubRestoreService
         Guid requestId,
         Guid packageId,
         Guid preRestorePackageId,
-        string sourceSnapshot)
+        string sourceSnapshot, string sourceIcons)
     {
         var databaseDirectory = Path.GetDirectoryName(
             _databasePath)!;
@@ -416,14 +417,19 @@ internal sealed class BackupHubRestoreService
                 replacement,
                 overwrite: false);
             FlushFile(replacement);
-            _ = SqliteDatabaseSnapshotService.Validate(
-                replacement);
+            var stagedLibrary = Path.Combine(staging, "replacement-library");
+            IconLibrarySnapshot.Extract(sourceIcons, stagedLibrary);
+            var previousIcons = Path.Combine(staging, "previous-icons.zip");
+            IconLibrarySnapshot.Create(_backups.LibraryRoot, previousIcons);
+            _ = SqliteDatabaseSnapshotService.Validate(replacement, stagedLibrary);
             var journal = new RestoreJournal(
                 BackupHubContract.Canonical(requestId),
                 BackupHubContract.Canonical(packageId),
                 BackupHubContract.Canonical(preRestorePackageId),
                 BackupHubContract.HashFile(_databasePath),
-                BackupHubContract.HashFile(replacement));
+                BackupHubContract.HashFile(replacement),
+                BackupHubContract.HashFile(previousIcons),
+                BackupHubContract.HashFile(sourceIcons));
             BackupHubContract.WriteJsonDurably(
                 Path.Combine(staging, "journal.json"),
                 journal);
@@ -446,6 +452,11 @@ internal sealed class BackupHubRestoreService
                 ignoreMetadataErrors: true);
             BackupHubContract.FlushDirectory(
                 databaseDirectory);
+            Directory.Move(_backups.LibraryRoot, Path.Combine(transaction, "previous-library"));
+            Directory.Move(Path.Combine(transaction, "replacement-library"), _backups.LibraryRoot);
+            BackupHubContract.FlushDirectory(databaseDirectory);
+            if (IconLibrarySnapshot.Fingerprint(_backups.LibraryRoot) != journal.CandidateLibrarySha256)
+                throw new InvalidDataException("The restored icon library differs from the candidate.");
             _ = SqliteDatabaseSnapshotService.Validate(
                 _databasePath);
             if (BackupHubContract.HashFile(_databasePath)
@@ -494,6 +505,7 @@ internal sealed class BackupHubRestoreService
             BackupHubContract.FlushDirectory(
                 Path.GetDirectoryName(_databasePath)!);
         }
+        RollBackLibrary(transaction, journal);
         _ = SqliteDatabaseSnapshotService.Validate(
             _databasePath);
         if (BackupHubContract.HashFile(_databasePath)
@@ -503,6 +515,29 @@ internal sealed class BackupHubRestoreService
                 "The previous database could not be restored after a failed replacement.");
         }
         // Keep the journal until result publication has been durably completed.
+    }
+
+    private void RollBackLibrary(string transaction, RestoreJournal journal)
+    {
+        var archive = Path.Combine(transaction, "previous-icons.zip");
+        BackupHubContract.RequireRegularFile(archive, "previous icon library");
+        if (BackupHubContract.HashFile(archive) != journal.PreviousLibrarySha256)
+            throw new InvalidDataException("The icon rollback source differs from its journal.");
+        var live = _backups.LibraryRoot;
+        if (Directory.Exists(live) && IconLibrarySnapshot.Fingerprint(live) == journal.PreviousLibrarySha256)
+            return;
+        var recovery = Path.Combine(transaction, "recovery-library");
+        var discarded = Path.Combine(transaction, "rollback-discard-library");
+        if (Directory.Exists(recovery)) Directory.Delete(recovery, recursive: true);
+        IconLibrarySnapshot.Extract(archive, recovery);
+        if (IconLibrarySnapshot.Fingerprint(recovery) != journal.PreviousLibrarySha256)
+            throw new InvalidDataException("The staged rollback library differs from its journal.");
+        if (Directory.Exists(discarded)) Directory.Delete(discarded, recursive: true);
+        if (Directory.Exists(live)) Directory.Move(live, discarded);
+        Directory.Move(recovery, live);
+        BackupHubContract.FlushDirectory(Path.GetDirectoryName(live)!);
+        if (IconLibrarySnapshot.Fingerprint(live) != journal.PreviousLibrarySha256)
+            throw new InvalidDataException("The previous icon library could not be restored.");
     }
 
     private void RecoverInterruptedTransactions(
@@ -566,7 +601,9 @@ internal sealed class BackupHubRestoreService
             || !BackupHubContract.IsLowercaseSha256(
                 journal.PreviousSha256)
             || !BackupHubContract.IsLowercaseSha256(
-                journal.CandidateSha256))
+                journal.CandidateSha256)
+            || !BackupHubContract.IsLowercaseSha256(journal.PreviousLibrarySha256)
+            || !BackupHubContract.IsLowercaseSha256(journal.CandidateLibrarySha256))
         {
             throw new InvalidDataException(
                 "The restore journal is invalid.");
@@ -693,8 +730,9 @@ internal sealed class BackupHubRestoreService
             if (result.State == "applied")
             {
                 _ = SqliteDatabaseSnapshotService.Validate(_databasePath);
-                if (BackupHubContract.HashFile(_databasePath) != journal.CandidateSha256)
-                    throw new InvalidDataException("The committed restore does not match the live database.");
+                if (BackupHubContract.HashFile(_databasePath) != journal.CandidateSha256
+                    || IconLibrarySnapshot.Fingerprint(_backups.LibraryRoot) != journal.CandidateLibrarySha256)
+                    throw new InvalidDataException("The committed restore does not match the live database and icon library.");
             }
             else RollBackReplacement(transaction);
         }
@@ -987,7 +1025,9 @@ internal sealed record RestoreJournal(
     string PackageId,
     string PreRestorePackageId,
     string PreviousSha256,
-    string CandidateSha256);
+    string CandidateSha256,
+    string PreviousLibrarySha256,
+    string CandidateLibrarySha256);
 
 internal sealed record RestoreError(
     string Code,

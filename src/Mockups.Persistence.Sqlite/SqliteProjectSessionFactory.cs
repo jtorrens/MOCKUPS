@@ -5,7 +5,7 @@ namespace Mockups.DesktopEditorShell.Data;
 internal static class SqliteProjectSessionFactory
 {
     internal static SqliteProjectSession Create(
-        SqliteProjectContext context)
+        SqliteProjectContext context, SystemAssetPathResolver iconLibrary)
     {
         SqliteProductionOwner production = null!;
         SqliteResourceOwner resources = null!;
@@ -21,7 +21,7 @@ internal static class SqliteProjectSessionFactory
             context,
             production.ProjectEpisodeRepository,
             production.ModuleInstanceThemeContextService,
-            SystemAssetPathResolver.Discover());
+            iconLibrary);
         var componentFieldOptions =
             new ComponentFieldOptionResolver(
                 design,

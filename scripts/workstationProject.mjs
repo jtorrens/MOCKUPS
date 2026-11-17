@@ -6,6 +6,8 @@ import {
   copyFileSync,
   existsSync,
   mkdirSync,
+  readdirSync,
+  lstatSync,
   readFileSync,
   renameSync,
   rmSync,
@@ -132,6 +134,8 @@ export function bootstrapWorkstationProject(
   mkdirSync(paths.workstationRoot, { recursive: true });
   const createdDatabase = !existsSync(paths.workstationDatabase);
   if (createdDatabase) {
+    if (existsSync(path.join(workstationRoot, "icon-library"))) throw new Error("An existing icon library requires explicit maintenance before database creation.");
+    copyIconLibrarySnapshot(path.join(root, "data", "icon-library"), path.join(workstationRoot, "icon-library"));
     copyFileSync(
       paths.repositoryDatabase,
       paths.workstationDatabase,
@@ -142,8 +146,47 @@ export function bootstrapWorkstationProject(
     validateDatabase(root, paths.workstationDatabase);
     requireDatabaseParity(paths);
   }
+  if (!existsSync(path.join(workstationRoot, "icon-library", "icon-themes"))) {
+    throw new Error("The editable icon library is missing. Import the existing library through explicit maintenance before opening MOCKUPS.");
+  }
   syncSystemPreviewFixtures(root, paths.workstationRoot);
   return paths;
+}
+
+export function iconLibraryDigest(root) {
+  const entries = [];
+  function visit(directory) {
+    const info = lstatSync(directory);
+    if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Icon library directories must not be symbolic links.");
+    for (const name of readdirSync(directory).sort()) {
+      const target = path.join(directory, name);
+      const item = lstatSync(target);
+      const relative = path.relative(root, target).split(path.sep).join("/");
+      if (item.isSymbolicLink()) throw new Error("Icon library entries must not be symbolic links.");
+      if (item.isDirectory()) { entries.push([relative + "/", ""]); visit(target); }
+      else if (item.isFile()) entries.push([relative, digest(target)]);
+      else throw new Error("Icon library entries must be regular files or directories.");
+    }
+  }
+  visit(root);
+  if (!entries.some(([name]) => name === "icon-themes/")) throw new Error("Icon library requires icon-themes.");
+  return createHash("sha256").update(JSON.stringify(entries)).digest("hex");
+}
+
+function copyIconLibrarySnapshot(source, destination) {
+  const expected = iconLibraryDigest(source);
+  if (existsSync(destination) && iconLibraryDigest(destination) === expected) return;
+  const staging = `${destination}.${process.pid}.tmp`;
+  const previous = `${destination}.${process.pid}.previous`;
+  if (existsSync(staging) || existsSync(previous)) throw new Error("An icon library snapshot transaction is already present.");
+  mkdirSync(path.dirname(destination), { recursive: true });
+  cpSync(source, staging, { recursive: true, force: false, errorOnExist: true });
+  if (iconLibraryDigest(staging) !== expected) throw new Error("Icon library snapshot verification failed.");
+  const replaced = existsSync(destination);
+  if (replaced) renameSync(destination, previous);
+  try { renameSync(staging, destination); }
+  catch (error) { if (replaced) renameSync(previous, destination); throw error; }
+  if (replaced) rmSync(previous, { recursive: true });
 }
 
 function syncSystemPreviewFixtures(root, workstationRoot) {
@@ -190,6 +233,10 @@ export function snapshotWorkstationProject(
   copyDatabaseAtomically(
     paths.workstationDatabase,
     paths.repositoryDatabase,
+  );
+  copyIconLibrarySnapshot(
+    path.join(paths.workstationRoot, "icon-library"),
+    path.join(path.dirname(paths.repositoryDatabase), "icon-library"),
   );
   validateDatabase(root, paths.repositoryDatabase);
   requireDatabaseParity(paths);
@@ -303,7 +350,13 @@ export function workstationUpdateStatus(
   const databasesAligned = repositoryExists
     && workstationExists
     && digest(paths.repositoryDatabase) === digest(paths.workstationDatabase);
+  const librariesAligned = repositoryExists && workstationExists
+    && existsSync(path.join(paths.workstationRoot, "icon-library"))
+    && existsSync(path.join(path.dirname(paths.repositoryDatabase), "icon-library"))
+    && iconLibraryDigest(path.join(paths.workstationRoot, "icon-library"))
+      === iconLibraryDigest(path.join(path.dirname(paths.repositoryDatabase), "icon-library"));
   return {
+    librariesAligned,
     updateActive,
     repositoryExists,
     workstationExists,
@@ -325,6 +378,10 @@ export function requireDatabaseParity(
       + "Run 'npm run desktop:update:checkpoint' during the active maintenance before validation.",
     );
   }
+  const canonicalLibrary = path.join(paths.workstationRoot, "icon-library");
+  const snapshotLibrary = path.join(path.dirname(paths.repositoryDatabase), "icon-library");
+  if (iconLibraryDigest(canonicalLibrary) !== iconLibraryDigest(snapshotLibrary))
+    throw new Error("The workstation icon library and repository snapshot differ. Run desktop:update:checkpoint.");
   return workstationDigest;
 }
 
@@ -370,7 +427,7 @@ function run(command) {
     const status = workstationUpdateStatus();
     console.log(`Update maintenance: ${status.updateActive ? "active" : "idle"}`);
     console.log(
-      `Canonical snapshot: ${status.databasesAligned ? "aligned" : "pending"}`,
+      `Canonical snapshot: ${status.databasesAligned && status.librariesAligned ? "aligned" : "pending"}`,
     );
     return;
   }

@@ -13,10 +13,10 @@ internal sealed class BackupHubApplicationLifecycle
 
     public BackupHubApplicationLifecycle(
         BackupHubBackupService backups,
-        string startupDatabaseSha256)
+        string startupSnapshotSha256)
     {
         _backups = backups;
-        _baselineSha256 = startupDatabaseSha256;
+        _baselineSha256 = startupSnapshotSha256;
     }
 
     public async Task<ApplicationBackupResult> PublishManualAsync(
@@ -29,7 +29,7 @@ internal sealed class BackupHubApplicationLifecycle
             throw new InvalidOperationException(
                 "A manual backup cannot be deduplicated.");
         }
-        SetBaseline(publication.DatabaseSha256);
+        SetBaseline(publication.SnapshotSha256);
         return new ApplicationBackupResult(
             ApplicationBackupOutcome.Published,
             System.IO.Path.GetFileName(
@@ -48,7 +48,7 @@ internal sealed class BackupHubApplicationLifecycle
             return new ApplicationBackupResult(
                 ApplicationBackupOutcome.Unchanged);
         }
-        SetBaseline(publication.DatabaseSha256);
+        SetBaseline(publication.SnapshotSha256);
         return new ApplicationBackupResult(
             ApplicationBackupOutcome.Published,
             System.IO.Path.GetFileName(

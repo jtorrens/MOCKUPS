@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.IO;
 
@@ -52,7 +53,7 @@ public static class SqliteDatabaseSnapshotService
             }
 
             FlushFile(destination);
-            return Validate(destination);
+            return Validate(destination, IconLibraryPaths.ForDatabase(source));
         }
         catch
         {
@@ -62,10 +63,11 @@ public static class SqliteDatabaseSnapshotService
     }
 
     public static SqliteDatabaseSnapshot Validate(
-        string snapshotPath)
+        string snapshotPath, string? iconLibraryRoot = null)
     {
         var path = Path.GetFullPath(snapshotPath);
-        _ = SqlitePersistence.OpenCurrent(path);
+        _ = SqlitePersistence.OpenCurrent(path, new SystemAssetPathResolver(
+            iconLibraryRoot ?? IconLibraryPaths.ForDatabase(path)));
 
         using var connection = Open(
             path,

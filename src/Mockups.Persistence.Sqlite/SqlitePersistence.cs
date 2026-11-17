@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using System.IO;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -15,12 +16,16 @@ public sealed class CurrentDatabaseException(
 public static class SqlitePersistence
 {
     public static SqliteProjectSession OpenCurrent(
-        string databasePath)
+        string databasePath) => OpenCurrent(databasePath,
+            new SystemAssetPathResolver(IconLibraryPaths.ForDatabase(Path.GetFullPath(databasePath))));
+
+    public static SqliteProjectSession OpenCurrent(string databasePath, SystemAssetPathResolver iconLibrary)
     {
+        ArgumentNullException.ThrowIfNull(iconLibrary);
         try
         {
             var context = new SqliteProjectContext(databasePath);
-            return SqliteProjectSessionFactory.Create(context);
+            return SqliteProjectSessionFactory.Create(context, iconLibrary);
         }
         catch (FileNotFoundException)
         {

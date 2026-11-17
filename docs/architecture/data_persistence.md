@@ -745,16 +745,18 @@ jobs remain usable. Only an explicit Remove action deletes that invalid entry.
 The Desktop Host is the sole owner of the Backup Hub integration. It publishes
 Backup Package v1 with `applicationId` `mockups`, snapshot format
 `mockups-production`, the captured SQLite `PRAGMA user_version` as the opaque
-schema version, and exactly one payload file: `payload/mockups.sqlite`. WAL and
+schema version, and exactly two payload files: `payload/mockups.sqlite` and
+`payload/icon-library.zip`. The deterministic ZIP contains the entire editable
+icon library, including collection metadata and SVGs. WAL and
 SHM sidecars, workstation locks, the repository parity database, preferences
-and Project assets are never payload.
+and other Project assets are never payload.
 
 Every package is built from the SQLite Backup API into a temporary directory
 inside Backup Hub's canonical inbox, validated through the strict current
 persistence contract plus `PRAGMA integrity_check`, flushed, and atomically
 renamed to `<packageId>.bhpkg`. Manual, pre-migration and pre-restore backups
 always publish. A normal application close is serialized after editor writes
-and publishes only when the hash of its consistent SQLite snapshot differs
+and publishes only when the combined hash of its consistent SQLite snapshot and icon archive differs
 from the startup or last-published baseline. Rendering, Preview refresh,
 navigation and other read-only activity therefore create no duplicate backup.
 `EditorOperationCoordinator` stops accepting new work, cancels queued work and
@@ -775,7 +777,11 @@ schema equal the schema supported by that running application; backups from an
 older or newer schema are rejected, while older backups made with the same
 schema remain valid. Confirmation first publishes the mandatory `pre-restore`
 package, then the Host performs a journaled atomic replacement and validates
-the live database. Its one local restore state machine has these durable phases:
+the live database and library. Schema 37 requires both payloads. Archive
+validation rejects traversal, duplicate paths and symlinks before extraction.
+The journal records both old and new database/library hashes. Directory swaps
+retain the old library and a verified rollback archive until completion; a crash
+between swaps rolls both resources back. Its one local restore state machine has these durable phases:
 
 - replacement staging (`.<requestId>.restore-tmp`) cannot touch the live database;
 - a published transaction (`.mockups-restore-<requestId>.txn`) retains the exact
@@ -910,7 +916,7 @@ same revision:
 
 - `data/mockups.sqlite`;
 - affected files under `assets/FOQN_S2`;
-- affected files under `assets/system/icon-themes`;
+- affected files under `data/icon-library/icon-themes`;
 - affected files under `assets/system/system_icons`.
 
 `data/mockups.sqlite` is a versioned snapshot, never a second authoring
