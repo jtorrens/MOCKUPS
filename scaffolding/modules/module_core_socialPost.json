@@ -1953,9 +1953,8 @@
         "kind": "mediaFilePath",
         "valueKind": "MediaFilePath",
         "defaultValue": "",
-        "allowEmpty": true,
         "source": "runtime",
-        "uiOrigin": "self",
+        "uiOrigin": "embedded",
         "uiGroupId": "media",
         "uiGroupLabel": "Media",
         "uiOrder": 0,
@@ -8730,7 +8729,7 @@
       {
         "id": "header",
         "label": "Header",
-        "subtitle": "Two rows · five slots each",
+        "subtitle": "Content Row collection",
         "icon": "header",
         "order": 20,
         "visible": true,
@@ -9138,7 +9137,7 @@
       {
         "id": "footer",
         "label": "Footer",
-        "subtitle": "Two rows · five slots each",
+        "subtitle": "Content Row collection",
         "icon": "footer",
         "order": 60,
         "visible": true,

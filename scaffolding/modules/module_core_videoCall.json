@@ -5043,7 +5043,7 @@
       {
         "id": "header",
         "label": "Header",
-        "subtitle": "Two rows · five slots each",
+        "subtitle": "Content Row collection",
         "icon": "layout",
         "order": 20,
         "visible": true,
@@ -5129,7 +5129,7 @@
       {
         "id": "main-video",
         "label": "Main Video",
-        "subtitle": "Surface and three aligned overlay rows",
+        "subtitle": "Content Row collection",
         "icon": "media",
         "order": 30,
         "visible": true,
@@ -5358,7 +5358,7 @@
       {
         "id": "footer",
         "label": "Footer",
-        "subtitle": "Two rows · five slots each",
+        "subtitle": "Content Row collection",
         "icon": "layout",
         "order": 60,
         "visible": true,

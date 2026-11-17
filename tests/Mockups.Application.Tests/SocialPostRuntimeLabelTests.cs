@@ -9,6 +9,11 @@ internal static class SocialPostRuntimeLabelTests
         var iconRow = JsonNode.Parse(File.ReadAllText("scaffolding/components/iconRow.json"))!["config"]!.AsObject();
         var config = spec["additionalVariants"]!.AsArray().Select(v => v!.AsObject())
             .Single(v => v["id"]!.GetValue<string>() == "reel")["config"]!.AsObject();
+        var defaults = RuntimePreviewDocumentContract.PrepareDeclaredInputDefaults(
+            spec["designPreview"]!.AsObject(), config);
+        if (defaults["mediaSource"] is not JsonValue mediaSource
+            || !mediaSource.TryGetValue<string>(out var emptySource) || emptySource != "")
+            throw new InvalidOperationException("Empty Media source must reach Preview as the Media owner's empty string.");
         var declaration = spec["designPreview"]!["collections"]!.AsArray().Select(v => v!.AsObject())
             .Single(v => v["id"]!.GetValue<string>() == "socialPostActions");
         var screens = new[] { "Screen A", "Screen B", "" }.Select(text => {
