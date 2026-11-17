@@ -589,6 +589,7 @@ internal sealed class DesignPreviewInputPreparer(
                 input.UiGroupId,
                 input.UiGroupLabel,
                 input.UiParentGroupId,
+                input.ThemeTokenFamily,
                 string.Join(",", input.Options?.Select((option) => $"{option.Value}={option.Label}") ?? []));
         }
 

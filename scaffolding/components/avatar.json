@@ -638,80 +638,7 @@
       ],
       "defaultValue": "theme.radii.full",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.radii.none",
-          "label": "radii.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.radii.xs",
-          "label": "radii.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.radii.s",
-          "label": "radii.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.radii.m",
-          "label": "radii.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.radii.l",
-          "label": "radii.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.radii.xl",
-          "label": "radii.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.radii.xxl",
-          "label": "radii.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.radii.full",
-          "label": "radii.full",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
@@ -722,7 +649,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "radii"
     },
     {
       "id": "component.avatar.defaultSize",

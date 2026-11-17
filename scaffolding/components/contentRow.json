@@ -566,36 +566,7 @@
       ],
       "defaultValue": "theme.spacing.s|theme.spacing.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl"
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl"
-        }
-      ],
+      "options": [],
       "pairLabels": {
         "first": "Horizontal",
         "second": "Vertical"
@@ -609,7 +580,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "component.contentRow.verticalAlignment",
@@ -853,31 +825,10 @@
             "id": "iconSizeToken",
             "label": "Icon size",
             "jsonKey": "iconSizeToken",
-            "kind": "Option",
-            "valueKind": "OptionToken",
+            "kind": "ThemeToken",
+            "valueKind": "ThemeToken",
             "defaultValue": "theme.iconSizes.m",
-            "options": [
-              {
-                "value": "theme.iconSizes.xs",
-                "label": "Extra small"
-              },
-              {
-                "value": "theme.iconSizes.s",
-                "label": "Small"
-              },
-              {
-                "value": "theme.iconSizes.m",
-                "label": "Medium"
-              },
-              {
-                "value": "theme.iconSizes.l",
-                "label": "Large"
-              },
-              {
-                "value": "theme.iconSizes.xl",
-                "label": "Extra large"
-              }
-            ],
+            "options": [],
             "minimum": 0,
             "maximum": 9999,
             "increment": 1,
@@ -916,7 +867,8 @@
             "showInEditor": true,
             "helpText": "",
             "valuePattern": "",
-            "valuePatternMessage": ""
+            "valuePatternMessage": "",
+            "themeTokenFamily": "iconSizes"
           },
           {
             "id": "labelSlot",

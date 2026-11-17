@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `35` is the only current schema. Authored Production rows belong
+Schema version `36` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -1045,3 +1045,12 @@ labels its projected Icon Row as Reaction Col, and removes fixed row counts from
 Social Post and Video Call declarations. Variant rows use the shared collection
 mutation owner. Existing ids, values and references remain intact; the prior selected
 media file is captured once as the Screen source. Startup performs no conversion.
+
+### Theme family metadata (schema 36)
+
+The explicit schema-36 maintenance replaces repeated Theme token option lists
+inside persisted Runtime/Test Value definitions with `themeTokenFamily`. It
+also scopes formerly unrestricted color inputs to the common color catalog.
+Authored token values and Theme numeric/color values remain unchanged. Three
+scaffold collection fields previously using OptionToken for Theme sizes now use
+ThemeToken. Startup validates the current contract without converting metadata.

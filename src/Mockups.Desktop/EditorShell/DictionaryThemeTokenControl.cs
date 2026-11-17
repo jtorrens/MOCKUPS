@@ -11,13 +11,13 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class DictionaryThemeTokenControl : Button, IDictionaryValueControl
 {
     private readonly FieldDefinition _definition;
-    private readonly Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? _showThemeTokenPicker;
+    private readonly Func<string, FieldDefinition, Task<string?>>? _showThemeTokenPicker;
     private string _value;
 
     public DictionaryThemeTokenControl(
         FieldDefinition definition,
         string value,
-        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker)
+        Func<string, FieldDefinition, Task<string?>>? showThemeTokenPicker)
     {
         _definition = definition;
         _value = value;
@@ -51,7 +51,7 @@ internal sealed class DictionaryThemeTokenControl : Button, IDictionaryValueCont
     {
         if (_showThemeTokenPicker is null) return;
 
-        var selected = await _showThemeTokenPicker(_value, _definition.Options);
+        var selected = await _showThemeTokenPicker(_value, _definition);
         if (string.IsNullOrWhiteSpace(selected)) return;
 
         SetValue(selected);

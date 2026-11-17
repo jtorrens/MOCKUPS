@@ -206,6 +206,14 @@ export function planScopedValidation(
       typecheck = true;
       continue;
     }
+    if (file.includes("ThemeToken") || file.includes("FieldDefinition")
+        || file.includes("RuntimeInputDefinition") || file.startsWith("scaffolding/")) {
+      add(npmStep(
+        "application:theme-token-families", "test:focus:application",
+        "Theme family selection must preserve catalog completeness and nested metadata",
+        ["--", "--exact", "Theme token families preserve complete catalogs and metadata"],
+      ));
+    }
     if (file === "src/desktop-preview/conversationModuleResolver.ts"
       || file === "docs/architecture/animation.md") {
       previewTests.add("tests/animation/conversationModuleResolver.test.ts");

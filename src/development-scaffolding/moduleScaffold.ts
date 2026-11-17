@@ -16,6 +16,7 @@ export interface ModuleScaffoldField {
   defaultValue: string;
   isEditable: boolean;
   options: JsonObject[];
+  themeTokenFamily?: string;
   optionSource: string;
   pairLabels: { first: string; second: string } | null;
   number: {
@@ -1112,6 +1113,7 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
     "defaultValue",
     "isEditable",
     "options",
+    ...("themeTokenFamily" in field ? ["themeTokenFamily"] : []),
     "optionSource",
     "pairLabels",
     "number",
@@ -1158,6 +1160,9 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
     jsonPath: stringArray(field.jsonPath, `${owner} jsonPath`),
     defaultValue: requiredString(field.defaultValue, `${owner} defaultValue`, true),
     isEditable: requiredBoolean(field.isEditable, `${owner} isEditable`),
+    ...(field.themeTokenFamily === undefined ? {} : {
+      themeTokenFamily: requiredString(field.themeTokenFamily, `${owner} themeTokenFamily`),
+    }),
     options: objectArray(field.options, `${owner} options`) as JsonObject[],
     optionSource: requiredString(field.optionSource, `${owner} optionSource`),
     pairLabels: pair

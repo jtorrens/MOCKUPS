@@ -3216,71 +3216,7 @@
       ],
       "defaultValue": "theme.spacing.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
@@ -3294,7 +3230,8 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": null,
-      "structuredCollection": null
+      "structuredCollection": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "module.core.videoCall.headerRows",
@@ -3478,71 +3415,7 @@
       ],
       "defaultValue": "theme.spacing.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
@@ -3556,7 +3429,8 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": null,
-      "structuredCollection": null
+      "structuredCollection": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "module.core.videoCall.footerRows",
@@ -3678,28 +3552,7 @@
       ],
       "defaultValue": "theme.spacing.s|theme.spacing.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        }
-      ],
+      "options": [],
       "optionSource": "None",
       "pairLabels": {
         "first": "Horizontal",
@@ -3716,7 +3569,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "module.core.videoCall.showPip",
@@ -3835,71 +3689,7 @@
       ],
       "defaultValue": "theme.spacing.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
@@ -3913,7 +3703,8 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": null,
-      "structuredCollection": null
+      "structuredCollection": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "module.core.videoCall.gridHeightMode",
@@ -4312,28 +4103,7 @@
       ],
       "defaultValue": "theme.spacing.s|theme.spacing.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        }
-      ],
+      "options": [],
       "optionSource": "None",
       "pairLabels": {
         "first": "Horizontal",
@@ -4350,7 +4120,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "module.core.videoCall.participantAvatarSize",
@@ -4797,28 +4568,7 @@
       ],
       "defaultValue": "theme.spacing.m|theme.spacing.none",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        }
-      ],
+      "options": [],
       "optionSource": "None",
       "pairLabels": {
         "first": "Horizontal",
@@ -4835,7 +4585,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "module.core.videoCall.headerLayout.placement",
@@ -4921,28 +4672,7 @@
       ],
       "defaultValue": "theme.spacing.m|theme.spacing.none",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        }
-      ],
+      "options": [],
       "optionSource": "None",
       "pairLabels": {
         "first": "Horizontal",
@@ -4959,7 +4689,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "module.core.videoCall.footerLayout.placement",

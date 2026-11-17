@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 
 var tests = new (string Name, Action Run)[]
 {
+    ("Theme token families preserve complete catalogs and metadata", ThemeTokenFamilyTests.CatalogAndMetadataStayComplete),
     ("Social Post Screen labels survive structure projection independently", SocialPostRuntimeLabelTests.ScreenLabelsSurviveProjection),
     ("Bubble requires valid message size tokens for every direction", BubbleConfigTests.DirectionSizesAreRequired),
     ("SVG fill transforms keep direct reusable geometry", SvgFillTransformsKeepDirectReusableGeometry),

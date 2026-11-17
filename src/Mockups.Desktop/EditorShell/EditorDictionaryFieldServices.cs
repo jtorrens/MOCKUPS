@@ -178,11 +178,11 @@ internal sealed class EditorDictionaryFieldServices
                     context.IconThemeId,
                     currentValue,
                     allowMultiple),
-            ShowThemeTokenPicker: (currentValue, allowedOptions) =>
+            ShowThemeTokenPicker: (currentValue, definition) =>
                 _domainDialogs.ShowThemeTokenPicker(
                     context.ProjectId,
                     currentValue,
-                    allowedOptions),
+                    definition),
             CreateIconPreview: (token) =>
                 SvgIconPreview.CreateIconTokenPreview(
                     token,

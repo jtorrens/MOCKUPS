@@ -34,6 +34,7 @@ internal sealed partial class SqliteDesignOwner
                 descriptor.IsEditable,
                 descriptor.DefaultValue,
                 Options: options,
+                ThemeTokenFamily: descriptor.ThemeTokenFamily,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings:
@@ -123,6 +124,7 @@ internal sealed partial class SqliteDesignOwner
                 CanInherit: true,
                 InheritedValue: inheritedValue,
                 Options: options,
+                ThemeTokenFamily: descriptor.ThemeTokenFamily,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings:
@@ -200,6 +202,7 @@ internal sealed partial class SqliteDesignOwner
                 CanInherit: true,
                 InheritedValue: inheritedValue,
                 Options: options,
+                ThemeTokenFamily: descriptor.ThemeTokenFamily,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings:
@@ -334,6 +337,7 @@ internal sealed partial class SqliteDesignOwner
                 CanInherit: true,
                 InheritedValue: inheritedValue,
                 Options: options,
+                ThemeTokenFamily: descriptor.ThemeTokenFamily,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings:
@@ -407,6 +411,7 @@ internal sealed partial class SqliteDesignOwner
                 CanInherit: true,
                 InheritedValue: inheritedValue,
                 Options: options,
+                ThemeTokenFamily: descriptor.ThemeTokenFamily,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings:

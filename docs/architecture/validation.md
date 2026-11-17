@@ -916,3 +916,15 @@ Write-on editing selection is covered by `RuntimeControlsResolveActiveFrameValue
 for root and item targets, exact keys, interior frames and outside ranges. It
 separately checks that resolved capture values remain partial. The shared
 animation selection includes the value resolver and mounted animation UI cases.
+
+### Theme token family selection
+
+`ThemeTokenFamilyTests.CatalogAndMetadataStayComplete` checks complete spacing and
+representative numeric/color family boundaries, checks Social Post and Video
+Call margin metadata, preserves Runtime-to-binding family projection, rejects
+unknown families, mixed family/options and truncated fixed lists, and preserves
+an exact keyboard metric. `ThemeTokenSelectionContract` is the shared runtime
+guard; catalog initialization and Runtime definition reads enforce it. Scoped
+validation includes this regression for token, field, Runtime definition and
+scaffold changes. Manual UI review must open the actual shared picker for spacing
+and another family; a metadata-only test does not prove dialog publication.

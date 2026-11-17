@@ -202,6 +202,7 @@ function renderField(field: ComponentScaffoldField) {
     defaultValue: field.defaultValue,
     isEditable: field.isEditable,
     options: field.options,
+    themeTokenFamily: field.themeTokenFamily ?? "",
     pairLabels: field.pairLabels,
     number: field.number,
     componentInputBindings: field.componentInputBindings,

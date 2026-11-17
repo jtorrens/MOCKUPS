@@ -410,32 +410,12 @@
         "jsonKey": "typingIndicatorSizeToken",
         "kind": "themeToken",
         "defaultValue": "theme.typography.sizes.m",
-        "options": [
-          {
-            "value": "theme.typography.sizes.xs",
-            "label": "typography.sizes.xs"
-          },
-          {
-            "value": "theme.typography.sizes.s",
-            "label": "typography.sizes.s"
-          },
-          {
-            "value": "theme.typography.sizes.m",
-            "label": "typography.sizes.m"
-          },
-          {
-            "value": "theme.typography.sizes.l",
-            "label": "typography.sizes.l"
-          },
-          {
-            "value": "theme.typography.sizes.xl",
-            "label": "typography.sizes.xl"
-          }
-        ],
+        "options": [],
         "groupId": "timing",
         "groupLabel": "Timing",
         "groupOrder": 20,
-        "valueKind": "ThemeToken"
+        "valueKind": "ThemeToken",
+        "themeTokenFamily": "typography.sizes"
       },
       {
         "id": "typingIndicatorAnimation",
@@ -714,28 +694,7 @@
                         "tableId": "",
                         "resolvedJsonKey": "",
                         "componentType": "",
-                        "options": [
-                          {
-                            "value": "theme.iconSizes.xs",
-                            "label": "iconSizes.xs"
-                          },
-                          {
-                            "value": "theme.iconSizes.s",
-                            "label": "iconSizes.s"
-                          },
-                          {
-                            "value": "theme.iconSizes.m",
-                            "label": "iconSizes.m"
-                          },
-                          {
-                            "value": "theme.iconSizes.l",
-                            "label": "iconSizes.l"
-                          },
-                          {
-                            "value": "theme.iconSizes.xl",
-                            "label": "iconSizes.xl"
-                          }
-                        ],
+                        "options": [],
                         "pairFirstLabel": "W",
                         "pairSecondLabel": "H",
                         "visibleWhenPath": "",
@@ -756,7 +715,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "iconSizes"
                       },
                       {
                         "id": "textSizeToken",
@@ -771,28 +731,7 @@
                         "tableId": "",
                         "resolvedJsonKey": "",
                         "componentType": "",
-                        "options": [
-                          {
-                            "value": "theme.typography.sizes.xs",
-                            "label": "typography.sizes.xs"
-                          },
-                          {
-                            "value": "theme.typography.sizes.s",
-                            "label": "typography.sizes.s"
-                          },
-                          {
-                            "value": "theme.typography.sizes.m",
-                            "label": "typography.sizes.m"
-                          },
-                          {
-                            "value": "theme.typography.sizes.l",
-                            "label": "typography.sizes.l"
-                          },
-                          {
-                            "value": "theme.typography.sizes.xl",
-                            "label": "typography.sizes.xl"
-                          }
-                        ],
+                        "options": [],
                         "pairFirstLabel": "W",
                         "pairSecondLabel": "H",
                         "visibleWhenPath": "",
@@ -813,7 +752,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "typography.sizes"
                       },
                       {
                         "id": "showBadge",
@@ -1110,7 +1050,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "colors"
                       },
                       {
                         "id": "textColorToken",
@@ -1146,7 +1087,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "colors"
                       },
                       {
                         "id": "surfaceTintPaletteColor",
@@ -1601,28 +1543,7 @@
                         "tableId": "",
                         "resolvedJsonKey": "",
                         "componentType": "",
-                        "options": [
-                          {
-                            "value": "theme.iconSizes.xs",
-                            "label": "iconSizes.xs"
-                          },
-                          {
-                            "value": "theme.iconSizes.s",
-                            "label": "iconSizes.s"
-                          },
-                          {
-                            "value": "theme.iconSizes.m",
-                            "label": "iconSizes.m"
-                          },
-                          {
-                            "value": "theme.iconSizes.l",
-                            "label": "iconSizes.l"
-                          },
-                          {
-                            "value": "theme.iconSizes.xl",
-                            "label": "iconSizes.xl"
-                          }
-                        ],
+                        "options": [],
                         "pairFirstLabel": "W",
                         "pairSecondLabel": "H",
                         "visibleWhenPath": "",
@@ -1643,7 +1564,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "iconSizes"
                       },
                       {
                         "id": "textSizeToken",
@@ -1658,28 +1580,7 @@
                         "tableId": "",
                         "resolvedJsonKey": "",
                         "componentType": "",
-                        "options": [
-                          {
-                            "value": "theme.typography.sizes.xs",
-                            "label": "typography.sizes.xs"
-                          },
-                          {
-                            "value": "theme.typography.sizes.s",
-                            "label": "typography.sizes.s"
-                          },
-                          {
-                            "value": "theme.typography.sizes.m",
-                            "label": "typography.sizes.m"
-                          },
-                          {
-                            "value": "theme.typography.sizes.l",
-                            "label": "typography.sizes.l"
-                          },
-                          {
-                            "value": "theme.typography.sizes.xl",
-                            "label": "typography.sizes.xl"
-                          }
-                        ],
+                        "options": [],
                         "pairFirstLabel": "W",
                         "pairSecondLabel": "H",
                         "visibleWhenPath": "",
@@ -1700,7 +1601,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "typography.sizes"
                       },
                       {
                         "id": "showBadge",
@@ -1997,7 +1899,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "colors"
                       },
                       {
                         "id": "textColorToken",
@@ -2033,7 +1936,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "colors"
                       },
                       {
                         "id": "surfaceTintPaletteColor",
@@ -2488,28 +2392,7 @@
                         "tableId": "",
                         "resolvedJsonKey": "",
                         "componentType": "",
-                        "options": [
-                          {
-                            "value": "theme.iconSizes.xs",
-                            "label": "iconSizes.xs"
-                          },
-                          {
-                            "value": "theme.iconSizes.s",
-                            "label": "iconSizes.s"
-                          },
-                          {
-                            "value": "theme.iconSizes.m",
-                            "label": "iconSizes.m"
-                          },
-                          {
-                            "value": "theme.iconSizes.l",
-                            "label": "iconSizes.l"
-                          },
-                          {
-                            "value": "theme.iconSizes.xl",
-                            "label": "iconSizes.xl"
-                          }
-                        ],
+                        "options": [],
                         "pairFirstLabel": "W",
                         "pairSecondLabel": "H",
                         "visibleWhenPath": "",
@@ -2530,7 +2413,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "iconSizes"
                       },
                       {
                         "id": "textSizeToken",
@@ -2545,28 +2429,7 @@
                         "tableId": "",
                         "resolvedJsonKey": "",
                         "componentType": "",
-                        "options": [
-                          {
-                            "value": "theme.typography.sizes.xs",
-                            "label": "typography.sizes.xs"
-                          },
-                          {
-                            "value": "theme.typography.sizes.s",
-                            "label": "typography.sizes.s"
-                          },
-                          {
-                            "value": "theme.typography.sizes.m",
-                            "label": "typography.sizes.m"
-                          },
-                          {
-                            "value": "theme.typography.sizes.l",
-                            "label": "typography.sizes.l"
-                          },
-                          {
-                            "value": "theme.typography.sizes.xl",
-                            "label": "typography.sizes.xl"
-                          }
-                        ],
+                        "options": [],
                         "pairFirstLabel": "W",
                         "pairSecondLabel": "H",
                         "visibleWhenPath": "",
@@ -2587,7 +2450,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "typography.sizes"
                       },
                       {
                         "id": "showBadge",
@@ -2884,7 +2748,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "colors"
                       },
                       {
                         "id": "textColorToken",
@@ -2920,7 +2785,8 @@
                           "origin": {
                             "kind": "ownerStart"
                           }
-                        }
+                        },
+                        "themeTokenFamily": "colors"
                       },
                       {
                         "id": "surfaceTintPaletteColor",
@@ -3317,28 +3183,7 @@
             "kind": "behaviorTiming",
             "valueKind": "BehaviorTiming",
             "defaultValue": "{\"mode\":\"fixed\",\"fixedFrames\":30,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
-            "options": [
-              {
-                "value": "theme.motion.naturalPace.verySlow",
-                "label": "Very slow"
-              },
-              {
-                "value": "theme.motion.naturalPace.slow",
-                "label": "Slow"
-              },
-              {
-                "value": "theme.motion.naturalPace.normal",
-                "label": "Normal"
-              },
-              {
-                "value": "theme.motion.naturalPace.fast",
-                "label": "Fast"
-              },
-              {
-                "value": "theme.motion.naturalPace.veryFast",
-                "label": "Very fast"
-              }
-            ],
+            "options": [],
             "naturalTiming": {
               "sourceFieldId": "text",
               "unit": "grapheme",
@@ -3348,7 +3193,8 @@
             "uiGroupLabel": "Timing",
             "uiParentGroupId": "",
             "uiOrder": 21,
-            "uiSectionLabel": ""
+            "uiSectionLabel": "",
+            "themeTokenFamily": "motion.naturalPace"
           },
           {
             "id": "postWriteOnHold",
@@ -3881,7 +3727,7 @@
             "jsonKey": "iconRowRuntime",
             "kind": "collection",
             "valueKind": "StructuredCollection",
-            "defaultValue": "[{\"id\":\"item_759f71d5c6374b3bae6f071434d56958\",\"runtimeInputs\":{\"componentType\":\"iconRow\",\"sampleText\":\"Sample\",\"sampleSubtext\":\"\",\"sampleSize\":256,\"inputs\":[{\"id\":\"buttonInputs\",\"label\":\"Buttons\",\"jsonKey\":\"buttonInputs\",\"kind\":\"collection\",\"valueKind\":\"StructuredCollection\",\"defaultValue\":\"[{\\\"id\\\":\\\"item_dd466805c6484b728e4b02264b463518\\\",\\\"sampleText\\\":\\\"\\\",\\\"iconToken\\\":\\\"system_check\\\",\\\"iconSizeToken\\\":\\\"theme.iconSizes.m\\\",\\\"textSizeToken\\\":\\\"theme.typography.sizes.s\\\",\\\"showBadge\\\":false,\\\"badgeContentMode\\\":\\\"text\\\",\\\"badgeIconToken\\\":\\\"system_check\\\",\\\"badgeText\\\":\\\"1\\\",\\\"badgeSize\\\":20,\\\"badgeBackgroundPaletteColor\\\":\\\"palette_project_foqn_s2_blue\\\",\\\"badgeContentPaletteColor\\\":\\\"palette_project_foqn_s2_gray_100\\\",\\\"iconColorToken\\\":\\\"theme.colors.icon\\\",\\\"textColorToken\\\":\\\"theme.colors.textPrimary\\\",\\\"enabled\\\":true,\\\"pressed\\\":false,\\\"surfaceTintPaletteColor\\\":\\\"palette_project_foqn_s2_gray_050\\\",\\\"surfaceTintAmount\\\":0}]\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"self\",\"uiGroupId\":\"\",\"uiGroupLabel\":\"\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"structuredCollection\":{\"id\":\"buttonInputs\",\"label\":\"Buttons\",\"jsonKey\":\"buttonInputs\",\"itemLabel\":\"Button\",\"fields\":[{\"id\":\"enabled\",\"label\":\"Enabled\",\"jsonKey\":\"enabled\",\"kind\":\"boolean\",\"valueKind\":\"Boolean\",\"defaultValue\":\"true\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"state\",\"uiGroupLabel\":\"State\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":10,\"animatable\":true,\"animationInterpolations\":[\"hold\"],\"animationTimeline\":{\"origin\":{\"kind\":\"ownerStart\"}}},{\"id\":\"pressed\",\"label\":\"Pressed\",\"jsonKey\":\"pressed\",\"kind\":\"boolean\",\"valueKind\":\"Boolean\",\"defaultValue\":\"false\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"state\",\"uiGroupLabel\":\"State\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":11,\"animatable\":true,\"animationInterpolations\":[\"hold\"],\"animationTimeline\":{\"origin\":{\"kind\":\"ownerStart\"}}},{\"id\":\"sampleText\",\"label\":\"Text\",\"jsonKey\":\"sampleText\",\"kind\":\"text\",\"valueKind\":\"StringSingleLine\",\"defaultValue\":\"Action\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"content\",\"uiGroupLabel\":\"Content\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":21},{\"id\":\"iconToken\",\"label\":\"Icon\",\"jsonKey\":\"iconToken\",\"kind\":\"icon\",\"valueKind\":\"IconToken\",\"defaultValue\":\"media_play_fill\",\"allowEmpty\":true,\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"content\",\"uiGroupLabel\":\"Content\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":22},{\"id\":\"iconSizeToken\",\"label\":\"Icon size\",\"jsonKey\":\"iconSizeToken\",\"kind\":\"themeToken\",\"valueKind\":\"ThemeToken\",\"defaultValue\":\"theme.iconSizes.m\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[{\"value\":\"theme.iconSizes.xs\",\"label\":\"iconSizes.xs\"},{\"value\":\"theme.iconSizes.s\",\"label\":\"iconSizes.s\"},{\"value\":\"theme.iconSizes.m\",\"label\":\"iconSizes.m\"},{\"value\":\"theme.iconSizes.l\",\"label\":\"iconSizes.l\"},{\"value\":\"theme.iconSizes.xl\",\"label\":\"iconSizes.xl\"}],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"content\",\"uiGroupLabel\":\"Content\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":23},{\"id\":\"textSizeToken\",\"label\":\"Text size\",\"jsonKey\":\"textSizeToken\",\"kind\":\"themeToken\",\"valueKind\":\"ThemeToken\",\"defaultValue\":\"theme.typography.sizes.s\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[{\"value\":\"theme.typography.sizes.xs\",\"label\":\"typography.sizes.xs\"},{\"value\":\"theme.typography.sizes.s\",\"label\":\"typography.sizes.s\"},{\"value\":\"theme.typography.sizes.m\",\"label\":\"typography.sizes.m\"},{\"value\":\"theme.typography.sizes.l\",\"label\":\"typography.sizes.l\"},{\"value\":\"theme.typography.sizes.xl\",\"label\":\"typography.sizes.xl\"}],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"content\",\"uiGroupLabel\":\"Content\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":24},{\"id\":\"showBadge\",\"label\":\"Show badge\",\"jsonKey\":\"showBadge\",\"kind\":\"boolean\",\"valueKind\":\"Boolean\",\"defaultValue\":\"false\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":40},{\"id\":\"badgeContentMode\",\"label\":\"Badge content\",\"jsonKey\":\"badgeContentMode\",\"kind\":\"option\",\"valueKind\":\"OptionToken\",\"defaultValue\":\"icon\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[{\"value\":\"icon\",\"label\":\"Icon\"},{\"value\":\"text\",\"label\":\"Text\"}],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":41},{\"id\":\"badgeIconToken\",\"label\":\"Badge icon\",\"jsonKey\":\"badgeIconToken\",\"kind\":\"icon\",\"valueKind\":\"IconToken\",\"defaultValue\":\"system_check\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":42},{\"id\":\"badgeText\",\"label\":\"Badge text\",\"jsonKey\":\"badgeText\",\"kind\":\"text\",\"valueKind\":\"StringSingleLine\",\"defaultValue\":\"1\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":43},{\"id\":\"badgeSize\",\"label\":\"Badge size\",\"jsonKey\":\"badgeSize\",\"kind\":\"number\",\"valueKind\":\"Integer\",\"defaultValue\":\"20\",\"minimum\":1,\"maximum\":512,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":44},{\"id\":\"badgeBackgroundPaletteColor\",\"label\":\"Badge background\",\"jsonKey\":\"badgeBackgroundPaletteColor\",\"kind\":\"text\",\"valueKind\":\"PaletteColorToken\",\"defaultValue\":\"blue\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":45},{\"id\":\"badgeContentPaletteColor\",\"label\":\"Badge icon / text color\",\"jsonKey\":\"badgeContentPaletteColor\",\"kind\":\"text\",\"valueKind\":\"PaletteColorToken\",\"defaultValue\":\"gray_100\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":46},{\"id\":\"iconColorToken\",\"label\":\"Icon color\",\"jsonKey\":\"iconColorToken\",\"kind\":\"themeToken\",\"valueKind\":\"ThemeToken\",\"defaultValue\":\"theme.colors.icon\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"self\",\"uiGroupId\":\"\",\"uiGroupLabel\":\"\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":22},{\"id\":\"textColorToken\",\"label\":\"Text color\",\"jsonKey\":\"textColorToken\",\"kind\":\"themeToken\",\"valueKind\":\"ThemeToken\",\"defaultValue\":\"theme.colors.textPrimary\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"self\",\"uiGroupId\":\"\",\"uiGroupLabel\":\"\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":22},{\"id\":\"surfaceTintPaletteColor\",\"label\":\"Surface tint color\",\"jsonKey\":\"surfaceTintPaletteColor\",\"kind\":\"text\",\"valueKind\":\"PaletteColorToken\",\"defaultValue\":\"palette_project_foqn_s2_gray_050\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"self\",\"uiGroupId\":\"surfaceTint\",\"uiGroupLabel\":\"Surface tint\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":30,\"animatable\":true,\"animationInterpolations\":[\"hold\"],\"animationTimeline\":{\"origin\":{\"kind\":\"ownerStart\"}}},{\"id\":\"surfaceTintAmount\",\"label\":\"Surface tint amount\",\"jsonKey\":\"surfaceTintAmount\",\"kind\":\"number\",\"valueKind\":\"Decimal\",\"defaultValue\":\"0\",\"minimum\":-1,\"maximum\":1,\"increment\":0.01,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"self\",\"uiGroupId\":\"surfaceTint\",\"uiGroupLabel\":\"Surface tint\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":31,\"animatable\":true,\"animationInterpolations\":[\"hold\"],\"animationTimeline\":{\"origin\":{\"kind\":\"ownerStart\"}},\"useSlider\":true}],\"itemPresentation\":{\"subtitleFieldIds\":[\"sampleText\",\"iconToken\"],\"subtitleMaxCharacters\":72,\"fallbackIcon\":\"component\"},\"canEditStructure\":false,\"structureProjection\":{\"sourceConfigPath\":\"iconRow.items\",\"sourceIdJsonKey\":\"id\",\"runtimeIdJsonKey\":\"id\",\"fieldBindings\":{\"sampleText\":\"text\",\"iconToken\":\"iconToken\",\"iconSizeToken\":\"iconSizeToken\",\"textSizeToken\":\"textSizeToken\"}}},\"uiOrder\":10}],\"buttonInputs\":[{\"id\":\"item_dd466805c6484b728e4b02264b463518\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\",\"enabled\":true,\"pressed\":false,\"surfaceTintPaletteColor\":\"palette_project_foqn_s2_gray_050\",\"surfaceTintAmount\":0}],\"collections\":[],\"actions\":[]}}]",
+            "defaultValue": "[{\"id\":\"item_759f71d5c6374b3bae6f071434d56958\",\"runtimeInputs\":{\"componentType\":\"iconRow\",\"sampleText\":\"Sample\",\"sampleSubtext\":\"\",\"sampleSize\":256,\"inputs\":[{\"id\":\"buttonInputs\",\"label\":\"Buttons\",\"jsonKey\":\"buttonInputs\",\"kind\":\"collection\",\"valueKind\":\"StructuredCollection\",\"defaultValue\":\"[{\\\"id\\\":\\\"item_dd466805c6484b728e4b02264b463518\\\",\\\"sampleText\\\":\\\"\\\",\\\"iconToken\\\":\\\"system_check\\\",\\\"iconSizeToken\\\":\\\"theme.iconSizes.m\\\",\\\"textSizeToken\\\":\\\"theme.typography.sizes.s\\\",\\\"showBadge\\\":false,\\\"badgeContentMode\\\":\\\"text\\\",\\\"badgeIconToken\\\":\\\"system_check\\\",\\\"badgeText\\\":\\\"1\\\",\\\"badgeSize\\\":20,\\\"badgeBackgroundPaletteColor\\\":\\\"palette_project_foqn_s2_blue\\\",\\\"badgeContentPaletteColor\\\":\\\"palette_project_foqn_s2_gray_100\\\",\\\"iconColorToken\\\":\\\"theme.colors.icon\\\",\\\"textColorToken\\\":\\\"theme.colors.textPrimary\\\",\\\"enabled\\\":true,\\\"pressed\\\":false,\\\"surfaceTintPaletteColor\\\":\\\"palette_project_foqn_s2_gray_050\\\",\\\"surfaceTintAmount\\\":0}]\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"self\",\"uiGroupId\":\"\",\"uiGroupLabel\":\"\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"structuredCollection\":{\"id\":\"buttonInputs\",\"label\":\"Buttons\",\"jsonKey\":\"buttonInputs\",\"itemLabel\":\"Button\",\"fields\":[{\"id\":\"enabled\",\"label\":\"Enabled\",\"jsonKey\":\"enabled\",\"kind\":\"boolean\",\"valueKind\":\"Boolean\",\"defaultValue\":\"true\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"state\",\"uiGroupLabel\":\"State\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":10,\"animatable\":true,\"animationInterpolations\":[\"hold\"],\"animationTimeline\":{\"origin\":{\"kind\":\"ownerStart\"}}},{\"id\":\"pressed\",\"label\":\"Pressed\",\"jsonKey\":\"pressed\",\"kind\":\"boolean\",\"valueKind\":\"Boolean\",\"defaultValue\":\"false\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"state\",\"uiGroupLabel\":\"State\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":11,\"animatable\":true,\"animationInterpolations\":[\"hold\"],\"animationTimeline\":{\"origin\":{\"kind\":\"ownerStart\"}}},{\"id\":\"sampleText\",\"label\":\"Text\",\"jsonKey\":\"sampleText\",\"kind\":\"text\",\"valueKind\":\"StringSingleLine\",\"defaultValue\":\"Action\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"content\",\"uiGroupLabel\":\"Content\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":21},{\"id\":\"iconToken\",\"label\":\"Icon\",\"jsonKey\":\"iconToken\",\"kind\":\"icon\",\"valueKind\":\"IconToken\",\"defaultValue\":\"media_play_fill\",\"allowEmpty\":true,\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"content\",\"uiGroupLabel\":\"Content\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":22},{\"id\":\"iconSizeToken\",\"label\":\"Icon size\",\"jsonKey\":\"iconSizeToken\",\"kind\":\"themeToken\",\"valueKind\":\"ThemeToken\",\"defaultValue\":\"theme.iconSizes.m\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"content\",\"uiGroupLabel\":\"Content\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":23,\"themeTokenFamily\":\"iconSizes\"},{\"id\":\"textSizeToken\",\"label\":\"Text size\",\"jsonKey\":\"textSizeToken\",\"kind\":\"themeToken\",\"valueKind\":\"ThemeToken\",\"defaultValue\":\"theme.typography.sizes.s\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"content\",\"uiGroupLabel\":\"Content\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":24,\"themeTokenFamily\":\"typography.sizes\"},{\"id\":\"showBadge\",\"label\":\"Show badge\",\"jsonKey\":\"showBadge\",\"kind\":\"boolean\",\"valueKind\":\"Boolean\",\"defaultValue\":\"false\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":40},{\"id\":\"badgeContentMode\",\"label\":\"Badge content\",\"jsonKey\":\"badgeContentMode\",\"kind\":\"option\",\"valueKind\":\"OptionToken\",\"defaultValue\":\"icon\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[{\"value\":\"icon\",\"label\":\"Icon\"},{\"value\":\"text\",\"label\":\"Text\"}],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":41},{\"id\":\"badgeIconToken\",\"label\":\"Badge icon\",\"jsonKey\":\"badgeIconToken\",\"kind\":\"icon\",\"valueKind\":\"IconToken\",\"defaultValue\":\"system_check\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":42},{\"id\":\"badgeText\",\"label\":\"Badge text\",\"jsonKey\":\"badgeText\",\"kind\":\"text\",\"valueKind\":\"StringSingleLine\",\"defaultValue\":\"1\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":43},{\"id\":\"badgeSize\",\"label\":\"Badge size\",\"jsonKey\":\"badgeSize\",\"kind\":\"number\",\"valueKind\":\"Integer\",\"defaultValue\":\"20\",\"minimum\":1,\"maximum\":512,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":44},{\"id\":\"badgeBackgroundPaletteColor\",\"label\":\"Badge background\",\"jsonKey\":\"badgeBackgroundPaletteColor\",\"kind\":\"text\",\"valueKind\":\"PaletteColorToken\",\"defaultValue\":\"blue\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":45},{\"id\":\"badgeContentPaletteColor\",\"label\":\"Badge icon / text color\",\"jsonKey\":\"badgeContentPaletteColor\",\"kind\":\"text\",\"valueKind\":\"PaletteColorToken\",\"defaultValue\":\"gray_100\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"embedded\",\"uiGroupId\":\"badge\",\"uiGroupLabel\":\"Badge\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":46},{\"id\":\"iconColorToken\",\"label\":\"Icon color\",\"jsonKey\":\"iconColorToken\",\"kind\":\"themeToken\",\"valueKind\":\"ThemeToken\",\"defaultValue\":\"theme.colors.icon\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"self\",\"uiGroupId\":\"\",\"uiGroupLabel\":\"\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":22,\"themeTokenFamily\":\"colors\"},{\"id\":\"textColorToken\",\"label\":\"Text color\",\"jsonKey\":\"textColorToken\",\"kind\":\"themeToken\",\"valueKind\":\"ThemeToken\",\"defaultValue\":\"theme.colors.textPrimary\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"self\",\"uiGroupId\":\"\",\"uiGroupLabel\":\"\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":22,\"themeTokenFamily\":\"colors\"},{\"id\":\"surfaceTintPaletteColor\",\"label\":\"Surface tint color\",\"jsonKey\":\"surfaceTintPaletteColor\",\"kind\":\"text\",\"valueKind\":\"PaletteColorToken\",\"defaultValue\":\"palette_project_foqn_s2_gray_050\",\"minimum\":0,\"maximum\":9999,\"increment\":1,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"self\",\"uiGroupId\":\"surfaceTint\",\"uiGroupLabel\":\"Surface tint\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":30,\"animatable\":true,\"animationInterpolations\":[\"hold\"],\"animationTimeline\":{\"origin\":{\"kind\":\"ownerStart\"}}},{\"id\":\"surfaceTintAmount\",\"label\":\"Surface tint amount\",\"jsonKey\":\"surfaceTintAmount\",\"kind\":\"number\",\"valueKind\":\"Decimal\",\"defaultValue\":\"0\",\"minimum\":-1,\"maximum\":1,\"increment\":0.01,\"tableId\":\"\",\"resolvedJsonKey\":\"\",\"componentType\":\"\",\"options\":[],\"pairFirstLabel\":\"W\",\"pairSecondLabel\":\"H\",\"visibleWhenPath\":\"\",\"visibleWhenValue\":\"\",\"source\":\"runtime\",\"uiOrigin\":\"self\",\"uiGroupId\":\"surfaceTint\",\"uiGroupLabel\":\"Surface tint\",\"uiParentGroupId\":\"\",\"transition\":null,\"unit\":\"\",\"uiOrder\":31,\"animatable\":true,\"animationInterpolations\":[\"hold\"],\"animationTimeline\":{\"origin\":{\"kind\":\"ownerStart\"}},\"useSlider\":true}],\"itemPresentation\":{\"subtitleFieldIds\":[\"sampleText\",\"iconToken\"],\"subtitleMaxCharacters\":72,\"fallbackIcon\":\"component\"},\"canEditStructure\":false,\"structureProjection\":{\"sourceConfigPath\":\"iconRow.items\",\"sourceIdJsonKey\":\"id\",\"runtimeIdJsonKey\":\"id\",\"fieldBindings\":{\"sampleText\":\"text\",\"iconToken\":\"iconToken\",\"iconSizeToken\":\"iconSizeToken\",\"textSizeToken\":\"textSizeToken\"}}},\"uiOrder\":10}],\"buttonInputs\":[{\"id\":\"item_dd466805c6484b728e4b02264b463518\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\",\"enabled\":true,\"pressed\":false,\"surfaceTintPaletteColor\":\"palette_project_foqn_s2_gray_050\",\"surfaceTintAmount\":0}],\"collections\":[],\"actions\":[]}}]",
             "source": "runtime",
             "uiOrigin": "embedded",
             "uiGroupId": "iconRow",
@@ -4323,36 +4169,7 @@
       ],
       "defaultValue": "theme.spacing.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl"
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl"
-        }
-      ],
+      "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
@@ -4366,7 +4183,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "module.core.chat.messageActionsTiming",
@@ -4772,71 +4590,7 @@
       ],
       "defaultValue": "theme.spacing.l",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
@@ -4850,7 +4604,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "module.core.chat.messageMotion",
@@ -4914,71 +4669,7 @@
       ],
       "defaultValue": "theme.spacing.l|theme.spacing.l",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "optionSource": "None",
       "pairLabels": {
         "first": "X",
@@ -4995,7 +4686,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "module.core.chat.showHeader",

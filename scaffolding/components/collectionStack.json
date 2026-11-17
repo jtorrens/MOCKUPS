@@ -170,36 +170,7 @@
         "jsonKey": "startGapToken",
         "kind": "themeToken",
         "defaultValue": "theme.spacing.none",
-        "options": [
-          {
-            "value": "theme.spacing.none",
-            "label": "spacing.none"
-          },
-          {
-            "value": "theme.spacing.xs",
-            "label": "spacing.xs"
-          },
-          {
-            "value": "theme.spacing.s",
-            "label": "spacing.s"
-          },
-          {
-            "value": "theme.spacing.m",
-            "label": "spacing.m"
-          },
-          {
-            "value": "theme.spacing.l",
-            "label": "spacing.l"
-          },
-          {
-            "value": "theme.spacing.xl",
-            "label": "spacing.xl"
-          },
-          {
-            "value": "theme.spacing.xxl",
-            "label": "spacing.xxl"
-          }
-        ],
+        "options": [],
         "valueKind": "ThemeToken",
         "uiOrigin": "self",
         "uiOrder": 30,
@@ -218,7 +189,8 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "themeTokenFamily": "spacing"
       },
       {
         "id": "endGapToken",
@@ -226,36 +198,7 @@
         "jsonKey": "endGapToken",
         "kind": "themeToken",
         "defaultValue": "theme.spacing.none",
-        "options": [
-          {
-            "value": "theme.spacing.none",
-            "label": "spacing.none"
-          },
-          {
-            "value": "theme.spacing.xs",
-            "label": "spacing.xs"
-          },
-          {
-            "value": "theme.spacing.s",
-            "label": "spacing.s"
-          },
-          {
-            "value": "theme.spacing.m",
-            "label": "spacing.m"
-          },
-          {
-            "value": "theme.spacing.l",
-            "label": "spacing.l"
-          },
-          {
-            "value": "theme.spacing.xl",
-            "label": "spacing.xl"
-          },
-          {
-            "value": "theme.spacing.xxl",
-            "label": "spacing.xxl"
-          }
-        ],
+        "options": [],
         "valueKind": "ThemeToken",
         "uiOrigin": "self",
         "uiOrder": 40,
@@ -274,7 +217,8 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "themeTokenFamily": "spacing"
       },
       {
         "id": "stackDirection",
@@ -318,36 +262,7 @@
         "jsonKey": "stackOffsetToken",
         "kind": "themeToken",
         "defaultValue": "theme.spacing.m",
-        "options": [
-          {
-            "value": "theme.spacing.none",
-            "label": "spacing.none"
-          },
-          {
-            "value": "theme.spacing.xs",
-            "label": "spacing.xs"
-          },
-          {
-            "value": "theme.spacing.s",
-            "label": "spacing.s"
-          },
-          {
-            "value": "theme.spacing.m",
-            "label": "spacing.m"
-          },
-          {
-            "value": "theme.spacing.l",
-            "label": "spacing.l"
-          },
-          {
-            "value": "theme.spacing.xl",
-            "label": "spacing.xl"
-          },
-          {
-            "value": "theme.spacing.xxl",
-            "label": "spacing.xxl"
-          }
-        ],
+        "options": [],
         "valueKind": "ThemeToken",
         "uiOrigin": "self",
         "uiOrder": 60,
@@ -366,7 +281,8 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "themeTokenFamily": "spacing"
       },
       {
         "id": "itemSizingMode",
@@ -561,41 +477,13 @@
             "kind": "themeToken",
             "defaultValue": "theme.spacing.m",
             "minimumItemIndex": 1,
-            "options": [
-              {
-                "value": "theme.spacing.none",
-                "label": "spacing.none"
-              },
-              {
-                "value": "theme.spacing.xs",
-                "label": "spacing.xs"
-              },
-              {
-                "value": "theme.spacing.s",
-                "label": "spacing.s"
-              },
-              {
-                "value": "theme.spacing.m",
-                "label": "spacing.m"
-              },
-              {
-                "value": "theme.spacing.l",
-                "label": "spacing.l"
-              },
-              {
-                "value": "theme.spacing.xl",
-                "label": "spacing.xl"
-              },
-              {
-                "value": "theme.spacing.xxl",
-                "label": "spacing.xxl"
-              }
-            ],
+            "options": [],
             "enabledWhenItemJsonKey": "gapBeforeMode",
             "enabledWhenItemValues": [
               "fixed"
             ],
-            "valueKind": "ThemeToken"
+            "valueKind": "ThemeToken",
+            "themeTokenFamily": "spacing"
           },
           {
             "id": "gapBeforeWeight",

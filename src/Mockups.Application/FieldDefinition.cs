@@ -229,7 +229,8 @@ public sealed record ComponentInputBindingDefinition(
     BehaviorTimingDefinition? BehaviorTiming = null,
     bool ActionOnly = false,
     RuntimeInputCollectionDefinition? StructuredCollection = null,
-    bool AllowEmpty = false)
+    bool AllowEmpty = false,
+    string ThemeTokenFamily = "")
 {
     public static ComponentInputBindingDefinition FromRuntimeInput(
         ComponentInputDefinition input) =>
@@ -256,7 +257,8 @@ public sealed record ComponentInputBindingDefinition(
             input.BehaviorTiming,
             input.ActionOnly,
             input.StructuredCollection,
-            input.AllowEmpty);
+            input.AllowEmpty,
+            input.ThemeTokenFamily);
 }
 
 public enum ImagePreviewMode
@@ -300,7 +302,8 @@ public sealed record FieldDefinition(
     string ValuePatternMessage = "",
     bool AllowEmpty = false,
     ThemeComponentVariantSource ThemeComponentVariantSource =
-        ThemeComponentVariantSource.None)
+        ThemeComponentVariantSource.None,
+    string ThemeTokenFamily = "")
 {
     public string DisplayLabel => string.IsNullOrWhiteSpace(Unit)
         ? Label

@@ -231,7 +231,18 @@ supplies the unit source and base rate.
 ### Spacing and compound values
 
 Padding and gaps use `theme.spacing.*` tokens. X/Y spacing uses a spacing-token
-pair. `PaletteColorPair` owns its compact Light/Dark layout, header, ellipsis
+pair. Theme token fields declare `themeTokenFamily` (`spacing`, `radii`,
+`iconSizes`, `typography.sizes`, `typography.lineHeights`, `motion.naturalPace`
+or `colors`) instead of enumerating token options. `ThemeTokenSelectionContract`
+reads the authoritative numeric/color catalogs when the shared selector opens.
+The color family includes all color tokens, including icons, borders and keyboard
+colors. Family metadata travels unchanged through descriptors, Runtime Inputs,
+collections, bindings and inherited/embedded field projections. Unknown families,
+family-plus-options and multi-token fixed lists fail explicitly. A field bound
+to one semantic metric may declare that single exact catalog token, as with
+keyboard height/key gap/row gap. Ordinary option enumerations remain explicit.
+
+`PaletteColorPair` owns its compact Light/Dark layout, header, ellipsis
 and border treatment.
 
 `VideoFilePath` is the registered Shot-reference path control. Its Browse

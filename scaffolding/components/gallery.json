@@ -416,36 +416,7 @@
       ],
       "defaultValue": "theme.spacing.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl"
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl"
-        }
-      ],
+      "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
@@ -456,7 +427,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "component.gallery.padding",
@@ -468,36 +440,7 @@
       ],
       "defaultValue": "theme.spacing.m|theme.spacing.m",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl"
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl"
-        }
-      ],
+      "options": [],
       "pairLabels": {
         "first": "H",
         "second": "V"
@@ -511,7 +454,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "component.gallery.containerPadding",
@@ -523,36 +467,7 @@
       ],
       "defaultValue": "theme.spacing.m|theme.spacing.m",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl"
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl"
-        }
-      ],
+      "options": [],
       "pairLabels": {
         "first": "H",
         "second": "V"
@@ -566,7 +481,8 @@
       "helpText": "Space between the Gallery Surface and the bounds assigned by its device or parent.",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "component.gallery.fadeExtent",

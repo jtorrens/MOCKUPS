@@ -396,28 +396,7 @@
               "tableId": "",
               "resolvedJsonKey": "",
               "componentType": "",
-              "options": [
-                {
-                  "value": "theme.iconSizes.xs",
-                  "label": "iconSizes.xs"
-                },
-                {
-                  "value": "theme.iconSizes.s",
-                  "label": "iconSizes.s"
-                },
-                {
-                  "value": "theme.iconSizes.m",
-                  "label": "iconSizes.m"
-                },
-                {
-                  "value": "theme.iconSizes.l",
-                  "label": "iconSizes.l"
-                },
-                {
-                  "value": "theme.iconSizes.xl",
-                  "label": "iconSizes.xl"
-                }
-              ],
+              "options": [],
               "pairFirstLabel": "W",
               "pairSecondLabel": "H",
               "visibleWhenPath": "",
@@ -438,7 +417,8 @@
                 "origin": {
                   "kind": "ownerStart"
                 }
-              }
+              },
+              "themeTokenFamily": "iconSizes"
             },
             {
               "id": "textSizeToken",
@@ -453,28 +433,7 @@
               "tableId": "",
               "resolvedJsonKey": "",
               "componentType": "",
-              "options": [
-                {
-                  "value": "theme.typography.sizes.xs",
-                  "label": "typography.sizes.xs"
-                },
-                {
-                  "value": "theme.typography.sizes.s",
-                  "label": "typography.sizes.s"
-                },
-                {
-                  "value": "theme.typography.sizes.m",
-                  "label": "typography.sizes.m"
-                },
-                {
-                  "value": "theme.typography.sizes.l",
-                  "label": "typography.sizes.l"
-                },
-                {
-                  "value": "theme.typography.sizes.xl",
-                  "label": "typography.sizes.xl"
-                }
-              ],
+              "options": [],
               "pairFirstLabel": "W",
               "pairSecondLabel": "H",
               "visibleWhenPath": "",
@@ -495,7 +454,8 @@
                 "origin": {
                   "kind": "ownerStart"
                 }
-              }
+              },
+              "themeTokenFamily": "typography.sizes"
             },
             {
               "id": "showBadge",
@@ -792,7 +752,8 @@
                 "origin": {
                   "kind": "ownerStart"
                 }
-              }
+              },
+              "themeTokenFamily": "colors"
             },
             {
               "id": "textColorToken",
@@ -828,7 +789,8 @@
                 "origin": {
                   "kind": "ownerStart"
                 }
-              }
+              },
+              "themeTokenFamily": "colors"
             },
             {
               "id": "surfaceTintPaletteColor",
@@ -1056,71 +1018,7 @@
       ],
       "defaultValue": "theme.spacing.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
@@ -1131,7 +1029,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "component.iconRow.iconSizeToken",
@@ -1143,53 +1042,7 @@
       ],
       "defaultValue": "theme.iconSizes.m",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.iconSizes.xs",
-          "label": "iconSizes.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.iconSizes.s",
-          "label": "iconSizes.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.iconSizes.m",
-          "label": "iconSizes.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.iconSizes.l",
-          "label": "iconSizes.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.iconSizes.xl",
-          "label": "iconSizes.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
@@ -1200,7 +1053,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "iconSizes"
     },
     {
       "id": "component.iconRow.itemSizingMode",
@@ -1294,61 +1148,21 @@
             "id": "iconSizeToken",
             "label": "Icon size",
             "jsonKey": "iconSizeToken",
-            "kind": "Option",
-            "valueKind": "OptionToken",
+            "kind": "ThemeToken",
+            "valueKind": "ThemeToken",
             "defaultValue": "theme.iconSizes.m",
-            "options": [
-              {
-                "value": "theme.iconSizes.xs",
-                "label": "Extra small"
-              },
-              {
-                "value": "theme.iconSizes.s",
-                "label": "Small"
-              },
-              {
-                "value": "theme.iconSizes.m",
-                "label": "Medium"
-              },
-              {
-                "value": "theme.iconSizes.l",
-                "label": "Large"
-              },
-              {
-                "value": "theme.iconSizes.xl",
-                "label": "Extra large"
-              }
-            ]
+            "options": [],
+            "themeTokenFamily": "iconSizes"
           },
           {
             "id": "textSizeToken",
             "label": "Text size",
             "jsonKey": "textSizeToken",
-            "kind": "Option",
-            "valueKind": "OptionToken",
+            "kind": "ThemeToken",
+            "valueKind": "ThemeToken",
             "defaultValue": "theme.typography.sizes.s",
-            "options": [
-              {
-                "value": "theme.typography.sizes.xs",
-                "label": "Extra small"
-              },
-              {
-                "value": "theme.typography.sizes.s",
-                "label": "Small"
-              },
-              {
-                "value": "theme.typography.sizes.m",
-                "label": "Medium"
-              },
-              {
-                "value": "theme.typography.sizes.l",
-                "label": "Large"
-              },
-              {
-                "value": "theme.typography.sizes.xl",
-                "label": "Extra large"
-              }
-            ]
+            "options": [],
+            "themeTokenFamily": "typography.sizes"
           }
         ],
         "itemPresentation": {
@@ -1469,53 +1283,7 @@
       ],
       "defaultValue": "theme.typography.sizes.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.typography.sizes.xs",
-          "label": "typography.sizes.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.typography.sizes.s",
-          "label": "typography.sizes.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.typography.sizes.m",
-          "label": "typography.sizes.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.typography.sizes.l",
-          "label": "typography.sizes.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.typography.sizes.xl",
-          "label": "typography.sizes.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
@@ -1526,7 +1294,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "typography.sizes"
     }
   ],
   "editorLayout": {

@@ -663,6 +663,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             IsEditable: _definition.IsEditable,
             DefaultValue: input.DefaultValue,
             Options: options,
+                ThemeTokenFamily: input.ThemeTokenFamily,
             PairLabels: input.PairLabels,
             Number: input.ValueKind is ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha
                 ? input.Number

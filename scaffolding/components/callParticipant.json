@@ -917,36 +917,7 @@
       ],
       "defaultValue": "theme.spacing.s|theme.spacing.s",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl"
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl"
-        }
-      ],
+      "options": [],
       "pairLabels": {
         "first": "X",
         "second": "Y"
@@ -960,7 +931,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "component.callParticipant.avatarSize",

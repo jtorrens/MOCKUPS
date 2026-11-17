@@ -623,7 +623,7 @@ internal sealed class SqliteEditorChildStore
         IReadOnlyList<FieldOption>? options = null) =>
         new(new FieldDefinition(
             descriptor.Id, descriptor.Label, descriptor.ValueKind, descriptor.IsEditable,
-            value, Options: options ?? descriptor.Options, PairLabels: descriptor.PairLabels,
+            value, Options: options ?? descriptor.Options, ThemeTokenFamily: descriptor.ThemeTokenFamily, PairLabels: descriptor.PairLabels,
             ImagePreview: descriptor.ImagePreview, Number: descriptor.Number,
             RecordReference: descriptor.RecordReference, Unit: descriptor.Unit), value);
 

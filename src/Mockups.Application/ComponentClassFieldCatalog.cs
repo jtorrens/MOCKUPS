@@ -23,7 +23,8 @@ public sealed record ComponentClassFieldDescriptor(
     string Unit = "",
     string HelpText = "",
     string ValuePattern = "",
-    string ValuePatternMessage = "");
+    string ValuePatternMessage = "",
+    string ThemeTokenFamily = "");
 
 public static partial class ComponentClassFieldCatalog
 {
@@ -43,75 +44,13 @@ public static partial class ComponentClassFieldCatalog
     static partial void AddGeneratedFields(
         Dictionary<string, ComponentClassFieldDescriptor> fields);
 
-    private static readonly FieldOption[] ThemeColorOptions =
-    [
-        new("theme.colors.background", "colors.background"),
-        new("theme.colors.surface", "colors.surface"),
-        new("theme.colors.card", "colors.card"),
-        new("theme.colors.label", "colors.label"),
-        new("theme.colors.text", "colors.text"),
-        new("theme.colors.textPrimary", "colors.textPrimary"),
-        new("theme.colors.textSecondary", "colors.textSecondary"),
-        new("theme.colors.icon", "colors.icon"),
-        new("theme.colors.button", "colors.button"),
-        new("theme.colors.field", "colors.field"),
-        new("theme.colors.checkbox", "colors.checkbox"),
-        new("theme.colors.radio", "colors.radio"),
-        new("theme.colors.switch", "colors.switch"),
-        new("theme.colors.tab", "colors.tab"),
-        new("theme.colors.menuItem", "colors.menuItem"),
-        new("theme.colors.badge", "colors.badge"),
-        new("theme.colors.toast", "colors.toast"),
-        new("theme.colors.divider", "colors.divider"),
-        new("theme.colors.accent", "colors.accent"),
-        new("theme.colors.positive", "colors.positive"),
-        new("theme.colors.negative", "colors.negative"),
-        new("theme.colors.onAction", "colors.onAction"),
-        new("theme.icons.primary", "icons.primary"),
-        new("theme.icons.secondary", "icons.secondary"),
-        new("theme.icons.alternate", "icons.alternate"),
-        new("theme.icons.accent", "icons.accent"),
-        new("theme.borders.primary", "borders.primary"),
-        new("theme.borders.secondary", "borders.secondary"),
-        new("theme.borders.alternate", "borders.alternate"),
-        new("theme.cursor.color", "cursor.color"),
-        new("theme.keyboard.background", "keyboard.background"),
-        new("theme.keyboard.keyBackground", "keyboard.keyBackground"),
-        new("theme.keyboard.specialKeyBackground", "keyboard.specialKeyBackground"),
-        new("theme.keyboard.pressedKeyBackground", "keyboard.pressedKeyBackground"),
-        new("theme.keyboard.keyBorder", "keyboard.keyBorder"),
-        new("theme.keyboard.text", "keyboard.text"),
-    ];
+    private static readonly FieldOption[] ThemeColorOptions = ThemeTokenSelectionContract.Options("colors");
 
-    private static readonly FieldOption[] RadiusTokenOptions =
-    [
-        new("theme.radii.none", "radii.none"),
-        new("theme.radii.xs", "radii.xs"),
-        new("theme.radii.s", "radii.s"),
-        new("theme.radii.m", "radii.m"),
-        new("theme.radii.l", "radii.l"),
-        new("theme.radii.xl", "radii.xl"),
-        new("theme.radii.xxl", "radii.xxl"),
-        new("theme.radii.full", "radii.full"),
-    ];
+    private static readonly FieldOption[] RadiusTokenOptions = ThemeTokenSelectionContract.Options("radii");
 
-    public static readonly FieldOption[] TypographySizeOptions =
-    [
-        new("theme.typography.sizes.xs", "typography.sizes.xs"),
-        new("theme.typography.sizes.s", "typography.sizes.s"),
-        new("theme.typography.sizes.m", "typography.sizes.m"),
-        new("theme.typography.sizes.l", "typography.sizes.l"),
-        new("theme.typography.sizes.xl", "typography.sizes.xl"),
-    ];
+    public static readonly FieldOption[] TypographySizeOptions = ThemeTokenSelectionContract.Options("typography.sizes");
 
-    public static readonly FieldOption[] IconSizeTokenOptions =
-    [
-        new("theme.iconSizes.xs", "iconSizes.xs"),
-        new("theme.iconSizes.s", "iconSizes.s"),
-        new("theme.iconSizes.m", "iconSizes.m"),
-        new("theme.iconSizes.l", "iconSizes.l"),
-        new("theme.iconSizes.xl", "iconSizes.xl"),
-    ];
+    public static readonly FieldOption[] IconSizeTokenOptions = ThemeTokenSelectionContract.Options("iconSizes");
 
     private static readonly FieldOption[] PasswordAnchorOptions =
     [
@@ -136,16 +75,7 @@ public static partial class ComponentClassFieldCatalog
     private static readonly FieldOption[] IconRowSizeSourceOptions = [new("shared", "Shared"), new("perButton", "Per button")];
     private static readonly FieldOption[] IconBarSizeSourceOptions = [new("shared", "Shared"), new("perRow", "Per row")];
 
-    public static readonly FieldOption[] SpacingTokenOptions =
-    [
-        new("theme.spacing.none", "spacing.none"),
-        new("theme.spacing.xs", "spacing.xs"),
-        new("theme.spacing.s", "spacing.s"),
-        new("theme.spacing.m", "spacing.m"),
-        new("theme.spacing.l", "spacing.l"),
-        new("theme.spacing.xl", "spacing.xl"),
-        new("theme.spacing.xxl", "spacing.xxl"),
-    ];
+    public static readonly FieldOption[] SpacingTokenOptions = ThemeTokenSelectionContract.Options("spacing");
 
     private static readonly FieldOption[] KeyboardHeightTokenOptions =
     [
@@ -463,8 +393,8 @@ public static partial class ComponentClassFieldCatalog
         ["component.style.shadowEnabled"] = new("component.style.shadowEnabled", "Shadow", ValueKind.Boolean, ["style", "shadowEnabled"], "false"),
         ["component.style.reliefEnabled"] = new("component.style.reliefEnabled", "Relief", ValueKind.Boolean, ["style", "reliefEnabled"], "false"),
         ["component.style.borderWidth"] = new("component.style.borderWidth", "Border width", ValueKind.Integer, ["style", "borderWidth"], "0"),
-        ["component.style.borderColorToken"] = new("component.style.borderColorToken", "Border color", ValueKind.ThemeToken, ["style", "borderColorToken"], "theme.borders.primary", Options: ThemeColorOptions),
-        ["component.style.cornerRadiusToken"] = new("component.style.cornerRadiusToken", "Corner radius", ValueKind.ThemeToken, ["style", "cornerRadiusToken"], "theme.radii.xl", Options: RadiusTokenOptions),
+        ["component.style.borderColorToken"] = new("component.style.borderColorToken", "Border color", ValueKind.ThemeToken, ["style", "borderColorToken"], "theme.borders.primary", ThemeTokenFamily: "colors"),
+        ["component.style.cornerRadiusToken"] = new("component.style.cornerRadiusToken", "Corner radius", ValueKind.ThemeToken, ["style", "cornerRadiusToken"], "theme.radii.xl", ThemeTokenFamily: "radii"),
         ["component.style.reliefAngle"] = new("component.style.reliefAngle", "Relief angle", ValueKind.Integer, ["style", "reliefAngle"], "-45"),
         ["component.style.reliefExtent"] = new(
             "component.style.reliefExtent",
@@ -561,6 +491,9 @@ public static partial class ComponentClassFieldCatalog
 
     private static void ValidateOptionContracts()
     {
+        foreach (var field in Fields.Values)
+            ThemeTokenSelectionContract.Validate(field.ValueKind, field.ThemeTokenFamily, field.Options, field.Id);
+
         foreach (var field in Fields.Values.Where((field) =>
                      field.ValueKind == ValueKind.OptionToken))
         {

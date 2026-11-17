@@ -20,7 +20,7 @@ internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueCo
     public DictionaryThemeTokenPairControl(
         FieldDefinition definition,
         string value,
-        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker)
+        Func<string, FieldDefinition, Task<string?>>? showThemeTokenPicker)
     {
         ColumnSpacing = 8;
         RowSpacing = 8;

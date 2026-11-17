@@ -1553,7 +1553,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -1580,7 +1581,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -1831,7 +1833,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -1858,7 +1861,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -2109,7 +2113,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -2136,7 +2141,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -2347,28 +2353,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -2389,7 +2374,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -2404,28 +2390,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -2446,7 +2411,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -2743,7 +2709,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -2779,7 +2746,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -3200,28 +3168,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -3242,7 +3189,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -3257,28 +3205,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -3299,7 +3226,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -3596,7 +3524,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -3632,7 +3561,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -4053,28 +3983,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -4095,7 +4004,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -4110,28 +4020,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -4152,7 +4041,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -4449,7 +4339,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -4485,7 +4376,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -5969,7 +5861,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -5996,7 +5889,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -6247,7 +6141,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -6274,7 +6169,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -6525,7 +6421,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -6552,7 +6449,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -6763,28 +6661,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -6805,7 +6682,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -6820,28 +6698,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -6862,7 +6719,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -7159,7 +7017,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -7195,7 +7054,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -7616,28 +7476,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -7658,7 +7497,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -7673,28 +7513,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -7715,7 +7534,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -8012,7 +7832,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -8048,7 +7869,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -8469,28 +8291,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -8511,7 +8312,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -8526,28 +8328,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -8568,7 +8349,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -8865,7 +8647,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -8901,7 +8684,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -10385,7 +10169,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -10412,7 +10197,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -10663,7 +10449,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -10690,7 +10477,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -10941,7 +10729,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -10968,7 +10757,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -11179,28 +10969,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -11221,7 +10990,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -11236,28 +11006,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -11278,7 +11027,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -11575,7 +11325,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -11611,7 +11362,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -12032,28 +11784,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -12074,7 +11805,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -12089,28 +11821,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -12131,7 +11842,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -12428,7 +12140,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -12464,7 +12177,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -12885,28 +12599,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -12927,7 +12620,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -12942,28 +12636,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -12984,7 +12657,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -13281,7 +12955,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -13317,7 +12992,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -14801,7 +14477,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -14828,7 +14505,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -15079,7 +14757,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -15106,7 +14785,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -15357,7 +15037,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -15384,7 +15065,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -15595,28 +15277,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -15637,7 +15298,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -15652,28 +15314,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -15694,7 +15335,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -15991,7 +15633,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -16027,7 +15670,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -16448,28 +16092,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -16490,7 +16113,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -16505,28 +16129,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -16547,7 +16150,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -16844,7 +16448,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -16880,7 +16485,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -17301,28 +16907,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -17343,7 +16928,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -17358,28 +16944,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -17400,7 +16965,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -17697,7 +17263,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -17733,7 +17300,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -19217,7 +18785,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -19244,7 +18813,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -19495,7 +19065,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -19522,7 +19093,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -19773,7 +19345,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   },
                   {
                     "id": "subtextColorToken",
@@ -19800,7 +19373,8 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 22
+                    "uiOrder": 22,
+                    "themeTokenFamily": "colors"
                   }
                 ],
                 "textMode": "literal",
@@ -20011,28 +19585,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -20053,7 +19606,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -20068,28 +19622,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -20110,7 +19643,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -20407,7 +19941,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -20443,7 +19978,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -20864,28 +20400,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -20906,7 +20421,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -20921,28 +20437,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -20963,7 +20458,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -21260,7 +20756,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -21296,7 +20793,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -21717,28 +21215,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.iconSizes.xs",
-                              "label": "iconSizes.xs"
-                            },
-                            {
-                              "value": "theme.iconSizes.s",
-                              "label": "iconSizes.s"
-                            },
-                            {
-                              "value": "theme.iconSizes.m",
-                              "label": "iconSizes.m"
-                            },
-                            {
-                              "value": "theme.iconSizes.l",
-                              "label": "iconSizes.l"
-                            },
-                            {
-                              "value": "theme.iconSizes.xl",
-                              "label": "iconSizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -21759,7 +21236,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "iconSizes"
                         },
                         {
                           "id": "textSizeToken",
@@ -21774,28 +21252,7 @@
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "theme.typography.sizes.xs",
-                              "label": "typography.sizes.xs"
-                            },
-                            {
-                              "value": "theme.typography.sizes.s",
-                              "label": "typography.sizes.s"
-                            },
-                            {
-                              "value": "theme.typography.sizes.m",
-                              "label": "typography.sizes.m"
-                            },
-                            {
-                              "value": "theme.typography.sizes.l",
-                              "label": "typography.sizes.l"
-                            },
-                            {
-                              "value": "theme.typography.sizes.xl",
-                              "label": "typography.sizes.xl"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -21816,7 +21273,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "typography.sizes"
                         },
                         {
                           "id": "showBadge",
@@ -22113,7 +21571,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "textColorToken",
@@ -22149,7 +21608,8 @@
                             "origin": {
                               "kind": "ownerStart"
                             }
-                          }
+                          },
+                          "themeTokenFamily": "colors"
                         },
                         {
                           "id": "surfaceTintPaletteColor",
@@ -22421,71 +21881,7 @@
       ],
       "defaultValue": "theme.spacing.none",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
@@ -22496,7 +21892,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "component.list.itemAlignment",
@@ -22601,71 +21998,7 @@
       ],
       "defaultValue": "theme.spacing.none",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
@@ -22676,7 +22009,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "component.list.itemGapBeforeWeight",
@@ -22902,71 +22236,7 @@
       ],
       "defaultValue": "theme.spacing.none",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
@@ -22977,7 +22247,8 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     },
     {
       "id": "component.list.surface",

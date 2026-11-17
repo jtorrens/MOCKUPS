@@ -24,7 +24,7 @@ internal sealed class DictionaryBehaviorTimingControl : Grid, IDictionaryValueCo
     public DictionaryBehaviorTimingControl(
         FieldDefinition definition,
         string value,
-        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker,
+        Func<string, FieldDefinition, Task<string?>>? showThemeTokenPicker,
         Func<FieldDefinition, string, int>? resolveFrames)
     {
         _definition = definition;
@@ -61,7 +61,8 @@ internal sealed class DictionaryBehaviorTimingControl : Grid, IDictionaryValueCo
                 "Natural pace",
                 ValueKind.ThemeToken,
                 definition.IsEditable,
-                Options: definition.Options),
+                Options: definition.Options,
+                ThemeTokenFamily: definition.ThemeTokenFamily),
             _value.PaceToken,
             showThemeTokenPicker);
 

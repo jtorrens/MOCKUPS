@@ -23,7 +23,8 @@ public sealed record RecordClassFieldDescriptor(
     string RuntimeCollectionComponentVariantFieldId = "",
     MotionTimingDefinition? MotionTiming = null,
     string[]? ConfigJsonPath = null,
-    FieldOptionSource OptionSource = FieldOptionSource.None);
+    FieldOptionSource OptionSource = FieldOptionSource.None,
+    string ThemeTokenFamily = "");
 
 public enum FieldOptionSource
 {
@@ -603,6 +604,9 @@ public static class RecordClassFieldCatalog
 
     private static void ValidateOptionContracts()
     {
+        foreach (var field in Fields.Values)
+            ThemeTokenSelectionContract.Validate(field.ValueKind, field.ThemeTokenFamily, field.Options, field.Id);
+
         var invalid = Fields.Values
             .Where((field) => field.ValueKind == ValueKind.OptionToken
                 && ((field.Options is null || field.Options.Count == 0)

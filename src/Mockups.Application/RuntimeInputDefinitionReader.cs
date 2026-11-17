@@ -64,6 +64,7 @@ public static class RuntimeInputDefinitionReader
                 JsonString(item, "uiParentGroupId"),
                 JsonString(item, "unit")) with
             {
+                ThemeTokenFamily = JsonString(item, "themeTokenFamily"),
                 UiOrder = (int)JsonDecimal(item, "uiOrder", 0),
                 UseSlider = item["useSlider"]?.GetValue<bool>() == true,
                 UiSectionLabel = JsonString(item, "uiSectionLabel"),
@@ -89,6 +90,7 @@ public static class RuntimeInputDefinitionReader
                     "structuredCollection",
                     $"Runtime Input '{id}'")),
             };
+            ThemeTokenSelectionContract.Validate(definition.ValueKind, definition.ThemeTokenFamily, definition.Options, definition.Id);
             if (source == ComponentInputSource.Runtime
                 && (includeHidden || InputIsVisible(item, config)))
             {
@@ -171,6 +173,7 @@ public static class RuntimeInputDefinitionReader
                     JsonString(field, "uiParentGroupId"),
                     JsonString(field, "unit")) with
                 {
+                    ThemeTokenFamily = JsonString(field, "themeTokenFamily"),
                     EnabledWhenPath = JsonString(field, "enabledWhenPath"),
                     EnabledWhenValue = JsonString(field, "enabledWhenValue"),
                     EnabledWhenItemJsonKey = JsonString(field, "enabledWhenItemJsonKey"),
@@ -199,6 +202,7 @@ public static class RuntimeInputDefinitionReader
                     ValuePatternMessage = JsonString(field, "valuePatternMessage"),
                     ShowInEditor = field["showInEditor"]?.GetValue<bool>() ?? true,
                 };
+                ThemeTokenSelectionContract.Validate(definition.ValueKind, definition.ThemeTokenFamily, definition.Options, definition.Id);
                 itemFields.Add(definition);
             }
 

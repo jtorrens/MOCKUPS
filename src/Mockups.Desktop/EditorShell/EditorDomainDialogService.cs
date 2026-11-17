@@ -192,11 +192,11 @@ internal sealed class EditorDomainDialogService
             _operations).Show(iconThemeId, currentValue, allowMultiple);
     }
 
-    public Task<string?> ShowThemeTokenPicker(string projectId, string currentValue, IReadOnlyList<FieldOption>? allowedOptions)
+    public Task<string?> ShowThemeTokenPicker(string projectId, string currentValue, FieldDefinition definition)
     {
         return new ThemeTokenPickerDialog(
             _owner,
             _themeTokens,
-            _operations).Show(projectId, currentValue, allowedOptions);
+            _operations).Show(projectId, currentValue, definition);
     }
 }

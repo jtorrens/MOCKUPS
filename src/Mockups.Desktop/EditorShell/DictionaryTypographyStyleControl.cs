@@ -34,23 +34,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         new("italic", "Italic"),
     ];
 
-    private static readonly FieldOption[] SizeTokenOptions =
-    [
-        new("theme.typography.sizes.xs", "typography.sizes.xs"),
-        new("theme.typography.sizes.s", "typography.sizes.s"),
-        new("theme.typography.sizes.m", "typography.sizes.m"),
-        new("theme.typography.sizes.l", "typography.sizes.l"),
-        new("theme.typography.sizes.xl", "typography.sizes.xl"),
-    ];
 
-    private static readonly FieldOption[] LineHeightTokenOptions =
-    [
-        new("theme.typography.lineHeights.tight", "lineHeights.tight"),
-        new("theme.typography.lineHeights.compact", "lineHeights.compact"),
-        new("theme.typography.lineHeights.normal", "lineHeights.normal"),
-        new("theme.typography.lineHeights.relaxed", "lineHeights.relaxed"),
-        new("theme.typography.lineHeights.loose", "lineHeights.loose"),
-    ];
 
     private readonly FieldDefinition _definition;
     private readonly JsonObject _inheritedValues;
@@ -70,7 +54,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         FieldDefinition definition,
         string value,
         bool isInherited,
-        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker,
+        Func<string, FieldDefinition, Task<string?>>? showThemeTokenPicker,
         string fixedFontFamilyId = "")
     {
         _definition = definition;
@@ -199,7 +183,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             TypographyStyleValue.LineHeight,
             showThemeTokenPicker,
             "theme.typography.lineHeights.normal",
-            LineHeightTokenOptions);
+            "typography.lineHeights");
 
         ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
         ApplyThemeBrushes();
@@ -246,9 +230,9 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         int row,
         string label,
         string key,
-        Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker,
+        Func<string, FieldDefinition, Task<string?>>? showThemeTokenPicker,
         string fallback = "theme.typography.sizes.s",
-        IReadOnlyList<FieldOption>? options = null)
+        string family = "typography.sizes")
     {
         var controlDefinition = new FieldDefinition(
             $"{_definition.Id}.{key}",
@@ -256,7 +240,7 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             ValueKind.ThemeToken,
             _definition.IsEditable,
             fallback,
-            Options: options ?? SizeTokenOptions);
+            ThemeTokenFamily: family);
         var control = new DictionaryThemeTokenControl(controlDefinition, ValueFor(key, fallback), showThemeTokenPicker);
         control.ValueChanged += (_, value) => SetSubValue(key, value);
         control.ValueCommitted += (_, value) => CommitSubValue(key, value);

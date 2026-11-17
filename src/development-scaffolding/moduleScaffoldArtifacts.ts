@@ -200,6 +200,7 @@ function renderField(field: ModuleScaffoldField) {
     valueKind: field.valueKind,
     isEditable: field.isEditable,
     options: field.options,
+    themeTokenFamily: field.themeTokenFamily ?? "",
     pairLabels: field.pairLabels,
     imagePreview: field.imagePreview,
     number: field.number,

@@ -50,6 +50,7 @@ internal static class RuntimeInputFieldDefinitionFactory
             valueKind,
             DefaultValue: input.DefaultValue,
             Options: options,
+                ThemeTokenFamily: input.ThemeTokenFamily,
             PairLabels: PairFieldLabelsContract.ForField(
                 input.ValueKind,
                 input.PairLabels,

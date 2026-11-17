@@ -28,11 +28,11 @@ internal sealed class ThemeTokenPickerDialog
         _operations = operations;
     }
 
-    public async Task<string?> Show(string projectId, string currentValue, IReadOnlyList<FieldOption>? allowedOptions)
+    public async Task<string?> Show(string projectId, string currentValue, FieldDefinition definition)
     {
-        var allowedTokens = allowedOptions is { Count: > 0 }
-            ? allowedOptions.Select((option) => option.Value).ToHashSet(StringComparer.Ordinal)
-            : null;
+        var allowedTokens = ThemeTokenSelectionContract.Tokens(
+            definition.ThemeTokenFamily, definition.Options, definition.Id)
+            .ToHashSet(StringComparer.Ordinal);
         var startup = await _operations.ExecuteWithActivityAsync(
             "Preparing theme token selector…",
             () =>
@@ -106,7 +106,7 @@ internal sealed class ThemeTokenPickerDialog
             }
 
             var options = startup.Tokens[selectedThemeId]
-                .Where((option) => allowedTokens is null || allowedTokens.Contains(option.Token))
+                .Where((option) => allowedTokens.Contains(option.Token))
                 .Where((option) => EditorSearchMatcher.Matches(
                     query,
                     option.Token,

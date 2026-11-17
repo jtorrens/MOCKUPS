@@ -229,6 +229,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
                 _definition.IsEditable && Forwarding(input) is null,
                 input.DefaultValue,
                 Options: options,
+                ThemeTokenFamily: input.ThemeTokenFamily,
                 PairLabels: input.PairLabels,
                 Number: input.Number,
                 RecordReference: input.ValueKind == ValueKind.RecordReference

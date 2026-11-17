@@ -29,6 +29,7 @@ export interface ComponentScaffoldField {
   defaultValue: string;
   isEditable: boolean;
   options: JsonObject[];
+  themeTokenFamily?: string;
   pairLabels: { first: string; second: string } | null;
   number: {
     minimum: number | null;
@@ -989,6 +990,7 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
     "defaultValue",
     "isEditable",
     "options",
+    ...("themeTokenFamily" in field ? ["themeTokenFamily"] : []),
     "pairLabels",
     "number",
     "componentInputBindings",
@@ -1042,6 +1044,9 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
       .map((segment, index) => requiredString(segment, `${owner} jsonPath[${index}]`)),
     defaultValue: requiredString(field.defaultValue, `${owner} defaultValue`, true),
     isEditable: requiredBoolean(field.isEditable, `${owner} isEditable`),
+    ...(field.themeTokenFamily === undefined ? {} : {
+      themeTokenFamily: requiredString(field.themeTokenFamily, `${owner} themeTokenFamily`),
+    }),
     options: requiredArray(field.options, `${owner} options`)
       .map((option, index) => requiredJsonObject(option, `${owner} options[${index}]`)),
     pairLabels: pairLabels
@@ -1176,9 +1181,9 @@ function validateDictionaryFields(
     const themeTokens = field.defaultValue.split("|");
     if ((field.valueKind === "ThemeToken" || field.valueKind === "ThemeTokenPair")
         && themeTokens.some((token) => token.startsWith("theme.spacing."))
-        && field.options.length === 0) {
+        && !field.themeTokenFamily) {
       violations.push(
-        `Dictionary field '${field.id}' uses Theme spacing defaults and requires explicit options.`,
+        `Dictionary field '${field.id}' uses Theme spacing defaults and requires a declared themeTokenFamily.`,
       );
     }
   }

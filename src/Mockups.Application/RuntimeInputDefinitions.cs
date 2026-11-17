@@ -78,7 +78,8 @@ public sealed record ComponentInputDefinition(
     string HelpText = "",
     string ValuePattern = "",
     string ValuePatternMessage = "",
-    bool UseSlider = false)
+    bool UseSlider = false,
+    string ThemeTokenFamily = "")
 {
     public NumberDefinition Number => new(
         Minimum, Maximum, Increment,
