@@ -1952,7 +1952,7 @@
         "jsonKey": "mediaSource",
         "kind": "mediaFilePath",
         "valueKind": "MediaFilePath",
-        "defaultValue": "",
+        "defaultValue": "system-preview://media/test-image.svg",
         "source": "runtime",
         "uiOrigin": "embedded",
         "uiGroupId": "media",
@@ -3290,7 +3290,7 @@
         "accentActive": false
       }
     ],
-    "mediaSource": ""
+    "mediaSource": "system-preview://media/test-image.svg"
   },
   "metadata": {
     "note": "Social Post defines its two-row header and one padded Media section."
