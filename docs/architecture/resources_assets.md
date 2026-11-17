@@ -63,7 +63,10 @@ Missing Runtime media remains authored and visible in this inventory. The
 effective Runtime document preserves the exact selected value, including media
 keyframes: it never substitutes Design defaults. The shared asset boundary
 resolves relative paths only against the exact Project root and absolute paths
-at their authored location. It never searches the working directory or removes
+at their authored location. SVG media uses `image/svg+xml` through this same
+reader for Project files and the declared System Preview fixture root; neither
+Modules nor Components translate the source or substitute another image.
+It never searches the working directory or removes
 a duplicated root prefix. Missing media paints `Media ausente`; an extraction or
 read failure paints `Error al leer media`, with a nonblocking diagnostic. A video
 frame cache is keyed by asset identity and the exact selected video timestamp;

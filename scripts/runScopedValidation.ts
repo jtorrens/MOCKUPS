@@ -500,6 +500,9 @@ export function planScopedValidation(
       previewTests.add("tests/animation/socialPostModule.test.ts");
       previewTests.add("tests/animation/videoCallModule.test.ts");
     }
+    if (file === "src/desktop-preview/previewAssetResolver.ts") {
+      previewTests.add("tests/animation/previewAssetResolver.test.ts");
+    }
     if (file.startsWith("src/desktop-preview/")) {
       typecheck = true;
       const owner = previewOwnerForFile(file, manifest);

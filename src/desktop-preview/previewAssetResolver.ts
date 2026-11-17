@@ -557,6 +557,7 @@ function ffprobeExecutable() {
 
 function imageMimeType(fullPath: string) {
   const extension = path.extname(fullPath).toLowerCase();
+  if (extension === ".svg") return "image/svg+xml";
   if (extension === ".png") return "image/png";
   if (extension === ".jpg" || extension === ".jpeg") return "image/jpeg";
   if (extension === ".webp") return "image/webp";

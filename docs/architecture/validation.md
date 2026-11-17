@@ -63,6 +63,12 @@ the existing owner rather than creating a second guard or validation route.
 | Update admission and independent startup | [workstation tooling](../../tests/tooling/workstationProject.test.ts), Desktop registry `repository maintenance does not block read-only application startup` | An application marker rejects update begin before snapshots change; an update marker permits application access and successful read-only session preparation. Reintroducing either startup rejection fails the success assertion. Packaging bootstrap preserves an existing database while maintenance is registered. `runScopedValidation.ts` selects both owners for changes to either side. |
 | Active rules and test selection | [documentation controls](../../tests/tooling/architectureValidationContracts.test.ts), [scope selection](../../tests/tooling/scopedValidation.test.ts) | Current schema and canonical index agree; exact known retired claims are rejected; build graphs and isolated UI consumers cannot be omitted by an earlier directory match. |
 
+The shared SVG media reader is covered by `previewAssetResolver.test.ts` with
+Project and System Preview roots, exact file bytes and explicit missing-file
+notices. The asset owner is selected by `runScopedValidation.ts`. Removing SVG
+MIME recognition must fail the successful URI assertions; execution and negative
+controls require explicit test authorization.
+
 Text checks enforce bounded documentation and metadata contracts only. They do
 not establish behavior or replace compiler/graph, integration or pixel tests.
 Negative controls require the intended diagnostic; unrelated exceptions,

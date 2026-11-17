@@ -14,6 +14,23 @@ const payload = {
   projectMediaRoot: "/project",
 } as DesignPreviewPayload;
 
+test("SVG media preserves exact bytes through Project and System Preview roots", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "mockups-svg-media-"));
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="24"><rect width="32" height="24" fill="red"/></svg>';
+  try {
+    writeFileSync(path.join(directory, "sample.svg"), svg);
+    const context = { ...payload, projectMediaRoot: directory, systemPreviewFixtureRoot: directory };
+    for (const source of ["sample.svg", "system-preview://sample.svg"]) {
+      const frame = mediaFrameUriForPath(context, source, 0);
+      assert.equal(frame.error, undefined);
+      assert.equal(frame.uri, `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`);
+    }
+    assert.equal(mediaFrameUriForPath(context, "missing.svg", 0).error, "Media ausente");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("Icon resolution preserves explicit absence without fabricating a mapping", () => {
   assert.equal(iconUriForToken(payload, "send"), "");
   assert.equal(iconUriForToken({
