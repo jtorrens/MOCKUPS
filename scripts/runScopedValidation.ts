@@ -214,6 +214,13 @@ export function planScopedValidation(
         ["--", "--exact", "Theme token families preserve complete catalogs and metadata"],
       ));
     }
+    if (file === "src/desktop-preview/parameterAnimationResolver.ts"
+      || file === "src/desktop-preview/socialPostModuleResolver.ts") {
+      previewTests.add("tests/animation/parameterAnimationResolver.test.ts");
+      previewTests.add("tests/animation/socialPostModule.test.ts");
+      previewTests.add("tests/animation/conversationModuleResolver.test.ts");
+      previewTests.add("tests/animation/previewAssetResolver.test.ts");
+    }
     if (file === "src/desktop-preview/conversationModuleResolver.ts"
       || file === "docs/architecture/animation.md") {
       previewTests.add("tests/animation/conversationModuleResolver.test.ts");

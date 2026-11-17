@@ -649,3 +649,16 @@ complete Button or Surface Stack, preserving pressed scale, opacity, child
 geometry and the component's measured box. The group applies one transform to
 all descendants together. Brilliance, icon-only targets, staggered child
 animation and per-effect parameters are outside this contract.
+
+## Media playback clock
+
+`resolvePlaybackClock` integrates the resolved Boolean Play/Pause track over the
+owner-local clock from frame zero. Without a track the authored Boolean applies
+throughout. Enabled keyframes use the same backward/forward hold semantics as
+parameter animation; negative keys determine the initial state but do not add
+pre-origin playback time. Pause retains accumulated time and subsequent Play
+resumes it. Current time is the source offset added once to that accumulated
+time. Seeking is stateless and therefore reversible. Social Post and Conversation
+consume this common clock; their existing declared duration bounds remain in
+force. The media asset resolver clamps requests beyond the actual video to its
+last decoded timestamp, so a longer Screen holds the final frame.

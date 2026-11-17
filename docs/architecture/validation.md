@@ -937,3 +937,9 @@ interrupted directory swap restores both resources; unsafe archive paths fail
 before extraction. `runScopedValidation.ts` selects these on either library
 owner, Backup Hub or workstation lifecycle changes. All restore fixtures are
 disposable and never target canonical authoring data.
+
+Media playback regressions in parameterAnimationResolver, socialPostModule and
+conversationModuleResolver cover static Play, owner/target isolation, source
+offsets, pause/resume and reverse seeks. previewAssetResolver covers actual
+video timestamps and final-frame clamping. The scoped validation selector includes
+these consumers when the common playback clock changes.

@@ -1,3 +1,4 @@
+import { resolvePlaybackClock } from "./parameterAnimationResolver.js";
 import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import { resolveConfiguredIconRowComponentFromRecords, resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import {
@@ -426,26 +427,15 @@ export function resolveConversationModuleFrame(
       messageActionsTiming,
       payload.frameRate,
     );
-    const playing = resolve("isPlaying");
-    message.isPlaying = playing.value;
-    if (playing.animated && playing.value === true && playing.sourceKeyframeFrame !== undefined) {
-      const elapsed = Math.max(
-        0,
-        timeline.temporalLocalFrame(
-          "isPlaying",
-          targetId,
-          screenFrame,
-          message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
-        ) - playing.sourceKeyframeFrame,
-      );
-      const duration = Math.max(1, Math.floor(requiredNumber(
-        message,
-        "playDurationFrames",
-        `module.core.chat.messages[${index}].playDurationFrames`,
-      )));
-      message.isPlaying = elapsed < duration;
-      message.playbackFrame = Math.min(elapsed, duration);
-    }
+    const playback = resolvePlaybackClock(animation, "isPlaying", targetId,
+      timeline.temporalLocalFrame("isPlaying", targetId, screenFrame,
+        message.hasExplicitPresenceEnd ? presenceEndFrame : undefined),
+      requiredBoolean(value, "isPlaying", `module.core.chat.messages[${index}].isPlaying`));
+    const duration = Math.max(1, Math.floor(requiredNumber(message,
+      "playDurationFrames", `module.core.chat.messages[${index}].playDurationFrames`)));
+    const elapsedFrames = Math.max(0, optionalNumber(message, "playbackFrame", 0)) + playback.elapsedFrames;
+    message.isPlaying = playback.isPlaying && elapsedFrames < duration;
+    message.playbackFrame = Math.min(elapsedFrames, duration);
     const fullScreen = resolve("fullScreen");
     message.isFullScreen = fullScreen.value;
     const fullScreenChanged = fullScreen.sourceKeyframeFrame !== undefined
@@ -1007,9 +997,8 @@ function messagePlaybackTimeSeconds(
   message: ResolvedConversationMessage,
   frameRate: number,
 ) {
-  const elapsedSeconds = message.playbackFrame > 0
-    ? message.playbackFrame / Math.max(1, frameRate)
-    : message.currentTimeSeconds;
+  const elapsedSeconds = message.currentTimeSeconds
+    + message.playbackFrame / Math.max(1, frameRate);
   if (message.playbackMode === "loop") {
     return elapsedSeconds % message.durationSeconds;
   }

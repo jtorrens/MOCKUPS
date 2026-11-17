@@ -1631,3 +1631,19 @@ function findRootOverlay(root: RenderableNode): RenderableNode | undefined {
   }
   return undefined;
 }
+
+ test("message playback preserves pauses and resumes on its owner clock", () => {
+  const messages = [{id:"m1",direction:"incoming",text:"",isPlaying:true,playDurationFrames:20,currentTimeSeconds:0.2}];
+  const tracks = [track("isPlaying", "m1", [
+    {frame:0,value:true,interpolation:"hold"},
+    {frame:5,value:false,interpolation:"hold"},
+    {frame:10,value:true,interpolation:"hold"},
+  ])];
+  const at = (frame: number) => (resolveConversationModuleFrame(payload(frame, tracks, messages)).messages as Array<Record<string,unknown>>)[0]!;
+  assert.equal(at(8).playbackFrame, 5);
+  assert.equal(at(8).isPlaying, false);
+  assert.equal(at(12).playbackFrame, 7);
+  assert.equal(at(2).playbackFrame, 2);
+  assert.equal(at(100).playbackFrame, 20);
+  assert.equal(at(100).isPlaying, false);
+ });

@@ -1,3 +1,4 @@
+import { resolvePlaybackClock } from "./parameterAnimationResolver.js";
 import { requiredModuleSectionLayout } from "./moduleSectionLayout.js";
 import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
@@ -295,22 +296,15 @@ function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
     (fieldId, targetId) => timeline.temporalLocalFrame(fieldId, targetId, screenFrame),
   );
   const preview = resolution.values;
-  const playing = resolution.field("isPlaying");
-  if (playing.animated
-      && playing.value === true
-      && playing.sourceKeyframeFrame !== undefined) {
-    const elapsedSeconds = Math.max(
-      0,
-      timeline.temporalLocalFrame("isPlaying", "", screenFrame)
-        - playing.sourceKeyframeFrame,
-    ) / Math.max(1, payload.frameRate);
-    const durationSeconds = Math.max(
-      0,
-      requiredNumber(preview, "durationSeconds", "module.core.socialPost.durationSeconds"),
-    );
-    preview.currentTimeSeconds = Math.min(elapsedSeconds, durationSeconds);
-    preview.isPlaying = durationSeconds > 0 && elapsedSeconds < durationSeconds;
-  }
+  const playback = resolvePlaybackClock(animation, "isPlaying", "",
+    timeline.temporalLocalFrame("isPlaying", "", screenFrame),
+    requiredBoolean(authored, "isPlaying", "module.core.socialPost.isPlaying"));
+  const durationSeconds = Math.max(0,
+    requiredNumber(preview, "durationSeconds", "module.core.socialPost.durationSeconds"));
+  const time = Math.max(0, requiredNumber(authored, "currentTimeSeconds",
+    "module.core.socialPost.currentTimeSeconds")) + playback.elapsedFrames / Math.max(1, payload.frameRate);
+  preview.currentTimeSeconds = Math.min(time, durationSeconds);
+  preview.isPlaying = playback.isPlaying && time < durationSeconds;
   const fullScreen = resolution.field("isFullScreen");
   const fullScreenChanged = fullScreen.sourceKeyframeFrame !== undefined
     && typeof fullScreen.previousValue === "boolean"

@@ -662,3 +662,28 @@ test("Reel action and footer labels consume independent Screen Runtime values", 
   source.designPreviewJson = JSON.stringify(runtime);
   assert.throws(() => resolveSocialPostModule(source), /match the prepared structure/);
  });
+
+ test("Social Post video accumulates Play intervals from Current time and holds at the end", () => {
+  for (const variant of ["default", "reel"]) {
+    const source = fixture(variant);
+    const runtime = JSON.parse(source.designPreviewJson);
+    Object.assign(runtime, {isPlaying: true, currentTimeSeconds: 0.2, durationSeconds: 1});
+    source.designPreviewJson = JSON.stringify(runtime);
+    source.runtimeContractJson = JSON.stringify(runtime);
+    source.instanceJson = JSON.stringify({animation:{schemaVersion:2,tracks:[]}});
+    const at = (frame: number) => { source.localFrame = frame; return resolveSocialPostModule(source); };
+    assert.equal(at(0).mediaCurrentTimeSeconds, 0.2);
+    assert.equal(at(10).mediaCurrentTimeSeconds, 0.6000000000000001);
+    assert.equal(at(100).mediaCurrentTimeSeconds, 1);
+    assert.equal(at(100).mediaIsPlaying, false);
+    source.instanceJson = JSON.stringify({animation:{schemaVersion:2,tracks:[{
+      fieldId:"isPlaying",keyframes:[{frame:0,value:true},{frame:5,value:false},{frame:10,value:true}]
+    }]}});
+    assert.equal(at(8).mediaCurrentTimeSeconds, 0.4);
+    assert.equal(at(8).mediaIsPlaying, false);
+    assert.equal(at(10).mediaCurrentTimeSeconds, 0.4);
+    assert.equal(at(15).mediaCurrentTimeSeconds, 0.6000000000000001);
+    assert.equal(at(100).mediaCurrentTimeSeconds, 1);
+    assert.equal(at(2).mediaCurrentTimeSeconds, 0.28);
+  }
+ });

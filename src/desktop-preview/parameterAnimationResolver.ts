@@ -24,22 +24,8 @@ export function resolveParameterAnimation(
   baseValue: unknown,
   valueKind?: "integerPair" | "decimalPair",
 ): ResolvedParameterAnimation {
-  validateTransientAnimationDocument(animation);
-  const track = optionalObjectArray(animation, "tracks", "runtime owner animation")
-    .find((candidate) =>
-      optionalString(candidate, "fieldId") === fieldId
-      && optionalString(candidate, "targetId") === targetId);
-  if (!track) return { value: baseValue, animated: false };
-
-  const keyframes = optionalObjectArray(track, "keyframes", "runtime animation track")
-    .filter((keyframe) => keyframe.enabled !== false)
-    .map((keyframe) => ({
-      frame: requiredNumberValue(keyframe.frame, "runtime animation keyframe frame"),
-      value: keyframe.value,
-      interpolation: Object.hasOwn(keyframe, "interpolation")
-        ? requiredString(keyframe, "interpolation", "runtime animation keyframe interpolation")
-        : "hold",
-    }));
+  const keyframes = parameterKeyframes(animation, fieldId, targetId);
+  if (!keyframes) return { value: baseValue, animated: false };
   if (keyframes.length === 0) {
     return { value: baseValue, animated: true };
   }
@@ -130,6 +116,53 @@ export function resolveParameterAnimation(
     sourceKeyframeFrame: source.frame,
     previousValue: destinationIndex > 1 ? keyframes[destinationIndex - 2]!.value : baseValue,
   };
+}
+
+function parameterKeyframes(animation: JsonRecord, fieldId: string, targetId: string) {
+  validateTransientAnimationDocument(animation);
+  const track = optionalObjectArray(animation, "tracks", "runtime owner animation")
+    .find((candidate) =>
+      optionalString(candidate, "fieldId") === fieldId
+      && optionalString(candidate, "targetId") === targetId);
+  if (!track) return undefined;
+
+  return optionalObjectArray(track, "keyframes", "runtime animation track")
+    .filter((keyframe) => keyframe.enabled !== false)
+    .map((keyframe) => ({
+      frame: requiredNumberValue(keyframe.frame, "runtime animation keyframe frame"),
+      value: keyframe.value,
+      interpolation: Object.hasOwn(keyframe, "interpolation")
+        ? requiredString(keyframe, "interpolation", "runtime animation keyframe interpolation")
+        : "hold",
+    }));
+}
+
+/** Integrates a discrete play state on its owner clock, independently of seek order. */
+export function resolvePlaybackClock(
+  animation: JsonRecord, fieldId: string, targetId: string,
+  localFrame: number, basePlaying: boolean,
+) {
+  const keyframes = parameterKeyframes(animation, fieldId, targetId) ?? [];
+  const boolean = (value: unknown) => {
+    if (typeof value !== "boolean") throw new Error(`${fieldId} playback requires Boolean keyframes`);
+    return value;
+  };
+  // Parameter tracks hold their first enabled value backwards; the owner's
+  // visible clock still begins at zero, including for negative keyframes.
+  let playing = keyframes.length ? boolean(keyframes[0]!.value) : basePlaying;
+  let cursor = 0;
+  let elapsedFrames = 0;
+  const end = Math.max(0, localFrame);
+  for (const keyframe of keyframes) {
+    const value = boolean(keyframe.value);
+    if (keyframe.frame <= 0) { playing = value; continue; }
+    if (keyframe.frame > end) break;
+    if (playing) elapsedFrames += keyframe.frame - cursor;
+    cursor = keyframe.frame;
+    playing = value;
+  }
+  if (playing) elapsedFrames += end - cursor;
+  return { elapsedFrames, isPlaying: playing };
 }
 
 function numericPair(value: string): [number, number] | undefined {

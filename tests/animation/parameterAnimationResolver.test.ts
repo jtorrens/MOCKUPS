@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resolveParameterAnimation } from "../../src/desktop-preview/parameterAnimationResolver.js";
+import { resolveParameterAnimation, resolvePlaybackClock } from "../../src/desktop-preview/parameterAnimationResolver.js";
 
 function animation(
   keyframes: Array<Record<string, unknown>>,
@@ -147,3 +147,23 @@ test("parameter resolution rejects malformed transient animation documents", () 
     assert.throws(() => resolveParameterAnimation(value, "value", "", 0, "base"));
   }
 });
+
+ test("playback clock integrates pause and resume independently of seek order", () => {
+  const document = animation([
+    {frame: 0, value: true}, {frame: 5, value: false},
+    {frame: 10, value: true}, {frame: 20, value: false},
+    {frame: 25, value: true, enabled: false},
+  ], "isPlaying", "item");
+  for (const [frame, elapsed, playing] of [[30,15,false], [0,0,true], [7,5,false], [12,7,true], [5,5,false], [20,15,false]] as const) {
+    assert.deepEqual(resolvePlaybackClock(document, "isPlaying", "item", frame, false),
+      {elapsedFrames: elapsed, isPlaying: playing});
+  }
+  assert.deepEqual(resolvePlaybackClock(document, "isPlaying", "other", 12, true),
+    {elapsedFrames: 12, isPlaying: true});
+ });
+ test("playback clock uses static state and clips negative keys to owner origin", () => {
+  assert.deepEqual(resolvePlaybackClock({}, "play", "", 25, false), {elapsedFrames: 0, isPlaying: false});
+  assert.deepEqual(resolvePlaybackClock({}, "play", "", 25, true), {elapsedFrames: 25, isPlaying: true});
+  const document = animation([{frame:-10,value:true},{frame:5,value:false}], "play");
+  assert.deepEqual(resolvePlaybackClock(document, "play", "", 15, false), {elapsedFrames: 5, isPlaying: false});
+ });
