@@ -381,6 +381,13 @@ explicit Shot interval.
 Screen payload is authored in Preview because that is where its effect can be
 checked, but ownership remains with the Screen instance.
 
+Screen creation prepares both its required-value form and its atomic write
+from the exact selected Module Variant, using the same Variant settings owner
+as existing Screens. Structure projection and field availability use that
+config throughout; the Module base cannot supply a second set of requirements.
+A Content Row icon or empty slot does not require an Actor; an Avatar slot
+retains its explicit Production Actor requirement.
+
 Creating a structured Runtime collection item in a Screen is one prepared
 Production creation workflow. The generic item prototype is inspected
 recursively before mutation. Any required Actor inherited from a Design

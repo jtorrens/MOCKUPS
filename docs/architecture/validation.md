@@ -63,6 +63,16 @@ the existing owner rather than creating a second guard or validation route.
 | Update admission and independent startup | [workstation tooling](../../tests/tooling/workstationProject.test.ts), Desktop registry `repository maintenance does not block read-only application startup` | An application marker rejects update begin before snapshots change; an update marker permits application access and successful read-only session preparation. Reintroducing either startup rejection fails the success assertion. Packaging bootstrap preserves an existing database while maintenance is registered. `runScopedValidation.ts` selects both owners for changes to either side. |
 | Active rules and test selection | [documentation controls](../../tests/tooling/architectureValidationContracts.test.ts), [scope selection](../../tests/tooling/scopedValidation.test.ts) | Current schema and canonical index agree; exact known retired claims are rejected; build graphs and isolated UI consumers cannot be omitted by an earlier directory match. |
 
+Screen creation's exact Variant requirement is covered by Desktop regression
+`Screen creation requires Actors only from the selected Variant`. Disposable
+Social Post and Video Call fixtures oppose the base and selected Variant's
+Avatar/icon/empty slot kinds, assert the actual creation fields, reject missing
+required Actors without inserting a Screen, then reopen the saved Screen and
+check its exact Variant, Runtime projection and Actor value. Reverting either
+creation step to Module base config must break preparation or completion.
+The production Runtime and Variant owners select this regression through
+`runScopedValidation.ts`; execution requires explicit test authorization.
+
 The shared SVG media reader is covered by `previewAssetResolver.test.ts` with
 Project and System Preview roots, exact file bytes and explicit missing-file
 notices. The asset owner is selected by `runScopedValidation.ts`. Removing SVG

@@ -392,6 +392,7 @@ var tests = new (string Name, Action Run)[]
     ("Social Post composes two structure-projected header and footer rows", SocialPostComposesHeaderRows),
     ("Social Post two Reel Screens persist independent labels without changing Variant", SocialPostReelScreenLabelsAreIndependent),
     ("Social Post Screen creation persists projected Runtime rows atomically", SocialPostScreenCreationIsAtomic),
+    ("Screen creation requires Actors only from the selected Variant", ScreenCreationUsesSelectedVariant),
     ("Social Post editor exposes its current generic header contract", SocialPostEditorExposesCurrentHeaderContract),
     ("Production animation activation keeps Payload and navigation mounted", () => ProductionScalarCommitKeepsScreenPayloadMounted(false, true)),
     ("Production scalar commits keep Screen Payload mounted", () => ProductionScalarCommitKeepsScreenPayloadMounted(false)),
@@ -28893,6 +28894,97 @@ static void SocialPostReelScreenLabelsAreIndependent()
     finally { File.Delete(temporary); }
 }
 
+static void ScreenCreationUsesSelectedVariant()
+{
+    foreach (var owner in new[] { "socialPost", "videoCall" })
+    foreach (var kind in new[] { "icon", "none", "avatar" })
+    {
+        var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data",
+            $".mockups-screen-variant-{Guid.NewGuid():N}.sqlite");
+        File.Copy(ParityDatabasePath(), temporary);
+        try
+        {
+            // Opposing structures make either use of the Module base observable:
+            // preparation must neither invent an Actor nor omit a required one.
+            string moduleId;
+            string selectedConfig;
+            using (var connection = new SqliteConnection($"Data Source={temporary}"))
+            {
+                connection.Open();
+                using var read = connection.CreateCommand();
+                read.CommandText = "SELECT id, config_json, metadata_json, design_preview_json FROM modules WHERE record_class_id=$class";
+                read.Parameters.AddWithValue("$class", $"module.core.{owner}");
+                using var reader = read.ExecuteReader();
+                True(reader.Read());
+                moduleId = reader.GetString(0);
+                var config = JsonNode.Parse(reader.GetString(1))!.AsObject();
+                var metadata = JsonNode.Parse(reader.GetString(2))!.AsObject();
+                var preview = JsonNode.Parse(reader.GetString(3))!.AsObject();
+                reader.Close();
+                var selected = config.DeepClone().AsObject();
+                Slot(selected)["kind"] = kind;
+                Slot(config)["kind"] = kind == "avatar" ? "icon" : "avatar";
+                selectedConfig = selected.ToJsonString();
+                var variants = metadata["variants"]!.AsArray();
+                variants.Single(item => item!["protected"]!.GetValue<bool>())!["config"] = config.DeepClone();
+                variants.Add(new JsonObject
+                {
+                    ["id"] = "creation_regression", ["name"] = "Creation regression",
+                    ["protected"] = false, ["locked"] = false, ["config"] = selected,
+                });
+                preview[$"{owner}FooterRows"]![0]!["slotInputs"]![0]!["actorId"] = SystemPreviewFixtureCatalog.PrimaryActorId;
+                using var write = connection.CreateCommand();
+                write.CommandText = "UPDATE modules SET config_json=$config, metadata_json=$metadata, design_preview_json=$preview WHERE id=$id";
+                write.Parameters.AddWithValue("$config", config.ToJsonString());
+                write.Parameters.AddWithValue("$metadata", metadata.ToJsonString());
+                write.Parameters.AddWithValue("$preview", preview.ToJsonString());
+                write.Parameters.AddWithValue("$id", moduleId);
+                Equal(1, write.ExecuteNonQuery());
+            }
+            var database = new SqliteProjectTestContext(temporary);
+            var shot = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
+                .First(node => node.Kind == ProjectTreeNodeKind.Shot);
+            var module = ModuleInstances(database).GetAvailableShotModules(shot.Id)
+                .Single(candidate => candidate.Id == moduleId);
+            var reference = $"{moduleId}::variant::creation_regression";
+            var selection = EditorAddChildWorkflow.ModuleInstanceSelectionValues(
+                new ShotModuleInstanceDraft(module, reference, "Creation regression", "Creation regression"));
+            var children = Children(database);
+            var creation = children.PrepareRecordCreation(shot, "moduleInstance", selection);
+            var actorField = $"screen.runtime/{owner}FooterRows/0/slotInputs/0/actorId";
+            Equal(kind == "avatar", creation.Fields.Any(field => field.Definition.Id == actorField));
+            var draft = CompleteModuleInstanceCreation(selection, creation);
+            if (kind == "avatar")
+            {
+                var incomplete = draft.Values.ToDictionary(pair => pair.Key, pair => pair.Value);
+                incomplete.Remove(actorField);
+                var before = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
+                    .Count(node => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+                Throws<InvalidOperationException>(() => children.CreateRecord(shot,
+                    new RecordCreationDraft(creation.Id, incomplete, selection, "moduleInstance")));
+                Equal(before, database.LoadProjectTree().SelectMany(DescendantsAndSelf)
+                    .Count(node => node.Kind == ProjectTreeNodeKind.ModuleInstance));
+            }
+            var screen = children.CreateRecord(shot, draft);
+            database = new SqliteProjectTestContext(temporary);
+            Equal(reference, database.GetModuleInstanceVariantReference(screen.Id));
+            True(JsonNode.DeepEquals(JsonNode.Parse(selectedConfig),
+                JsonNode.Parse(database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson)));
+            var runtime = JsonNode.Parse(database.GetModuleInstanceRuntimePreviewJson(screen.Id))!;
+            Equal(kind, runtime[$"{owner}FooterRows"]![0]!["slotInputs"]![0]!["kind"]!.GetValue<string>());
+            if (kind == "avatar")
+            {
+                var content = JsonNode.Parse(database.GetModuleInstanceSettings(screen.Id).ContentJson)!;
+                Equal(draft.Values[actorField], content[$"{owner}FooterRows"]![0]!["slotInputs"]![0]!["actorId"]!.GetValue<string>());
+            }
+
+            JsonObject Slot(JsonObject config) =>
+                config[owner]!["footerRows"]![0]!["rowSlot"]!["overrides"]!["contentRow"]!["slots"]![0]!.AsObject();
+        }
+        finally { File.Delete(temporary); }
+    }
+}
+
 static void SocialPostScreenCreationIsAtomic()
 {
     var source = ParityDatabasePath();
@@ -28933,8 +29025,10 @@ static void SocialPostScreenCreationIsAtomic()
             field.Definition.ValueKind is not ValueKind.MediaDirectoryPath
                 and not ValueKind.MediaFilePath
                 and not ValueKind.ImageFilePath));
-        True(creation.Fields.Count((field) =>
-            field.Definition.ValueKind == ValueKind.RecordReference) > 1);
+        True(creation.Fields.Any((field) =>
+            field.Definition.Id == "screen.runtime/socialPostRows/0/slotInputs/0/actorId"));
+        True(!creation.Fields.Any((field) =>
+            field.Definition.Id == "screen.runtime/socialPostFooterRows/0/slotInputs/0/actorId"));
         Throws<InvalidOperationException>(() => children.CreateRecord(
             shot,
             new RecordCreationDraft(

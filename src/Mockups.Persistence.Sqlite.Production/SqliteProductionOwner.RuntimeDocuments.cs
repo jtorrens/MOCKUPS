@@ -263,8 +263,8 @@ internal sealed partial class SqliteProductionOwner
         var content = RuntimeInputDocumentContract.CreateContentForContract(
             new JsonObject(),
             contract);
-        var moduleSettings = _moduleVariantCatalog.GetModuleSettings(
-            draft.Module.Id);
+        var moduleSettings = GetModuleInstanceVariantSettings(
+            connection, draft.Module.Id, metadata.ToJsonString());
         var config = ParseJsonObject(moduleSettings.ConfigJson);
         var runtime = RuntimePreviewDocumentContract.PrepareRuntime(
             ParseJsonObject(moduleSettings.DesignPreviewJson),
@@ -292,8 +292,9 @@ internal sealed partial class SqliteProductionOwner
             RequireModuleInstanceSelection(shot, draft);
             var module = draft.Module;
             var requestedName = draft.Name.Trim();
-            var moduleSettings =
-                _moduleVariantCatalog.GetModuleSettings(module.Id);
+            var metadata = ModuleInstanceMetadata(draft);
+            var moduleSettings = GetModuleInstanceVariantSettings(
+                connection, module.Id, metadata.ToJsonString());
             var initialDuration =
                 RuntimeDurationContract.InitialDurationFrames(
                     moduleSettings.DesignPreviewJson);
@@ -303,7 +304,6 @@ internal sealed partial class SqliteProductionOwner
             var initialThemeId = _moduleInstanceThemeContextService.GetInitialThemeId(
                 connection,
                 shot.Id);
-            var metadata = ModuleInstanceMetadata(draft);
             var contract = ResolveModuleInstanceContract(
                 connection,
                 module.Id,

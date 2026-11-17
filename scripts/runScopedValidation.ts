@@ -421,6 +421,20 @@ export function planScopedValidation(
         ["--", "--exact", "Social Post two Reel Screens persist independent labels without changing Variant"],
       ));
     }
+    if ([
+      "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.RuntimeDocuments.cs",
+      "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.ModuleVariants.cs",
+      "src/Mockups.Application/ProductionRuntimeCreationContract.cs",
+      "src/Mockups.Application/CollectionFieldAvailability.cs",
+      "src/Mockups.Application/StructuredRuntimeCollectionProjection.cs",
+    ].includes(file)) {
+      add(npmStep(
+        "desktop:screen-creation-variant",
+        "test:focus:desktop",
+        "Screen creation requirements and persisted Runtime must use the exact selected Variant",
+        ["--", "--exact", "Screen creation requires Actors only from the selected Variant"],
+      ));
+    }
     if (file === "data/mockups.sqlite") {
       database = true;
       desktopCore = true;

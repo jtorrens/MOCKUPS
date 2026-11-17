@@ -160,17 +160,23 @@ internal sealed partial class SqliteProductionOwner
     private ModuleSettings GetModuleInstanceVariantSettings(SqliteConnection connection, string moduleInstanceId)
     {
         var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
-        var reference = JsonPath.RequiredString(ParseJsonObject(instance.MetadataJson), "moduleVariantReference", "Screen metadata");
+        return GetModuleInstanceVariantSettings(connection, instance.ModuleId, instance.MetadataJson);
+    }
+
+    private ModuleSettings GetModuleInstanceVariantSettings(
+        SqliteConnection connection, string expectedModuleId, string metadataJson)
+    {
+        var reference = JsonPath.RequiredString(ParseJsonObject(metadataJson), "moduleVariantReference", "Screen metadata");
         if (!VariantReferenceId.TryParse(
                 reference,
                 out var moduleId,
                 out var variantId)
             || !moduleId.Equals(
-                instance.ModuleId,
+                expectedModuleId,
                 StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                $"Module instance '{moduleInstanceId}' has an invalid module variant reference.");
+                $"Invalid module variant reference '{reference}' for Module '{expectedModuleId}'.");
         }
 
         var settings = _moduleVariantCatalog.GetModuleSettings(connection, moduleId);
@@ -235,29 +241,10 @@ internal sealed partial class SqliteProductionOwner
         string moduleId,
         string instanceMetadataJson)
     {
-        var instanceMetadata = ParseJsonObject(instanceMetadataJson);
-        var reference =
-            instanceMetadata["moduleVariantReference"]?.GetValue<string>()
-            ?? throw new InvalidOperationException(
-                "Module instance has no explicit module variant reference.");
-        if (!VariantReferenceId.TryParse(
-                reference,
-                out var referencedModuleId,
-                out var variantId)
-            || referencedModuleId != moduleId)
-        {
-            throw new InvalidOperationException(
-                $"Invalid module variant reference '{reference}'.");
-        }
-
-        var module = _moduleVariantCatalog.GetModuleSettings(connection, moduleId);
-        var variant = _moduleVariantCatalog.GetModuleVariants(connection, moduleId)
-            .FirstOrDefault((candidate) => candidate.Id == variantId)
-            ?? throw new InvalidOperationException(
-                $"Missing module variant '{reference}'.");
+        var module = GetModuleInstanceVariantSettings(connection, moduleId, instanceMetadataJson);
         return RuntimePreviewDocumentContract.PrepareFixture(
             ParseJsonObject(module.DesignPreviewJson),
-            ParseJsonObject(variant.ConfigJson),
+            ParseJsonObject(module.ConfigJson),
             reference => _componentVariantConfigCatalog.GetComponentVariantConfig(connection, reference),
             reference => _componentVariantConfigCatalog.GetComponentVariantRuntimeContract(connection, reference));
     }
