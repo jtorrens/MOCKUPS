@@ -10,7 +10,7 @@ export function rowsSectionNode<TContent>(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
   options: {
-    ownerId: string; section: string; rows: [ModuleRow<TContent>, ModuleRow<TContent>]; rowGapToken: string;
+    ownerId: string; section: string; rows: ModuleRow<TContent>[]; rowGapToken: string;
     height: number; renderSurface: (box: RenderableBox) => RenderableNode; edge: "top" | "bottom";
     contentEdge: number; horizontalInset?: number; edgeOffset?: number; bleedToScreenEdge?: boolean;
     contentAlignment?: "bottom" | "center";
@@ -55,15 +55,14 @@ export function alignedRowsOverlayNode<TContent>(
   options: {
     ownerId: string;
     section: string;
-    rows: [ModuleRow<TContent>, ModuleRow<TContent>, ModuleRow<TContent>];
+    rows: ModuleRow<TContent>[];
     box: RenderableBox;
     rowHasContent: (content: TContent) => boolean;
     renderRow: (payload: DesignPreviewPayload, content: TContent, box: RenderableBox) => RenderableNode;
   },
 ): RenderableNode {
-  const placements = ["top", "center", "bottom"] as const;
-  const rendered = options.rows.flatMap((row, index) => row.visible && options.rowHasContent(row.content)
-    ? [{ row: renderRow(payload, componentBaseConfigs, options.ownerId, options.section, row, 0, options.box.x, options.box.width, options.renderRow), placement: placements[index] }]
+  const rendered = options.rows.flatMap((row) => row.visible && options.rowHasContent(row.content)
+    ? [{ row: renderRow(payload, componentBaseConfigs, options.ownerId, options.section, row, 0, options.box.x, options.box.width, options.renderRow), placement: row.placement }]
     : []);
   return {
     id: `${options.ownerId}.${options.section}`, type: "group", frame: 0, box: options.box, style: { overflow: "visible" },

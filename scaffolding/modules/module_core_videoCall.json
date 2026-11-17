@@ -159,7 +159,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "center"
         },
         {
           "id": "item_d2a1bd7aeb5f49c49501136b62bc4389",
@@ -261,7 +262,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "center"
         }
       ],
       "showFooter": true,
@@ -380,7 +382,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "center"
         },
         {
           "id": "item_1729c03bec80498bb124f253df1c1709",
@@ -482,7 +485,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "center"
         }
       ],
       "showMainVideo": true,
@@ -744,7 +748,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "top"
         },
         {
           "id": "item_29f0dbd15fd34b1a85890be5c6777312",
@@ -850,7 +855,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "center"
         },
         {
           "id": "item_9da03395fe2749f3bad029e13f8bb975",
@@ -960,7 +966,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "bottom"
         }
       ],
       "headerLayout": {
@@ -1155,7 +1162,6 @@
           "iconValueMap": {}
         },
         "canEditStructure": false,
-        "fixedItemCount": 2,
         "uiPresentation": "collection",
         "itemRuntimePresentation": "card",
         "structureProjection": {
@@ -1330,7 +1336,6 @@
           "iconValueMap": {}
         },
         "canEditStructure": false,
-        "fixedItemCount": 2,
         "uiPresentation": "collection",
         "itemRuntimePresentation": "card",
         "structureProjection": {
@@ -1505,7 +1510,6 @@
           "iconValueMap": {}
         },
         "canEditStructure": false,
-        "fixedItemCount": 3,
         "uiPresentation": "collection",
         "itemRuntimePresentation": "card",
         "structureProjection": {
@@ -3300,7 +3304,7 @@
         "videoCall",
         "headerRows"
       ],
-      "defaultValue": "[{\"id\":\"item_690ab7d988ef466c8d6b20406ef2e024\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"item_d2a1bd7aeb5f49c49501136b62bc4389\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
+      "defaultValue": "[{\"id\":\"item_690ab7d988ef466c8d6b20406ef2e024\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"center\"},{\"id\":\"item_d2a1bd7aeb5f49c49501136b62bc4389\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"center\"}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -3323,7 +3327,7 @@
             "jsonKey": "label",
             "kind": "Text",
             "valueKind": "StringReadOnly",
-            "defaultValue": "",
+            "defaultValue": "Row",
             "showInEditor": false
           },
           {
@@ -3342,19 +3346,31 @@
             "valueKind": "ComponentVariantSlot",
             "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{}}",
             "componentType": "contentRow"
+          },
+          {
+            "id": "placement",
+            "label": "Overlay placement",
+            "jsonKey": "placement",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "center",
+            "options": [
+              {
+                "value": "top",
+                "label": "Top"
+              },
+              {
+                "value": "center",
+                "label": "Center"
+              },
+              {
+                "value": "bottom",
+                "label": "Bottom"
+              }
+            ]
           }
         ],
-        "itemPresentation": {
-          "titleFieldId": "label",
-          "firstItemBadge": "",
-          "subtitleFieldIds": [],
-          "subtitleMaxCharacters": 72,
-          "iconFieldId": "",
-          "fallbackIcon": "layout",
-          "iconValueMap": {}
-        },
-        "canEditStructure": false,
-        "fixedItemCount": 2,
+        "canEditStructure": true,
         "uiPresentation": "collection",
         "itemRuntimePresentation": "card"
       },
@@ -3550,7 +3566,7 @@
         "videoCall",
         "footerRows"
       ],
-      "defaultValue": "[{\"id\":\"item_9df0890d96604176aca0bb0a6e7889e2\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"item_1729c03bec80498bb124f253df1c1709\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
+      "defaultValue": "[{\"id\":\"item_9df0890d96604176aca0bb0a6e7889e2\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"center\"},{\"id\":\"item_1729c03bec80498bb124f253df1c1709\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"center\"}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -3573,7 +3589,7 @@
             "jsonKey": "label",
             "kind": "Text",
             "valueKind": "StringReadOnly",
-            "defaultValue": "",
+            "defaultValue": "Row",
             "showInEditor": false
           },
           {
@@ -3592,19 +3608,31 @@
             "valueKind": "ComponentVariantSlot",
             "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{}}",
             "componentType": "contentRow"
+          },
+          {
+            "id": "placement",
+            "label": "Overlay placement",
+            "jsonKey": "placement",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "center",
+            "options": [
+              {
+                "value": "top",
+                "label": "Top"
+              },
+              {
+                "value": "center",
+                "label": "Center"
+              },
+              {
+                "value": "bottom",
+                "label": "Bottom"
+              }
+            ]
           }
         ],
-        "itemPresentation": {
-          "titleFieldId": "label",
-          "firstItemBadge": "",
-          "subtitleFieldIds": [],
-          "subtitleMaxCharacters": 72,
-          "iconFieldId": "",
-          "fallbackIcon": "layout",
-          "iconValueMap": {}
-        },
-        "canEditStructure": false,
-        "fixedItemCount": 2,
+        "canEditStructure": true,
         "uiPresentation": "collection",
         "itemRuntimePresentation": "card"
       },
@@ -4034,7 +4062,7 @@
         "videoCall",
         "mainRows"
       ],
-      "defaultValue": "[{\"id\":\"item_8313f23337934e96888a6dc2757f8514\",\"label\":\"Top\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"icon\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{\"button\":{\"iconToken\":\"status_wifi\"}}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"item_29f0dbd15fd34b1a85890be5c6777312\",\"label\":\"Center\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"item_9da03395fe2749f3bad029e13f8bb975\",\"label\":\"Bottom\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"icon\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{\"button\":{\"iconToken\":\"media_mic\"}}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
+      "defaultValue": "[{\"id\":\"item_8313f23337934e96888a6dc2757f8514\",\"label\":\"Top\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"icon\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{\"button\":{\"iconToken\":\"status_wifi\"}}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"top\"},{\"id\":\"item_29f0dbd15fd34b1a85890be5c6777312\",\"label\":\"Center\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"center\"},{\"id\":\"item_9da03395fe2749f3bad029e13f8bb975\",\"label\":\"Bottom\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"icon\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{\"button\":{\"iconToken\":\"media_mic\"}}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"bottom\"}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -4057,7 +4085,7 @@
             "jsonKey": "label",
             "kind": "Text",
             "valueKind": "StringReadOnly",
-            "defaultValue": "",
+            "defaultValue": "Row",
             "showInEditor": false
           },
           {
@@ -4076,19 +4104,31 @@
             "valueKind": "ComponentVariantSlot",
             "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{}}",
             "componentType": "contentRow"
+          },
+          {
+            "id": "placement",
+            "label": "Overlay placement",
+            "jsonKey": "placement",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "center",
+            "options": [
+              {
+                "value": "top",
+                "label": "Top"
+              },
+              {
+                "value": "center",
+                "label": "Center"
+              },
+              {
+                "value": "bottom",
+                "label": "Bottom"
+              }
+            ]
           }
         ],
-        "itemPresentation": {
-          "titleFieldId": "label",
-          "firstItemBadge": "",
-          "subtitleFieldIds": [],
-          "subtitleMaxCharacters": 72,
-          "iconFieldId": "",
-          "fallbackIcon": "layout",
-          "iconValueMap": {}
-        },
-        "canEditStructure": false,
-        "fixedItemCount": 3,
+        "canEditStructure": true,
         "uiPresentation": "collection",
         "itemRuntimePresentation": "card"
       },

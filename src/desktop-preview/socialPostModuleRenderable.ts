@@ -434,19 +434,14 @@ function mediaSectionNode(
     width: Math.max(1, screen.width - horizontalPadding * 2),
     height: mediaHeight,
   };
-  const pages = mediaPagerPages(contract.mediaSources, contract.gallerySelectedIndex);
-  const activeIndex = contract.mediaSources.length > 0
-    ? Math.min(
-        Math.round(contract.gallerySelectedIndex),
-        contract.mediaSources.length - 1,
-      )
-    : 0;
+  const pages = [{ index: 0, sourceUri: contract.mediaSource }];
+  const activeIndex = 0;
   const mediaPages = pages.map(({ index, sourceUri }) => {
     const isActive = index === activeIndex;
     const isVideo = projectMediaType(sourceUri) === "video";
     const pageBox = {
       ...mediaBox,
-      x: mediaBox.x + (index - contract.gallerySelectedIndex) * mediaBox.width,
+      x: mediaBox.x + index * mediaBox.width,
     };
     const media = componentNode(
       payload,
@@ -546,18 +541,6 @@ function mediaSectionNode(
     style: { overflow: "visible" },
     children,
   };
-}
-
-function mediaPagerPages(sources: string[], selectedIndex: number) {
-  if (sources.length === 0) return [{ index: 0, sourceUri: "" }];
-  const lowerIndex = Math.floor(selectedIndex);
-  const upperIndex = Math.ceil(selectedIndex);
-  return upperIndex === lowerIndex
-    ? [{ index: lowerIndex, sourceUri: sources[lowerIndex]! }]
-    : [
-        { index: lowerIndex, sourceUri: sources[lowerIndex]! },
-        { index: upperIndex, sourceUri: sources[upperIndex]! },
-      ];
 }
 
 function componentNode(

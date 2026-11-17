@@ -492,3 +492,22 @@ test("Video Call shares floating placement and leaves its body unreserved", () =
   config.videoCall.headerLayout.mode = "invalid";
   assert.throws(() => resolveVideoCallModule({ ...source, configJson: JSON.stringify(config) }), /must be stack or float/);
 });
+
+ test("VideoCall resolves arbitrary row membership and rejects unprepared rows", () => {
+  const source = fixture();
+  const config = JSON.parse(source.configJson);
+  const runtime = JSON.parse(source.designPreviewJson);
+  const original = config.videoCall.headerRows[0];
+  const originalRuntime = runtime.videoCallHeaderRows[0];
+  for (const count of [0, 1, 4]) {
+    config.videoCall.headerRows = Array.from({length: count}, (_, i) => ({...structuredClone(original), id: `item_${i.toString(16).padStart(32, "0")}`}));
+    runtime.videoCallHeaderRows = config.videoCall.headerRows.map((row: {id: string}) => ({...structuredClone(originalRuntime), id: row.id}));
+    source.configJson = JSON.stringify(config);
+    source.designPreviewJson = JSON.stringify(runtime);
+    assert.equal(resolveVideoCallModule(source).headerRows.length, count);
+    assert.ok(videoCallModuleToRenderable(source));
+  }
+  runtime.videoCallHeaderRows.pop();
+  source.designPreviewJson = JSON.stringify(runtime);
+  assert.throws(() => resolveVideoCallModule(source), /match the prepared structure/);
+ });

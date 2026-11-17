@@ -20,7 +20,7 @@ import {
   requiredString,
 } from "./componentResolverCommon.js";
 import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
-import { requiredRows, requiredRuntimeRows, resolveRow } from "./moduleRowSectionResolver.js";
+import { requiredRows, requiredRuntimeRows, resolveRows } from "./moduleRowSectionResolver.js";
 import { resolveContentRowComponent } from "./contentRowComponentResolver.js";
 import { resolveRuntimeDocumentAnimationValues } from "./runtimeNestedAnimationFields.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
@@ -148,10 +148,7 @@ export function resolveSocialPostModule(
       "rowGapToken",
       "module.core.socialPost.rowGapToken",
     ),
-    rows: [
-      resolveRow(payload, "module.core.socialPost", "header", 1, rows[0], runtimeRows[0], componentBaseConfigs, "contentRow", resolveContentRowComponent),
-      resolveRow(payload, "module.core.socialPost", "header", 2, rows[1], runtimeRows[1], componentBaseConfigs, "contentRow", resolveContentRowComponent),
-    ],
+    rows: resolveRows(payload, "module.core.socialPost", "header", rows, runtimeRows, componentBaseConfigs, "contentRow", resolveContentRowComponent),
     showMedia: requiredBoolean(
       socialPost,
       "showMedia",
@@ -173,7 +170,7 @@ export function resolveSocialPostModule(
       "mediaInputs",
       "module.core.socialPost.mediaInputs",
     )),
-    mediaSources: gallerySources,
+    mediaSource: requiredPossiblyEmptyString(preview, "mediaSource", "module.core.socialPost.mediaSource"),
     mediaHeightMode: requiredMediaHeightMode(socialPost),
     mediaHeight: Math.max(1, requiredNumber(
       socialPost,
@@ -264,10 +261,7 @@ export function resolveSocialPostModule(
       "footerRowGapToken",
       "module.core.socialPost.footerRowGapToken",
     ),
-    footerRows: [
-      resolveRow(payload, "module.core.socialPost", "footer", 1, footerRows[0], footerRuntimeRows[0], componentBaseConfigs, "contentRow", resolveContentRowComponent),
-      resolveRow(payload, "module.core.socialPost", "footer", 2, footerRows[1], footerRuntimeRows[1], componentBaseConfigs, "contentRow", resolveContentRowComponent),
-    ],
+    footerRows: resolveRows(payload, "module.core.socialPost", "footer", footerRows, footerRuntimeRows, componentBaseConfigs, "contentRow", resolveContentRowComponent),
   };
 }
 

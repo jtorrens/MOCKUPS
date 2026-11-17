@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `34` is the only current schema. Authored Production rows belong
+Schema version `35` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -1037,3 +1037,11 @@ edits survive preparation and structure reconciliation. Existing Content Row
 Runtime label descriptors enable icon slots; existing text is preserved.
 Reel's footer Buttons receive local iconText/bottom Overrides. Startup remains
 read-only and never adds these fields or rewrites values.
+
+### Generic Module Runtime maintenance (schema 35)
+
+Explicit canonical maintenance adds Social Post Media source independently of Gallery,
+labels its projected Icon Row as Reaction Col, and removes fixed row counts from
+Social Post and Video Call declarations. Variant rows use the shared collection
+mutation owner. Existing ids, values and references remain intact; the prior selected
+media file is captured once as the Screen source. Startup performs no conversion.

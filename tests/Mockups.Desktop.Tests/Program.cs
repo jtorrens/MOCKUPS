@@ -29609,7 +29609,7 @@ static void CollectionItemPresentationSummarizesConfiguredFields()
         "Payload item 1",
         EditorIcons.Component);
 
-    Equal("Welcome · Initial", presentation.Title);
+    Equal("Message 1", presentation.Title);
     Equal("Incoming · A message wi…", presentation.Subtitle);
     Equal(EditorIcons.Image, presentation.Icon);
 }

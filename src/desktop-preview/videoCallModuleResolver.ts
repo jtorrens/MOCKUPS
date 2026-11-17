@@ -6,7 +6,7 @@ import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 import { resolveMediaComponentFromRecords } from "./mediaComponentResolver.js";
-import { requiredRows, requiredRuntimeRows, resolveRow } from "./moduleRowSectionResolver.js";
+import { requiredRows, requiredRuntimeRows, resolveRows } from "./moduleRowSectionResolver.js";
 import { resolveContentRowComponent } from "./contentRowComponentResolver.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import type { VideoCallComponentSlot, VideoCallModuleContract, VideoCallParticipantRole } from "./videoCallModuleContract.js";
@@ -147,8 +147,8 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
   const headerRuntimeRows = requiredRuntimeRows(preview, "videoCallHeaderRows", "module.core.videoCall");
   const footerRows = requiredRows(owner, "footerRows", "module.core.videoCall");
   const footerRuntimeRows = requiredRuntimeRows(preview, "videoCallFooterRows", "module.core.videoCall");
-  const mainRows = requiredRows(owner, "mainRows", "module.core.videoCall", 3);
-  const mainRuntimeRows = requiredRuntimeRows(preview, "videoCallMainRows", "module.core.videoCall", 3);
+  const mainRows = requiredRows(owner, "mainRows", "module.core.videoCall");
+  const mainRuntimeRows = requiredRuntimeRows(preview, "videoCallMainRows", "module.core.videoCall");
   const pipSize = requiredNumberPair(owner, "pipSize", "module.core.videoCall.pipSize");
   return {
     id: "module.core.videoCall",
@@ -159,26 +159,16 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     headerHeight: nonNegative(requiredNumber(owner, "headerHeight", "module.core.videoCall.headerHeight"), "headerHeight"),
     headerSurfaceSlot: typedSlot(owner, bases, "headerSurfaceSlot", "surface"),
     headerRowGapToken: requiredString(owner, "headerRowGapToken", "module.core.videoCall.headerRowGapToken"),
-    headerRows: [
-      resolveRow(payload, "module.core.videoCall", "header", 1, headerRows[0], headerRuntimeRows[0], bases, "contentRow", resolveContentRowComponent),
-      resolveRow(payload, "module.core.videoCall", "header", 2, headerRows[1], headerRuntimeRows[1], bases, "contentRow", resolveContentRowComponent),
-    ],
+    headerRows: resolveRows(payload, "module.core.videoCall", "header", headerRows, headerRuntimeRows, bases, "contentRow", resolveContentRowComponent),
     showFooter: requiredBoolean(owner, "showFooter", "module.core.videoCall.showFooter"),
     footerLayout: requiredModuleSectionLayout(owner, "footerLayout", "module.core.videoCall"),
     footerHeight: nonNegative(requiredNumber(owner, "footerHeight", "module.core.videoCall.footerHeight"), "footerHeight"),
     footerSurfaceSlot: typedSlot(owner, bases, "footerSurfaceSlot", "surface"),
     footerRowGapToken: requiredString(owner, "footerRowGapToken", "module.core.videoCall.footerRowGapToken"),
-    footerRows: [
-      resolveRow(payload, "module.core.videoCall", "footer", 1, footerRows[0], footerRuntimeRows[0], bases, "contentRow", resolveContentRowComponent),
-      resolveRow(payload, "module.core.videoCall", "footer", 2, footerRows[1], footerRuntimeRows[1], bases, "contentRow", resolveContentRowComponent),
-    ],
+    footerRows: resolveRows(payload, "module.core.videoCall", "footer", footerRows, footerRuntimeRows, bases, "contentRow", resolveContentRowComponent),
     showMainVideo: requiredBoolean(owner, "showMainVideo", "module.core.videoCall.showMainVideo"),
     participantOuterPadding: pair(owner, "participantOuterPadding"),
-    mainRows: [
-      resolveRow(payload, "module.core.videoCall", "main", 1, mainRows[0]!, mainRuntimeRows[0]!, bases, "contentRow", resolveContentRowComponent),
-      resolveRow(payload, "module.core.videoCall", "main", 2, mainRows[1]!, mainRuntimeRows[1]!, bases, "contentRow", resolveContentRowComponent),
-      resolveRow(payload, "module.core.videoCall", "main", 3, mainRows[2]!, mainRuntimeRows[2]!, bases, "contentRow", resolveContentRowComponent),
-    ],
+    mainRows: resolveRows(payload, "module.core.videoCall", "main", mainRows, mainRuntimeRows, bases, "contentRow", resolveContentRowComponent),
     showPip: requiredBoolean(owner, "showPip", "module.core.videoCall.showPip"),
     pipSize: { width: positive(pipSize.first, "pipSize.width"), height: positive(pipSize.second, "pipSize.height") },
     pipPlacement: requiredPlacement(owner, "pipPlacement", "module.core.videoCall.pipPlacement"),

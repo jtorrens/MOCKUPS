@@ -3,12 +3,23 @@ import { requiredBoolean, requiredRecord, requiredString } from "./componentReso
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { ModuleRow } from "./moduleRowSectionContract.js";
 
-export function requiredRuntimeRows(preview: Record<string, unknown>, key: string, ownerId: string, rowCount = 2): Record<string, unknown>[] {
-  return requiredIdentifiedRows(preview[key], key, ownerId, rowCount);
+export function requiredRuntimeRows(preview: Record<string, unknown>, key: string, ownerId: string): Record<string, unknown>[] {
+  return requiredIdentifiedRows(preview[key], key, ownerId);
 }
 
-export function requiredRows(owner: Record<string, unknown>, key: string, ownerId: string, rowCount = 2): Record<string, unknown>[] {
-  return requiredIdentifiedRows(owner[key], key, ownerId, rowCount);
+export function requiredRows(owner: Record<string, unknown>, key: string, ownerId: string): Record<string, unknown>[] {
+  return requiredIdentifiedRows(owner[key], key, ownerId);
+}
+
+export function resolveRows<TContent>(
+  payload: DesignPreviewPayload, ownerId: string, section: string,
+  rows: Record<string, unknown>[], runtimeRows: Record<string, unknown>[],
+  bases: Record<string, unknown>, componentType: string,
+  resolve: (payload: DesignPreviewPayload) => TContent,
+): ModuleRow<TContent>[] {
+  if (rows.length !== runtimeRows.length) throw new Error(`${ownerId}.${section} Runtime rows must match the prepared structure`);
+  return rows.map((row, index) => resolveRow(payload, ownerId, section, index + 1,
+    row, runtimeRows[index]!, bases, componentType, resolve));
 }
 
 export function resolveRow<TContent>(
@@ -28,8 +39,12 @@ export function resolveRow<TContent>(
     throw new Error(`${ownerId}.${section} runtime must retain the exact ordered row identities`);
   }
   const config = embeddedComponentConfig(componentBaseConfigs, rowSlot, componentType, `${ownerId}.${section}.${id}.rowSlot`);
+  const placement = requiredString(rowConfig, "placement", `${ownerId}.${section}.${id}.placement`);
+  if (placement !== "top" && placement !== "center" && placement !== "bottom")
+    throw new Error(`${ownerId}.${section}.${id}.placement is invalid`);
   return {
     id,
+    placement,
     visible: requiredBoolean(rowConfig, "visible", `${ownerId}.${section}.${id}.visible`),
     content: resolve({
       ...payload,
@@ -40,8 +55,8 @@ export function resolveRow<TContent>(
   };
 }
 
-function requiredIdentifiedRows(value: unknown, key: string, ownerId: string, rowCount: number) {
-  if (!Array.isArray(value) || value.length !== rowCount) throw new Error(`${ownerId} collection '${key}' must contain exactly ${rowCount} rows`);
+function requiredIdentifiedRows(value: unknown, key: string, ownerId: string) {
+  if (!Array.isArray(value)) throw new Error(`${ownerId} collection '${key}' must be an array`);
   const ids = new Set<string>();
   return value.map((item, index) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error(`${ownerId}.${key}[${index}] must be an object`);

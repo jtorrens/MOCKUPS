@@ -80,7 +80,7 @@ function fixture(variantId = "default") {
   }
 }
 
-test("Social Post owns two fixed structure-projected Runtime row sections", () => {
+test("Social Post owns structure-projected Runtime row sections", () => {
   const source = fixture();
   const contract = resolveSocialPostModule(source);
   const runtime = JSON.parse(source.runtimeContractJson) as {
@@ -114,6 +114,7 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
     "messageWriteOnFrame",
     "mediaCutout",
     "galleryMediaCutout",
+    "mediaSource",
   ]);
   assert.deepEqual(runtime.collections.map(({ id }) => id), [
     "socialPostRows",
@@ -171,57 +172,27 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   }
 });
 
-test("Social Post pages its main Media from the Gallery directory and selected index", () => {
+test("Social Post Media source is independent of Gallery and preserves explicit absence", () => {
   const source = fixture();
-  source.projectMediaFiles = ["media/a.jpg", "media/b.jpg", "media/c.jpg"];
-  const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
-  const config = JSON.parse(source.configJson) as {
-    socialPost: {
-      mediaSlot: { overrides: Record<string, unknown> };
-    };
-  };
-  config.socialPost.mediaSlot.overrides = {
-    media: {
-      surfaceSlot: {
-        overrides: { style: { shadowEnabled: true } },
-      },
-    },
-  };
-  source.configJson = JSON.stringify(config);
+  source.projectMediaFiles = ["media/a.jpg", "media/b.jpg"];
+  const runtime = JSON.parse(source.designPreviewJson);
+  runtime.mediaSource = "media/independent.jpg";
   runtime.galleryDirectory = "media";
-  runtime.gallerySelectedIndex = 1.25;
+  runtime.gallerySelectedIndex = 1;
   source.designPreviewJson = JSON.stringify(runtime);
-  source.runtimeContractJson = JSON.stringify(runtime);
-
-  const contract = resolveSocialPostModule(source);
-  assert.deepEqual(contract.mediaSources, ["media/a.jpg", "media/b.jpg", "media/c.jpg"]);
-  assert.equal(contract.gallerySelectedIndex, 1.25);
-
-  const renderable = socialPostModuleToRenderable(source);
-  const viewport = requiredNode(renderable, "module.core.socialPost.media.viewport");
-  const outgoing = requiredNode(renderable, "module.core.socialPost.media.page.1");
-  const incoming = requiredNode(renderable, "module.core.socialPost.media.page.2");
-  const pageShadow = findNodeBy(outgoing, (node) => node.style?.shadow !== undefined);
-  assert.ok(pageShadow, "Expected the Media page override to enable its Surface shadow.");
-  assert.equal(viewport.style?.overflow, "hidden");
-  assert.ok(viewport.box);
-  assert.ok(outgoing.box);
-  assert.ok(incoming.box);
-  assert.equal(incoming.box.x - outgoing.box.x, outgoing.box.width);
-  const mediaOrigin = outgoing.box.x + outgoing.box.width * 0.25;
-  assert.ok(
-    viewport.box.x < mediaOrigin,
-    JSON.stringify({ viewport: viewport.box, outgoing: outgoing.box, mediaOrigin }),
-  );
-  assert.ok(viewport.box.x + viewport.box.width > mediaOrigin + outgoing.box.width);
-  assert.ok(
-    viewport.box.y < outgoing.box.y,
-    JSON.stringify({ viewport: viewport.box, outgoing: outgoing.box, pageShadow: pageShadow.box }),
-  );
-  assert.ok(
-    viewport.box.y + viewport.box.height > outgoing.box.y + outgoing.box.height,
-    JSON.stringify({ viewport: viewport.box, outgoing: outgoing.box }),
-  );
+  const first = resolveSocialPostModule(source);
+  assert.equal(first.mediaSource, "media/independent.jpg");
+  const before = requiredNode(socialPostModuleToRenderable(source), "module.core.socialPost.media.page.0");
+  runtime.gallerySelectedIndex = 0;
+  runtime.galleryDirectory = "another";
+  source.designPreviewJson = JSON.stringify(runtime);
+  assert.deepEqual(requiredNode(socialPostModuleToRenderable(source), "module.core.socialPost.media.page.0"), before);
+  runtime.mediaSource = "";
+  source.designPreviewJson = JSON.stringify(runtime);
+  assert.equal(resolveSocialPostModule(source).mediaSource, "");
+  delete runtime.mediaSource;
+  source.designPreviewJson = JSON.stringify(runtime);
+  assert.throws(() => resolveSocialPostModule(source), /mediaSource/);
 });
 
 test("Social Post resolves animated Media scale and offset", () => {
@@ -262,6 +233,7 @@ test("Social Post resolves selected video playback and full-screen animation", (
   const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
   runtime.galleryDirectory = "media";
   runtime.gallerySelectedIndex = 1;
+  runtime.mediaSource = "media/b.mov";
   runtime.durationSeconds = 2;
   source.designPreviewJson = JSON.stringify(runtime);
   source.runtimeContractJson = JSON.stringify(runtime);
@@ -298,7 +270,7 @@ test("Social Post resolves selected video playback and full-screen animation", (
   assert.equal(contract.mediaMotionElapsedMs, 120);
 
   const renderable = socialPostModuleToRenderable(source);
-  const activeMedia = requiredNode(renderable, "module.core.socialPost.media.page.1");
+  const activeMedia = requiredNode(renderable, "module.core.socialPost.media.page.0");
   assert.ok(findNodeBy(activeMedia, (node) => node.style?.rootOverlay === true));
 });
 
@@ -671,3 +643,22 @@ test("Reel action and footer labels consume independent Screen Runtime values", 
   runtime.socialPostActions[0].id = "item_00000000000000000000000000000000";
   assert.throws(() => resolveSocialPostModule({ ...source, designPreviewJson: JSON.stringify(runtime), runtimeContractJson: JSON.stringify(runtime) }), /missing|unknown|match/i);
 });
+
+ test("SocialPost resolves arbitrary row membership and rejects unprepared rows", () => {
+  const source = fixture();
+  const config = JSON.parse(source.configJson);
+  const runtime = JSON.parse(source.designPreviewJson);
+  const original = config.socialPost.rows[0];
+  const originalRuntime = runtime.socialPostRows[0];
+  for (const count of [0, 1, 4]) {
+    config.socialPost.rows = Array.from({length: count}, (_, i) => ({...structuredClone(original), id: `item_${i.toString(16).padStart(32, "0")}`}));
+    runtime.socialPostRows = config.socialPost.rows.map((row: {id: string}) => ({...structuredClone(originalRuntime), id: row.id}));
+    source.configJson = JSON.stringify(config);
+    source.designPreviewJson = JSON.stringify(runtime);
+    assert.equal(resolveSocialPostModule(source).rows.length, count);
+    assert.ok(socialPostModuleToRenderable(source));
+  }
+  runtime.socialPostRows.pop();
+  source.designPreviewJson = JSON.stringify(runtime);
+  assert.throws(() => resolveSocialPostModule(source), /match the prepared structure/);
+ });

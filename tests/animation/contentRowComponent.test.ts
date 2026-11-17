@@ -53,3 +53,43 @@ test("Content Row preserves Button content mode and renders Screen-owned labels"
     assert.equal(button.appearance.label?.text, contentMode === "icon" ? undefined : "Screen label");
   }
 });
+
+test("Content Row follows stable slot identities through removal, addition and reorder", () => {
+  const source = committedComponentFixture("contentRow", "default");
+  const config = JSON.parse(source.configJson);
+  const runtime = JSON.parse(source.designPreviewJson);
+  const slot = config.contentRow.slots[0];
+  const value = runtime.slotInputs[0];
+  for (const count of [0, 2, 6]) {
+    config.contentRow.slots = Array.from({ length: count }, (_, index) => ({
+      ...structuredClone(slot), kind: "label", id: `item_${index.toString(16).padStart(32, "0")}`,
+    })).reverse();
+    runtime.slotInputs = [...config.contentRow.slots].reverse().map((item: { id: string }) => ({
+      ...structuredClone(value), id: item.id, label: item.id,
+    }));
+    const row = resolveContentRowComponent({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(runtime) });
+    assert.deepEqual(row.slots.map(item => item.id), config.contentRow.slots.map((item: { id: string }) => item.id));
+    for (const item of row.slots) {
+      assert.ok(item.content && "text" in item.content);
+      assert.equal(item.content.text, item.id);
+    }
+    assert.ok(contentRowComponentToRenderable(source, row));
+  }
+  runtime.slotInputs.pop();
+  assert.throws(() => resolveContentRowComponent({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(runtime) }), /missing slot/);
+});
+
+test("Content Row retains the exact Button boundary's prepared Badge default", () => {
+  const source = committedComponentFixture("contentRow", "default");
+  const config = JSON.parse(source.configJson);
+  const runtime = JSON.parse(source.designPreviewJson);
+  const catalog = JSON.parse(source.componentBaseConfigsJson);
+  const slot = config.contentRow.slots[0];
+  slot.kind = "icon";
+  runtime.slotInputs[0].label = "";
+  catalog.inputDefaults[slot.iconSlot.variantReference].showBadge = true;
+  const row = resolveContentRowComponent({ ...source, configJson: JSON.stringify(config),
+    designPreviewJson: JSON.stringify(runtime), componentBaseConfigsJson: JSON.stringify(catalog) });
+  const button = row.slots[0].content;
+  assert.ok(button && "badge" in button && button.badge);
+});

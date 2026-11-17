@@ -479,7 +479,9 @@ export function planScopedValidation(
       desktopUi = true;
       continue;
     }
-    if (file.startsWith("src/desktop-preview/contentRowComponent")
+    if (file === "src/Mockups.Application/ModuleRowCollectionContract.cs"
+      || file.startsWith("src/desktop-preview/moduleRowSection")
+      || file.startsWith("src/desktop-preview/contentRowComponent")
       || file === "scaffolding/components/contentRow.json") {
       previewTests.add("tests/animation/contentRowComponent.test.ts");
       previewTests.add("tests/animation/socialPostModule.test.ts");

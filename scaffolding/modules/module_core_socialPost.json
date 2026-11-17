@@ -171,7 +171,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "center"
         },
         {
           "id": "item_d2a1bd7aeb5f49c49501136b62bc4389",
@@ -273,7 +274,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "center"
         }
       ],
       "headerHeight": 130,
@@ -1334,7 +1336,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "center"
         },
         {
           "id": "item_1729c03bec80498bb124f253df1c1709",
@@ -1436,7 +1439,8 @@
                 ]
               }
             }
-          }
+          },
+          "placement": "center"
         }
       ],
       "footerHeight": 130,
@@ -1941,6 +1945,24 @@
         "uiOrigin": "self",
         "actionOnly": true,
         "uiOrder": 70
+      },
+      {
+        "id": "mediaSource",
+        "label": "Media source",
+        "jsonKey": "mediaSource",
+        "kind": "mediaFilePath",
+        "valueKind": "MediaFilePath",
+        "defaultValue": "",
+        "allowEmpty": true,
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 0,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
       }
     ],
     "collections": [
@@ -2107,7 +2129,6 @@
           "iconValueMap": {}
         },
         "canEditStructure": false,
-        "fixedItemCount": 2,
         "uiPresentation": "collection",
         "itemRuntimePresentation": "card",
         "structureProjection": {
@@ -2282,7 +2303,6 @@
           "iconValueMap": {}
         },
         "canEditStructure": false,
-        "fixedItemCount": 2,
         "uiPresentation": "collection",
         "itemRuntimePresentation": "card",
         "structureProjection": {
@@ -2296,9 +2316,9 @@
       },
       {
         "id": "socialPostActions",
-        "label": "Actions",
+        "label": "Reaction Col",
         "jsonKey": "socialPostActions",
-        "itemLabel": "Button",
+        "itemLabel": "Item",
         "fields": [
           {
             "id": "enabled",
@@ -3270,7 +3290,8 @@
         "accentType": "pulse",
         "accentActive": false
       }
-    ]
+    ],
+    "mediaSource": ""
   },
   "metadata": {
     "note": "Social Post defines its two-row header and one padded Media section."
@@ -4916,7 +4937,8 @@
                     ]
                   }
                 }
-              }
+              },
+              "placement": "center"
             },
             {
               "id": "item_d2a1bd7aeb5f49c49501136b62bc4389",
@@ -5043,7 +5065,8 @@
                     ]
                   }
                 }
-              }
+              },
+              "placement": "center"
             }
           ],
           "headerHeight": 80,
@@ -6150,7 +6173,8 @@
                     ]
                   }
                 }
-              }
+              },
+              "placement": "center"
             },
             {
               "id": "item_1729c03bec80498bb124f253df1c1709",
@@ -6277,7 +6301,8 @@
                     ]
                   }
                 }
-              }
+              },
+              "placement": "center"
             }
           ],
           "footerHeight": 100,
@@ -7325,7 +7350,7 @@
         "socialPost",
         "rows"
       ],
-      "defaultValue": "[{\"id\":\"item_690ab7d988ef466c8d6b20406ef2e024\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"item_d2a1bd7aeb5f49c49501136b62bc4389\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
+      "defaultValue": "[{\"id\":\"item_690ab7d988ef466c8d6b20406ef2e024\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"center\"},{\"id\":\"item_d2a1bd7aeb5f49c49501136b62bc4389\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"center\"}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -7348,7 +7373,7 @@
             "jsonKey": "label",
             "kind": "Text",
             "valueKind": "StringReadOnly",
-            "defaultValue": "",
+            "defaultValue": "Row",
             "showInEditor": false
           },
           {
@@ -7367,19 +7392,31 @@
             "valueKind": "ComponentVariantSlot",
             "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{}}",
             "componentType": "contentRow"
+          },
+          {
+            "id": "placement",
+            "label": "Overlay placement",
+            "jsonKey": "placement",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "center",
+            "options": [
+              {
+                "value": "top",
+                "label": "Top"
+              },
+              {
+                "value": "center",
+                "label": "Center"
+              },
+              {
+                "value": "bottom",
+                "label": "Bottom"
+              }
+            ]
           }
         ],
-        "itemPresentation": {
-          "titleFieldId": "label",
-          "firstItemBadge": "",
-          "subtitleFieldIds": [],
-          "subtitleMaxCharacters": 72,
-          "iconFieldId": "",
-          "fallbackIcon": "layout",
-          "iconValueMap": {}
-        },
-        "canEditStructure": false,
-        "fixedItemCount": 2,
+        "canEditStructure": true,
         "uiPresentation": "collection",
         "itemRuntimePresentation": "card"
       },
@@ -7549,7 +7586,7 @@
         "socialPost",
         "footerRows"
       ],
-      "defaultValue": "[{\"id\":\"item_9df0890d96604176aca0bb0a6e7889e2\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"item_1729c03bec80498bb124f253df1c1709\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
+      "defaultValue": "[{\"id\":\"item_9df0890d96604176aca0bb0a6e7889e2\",\"label\":\"Row 1\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"center\"},{\"id\":\"item_1729c03bec80498bb124f253df1c1709\",\"label\":\"Row 2\",\"visible\":true,\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"item_34fbbdf4d78e41d997300e5627ffde3f\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_c3670a42984144e68ece92607ead97a2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_aa53d0f618af429fbd0b40ab3ef8ad68\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_31fe810992dc4c6c81326cf488cffd1e\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"item_769bfa57115a4cfdaaea8cdf040a5284\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}},\"placement\":\"center\"}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -7572,7 +7609,7 @@
             "jsonKey": "label",
             "kind": "Text",
             "valueKind": "StringReadOnly",
-            "defaultValue": "",
+            "defaultValue": "Row",
             "showInEditor": false
           },
           {
@@ -7591,19 +7628,31 @@
             "valueKind": "ComponentVariantSlot",
             "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{}}",
             "componentType": "contentRow"
+          },
+          {
+            "id": "placement",
+            "label": "Overlay placement",
+            "jsonKey": "placement",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "center",
+            "options": [
+              {
+                "value": "top",
+                "label": "Top"
+              },
+              {
+                "value": "center",
+                "label": "Center"
+              },
+              {
+                "value": "bottom",
+                "label": "Bottom"
+              }
+            ]
           }
         ],
-        "itemPresentation": {
-          "titleFieldId": "label",
-          "firstItemBadge": "",
-          "subtitleFieldIds": [],
-          "subtitleMaxCharacters": 72,
-          "iconFieldId": "",
-          "fallbackIcon": "layout",
-          "iconValueMap": {}
-        },
-        "canEditStructure": false,
-        "fixedItemCount": 2,
+        "canEditStructure": true,
         "uiPresentation": "collection",
         "itemRuntimePresentation": "card"
       },
@@ -7667,7 +7716,7 @@
     },
     {
       "id": "module.core.socialPost.showActions",
-      "label": "Show actions",
+      "label": "Show reactions",
       "valueKind": "Boolean",
       "jsonPath": [
         "socialPost",
@@ -9175,7 +9224,7 @@
       },
       {
         "id": "actions",
-        "label": "Actions",
+        "label": "Reaction Col",
         "subtitle": "Icon Row",
         "icon": "button-icon",
         "order": 55,
@@ -9184,7 +9233,7 @@
         "groups": [
           {
             "id": "actions",
-            "label": "Actions",
+            "label": "Reaction Col",
             "order": 10,
             "visible": true,
             "fields": [
@@ -9203,7 +9252,7 @@
           },
           {
             "id": "actions-layout",
-            "label": "Actions layout",
+            "label": "Reaction Col layout",
             "order": 90,
             "visible": true,
             "presentation": "separatedSections",

@@ -576,7 +576,9 @@ style.
 stores order. Moving an item changes array position only. Duplicate creates new
 editable identities while retaining exact identities across fixed embedded
 boundaries. Neither Modules nor Preview prefix, infer or regenerate child ids.
-Fixed rows validate count and unique identity, never names derived from position.
+Module row collections validate unique identity and exact prepared membership,
+never fixed cardinality or names derived from position. Each Module row declares
+its own top/center/bottom overlay placement; reordering retains that placement.
 
 Every Screen authoring mutation starts from the same prepared Runtime document
 used by Preview, projected to stored authoring content. The shared Screen commit
@@ -638,3 +640,22 @@ is enabled for icon slots as well as Label and Avatar slots. It never forces
 icon-only content. Reel footer Buttons declare icon+text below in their local
 Overrides; footer text remains in the existing `socialPostFooterRows` Runtime
 collection. No Module-specific text editor or second mutation path exists.
+
+### Generic Module rows and independent Media
+
+Social Post and Video Call use `ModuleRowCollectionContract` and the shared
+row resolver for arbitrary ordered row collections, including empty sections.
+Variant authoring owns add, duplicate, delete and order through the generic
+structured collection commands. Runtime projects the exact rows and nested
+Content Row slots by stable id and cannot edit their structure. Missing, duplicate
+or reordered unprepared Runtime rows fail in the resolver without repair.
+
+Runtime collection navigation always uses the declared item noun and ordinal;
+content and authored labels never replace that title. Summaries remain metadata
+owned. Social Post presents its Icon Row collection as Reaction Col.
+
+Social Post declares `mediaSource` as an independent MediaFilePath Runtime Input.
+Gallery directory and selection affect Gallery only. Media consumes that exact
+source, including an empty source and its normal missing-media notice.
+Content Row prepares static Button defaults through the common Runtime boundary
+and forwards its declared values without forcing the child Badge off.

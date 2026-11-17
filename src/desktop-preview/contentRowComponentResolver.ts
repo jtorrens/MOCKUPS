@@ -89,7 +89,6 @@ function resolveSlot(
         pressed: requiredBoolean(runtime, "pressed", `${path}.runtime.pressed`),
         sampleText: label,
         iconSizeToken: requiredString(slot, "iconSizeToken", `${path}.iconSizeToken`),
-        showBadge: false,
       }), bases, `${path}.icon`, payload),
     };
   }

@@ -48,12 +48,12 @@ export interface SocialPostModuleContract {
   showNavigationBar: boolean;
   headerSurfaceSlot: SocialPostComponentSlot;
   rowGapToken: string;
-  rows: [ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>];
+  rows: ModuleRow<ContentRowDesignContract>[];
   showMedia: boolean;
   mediaSlot: SocialPostComponentSlot;
   mediaPadding: string;
   mediaInputs: Record<string, unknown>;
-  mediaSources: string[];
+  mediaSource: string;
   mediaHeightMode: "fixed" | "fill" | "screen";
   mediaHeight: number;
   mediaCutout: boolean;
@@ -79,5 +79,5 @@ export interface SocialPostModuleContract {
   footerHeight: number;
   footerSurfaceSlot: SocialPostComponentSlot;
   footerRowGapToken: string;
-  footerRows: [ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>];
+  footerRows: ModuleRow<ContentRowDesignContract>[];
 }

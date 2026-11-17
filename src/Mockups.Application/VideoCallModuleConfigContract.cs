@@ -62,9 +62,9 @@ internal static class VideoCallModuleConfigContract
             ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(owner, key, context), $"{context}.videoCall.{key}");
         foreach (var key in new[] { "statusBarOverrides", "navigationBarOverrides" })
             _ = JsonPath.RequiredObject(owner, key, context);
-        SocialPostModuleConfigContract.ValidateRows(owner, "headerRows", $"{context}.videoCall");
-        SocialPostModuleConfigContract.ValidateRows(owner, "footerRows", $"{context}.videoCall");
-        SocialPostModuleConfigContract.ValidateRows(owner, "mainRows", $"{context}.videoCall", 3);
+        ModuleRowCollectionContract.Validate(owner, "headerRows", $"{context}.videoCall");
+        ModuleRowCollectionContract.Validate(owner, "footerRows", $"{context}.videoCall");
+        ModuleRowCollectionContract.Validate(owner, "mainRows", $"{context}.videoCall");
     }
 
     private static void RequireExactKeys(JsonObject value, IReadOnlyList<string> expected, string owner)

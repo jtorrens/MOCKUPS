@@ -22,17 +22,7 @@ internal static class RuntimeCollectionItemPresentation
             return new RuntimeCollectionItemPresentationResult(defaultTitle, defaultSubtitle, defaultIcon);
         }
 
-        var title = defaultTitle;
-        var titleField = collection.Fields.FirstOrDefault((field) => field.Id == presentation.TitleFieldId);
-        if (titleField is not null)
-        {
-            var value = DisplayValue(titleField, item);
-            if (!string.IsNullOrWhiteSpace(value)) title = value;
-        }
-        if (itemIndex == 0 && !string.IsNullOrWhiteSpace(presentation.FirstItemBadge))
-        {
-            title = $"{title} · {presentation.FirstItemBadge}";
-        }
+        var title = $"{collection.ItemLabel} {itemIndex + 1}";
 
         var subtitle = string.Join(
             " · ",
