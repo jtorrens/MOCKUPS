@@ -30,7 +30,8 @@ internal sealed partial class SqliteProductionOwner
             record.AnimationJson,
             record.MetadataJson,
             GetShotSettings(
-                record.ShotId).Fps);
+                record.ShotId).Fps,
+            record.VerticalOffsetPx);
     }
 
     public string GetModuleInstanceModuleName(

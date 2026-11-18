@@ -309,6 +309,7 @@ internal static class DesignPreviewPayloadFactory
             {
                 ["shotId"] = instance.ShotId,
                 ["moduleInstanceId"] = moduleInstanceId,
+                ["verticalOffsetPx"] = instance.VerticalOffsetPx,
                 ["screenFrame"] = Math.Max(0, screenFrame ?? 0),
             },
         };

@@ -1,3 +1,4 @@
+import { parseObject, requiredRecord, requiredNumber } from "./componentResolverCommon.js";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { RenderableNodeSchema } from "../visual/renderable/schema.js";
@@ -15,7 +16,7 @@ import { screenTransitionLayers } from "./screenTransitionRenderable.js";
 export function renderDesignPreviewRenderable(payload: DesignPreviewPayload): RenderableNode {
   const children = payload.kind === "screenTransition"
     ? screenTransitionChildren(payload)
-    : ownerChildren(payload);
+    : screenContents(payload);
 
   return RenderableNodeSchema.parse(withAuthoringTarget(payload, {
     id: "design_preview.surface",
@@ -53,6 +54,28 @@ function ownerChildren(payload: DesignPreviewPayload): RenderableNode[] {
   return [extracted.node, ...extracted.overlays];
 }
 
+function verticalOffset(payload: DesignPreviewPayload): number {
+  if (payload.kind !== "moduleInstance") return 0;
+  const context = requiredRecord(parseObject(payload.instanceJson), "context", "Screen");
+  return requiredNumber(context, "verticalOffsetPx", "Screen context");
+}
+
+function screenContents(payload: DesignPreviewPayload): RenderableNode[] {
+  const children = ownerChildren(payload);
+  const y = verticalOffset(payload);
+  if (y === 0) return children;
+  const box = rootPreviewScreenBox(payload);
+  return [{
+    id: "screen.viewport", type: "group", frame: payload.localFrame, box,
+    style: { overflow: "hidden" },
+    children: [{
+      id: "screen.content", type: "group", frame: payload.localFrame, box,
+      style: { backgroundColor: screenBackground(payload) },
+      transform: { y }, children,
+    }],
+  }];
+}
+
 function screenTransitionChildren(payload: DesignPreviewPayload): RenderableNode[] {
   const transition = payload.screenTransition;
   if (!transition) {
@@ -84,13 +107,17 @@ function screenLayer(
       overflow: "hidden",
       backgroundColor: previewCanvasBackground(payload),
     },
-    children: ownerChildren(payload),
+    children: screenContents(payload),
   };
 }
 
 export function previewCanvasBackground(
   payload: DesignPreviewPayload,
 ): string | undefined {
+  return verticalOffset(payload) === 0 ? screenBackground(payload) : undefined;
+}
+
+function screenBackground(payload: DesignPreviewPayload): string | undefined {
   return payload.kind === "screenTransition"
     || payload.previewFrame.moduleTransparency.enabled
     ? undefined

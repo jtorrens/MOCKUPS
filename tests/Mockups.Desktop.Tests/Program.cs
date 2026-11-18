@@ -27271,6 +27271,7 @@ static void ScreenWritesAreAtomic()
                 ("animation", () => database.UpdateModuleInstanceAnimationJson(screen.Id, state.AnimationJson)),
                 ("Variant", () => database.UpdateModuleInstanceVariant(screen.Id, variant.Value)),
                 ("start", () => database.UpdateModuleInstanceField(screen.Id, "moduleInstance.startFrame", "25")),
+                ("vertical offset", () => database.UpdateModuleInstanceField(screen.Id, "moduleInstance.verticalOffsetPx", "-40")),
                 ("delay", () => database.UpdateModuleInstanceField(screen.Id, "moduleInstance.actionDelayFrames", "13")),
                 ("Theme", () => database.UpdateModuleInstanceField(screen.Id, "moduleInstance.themeId", state.ThemeId)),
                 ("policy", () => database.UpdateModuleInstanceField(screen.Id, "moduleInstance.durationPolicy", state.DurationPolicy)),

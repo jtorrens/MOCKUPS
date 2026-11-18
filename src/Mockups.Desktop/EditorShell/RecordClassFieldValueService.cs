@@ -760,6 +760,7 @@ internal sealed class RecordClassFieldValueService
                         moduleInstanceId)
                     .EffectiveDurationFrames
                     .ToString(),
+            "moduleInstance.verticalOffsetPx" => settings.VerticalOffsetPx.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "moduleInstance.actionDelayFrames" =>
                 settings.ActionDelayFrames.ToString(),
             "moduleInstance.device" => _production.GetShotSettings(settings.ShotId)

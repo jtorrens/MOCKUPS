@@ -133,7 +133,8 @@ internal static class CurrentSqliteSchema
           content_json TEXT NOT NULL DEFAULT '{}',
           behavior_json TEXT NOT NULL DEFAULT '{}',
           animation_json TEXT NOT NULL DEFAULT '{"schemaVersion":2,"tracks":[]}',
-          metadata_json TEXT NOT NULL DEFAULT '{}'
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          vertical_offset_px INTEGER NOT NULL DEFAULT 0
         );
 
         CREATE INDEX IF NOT EXISTS idx_module_instances_shot
@@ -243,7 +244,7 @@ internal static class CurrentSqliteSchema
           last_error TEXT NOT NULL
         );
 
-        PRAGMA user_version = 41;
+        PRAGMA user_version = 43;
         """;
 
 }

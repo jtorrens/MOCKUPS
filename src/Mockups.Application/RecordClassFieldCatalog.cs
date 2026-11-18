@@ -304,6 +304,9 @@ public static class RecordClassFieldCatalog
             IsEditable: false,
             Number: new NumberDefinition(1, 100000, 1, 0),
             Unit: "frames"),
+        ["moduleInstance.verticalOffsetPx"] = new(
+            "moduleInstance.verticalOffsetPx", "Vertical offset", ValueKind.Integer,
+            Number: new NumberDefinition(-100000, 100000, 1, 0), Unit: "px"),
         ["moduleInstance.actionDelayFrames"] = new(
             "moduleInstance.actionDelayFrames",
             "Action delay",

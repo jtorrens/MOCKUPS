@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `41` is the only current schema. Authored Production rows belong
+Schema version `43` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -1077,3 +1077,5 @@ to `theme.spacing.none`. The shared dictionary and Content Stack editor layout
 expose this Variant-owned spacing token. Only the canonical workstation database
 is updated after Backup Hub publication; checkpoint captures repository parity.
 Startup validates the current contract without defaults or migration.
+
+Screen rows store their signed vertical content offset in `vertical_offset_px`, default zero. Duplication retains the offset.

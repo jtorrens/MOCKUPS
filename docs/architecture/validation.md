@@ -992,3 +992,5 @@ video timestamps and final-frame clamping. The scoped validation selector includ
 these consumers when the common playback clock changes.
 
 Production tree Screen ordering selects the existing “Shot Screen tracks resolve independent lanes gaps and overlap priority” regression for the persisted order and prepared overlap layers. Check the tree controls separately at both ends of a multi-Screen Shot.
+
+Screen offset coverage includes the signed instance write in the Screen transaction rollback regression. The frame composition boundary selects the Screen transition suite; verify signed displacement and viewport clipping by comparing composed Preview and Render pixels.

@@ -113,7 +113,8 @@ public sealed record ModuleInstanceSettings(
     string BehaviorJson,
     string AnimationJson,
     string MetadataJson,
-    int FrameRate)
+    int FrameRate,
+    int VerticalOffsetPx = 0)
 {
     public DeviceSettings EffectiveDeviceSettings(DeviceSettings inherited) =>
         DeviceSettingsFieldContract.ApplyScreenOverrides(

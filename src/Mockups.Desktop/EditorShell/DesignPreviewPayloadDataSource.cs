@@ -46,7 +46,8 @@ internal sealed record DesignPreviewModuleInstanceSource(
     string RuntimePreviewJson,
     string AppConfigJson,
     string AnimationJson,
-    int FrameRate);
+    int FrameRate,
+    int VerticalOffsetPx);
 
 internal sealed record DesignPreviewShotSlot(
     string Id,
@@ -249,7 +250,8 @@ internal sealed class DesignPreviewPayloadDataSource
             _timeline.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
             app.ConfigJson,
             instance.AnimationJson,
-            shot.Fps);
+            shot.Fps,
+            instance.VerticalOffsetPx);
     }
 
     public string LoadComponentBaseConfigs(string projectId, IEnumerable<string> owners) =>

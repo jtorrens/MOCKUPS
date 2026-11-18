@@ -270,6 +270,10 @@ export function planScopedValidation(
         ["--", "--exact", "Bubble requires valid message size tokens for every direction"],
       ));
     }
+    if (file === "src/desktop-preview/renderDesignPreviewMarkup.tsx"
+      || file === "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs") {
+      previewTests.add("tests/animation/screenTransitionRenderable.test.ts");
+    }
     if (file === "src/Mockups.Desktop/EditorShell/EditorNavigationRenderer.cs"
       || file === "src/Mockups.Desktop/EditorShell/EditorNodeCommandController.cs") {
       desktopUi = true;

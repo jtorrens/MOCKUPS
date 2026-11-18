@@ -161,7 +161,8 @@ internal sealed record ModuleInstanceRecord(
     string ContentJson,
     string BehaviorJson,
     string AnimationJson,
-    string MetadataJson);
+    string MetadataJson,
+    int VerticalOffsetPx = 0);
 
 internal sealed record ReferenceTarget(ProjectTreeNodeKind Kind, string Id);
 
@@ -685,6 +686,7 @@ internal interface IModuleInstanceRepository
 
     void UpdateAnimation(SqliteConnection connection, string moduleInstanceId, string animationJson, SqliteTransaction? transaction = null);
 
+    void UpdateVerticalOffset(SqliteConnection connection, string id, int pixels, SqliteTransaction transaction);
     void UpdateActionDelay(
         SqliteConnection connection,
         string moduleInstanceId,

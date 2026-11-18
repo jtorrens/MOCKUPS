@@ -848,3 +848,5 @@ Closing the editor disposes the Preview session owner: Design and Production
 preparation, ahead preload, playback timing, frame-cache reservations and the
 external rasterizer lifetime are canceled or released before the window
 becomes unreachable. A Preview operation may not outlive its window.
+
+Each Production Screen carries its signed vertical offset in its prepared instance context. The common frame composer translates the complete content, including root overlays, by that many canvas pixels inside the fixed Screen viewport before Shot layer motion and stacking.

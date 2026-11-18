@@ -26,7 +26,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames, duration_policy, action_delay_frames,
-                   device_overrides_json, theme_id, content_json, behavior_json, animation_json, metadata_json
+                   device_overrides_json, theme_id, content_json, behavior_json, animation_json, metadata_json, vertical_offset_px
             FROM module_instances
             WHERE id = $id
             """;
@@ -45,7 +45,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames, duration_policy, action_delay_frames,
-                   device_overrides_json, theme_id, content_json, behavior_json, animation_json, metadata_json
+                   device_overrides_json, theme_id, content_json, behavior_json, animation_json, metadata_json, vertical_offset_px
             FROM module_instances
             ORDER BY shot_id, sort_order, name, id
             """;
@@ -57,7 +57,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames, duration_policy, action_delay_frames,
-                   device_overrides_json, theme_id, content_json, behavior_json, animation_json, metadata_json
+                   device_overrides_json, theme_id, content_json, behavior_json, animation_json, metadata_json, vertical_offset_px
             FROM module_instances
             WHERE shot_id = $shotId
             ORDER BY sort_order, name, id
@@ -99,11 +99,11 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames,
               duration_policy, action_delay_frames, device_overrides_json, theme_id,
-              content_json, behavior_json, animation_json, metadata_json)
+              content_json, behavior_json, animation_json, metadata_json, vertical_offset_px)
             VALUES (
               $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, $startFrame, $durationFrames,
               $durationPolicy, $actionDelayFrames, $deviceOverridesJson, $themeId,
-              $contentJson, $behaviorJson, $animationJson, $metadataJson)
+              $contentJson, $behaviorJson, $animationJson, $metadataJson, $verticalOffsetPx)
             """,
             ("$id", record.Id),
             ("$shotId", record.ShotId),
@@ -121,7 +121,8 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             ("$contentJson", record.ContentJson),
             ("$behaviorJson", record.BehaviorJson),
             ("$animationJson", record.AnimationJson),
-            ("$metadataJson", record.MetadataJson));
+            ("$metadataJson", record.MetadataJson),
+            ("$verticalOffsetPx", record.VerticalOffsetPx));
     }
 
     public ModuleInstanceRecord Duplicate(
@@ -141,10 +142,10 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames,
               duration_policy, action_delay_frames, device_overrides_json, theme_id,
-              content_json, behavior_json, animation_json, metadata_json)
+              content_json, behavior_json, animation_json, metadata_json, vertical_offset_px)
             SELECT $id, $shotId, app_id, module_id, $name, notes, $sortOrder, start_frame, duration_frames,
                    duration_policy, action_delay_frames, device_overrides_json, theme_id,
-                   content_json, behavior_json, animation_json, metadata_json
+                   content_json, behavior_json, animation_json, metadata_json, vertical_offset_px
             FROM module_instances
             WHERE id = $sourceId
             """,
@@ -203,6 +204,11 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             ("$animationJson", animationJson),
             ("$id", moduleInstanceId));
     }
+
+    public void UpdateVerticalOffset(SqliteConnection connection, string id, int pixels, SqliteTransaction transaction) =>
+        _context.Execute(connection, transaction,
+            "UPDATE module_instances SET vertical_offset_px = $pixels WHERE id = $id",
+            ("$pixels", pixels), ("$id", id));
 
     public void UpdateActionDelay(
         SqliteConnection connection,
@@ -438,7 +444,8 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             SqliteCommandExecutor.ReadString(reader, 13),
             SqliteCommandExecutor.ReadString(reader, 14),
             SqliteCommandExecutor.ReadString(reader, 15),
-            SqliteCommandExecutor.ReadString(reader, 16));
+            SqliteCommandExecutor.ReadString(reader, 16),
+            reader.GetInt32(17));
         Validate(record);
         return record;
     }

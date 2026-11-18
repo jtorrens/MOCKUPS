@@ -203,6 +203,10 @@ internal sealed partial class SqliteProductionOwner
         {
             switch (fieldId)
             {
+                case "moduleInstance.verticalOffsetPx":
+                    _moduleInstanceRepository.UpdateVerticalOffset(connection, moduleInstanceId,
+                        int.Parse(value, System.Globalization.CultureInfo.InvariantCulture), transaction);
+                    break;
                 case "moduleInstance.startFrame":
                     _moduleInstanceRepository.UpdateStartFrame(connection, moduleInstanceId,
                         NumericText.Int32(value, 0), transaction);
