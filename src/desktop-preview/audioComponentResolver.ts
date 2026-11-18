@@ -12,6 +12,7 @@ import {
   requiredBoolean,
   requiredNumber,
   requiredPlacement,
+  requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
   requiredStringPair,
@@ -59,10 +60,28 @@ export function resolveAudioComponentFromRecords(
     "component.audio.avatar.showAvatar",
   );
   const showBadge = requiredBoolean(
-    inputs,
+    badgeSlot,
     "showBadge",
-    "component.audio.input.showBadge",
+    "component.audio.badgeSlot.showBadge",
   );
+  const badgeInputs = {
+    contentMode: requiredString(badgeSlot, "contentMode", "component.audio.badgeSlot.contentMode"),
+    iconToken: requiredPossiblyEmptyString(badgeSlot, "iconToken", "component.audio.badgeSlot.iconToken"),
+    text: requiredPossiblyEmptyString(badgeSlot, "text", "component.audio.badgeSlot.text"),
+    size: requiredNumber(badgeSlot, "size", "component.audio.badgeSlot.size"),
+    backgroundPaletteColor: requiredString(badgeSlot, "backgroundPaletteColor", "component.audio.badgeSlot.backgroundPaletteColor"),
+    contentPaletteColor: requiredString(badgeSlot, "contentPaletteColor", "component.audio.badgeSlot.contentPaletteColor"),
+  };
+  if (badgeInputs.contentMode !== "icon" && badgeInputs.contentMode !== "text") {
+    throw new Error(`Unsupported Audio badge contentMode ${badgeInputs.contentMode}`);
+  }
+  const contentKey = badgeInputs.contentMode === "icon" ? "iconToken" : "text";
+  if (!badgeInputs[contentKey].trim()) {
+    throw new Error(`component.audio.badgeSlot.${contentKey} must not be empty`);
+  }
+  if (!Number.isInteger(badgeInputs.size) || badgeInputs.size < 1 || badgeInputs.size > 512) {
+    throw new Error("component.audio.badgeSlot.size must be an integer between 1 and 512");
+  }
   const avatarConfig = embeddedComponentConfig(componentBaseConfigs, avatarComponentSlot, "avatar", "component.audio.avatarSlot.componentSlot");
   const badgeConfig = embeddedComponentConfig(componentBaseConfigs, badgeComponentSlot, "badge", "component.audio.badgeSlot.componentSlot");
   const surfaceConfig = embeddedComponentConfig(componentBaseConfigs, surfaceSlot, "surface", "component.audio.surfaceSlot");
@@ -188,14 +207,7 @@ export function resolveAudioComponentFromRecords(
         ? {
             ...resolveBadgeComponentFromRecords(
               badgeConfig,
-              {
-                contentMode: requiredString(inputs, "badgeContentMode", "component.audio.input.badgeContentMode"),
-                iconToken: requiredString(inputs, "badgeIconToken", "component.audio.input.badgeIconToken"),
-                text: requiredString(inputs, "badgeText", "component.audio.input.badgeText"),
-                size: requiredNumber(inputs, "badgeSize", "component.audio.input.badgeSize"),
-                backgroundPaletteColor: requiredString(inputs, "badgeBackgroundPaletteColor", "component.audio.input.badgeBackgroundPaletteColor"),
-                contentPaletteColor: requiredString(inputs, "badgeContentPaletteColor", "component.audio.input.badgeContentPaletteColor"),
-              },
+              badgeInputs,
               "component.audio.badge",
             ),
             placement: requiredPlacement(

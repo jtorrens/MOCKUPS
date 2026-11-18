@@ -347,6 +347,17 @@ The avatar uses the exact message Actor. This policy changes neither the
 external Bubble avatar nor its Actor label, and keeps outgoing/system audio
 avatars hidden. Audio continues to own avatar styling and layout.
 
+Audio's `badgeSlot` owns the complete Variant-authored badge: `showBadge`,
+`contentMode`, `iconToken`, `text`, `size`, `backgroundPaletteColor` and
+`contentPaletteColor`, alongside its exact Badge Variant and placement.
+Dictionary controls expose these values in Audio's Badge group and local
+Overrides. They are not Runtime Inputs or Design Test Values. Audio supplies
+these explicit values to its embedded Badge; Bubble neither suppresses nor
+replaces them. The badge is positioned on Audio's avatar and paints only while
+that avatar is visible. Audio suppresses Avatar's separate internal badge to
+avoid a second badge at the same boundary. The same prepared Audio configuration
+is consumed directly in Design and through Bubble in Conversation/Production.
+
 The generic structured-collection editor exposes an item's declared nested
 Runtime contract as Runtime-input fields. Nested collection commits persist the
 complete contract at the same stable outer item address, and animation controls

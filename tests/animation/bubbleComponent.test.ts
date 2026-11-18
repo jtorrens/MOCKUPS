@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { resolveBubbleComponent } from "../../src/desktop-preview/bubbleComponentResolver.js";
+import { resolveAudioComponent } from "../../src/desktop-preview/audioComponentResolver.js";
+import { audioComponentToRenderable } from "../../src/desktop-preview/audioComponentRenderable.js";
 import { bubbleComponentToRenderable } from "../../src/desktop-preview/bubbleComponentRenderable.js";
 import {
   measureTextBoxComponent,
@@ -346,6 +348,55 @@ test("Bubble audio avatar policy preserves the message Actor and Audio master sw
       config.bubble.audioAvatarVisibility = invalid;
       assert.throws(() => resolveBubbleComponent({ ...source, configJson: JSON.stringify(config) }), /audioAvatarVisibility/);
     }
+  }
+});
+
+test("Audio badge Variant configuration paints identically directly and inside Bubble", () => {
+  for (const variantId of ["default", "default_copy"]) {
+    const source = committedComponentFixture("audio", variantId);
+    const preview = JSON.parse(source.designPreviewJson);
+    for (const key of ["showBadge", "badgeContentMode", "badgeIconToken", "badgeText", "badgeSize",
+      "badgeBackgroundPaletteColor", "badgeContentPaletteColor"]) {
+      assert.equal(Object.hasOwn(preview, key), false);
+      assert.equal(preview.inputs.some((input: { id: string }) => input.id === key), false);
+    }
+    for (const showBadge of [false, true]) {
+      for (const contentMode of ["icon", "text"]) {
+        const config = JSON.parse(source.configJson);
+        Object.assign(config.audio.badgeSlot, { showBadge, contentMode, text: "7", size: 23 });
+        config.audio.avatarSlot.showAvatar = true;
+        const directPayload = { ...source, configJson: JSON.stringify(config) };
+        const direct = resolveAudioComponent(directPayload);
+        const directNode = audioComponentToRenderable(directPayload, direct);
+
+        const bubbleSource = committedComponentFixture("bubble", "default_copy");
+        const catalog = JSON.parse(bubbleSource.componentBaseConfigsJson);
+        const reference = `component_project_foqn_s2_audio::variant::${variantId}`;
+        catalog.variants[reference] = config;
+        const bubbleConfig = JSON.parse(bubbleSource.configJson);
+        Object.assign(bubbleConfig.bubble, { audioAvatarVisibility: "individualAndGroup",
+          audioSlot: { variantReference: reference, overrides: {} } });
+        const bubblePreview = JSON.parse(bubbleSource.designPreviewJson);
+        Object.assign(bubblePreview, { mediaType: "audio", sampleText: "", state: "incoming", actorIdentityVisible: false });
+        const embeddedPayload = { ...bubbleSource, configJson: JSON.stringify(bubbleConfig),
+          componentBaseConfigsJson: JSON.stringify(catalog), designPreviewJson: JSON.stringify(bubblePreview) };
+        const embedded = resolveBubbleComponent(embeddedPayload);
+        assert.deepEqual(embedded.mediaSlot.audio!.badgeSlot, direct.badgeSlot);
+        const embeddedNode = bubbleComponentToRenderable(embeddedPayload, embedded);
+        for (const rendered of [directNode, embeddedNode]) {
+          const badge = findNode(rendered, "component.audio.badge");
+          assert.equal(Boolean(badge), showBadge);
+          if (showBadge) {
+            const content = requiredNode(badge!, `component.audio.badge.${contentMode}`);
+            assert.equal(content.text, contentMode === "text" ? "7" : config.audio.badgeSlot.iconToken);
+            assert.ok(badge!.box!.width > 0);
+          }
+        }
+      }
+    }
+    const missing = JSON.parse(source.configJson);
+    delete missing.audio.badgeSlot.showBadge;
+    assert.throws(() => resolveAudioComponent({ ...source, configJson: JSON.stringify(missing) }), /showBadge/);
   }
 });
 

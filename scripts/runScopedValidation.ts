@@ -227,6 +227,17 @@ export function planScopedValidation(
       previewTests.add("tests/animation/bubbleComponent.test.ts");
       typecheck = true;
     }
+    if (file === "src/desktop-preview/audioComponentResolver.ts"
+      || file === "src/Mockups.Application/AudioComponentConfigContract.cs"
+      || file === "scaffolding/components/audio.json") {
+      previewTests.add("tests/animation/atomicTemporalComponents.test.ts");
+      previewTests.add("tests/animation/bubbleComponent.test.ts");
+      add(npmStep(
+        "application:audio-badge-config", "test:focus:application",
+        "Audio badge is complete Variant configuration across direct and embedded consumers",
+        ["--", "--exact", "Audio requires complete Variant-owned badge configuration"],
+      ));
+    }
     if (file === "src/desktop-preview/bubbleComponentResolver.ts"
       || file === "src/desktop-preview/bubbleComponentRenderable.ts"
       || file === "src/Mockups.Application/BubbleComponentConfigContract.cs"

@@ -624,9 +624,6 @@ function bubbleAudioInputs(
     ...preview,
     actor: actorPreview ?? {},
     availableWidth,
-    // Bubble owns this child-input binding at its Audio slot boundary.
-    // It is explicit composition data, not an Audio resolver fallback.
-    showBadge: false,
     isPlaying: requiredBoolean(preview, "isPlaying", "component.bubble.input.isPlaying"),
     durationSeconds: Math.max(
       1,

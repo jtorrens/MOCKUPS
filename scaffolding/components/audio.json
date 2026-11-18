@@ -32,7 +32,7 @@
     "renderableExport": "audioComponentToRenderable",
     "registryMode": "simple",
     "focusedTest": "tests/animation/atomicTemporalComponents.test.ts",
-    "configContractExport": null
+    "configContractExport": "AudioComponentConfigContract"
   },
   "config": {
     "style": {
@@ -92,7 +92,14 @@
         "componentSlot": {
           "variantReference": "component_project_foqn_s2_badge::variant::default",
           "overrides": {}
-        }
+        },
+        "showBadge": true,
+        "contentMode": "icon",
+        "iconToken": "media_mic",
+        "text": "1",
+        "size": 16,
+        "backgroundPaletteColor": "blue",
+        "contentPaletteColor": "gray_100"
       },
       "progressKnobSize": 12,
       "backgroundColorToken": "theme.colors.surface",
@@ -211,7 +218,14 @@
           "componentSlot": {
             "variantReference": "component_project_foqn_s2_badge::variant::default",
             "overrides": {}
-          }
+          },
+          "showBadge": true,
+          "contentMode": "icon",
+          "iconToken": "media_mic",
+          "text": "1",
+          "size": 16,
+          "backgroundPaletteColor": "blue",
+          "contentPaletteColor": "gray_100"
         },
         "progressKnobSize": 12,
         "backgroundColorToken": "theme.colors.surface",
@@ -332,7 +346,14 @@
             "componentSlot": {
               "variantReference": "component_project_foqn_s2_badge::variant::default",
               "overrides": {}
-            }
+            },
+            "showBadge": true,
+            "contentMode": "icon",
+            "iconToken": "media_mic",
+            "text": "1",
+            "size": 16,
+            "backgroundPaletteColor": "blue",
+            "contentPaletteColor": "gray_100"
           },
           "progressKnobSize": 12,
           "backgroundColorToken": "theme.colors.surface",
@@ -530,204 +551,6 @@
         "transition": null,
         "unit": "",
         "uiOrder": 30
-      },
-      {
-        "id": "showBadge",
-        "label": "Show badge",
-        "jsonKey": "showBadge",
-        "kind": "boolean",
-        "valueKind": "Boolean",
-        "defaultValue": "false",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "badge",
-        "uiGroupLabel": "Badge",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 40
-      },
-      {
-        "id": "badgeContentMode",
-        "label": "Badge content",
-        "jsonKey": "badgeContentMode",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "icon",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [
-          {
-            "value": "icon",
-            "label": "Icon"
-          },
-          {
-            "value": "text",
-            "label": "Text"
-          }
-        ],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "badge",
-        "uiGroupLabel": "Badge",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 41
-      },
-      {
-        "id": "badgeIconToken",
-        "label": "Badge icon",
-        "jsonKey": "badgeIconToken",
-        "kind": "icon",
-        "valueKind": "IconToken",
-        "defaultValue": "media_mic",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "badge",
-        "uiGroupLabel": "Badge",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 42
-      },
-      {
-        "id": "badgeText",
-        "label": "Badge text",
-        "jsonKey": "badgeText",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "1",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "badge",
-        "uiGroupLabel": "Badge",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 43
-      },
-      {
-        "id": "badgeSize",
-        "label": "Badge size",
-        "jsonKey": "badgeSize",
-        "kind": "number",
-        "valueKind": "Integer",
-        "defaultValue": "16",
-        "minimum": 1,
-        "maximum": 512,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "badge",
-        "uiGroupLabel": "Badge",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 44
-      },
-      {
-        "id": "badgeBackgroundPaletteColor",
-        "label": "Badge background",
-        "jsonKey": "badgeBackgroundPaletteColor",
-        "kind": "text",
-        "valueKind": "PaletteColorToken",
-        "defaultValue": "blue",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "badge",
-        "uiGroupLabel": "Badge",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 45
-      },
-      {
-        "id": "badgeContentPaletteColor",
-        "label": "Badge icon / text color",
-        "jsonKey": "badgeContentPaletteColor",
-        "kind": "text",
-        "valueKind": "PaletteColorToken",
-        "defaultValue": "gray_100",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "badge",
-        "uiGroupLabel": "Badge",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 46
       }
     ],
     "actions": [
@@ -747,13 +570,6 @@
     "durationSeconds": 5,
     "actorId": "actor_alex",
     "availableWidth": 240,
-    "showBadge": true,
-    "badgeContentMode": "icon",
-    "badgeIconToken": "media_mic",
-    "badgeText": "1",
-    "badgeSize": 16,
-    "badgeBackgroundPaletteColor": "blue",
-    "badgeContentPaletteColor": "gray_100",
     "collections": []
   },
   "metadata": {
@@ -1231,6 +1047,189 @@
       "valuePatternMessage": "",
       "embeddedSlot": null,
       "themeTokenFamily": "colors"
+    },
+    {
+      "id": "component.audio.badge.showBadge",
+      "label": "Show badge",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "audio",
+        "badgeSlot",
+        "showBadge"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.audio.badge.contentMode",
+      "label": "Badge content",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "audio",
+        "badgeSlot",
+        "contentMode"
+      ],
+      "defaultValue": "icon",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "text",
+          "label": "Text"
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.audio.badge.iconToken",
+      "label": "Badge icon",
+      "valueKind": "IconToken",
+      "jsonPath": [
+        "audio",
+        "badgeSlot",
+        "iconToken"
+      ],
+      "defaultValue": "media_mic",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.audio.badge.text",
+      "label": "Badge text",
+      "valueKind": "StringSingleLine",
+      "jsonPath": [
+        "audio",
+        "badgeSlot",
+        "text"
+      ],
+      "defaultValue": "1",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.audio.badge.size",
+      "label": "Badge size",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "audio",
+        "badgeSlot",
+        "size"
+      ],
+      "defaultValue": "16",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 1,
+        "maximum": 512,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.audio.badge.backgroundPaletteColor",
+      "label": "Badge background",
+      "valueKind": "PaletteColorToken",
+      "jsonPath": [
+        "audio",
+        "badgeSlot",
+        "backgroundPaletteColor"
+      ],
+      "defaultValue": "blue",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.audio.badge.contentPaletteColor",
+      "label": "Badge icon / text color",
+      "valueKind": "PaletteColorToken",
+      "jsonPath": [
+        "audio",
+        "badgeSlot",
+        "contentPaletteColor"
+      ],
+      "defaultValue": "gray_100",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {
@@ -1408,13 +1407,48 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.audio.badge.editor",
+                "id": "component.audio.badge.showBadge",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.audio.badge.placement",
+                "id": "component.audio.badge.contentMode",
                 "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.audio.badge.iconToken",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.audio.badge.text",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.audio.badge.size",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.audio.badge.backgroundPaletteColor",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.audio.badge.contentPaletteColor",
+                "order": 70,
+                "visible": true
+              },
+              {
+                "id": "component.audio.badge.editor",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "component.audio.badge.placement",
+                "order": 90,
                 "visible": true
               }
             ]

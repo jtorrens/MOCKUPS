@@ -13,6 +13,7 @@ internal static class GeneratedComponentScaffoldConfigRegistry
         switch (componentType)
         {
             case "audio":
+                AudioComponentConfigContract.Validate(config, context);
                 return true;
             case "avatar":
                 return true;

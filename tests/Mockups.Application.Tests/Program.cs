@@ -10,6 +10,7 @@ var tests = new (string Name, Action Run)[]
     ("Theme token families preserve complete catalogs and metadata", ThemeTokenFamilyTests.CatalogAndMetadataStayComplete),
     ("Social Post Screen labels survive structure projection independently", SocialPostRuntimeLabelTests.ScreenLabelsSurviveProjection),
     ("Bubble requires valid message size tokens for every direction", BubbleConfigTests.DirectionSizesAreRequired),
+    ("Audio requires complete Variant-owned badge configuration", AudioConfigTests.BadgeConfigurationIsRequired),
     ("SVG fill transforms keep direct reusable geometry", SvgFillTransformsKeepDirectReusableGeometry),
     ("redirected child-process text round-trips exact UTF-8", RedirectedChildProcessTextRoundTripsExactUtf8),
     ("Node workers share their installation with child tools", NodeWorkersShareInstallation),
