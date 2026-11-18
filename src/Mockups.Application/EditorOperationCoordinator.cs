@@ -14,6 +14,8 @@ public sealed class EditorOperationCoordinator : IDisposable
     private bool _stopping;
     private bool _disposed;
     private long _nextActivityId;
+    private object? _pendingReplacementKey;
+    private CancellationTokenSource? _pendingReplacement;
 
     public event Action<EditorOperationActivity>? ActivityChanged;
     public event Action<EditorOperationMeasurement>? OperationMeasured;
@@ -45,13 +47,33 @@ public sealed class EditorOperationCoordinator : IDisposable
         return ExecuteAsync(_ => Task.FromResult(operation()), cancellationToken, operationName);
     }
 
-    public async Task<T> ExecuteAsync<T>(
+    public Task<T> ExecuteAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        CancellationToken cancellationToken = default,
+        [CallerMemberName] string operationName = "") =>
+        ExecuteCoreAsync(operation, null, cancellationToken, operationName);
+
+    // Only adjacent pending requests with the same semantic identity may be
+    // replaced. Ordinary operations are ordering barriers, including writes,
+    // relative steps and Restore. An operation already running always finishes.
+    public Task<T> ExecuteLatestAsync<T>(
+        object requestKey,
         Func<CancellationToken, Task<T>> operation,
         CancellationToken cancellationToken = default,
         [CallerMemberName] string operationName = "")
     {
+        ArgumentNullException.ThrowIfNull(requestKey);
+        return ExecuteCoreAsync(operation, requestKey, cancellationToken, operationName);
+    }
+
+    private async Task<T> ExecuteCoreAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        object? replacementKey,
+        CancellationToken cancellationToken,
+        string operationName)
+    {
         ArgumentNullException.ThrowIfNull(operation);
-        CancellationToken lifetimeToken;
+        CancellationTokenSource operationCancellation;
         lock (_stateGate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -60,31 +82,51 @@ public sealed class EditorOperationCoordinator : IDisposable
                 throw new InvalidOperationException(
                     "The editor operation queue is stopping for application close.");
             }
-            lifetimeToken = _lifetime.Token;
+            operationCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                _lifetime.Token, cancellationToken);
+            if (replacementKey is not null && Equals(replacementKey, _pendingReplacementKey))
+                _pendingReplacement?.Cancel();
+            _pendingReplacementKey = replacementKey;
+            _pendingReplacement = replacementKey is null ? null : operationCancellation;
         }
 
-        using var operationCancellation =
-            CancellationTokenSource.CreateLinkedTokenSource(
-                lifetimeToken,
-                cancellationToken);
         var token = operationCancellation.Token;
         var timer = Stopwatch.StartNew();
-        await _operationGate.WaitAsync(token).ConfigureAwait(false);
-        var queueMs = timer.Elapsed.TotalMilliseconds;
-        var succeeded = false;
         try
         {
-            token.ThrowIfCancellationRequested();
-            var result = await Task.Run(() => operation(token), token).ConfigureAwait(false);
-            succeeded = true;
-            return result;
+            await _operationGate.WaitAsync(token).ConfigureAwait(false);
+            var queueMs = timer.Elapsed.TotalMilliseconds;
+            var succeeded = false;
+            try
+            {
+                lock (_stateGate) ClearPendingReplacement(operationCancellation);
+                token.ThrowIfCancellationRequested();
+                var result = await Task.Run(() => operation(token), token).ConfigureAwait(false);
+                succeeded = true;
+                return result;
+            }
+            finally
+            {
+                _operationGate.Release();
+                OperationMeasured?.Invoke(new EditorOperationMeasurement(
+                    operationName, queueMs, timer.Elapsed.TotalMilliseconds - queueMs, succeeded));
+            }
         }
         finally
         {
-            _operationGate.Release();
-            OperationMeasured?.Invoke(new EditorOperationMeasurement(
-                operationName, queueMs, timer.Elapsed.TotalMilliseconds - queueMs, succeeded));
+            lock (_stateGate)
+            {
+                ClearPendingReplacement(operationCancellation);
+                operationCancellation.Dispose();
+            }
         }
+    }
+
+    private void ClearPendingReplacement(CancellationTokenSource operation)
+    {
+        if (!ReferenceEquals(_pendingReplacement, operation)) return;
+        _pendingReplacement = null;
+        _pendingReplacementKey = null;
     }
 
     public Task ExecuteAsync(

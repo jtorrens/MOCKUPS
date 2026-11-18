@@ -1782,8 +1782,14 @@ internal sealed class EditorPreviewController : IDisposable
     }
 
     private Task<PreparedDesignPreview> PrepareDesignPreviewAsync(
-        ProjectTreeNode? node, Action? applyCommand, CancellationToken cancellationToken) =>
-        _operations.ExecuteAsync(async token =>
+        ProjectTreeNode? node, Action? applyCommand, CancellationToken cancellationToken,
+        object? replacementKey = null)
+    {
+        return replacementKey is null
+            ? _operations.ExecuteAsync(Prepare, cancellationToken)
+            : _operations.ExecuteLatestAsync(replacementKey, Prepare, cancellationToken);
+
+        async Task<PreparedDesignPreview> Prepare(CancellationToken token)
         {
             var request = await Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -1827,7 +1833,8 @@ internal sealed class EditorPreviewController : IDisposable
                 PlaybackState.NotifyFrameChanged();
                 return new PreparedDesignPreview(payload, context);
             }, DispatcherPriority.Normal, token);
-        }, cancellationToken);
+        }
+    }
 
     private void RefreshDesignPlaybackFrame()
     {
@@ -2113,7 +2120,8 @@ internal sealed class EditorPreviewController : IDisposable
     private bool HasCurrentDesignInputs(ProjectTreeNode node) =>
         IsCurrentDesignOwner(node) && _designInputsPanel.IsPreparedFor(node);
 
-    private async Task RunDesignActionAsync(ProjectTreeNode node, Func<bool> command)
+    private async Task RunDesignActionAsync(ProjectTreeNode node, Func<bool> command,
+        object? replacementKey = null)
     {
         try
         {
@@ -2121,7 +2129,7 @@ internal sealed class EditorPreviewController : IDisposable
             {
                 if (!HasCurrentDesignInputs(node) || !command())
                     throw new InvalidOperationException("The requested Design action is not available for its exact owner.");
-            }, CancellationToken.None);
+            }, CancellationToken.None, replacementKey);
         }
         catch (OperationCanceledException) { }
         catch (Exception exception)
@@ -2152,7 +2160,8 @@ internal sealed class EditorPreviewController : IDisposable
         RunDesignActionAsync(node, () => _designInputsPanel.StepActionFrame(actionId, delta, targetValue));
 
     public Task SetDesignPreviewActionFrame(ProjectTreeNode node, string actionId, int frame, string? targetValue = null) =>
-        RunDesignActionAsync(node, () => _designInputsPanel.SetActionFrame(actionId, frame, targetValue));
+        RunDesignActionAsync(node, () => _designInputsPanel.SetActionFrame(actionId, frame, targetValue),
+            (node.Kind, node.Id, actionId, targetValue));
 
     public Task RestoreDesignPreviewAction(ProjectTreeNode node, string actionId) =>
         RunDesignActionAsync(node, () => _designInputsPanel.RestoreAction(actionId));

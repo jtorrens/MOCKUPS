@@ -320,6 +320,8 @@ export function planScopedValidation(
     }
     if ([
       "src/Mockups.Desktop/EditorShell/RuntimeTestActionControl.cs",
+      "src/Mockups.Application/EditorOperationCoordinator.cs",
+      "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
       "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
       "src/Mockups.Desktop/Common/PreviewPlaybackStateBinding.cs",
       "src/Mockups.Desktop/EditorShell/EditorSliderBehavior.cs",

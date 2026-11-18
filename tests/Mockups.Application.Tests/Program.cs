@@ -60,6 +60,7 @@ var tests = new (string Name, Action Run)[]
     ("editor operations execute away from the caller thread", EditorOperationsRunOnWorker),
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
     ("asynchronous editor operations retain ordering and propagate cancellation", AsyncEditorOperationsRetainOrdering),
+    ("latest editor requests replace only adjacent pending work", LatestEditorRequestsPreserveBarriers),
     ("presented editor operations publish their complete activity lifetime", PresentedEditorOperationsPublishActivityLifetime),
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
     ("editor shutdown waits beyond three seconds and cancels queued work", EditorOperationShutdownTests.WaitForActiveWrite),
@@ -1124,6 +1125,46 @@ static void AsyncEditorOperationsRetainOrdering()
     cancelStarted.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
     coordinator.Dispose();
     Throws<OperationCanceledException>(() => canceled.GetAwaiter().GetResult());
+}
+
+static void LatestEditorRequestsPreserveBarriers()
+{
+    using var coordinator = new EditorOperationCoordinator();
+    var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var order = new List<string>();
+    var blocker = coordinator.ExecuteLatestAsync("owner/action", async token =>
+    {
+        entered.SetResult();
+        await release.Task.WaitAsync(token);
+        order.Add("active");
+        return true;
+    });
+    entered.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+    Task<bool> Seek(string key, string label) => coordinator.ExecuteLatestAsync(key, _ =>
+    {
+        order.Add(label);
+        return Task.FromResult(true);
+    });
+    Task<bool>[] retired;
+    Task[] retained;
+    try
+    {
+        retired = Enumerable.Range(0, 200).Select(i => Seek("owner/action", $"obsolete-{i}")).ToArray();
+        var lastBeforeWrite = Seek("owner/action", "before-write");
+        var write = coordinator.ExecuteAsync(() => order.Add("write"));
+        var afterWrite = Seek("owner/action", "after-write");
+        var step = coordinator.ExecuteAsync(() => order.Add("step"));
+        var afterStep = Seek("owner/action", "after-step");
+        var otherOwner = Seek("other/action", "other-owner");
+        var last = Seek("owner/action", "last");
+        retained = [blocker, lastBeforeWrite, write, afterWrite, step, afterStep, otherOwner, last];
+    }
+    finally { release.TrySetResult(); }
+    Task.WhenAll(retained).WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+    foreach (var task in retired)
+        Throws<OperationCanceledException>(() => task.GetAwaiter().GetResult());
+    Equal("active,before-write,write,after-write,step,after-step,other-owner,last", string.Join(",", order));
 }
 
 static void PresentedEditorOperationsPublishActivityLifetime()

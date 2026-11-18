@@ -406,9 +406,10 @@ selects integer frames and pauses on the resolved frame. Pause retains that
 frame and the existing action target; Play resumes there without recapturing
 the origin or toggling the target again. Only Play at the completed endpoint
 restarts from the captured origin. A held interior frame is not completion.
-While ordered frame requests are pending, transport feedback cannot move the
+While frame requests are pending, transport feedback cannot move the
 slider away from the latest requested position; after publication it follows
-the common owner playhead again.
+the common owner playhead again. Absolute selections use the bounded pending
+request contract in `preview_rendering.md`; relative steps remain ordered.
 
 Loop belongs only to the shared Preview playback session, starts disabled and
 is never serialized into action, Screen, Shot or Render documents. Both Design

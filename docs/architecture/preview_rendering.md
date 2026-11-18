@@ -559,6 +559,19 @@ new owner, even if both declare the same action id. Controls await command
 publication before refreshing their state. Frame generation and playback remain
 asynchronous outside the mutation gate; the gate is not held during playback.
 
+Absolute Design frame selection uses the operation coordinator's replaceable
+request admission. Consecutive pending selections for the exact owner, action
+and target retain only the latest request; canceled requests never prepare a
+payload or publish a playhead. An already running operation finishes normally.
+Any ordinary operation (including authored writes, relative frame steps, Play
+and Restore), or a different request identity, separates those replacement
+groups. Thus a later seek cannot erase the frame a queued relative step must
+consume or cross an intervening edit. The shared queue remains the only
+capture/preparation/publication path; controls do not debounce writes or bypass
+fresh Runtime preparation. This bounds scrubbing backlog independently of the
+number of pointer events and lets subsequent Variant and payload commits run
+without waiting for obsolete frames.
+
 Scalar Test Value callbacks carry their exact owner, including when Preview is
 pinned elsewhere or the owner's first preparation is pending. Structured item
 edits enter the same operation queue and capture the latest temporary document

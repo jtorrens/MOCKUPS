@@ -10539,10 +10539,18 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                     return true;
                 });
                 Task<bool> frameDrained;
+                var preparedFrames = 0;
+                void CountFramePreparation(EditorOperationMeasurement measurement)
+                {
+                    if (measurement.Name == "PrepareDesignPreviewAsync" && measurement.Succeeded)
+                        Interlocked.Increment(ref preparedFrames);
+                }
+                operations.OperationMeasured += CountFramePreparation;
                 try
                 {
                     Wait(() => frameEntered.Task.IsCompleted);
-                    slider.Value = 2;
+                    for (var request = 0; request < 200; request++)
+                        slider.Value = request % 2 == 0 ? 2 : 3;
                     slider.Value = 1;
                     controller.PlaybackState.NotifyFrameChanged();
                     Equal(1d, slider.Value); // Published old frames cannot pull back the user's thumb.
@@ -10553,6 +10561,9 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 Wait(() => frameDrained.IsCompleted);
                 frameBlocker.GetAwaiter().GetResult();
                 frameDrained.GetAwaiter().GetResult();
+                operations.OperationMeasured -= CountFramePreparation;
+                True(preparedFrames <= 2,
+                    $"Scrubbing must not queue a preparation per pointer value; prepared {preparedFrames} frames.");
                 Equal(1, controller.CurrentDesignPreviewActionFrame(owner, actionId));
                 Equal(1d, slider.Value);
                 var restoreFrame = controller.SetDesignPreviewActionFrame(owner, actionId, 3);
