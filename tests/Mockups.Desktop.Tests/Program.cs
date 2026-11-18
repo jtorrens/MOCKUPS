@@ -29009,6 +29009,17 @@ static void ProductionNestedRuntimePreviewIgnoresSourceActors()
     var database = new SqliteProjectTestContext(ParityDatabasePath());
     var screen = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
         .Single(node => node.Id == "module_instance_89d6def6c70f4db4af92655d73321e34");
+    var savedContent = JsonNode.Parse(database.GetModuleInstanceSettings(screen.Id).ContentJson)!.AsObject();
+    var states = savedContent["forwarded_module_system_composition_stackStateInputs"]!.AsArray();
+    var notification = states.Single()!["inputs"]!.AsObject();
+    var textField = notification["displayMode"]!.GetValue<string>() switch
+    {
+        "summary" => "summaryText",
+        "detail" => "detailText",
+        var mode => throw new InvalidOperationException($"Unknown saved notification display mode '{mode}'."),
+    };
+    var expectedText = notification[textField]!.GetValue<string>();
+
     var dataSource = new DesignPreviewPayloadDataSource(database.PreviewInputs,
         database.Production, database.Resources, database.Resources, database.ProjectPaths);
     var preparer = new ProductionPreviewPayloadPreparer(dataSource,
@@ -29031,8 +29042,15 @@ static void ProductionNestedRuntimePreviewIgnoresSourceActors()
             ?? database.GetActorSettings(shot.OwnerActorId).DefaultDeviceId);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload).GetAwaiter().GetResult();
         True(!html.Contains("preview-error", StringComparison.Ordinal));
-        True(html.Contains("New notification", StringComparison.Ordinal));
+        var lines = System.Text.RegularExpressions.Regex.Matches(html,
+            """data-renderable-id="component\.notification\.label\.text(?:\.\d+)?"[^>]*>([^<]*)</div>""");
+        True(lines.Count > 0);
+        var renderedText = string.Join(" ", lines.Select(line => WebUtility.HtmlDecode(line.Groups[1].Value)));
+        Equal(NormalizeWhitespace(expectedText), NormalizeWhitespace(renderedText));
     }
+
+    static string NormalizeWhitespace(string text) =>
+        System.Text.RegularExpressions.Regex.Replace(text.Trim(), @"\s+", " ");
 }
 
 static void ScreenCreationUsesSelectedVariant()
