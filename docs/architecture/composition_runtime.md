@@ -347,6 +347,11 @@ The avatar uses the exact message Actor. This policy changes neither the
 external Bubble avatar nor its Actor label, and keeps outgoing/system audio
 avatars hidden. Audio continues to own avatar styling and layout.
 
+Audio owns Play as a circular surface plus a centered vector path. Its triangle
+centroid coincides with the circle center; authored icon padding determines the
+vector box and the authored icon color determines its fill. Preview and Render
+consume the same path primitive, with no text glyph or font baseline involved.
+
 Audio's `badgeSlot` owns the complete Variant-authored badge: `showBadge`,
 `contentMode`, `iconToken`, `text`, `size`, `backgroundPaletteColor` and
 `contentPaletteColor`, alongside its exact Badge Variant and placement.

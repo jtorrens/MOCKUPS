@@ -228,6 +228,7 @@ export function planScopedValidation(
       typecheck = true;
     }
     if (file === "src/desktop-preview/audioComponentResolver.ts"
+      || file === "src/desktop-preview/audioComponentRenderable.ts"
       || file === "src/Mockups.Application/AudioComponentConfigContract.cs"
       || file === "scaffolding/components/audio.json") {
       previewTests.add("tests/animation/atomicTemporalComponents.test.ts");

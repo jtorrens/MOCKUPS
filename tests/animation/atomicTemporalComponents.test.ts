@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { resolveAudioComponent } from "../../src/desktop-preview/audioComponentResolver.js";
+import { audioComponentToRenderable } from "../../src/desktop-preview/audioComponentRenderable.js";
 import { resolveBubbleComponent } from "../../src/desktop-preview/bubbleComponentResolver.js";
 import { buttonComponentToRenderableAt, measureButtonComponent } from "../../src/desktop-preview/buttonComponentRenderable.js";
 import { resolveButtonComponent } from "../../src/desktop-preview/buttonComponentResolver.js";
@@ -94,6 +95,26 @@ test("Audio requires its prepared Runtime playback time", () => {
     () => resolveAudioComponent(withDocument(source, preview)),
     /component\.audio\.input\.currentTimeSeconds/,
   );
+});
+
+test("Audio Play uses centered vector geometry independent of playback and font metrics", () => {
+  const source = withInputDefaults(committedComponentFixture("audio"));
+  for (const time of [0, 3]) {
+    const payload = withValues(source, { currentTimeSeconds: time, durationSeconds: 12 });
+    const audio = resolveAudioComponent(payload);
+    for (const size of [24, 48]) {
+      const node = audioComponentToRenderable(payload, { ...audio, playCircleSize: size });
+      const circle = node.children!.find(child => child.id === `${audio.id}.play`)!;
+      const glyph = node.children!.find(child => child.id === `${audio.id}.play.glyph`)!;
+      assert.equal(circle.text, undefined);
+      assert.equal(glyph.type, "path");
+      assert.equal(glyph.text, undefined);
+      assert.equal(glyph.style!.viewBox, "0 0 100 100");
+      assert.ok(Math.abs(glyph.box!.x + glyph.box!.width / 2 - circle.box!.x - circle.box!.width / 2) < 1e-9);
+      assert.ok(Math.abs(glyph.box!.y + glyph.box!.height / 2 - circle.box!.y - circle.box!.height / 2) < 1e-9);
+      assert.ok(glyph.box!.width <= circle.box!.width);
+    }
+  }
 });
 
 test("Notification display changes resolve their reflow state and source label", () => {

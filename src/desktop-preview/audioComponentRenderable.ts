@@ -118,6 +118,13 @@ export function audioComponentToRenderable(
   };
   const audioBox = translateBox(audioBoxLocal, origin);
   const playBox = translateBox(playBoxLocal, origin);
+  const playIconSize = Math.max(1, playSize - playIconPadding * 2);
+  const playIconBox = {
+    x: playBox.x + (playSize - playIconSize) / 2,
+    y: playBox.y + (playSize - playIconSize) / 2,
+    width: playIconSize,
+    height: playIconSize,
+  };
   const waveformBox = translateBox(waveformBoxLocal, origin);
   const textBox = translateBox(textBoxLocal, origin);
   const avatarBox = avatarBoxLocal ? translateBox(avatarBoxLocal, origin) : undefined;
@@ -181,18 +188,22 @@ export function audioComponentToRenderable(
         type: "surface",
         frame: 0,
         box: playBox,
-        text: "▶",
         style: {
-          alignItems: "center",
           background: selectedColor(payload, audio.playColorToken),
           borderRadius: playSize / 2,
-          color: selectedColor(payload, audio.playIconColorToken),
-          display: "flex",
-          fontSize: Math.max(1, playSize - playIconPadding * 2),
-          justifyContent: "center",
-          lineHeight: playSize,
-          textAlign: "center",
-          paddingLeft: Math.max(0, playSize - playIconPadding * 2) * 0.08,
+        },
+      },
+      {
+        id: `${audio.id}.play.glyph`,
+        type: "path",
+        frame: 0,
+        box: playIconBox,
+        style: {
+          // Inscribed triangle with its centroid at the circle center.
+          pathData: "M25 6.7 L100 50 L25 93.3 Z",
+          viewBox: "0 0 100 100",
+          preserveAspectRatio: "xMidYMid meet",
+          fill: selectedColor(payload, audio.playIconColorToken),
         },
       },
       ...waveformBars,
