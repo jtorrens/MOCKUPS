@@ -51,6 +51,9 @@ internal sealed class EditorFieldCommitCoordinator
         }
     }
 
+    public IDisposable BeginPreviewUpdate() =>
+        _operations.BeginActivity("Actualizando Preview…", EditorActivitySurface.Preview);
+
     public Task ExecuteAsync(Action persist) =>
         _operations.ExecuteAsync(persist);
 

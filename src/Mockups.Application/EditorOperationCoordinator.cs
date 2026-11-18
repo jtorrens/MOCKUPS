@@ -20,10 +20,10 @@ public sealed class EditorOperationCoordinator : IDisposable
     public event Action<EditorOperationActivity>? ActivityChanged;
     public event Action<EditorOperationMeasurement>? OperationMeasured;
 
-    public IDisposable BeginActivity(string message)
+    public IDisposable BeginActivity(string message, EditorActivitySurface surface = EditorActivitySurface.Workspace)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
-        var activity = new EditorOperationActivity(Interlocked.Increment(ref _nextActivityId), message, true);
+        var activity = new EditorOperationActivity(Interlocked.Increment(ref _nextActivityId), message, true, surface);
         ActivityChanged?.Invoke(activity);
         return new ActivityScope(this, activity);
     }
@@ -231,7 +231,10 @@ public sealed class EditorOperationCoordinator : IDisposable
 public readonly record struct EditorOperationActivity(
     long Id,
     string Message,
-    bool IsActive);
+    bool IsActive,
+    EditorActivitySurface Surface = EditorActivitySurface.Workspace);
+
+public enum EditorActivitySurface { Workspace, Preview }
 
 public readonly record struct EditorOperationMeasurement(
     string Name, double QueueMs, double WorkMs, bool Succeeded);

@@ -510,6 +510,7 @@ internal sealed class EditorPreviewController : IDisposable
         _productionRecordFields = productionRecordFields;
         _operations = operations;
         _designPreviewPane = new DesignWebPreviewPane(projectPaths);
+        _operations.ActivityChanged += OnPreviewActivityChanged;
         _previewPayloadData = new DesignPreviewPayloadDataSource(
             preview,
             timeline,
@@ -602,6 +603,7 @@ internal sealed class EditorPreviewController : IDisposable
         }
 
         _disposed = true;
+        _operations.ActivityChanged -= OnPreviewActivityChanged;
         _shotPlaybackTimer.Stop();
         _visualContextPreparation.Dispose();
         _productionPayloadPreparation.Dispose();
@@ -1247,6 +1249,7 @@ internal sealed class EditorPreviewController : IDisposable
             string projectId,
         CancellationToken cancellationToken)
     {
+        using var previewUpdate = BeginPreviewUpdate();
         if (string.IsNullOrWhiteSpace(projectId))
         {
             return null;
@@ -1637,6 +1640,20 @@ internal sealed class EditorPreviewController : IDisposable
         Refresh();
     }
 
+    private void OnPreviewActivityChanged(EditorOperationActivity activity)
+    {
+        if (activity.Surface != EditorActivitySurface.Preview) return;
+        void Apply()
+        {
+            if (!_disposed) _designPreviewPane.SetUpdateActivity(activity);
+        }
+        if (Dispatcher.UIThread.CheckAccess()) Apply();
+        else Dispatcher.UIThread.Post(Apply, DispatcherPriority.Input);
+    }
+
+    private IDisposable BeginPreviewUpdate() =>
+        _operations.BeginActivity("Actualizando Preview…", EditorActivitySurface.Preview);
+
     private async Task BrowseReferenceAsync()
     {
         if (string.IsNullOrWhiteSpace(_projectId)) return;
@@ -1749,6 +1766,7 @@ internal sealed class EditorPreviewController : IDisposable
 
     private async Task RefreshDesignCoreAsync()
     {
+        using var previewUpdate = BeginPreviewUpdate();
         var operation = _designPayloadPreparation.Begin();
         try
         {
@@ -1851,6 +1869,7 @@ internal sealed class EditorPreviewController : IDisposable
 
     private async Task RefreshProductionCoreAsync()
     {
+        using var previewUpdate = BeginPreviewUpdate();
         var preparation =
             _productionPayloadPreparation.Begin();
         var cancellationToken =
@@ -2210,15 +2229,16 @@ internal sealed class EditorPreviewController : IDisposable
                 result.Content[captured.Address.RootStorageJsonKey]!.AsArray().Select(item => item!.AsObject()).ToArray()));
     }
 
-    private Task<T> EditDesignPreviewInputsAsync<T>(
+    private async Task<T> EditDesignPreviewInputsAsync<T>(
         ProjectTreeNode node,
         Func<DesignPreviewPayload, ComponentPreviewTransientState, T> edit,
         Action<T> publish)
     {
+        using var previewUpdate = BeginPreviewUpdate();
         var themeId = _selectedThemeId;
         var mode = _selectedMode;
         var frame = _shotPreviewFrame;
-        return _operations.ExecuteAsync(async cancellationToken =>
+        return await _operations.ExecuteAsync(async cancellationToken =>
         {
             var capture = await Dispatcher.UIThread.InvokeAsync(() =>
                 _designInputsPanel.CaptureTransientState(node, node.Kind == ProjectTreeNodeKind.ModuleInstance),

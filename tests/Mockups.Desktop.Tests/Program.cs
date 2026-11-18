@@ -10498,6 +10498,11 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 {
                     Wait(() => entered.Task.IsCompleted);
                     edit = controller.SetDesignPreviewTestValue(owner, targetKey, editedValue);
+                    var updateStatus = Required(window.GetVisualDescendants().OfType<TextBlock>()
+                        .SingleOrDefault(text => text.Name == "PreviewUpdateStatus"));
+                    True(updateStatus.IsVisible,
+                        "Preview activity must be visible while the value edit is still queued.");
+                    Equal("Actualizando Preview…", updateStatus.Text);
                     playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     True(targetAtPlay is null, "Play must wait for the preceding edit at the shared gate.");
                 }
@@ -11000,6 +11005,15 @@ static void PreviewOwnerChangesClearPresentation()
         pane.BeginContextUpdate("shot-a");
         True(!loading.IsVisible);
         True(view.IsVisible);
+        var updateStatus = pane.Children.OfType<TextBlock>().Single(text => text.Name == "PreviewUpdateStatus");
+        pane.SetUpdateActivity(new(1, "Actualizando Preview…", true, EditorActivitySurface.Preview));
+        pane.SetUpdateActivity(new(2, "Actualizando Preview…", true, EditorActivitySurface.Preview));
+        True(updateStatus.IsVisible);
+        True(view.IsVisible); // Activity does not discard the resident frame.
+        pane.SetUpdateActivity(new(1, "Actualizando Preview…", false, EditorActivitySurface.Preview));
+        True(updateStatus.IsVisible); // Earlier completion cannot hide a newer update.
+        pane.SetUpdateActivity(new(2, "Actualizando Preview…", false, EditorActivitySurface.Preview));
+        True(!updateStatus.IsVisible);
         foreach (var owner in new[] { "screen-a", "screen-b", "shot-b", "shot-a" })
         {
             pane.BeginContextUpdate(owner);

@@ -45,6 +45,7 @@ internal sealed class EditorOperationActivityPresenter : IDisposable
 
     private void OnActivityChanged(EditorOperationActivity activity)
     {
+        if (activity.Surface != EditorActivitySurface.Workspace) return;
         if (Dispatcher.UIThread.CheckAccess()) Apply(activity);
         else Dispatcher.UIThread.Post(() => Apply(activity), DispatcherPriority.Input);
     }

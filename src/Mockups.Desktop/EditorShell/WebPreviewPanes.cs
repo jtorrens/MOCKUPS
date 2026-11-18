@@ -30,6 +30,16 @@ internal abstract class WebPreviewPane : Grid
     private Bitmap? _nativeRasterBitmap;
     private bool _nativeRasterBitmapIsBuffered;
     private readonly EditorLoadingScrim _contextLoading = new();
+    private readonly HashSet<long> _updateActivities = [];
+    private bool _renderActivity;
+    private readonly TextBlock _updateStatus = new()
+    {
+        Text = "Actualizando Preview…",
+        Name = "PreviewUpdateStatus",
+        IsVisible = false,
+        IsHitTestVisible = false,
+        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+    };
     protected bool IsContextPreparing => _contextLoading.IsVisible;
     private readonly object _rasterBufferGate = new();
     private readonly Dictionary<string, Bitmap> _rasterBuffer = new(StringComparer.Ordinal);
@@ -42,6 +52,7 @@ internal abstract class WebPreviewPane : Grid
 
     protected WebPreviewPane()
     {
+        RowDefinitions = new RowDefinitions("*,Auto");
         WebView = new NativeWebView
         {
             Background = Brushes.Transparent,
@@ -52,7 +63,25 @@ internal abstract class WebPreviewPane : Grid
         Children.Add(WebView);
         Children.Add(_nativeRasterFrame);
         Children.Add(_contextLoading);
+        Grid.SetRow(_updateStatus, 1);
+        Children.Add(_updateStatus);
     }
+
+    public void SetUpdateActivity(EditorOperationActivity activity)
+    {
+        if (activity.IsActive) _updateActivities.Add(activity.Id);
+        else _updateActivities.Remove(activity.Id);
+        RefreshUpdateStatus();
+    }
+
+    protected void SetRenderingActivity(bool active)
+    {
+        _renderActivity = active;
+        RefreshUpdateStatus();
+    }
+
+    private void RefreshUpdateStatus() =>
+        _updateStatus.IsVisible = _renderActivity || _updateActivities.Count > 0;
 
     protected void BeginPresentationContext()
     {
@@ -2186,6 +2215,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 var update = _pendingUpdate;
                 _pendingUpdate = null;
                 _renderingUpdate = update;
+                SetRenderingActivity(!update.IsPlaybackUpdate);
                 await RenderUpdateAsync(update);
                 _renderingUpdate = null;
             }
@@ -2194,6 +2224,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         {
             _renderingUpdate = null;
             _isRendering = false;
+            SetRenderingActivity(false);
             if (_pendingUpdate is not null)
             {
                 _ = ProcessPendingUpdatesAsync();
@@ -2281,11 +2312,6 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             {
                 LoadContextState(loadingState, update);
             }
-        }
-        else
-        {
-            ShowResidentContextState("loading", "Actualizando preview",
-                update.Payload is null ? "Fotograma transparente" : update.Payload.Name);
         }
         try
         {

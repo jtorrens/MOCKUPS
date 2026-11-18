@@ -803,6 +803,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var pendingChange = Task.CompletedTask;
         async Task PublishValueAsync(string next)
         {
+            using var previewUpdate = _operations.BeginActivity("Actualizando Preview…", EditorActivitySurface.Preview);
             await _setPreviewTestValue(owner.Node, input.JsonKey, next);
             _testValuesChanged();
         }
@@ -814,6 +815,7 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         control.ValueCommitted += async (_, next) =>
         {
+            using var previewUpdate = _operations.BeginActivity("Actualizando Preview…", EditorActivitySurface.Preview);
             await pendingChange;
             if (owner.IsInstance)
             {
@@ -1484,6 +1486,7 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         control.ValueCommitted += async (_, next) =>
         {
+            using var previewUpdate = _operations.BeginActivity("Actualizando Preview…", EditorActivitySurface.Preview);
             runtimeContract[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
             await persistRuntimeContract(true);
         };
@@ -2283,6 +2286,7 @@ internal sealed class RuntimeInputsCollectionEditor
         itemControls?[input.Id] = control;
         control.ValueCommitted += async (_, next) =>
         {
+            using var previewUpdate = _operations.BeginActivity("Actualizando Preview…", EditorActivitySurface.Preview);
             var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
                 ? id
                 : "";
@@ -2388,6 +2392,7 @@ internal sealed class RuntimeInputsCollectionEditor
         control.ValueChanged += async (_, next) => await ApplyTransientValue(next);
         control.ValueCommitted += async (_, next) =>
         {
+            using var previewUpdate = _operations.BeginActivity("Actualizando Preview…", EditorActivitySurface.Preview);
             componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
             var inputsJsonKey = RuntimeContractJsonKey(collection);
             item[inputsJsonKey] = componentInputs.DeepClone();

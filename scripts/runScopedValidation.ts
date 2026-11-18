@@ -337,6 +337,11 @@ export function planScopedValidation(
     }
     if ([
       "src/Mockups.Desktop/EditorShell/RuntimeTestActionControl.cs",
+      "src/Mockups.Desktop/EditorShell/EditorFieldCommitCoordinator.cs",
+      "src/Mockups.Desktop/EditorShell/EditorLayoutCardFactory.cs",
+      "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
+      "src/Mockups.Desktop/EditorShell/EditorOperationActivityPresenter.cs",
+      "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
       "src/Mockups.Application/EditorOperationCoordinator.cs",
       "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
       "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
@@ -347,6 +352,7 @@ export function planScopedValidation(
       for (const name of [
         "Runtime action controls reactivate after playback and visual-tree reattachment",
         "Preview Loop shares controls and repeats prepared Design actions",
+        "Preview owner changes clear presentation without clearing same-owner frames",
         "Media Design actions consume queued edits and retain exact ownership",
         "Notification Design actions consume queued edits and retain exact ownership",
       ]) add(npmStep(`desktop:design-transport:${name}`, "test:focus:desktop",

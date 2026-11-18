@@ -331,6 +331,7 @@ internal sealed class EditorLayoutCardFactory
                 activeFieldControls.Register(control);
                 control.ValueCommitted += async (_, value) =>
                 {
+                    using var previewUpdate = _fieldCommitCoordinator.BeginPreviewUpdate();
                     try
                     {
                         await _fieldCommitCoordinator.CommitAsync(
@@ -484,6 +485,7 @@ internal sealed class EditorLayoutCardFactory
         _activeFieldControls.Register(control);
         control.ValueCommitted += async (_, value) =>
         {
+            using var previewUpdate = _fieldCommitCoordinator.BeginPreviewUpdate();
             try
             {
                 await _fieldCommitCoordinator.CommitAsync(
@@ -665,6 +667,7 @@ internal sealed class EditorLayoutCardFactory
         activeFieldControls.Register(control);
         control.ValueCommitted += async (_, value) =>
         {
+            using var previewUpdate = _fieldCommitCoordinator.BeginPreviewUpdate();
             try
             {
                 if (context.RuntimeSource is not null)
