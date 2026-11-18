@@ -11969,6 +11969,26 @@ static void PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign()
                     as ProductionPreviewSessionSnapshot
                     ?? throw new InvalidOperationException("Missing Production Preview session.");
                 Equal(shot.Id, snapshot.Screen(lockedNode.Id).ShotId);
+                Required(window.FindControl<Button>("DesignWorkspaceButton"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return WindowSession(window).Workspace == EditorWorkspace.Design;
+                    },
+                    TimeSpan.FromSeconds(10)));
+                True((bool)(selectNode.Invoke(window, [designNode.Id]) ?? false));
+                // Release and repin before queued Design preparation can publish.
+                // The last painted Production Screen must never become a Design lock.
+                lockButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                lockButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Equal(EditorWorkspace.Design, preview.PreviewAuthoringWorkspace);
+                preview.BeginSelectionTransition();
+                var releasedOwner = preview.PreviewAuthoringNode(
+                    Required(WindowSession(window).SelectedNode),
+                    WindowSession(window).TreeRoots);
+                True(releasedOwner.Kind != ProjectTreeNodeKind.ModuleInstance);
                 CloseTestWindow(window);
             },
             CancellationToken.None).GetAwaiter().GetResult();

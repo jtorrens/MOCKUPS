@@ -329,6 +329,12 @@ export function planScopedValidation(
         "declared tool docks preserve live controls, deferred pointer gestures, Escape selection, stable geometry, vertical edge insertion, central tab merge, last group on Close, declared home on return, availability and modal occlusion",
         ["--", "--exact", "Application modals preserve Preview and displace siblings"]));
     }
+    if (file === "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs") {
+      desktopUi = true;
+      add(npmStep("desktop:preview-lock-workspace", "test:focus:desktop",
+        "Production pinning and immediate release/repin preserve exact workspace ownership",
+        ["--", "--exact", "pinned Production Preview keeps its active Screen while editing Design"]));
+    }
     if ([
       "src/Mockups.Desktop/EditorShell/RuntimeTestActionControl.cs",
       "src/Mockups.Application/EditorOperationCoordinator.cs",

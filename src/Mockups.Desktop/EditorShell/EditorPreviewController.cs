@@ -2009,8 +2009,7 @@ internal sealed class EditorPreviewController : IDisposable
         {
             _lastProductionPreviewNode =
                 PreviewNodeKey.From(node);
-            _activeDesignPreviewNode =
-                _lastProductionPreviewNode;
+            _activeDesignPreviewNode = null;
             _activeProductionHistoryEntry =
                 new DesignPreviewHistoryEntry(
                     _lastProductionPreviewNode,
@@ -4087,9 +4086,11 @@ internal sealed class EditorPreviewController : IDisposable
         RefreshDesignContextHistoryChrome();
         ToolTip.SetTip(
             _designContextText,
-            _activeDesignPreviewNode is not null
-                ? productionContext ? "Open the active module instance" : "Open this component variant in the editor"
-                : null);
+            productionContext
+                ? "Open the active module instance"
+                : _activeDesignPreviewNode is not null
+                    ? "Open this component variant in the editor"
+                    : null);
 
         _designContextLockButton.IsEnabled = _activeDesignPreviewNode is not null
             || _lastDesignPreviewNode is not null

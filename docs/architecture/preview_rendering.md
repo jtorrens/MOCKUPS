@@ -739,6 +739,10 @@ The shared authoring refresh coordinator selects this route from the effective
 Preview workspace, not the editor's navigation workspace. A pinned Production
 Screen therefore refreshes its catalog and Timeline while the editor is in
 Design, retaining the pinned owner, playhead and mounted payload controls.
+Production publication never populates the active Design identity. Releasing a
+Production lock while navigating Design restores Design ownership immediately;
+repinning before preparation completes can only retain a Design identity. The
+resident Production frame does not confer ownership on the Design workspace.
 The collection editor retains its mounted view after its own successful scalar
 writes only when the next prepared document matches that live view's values,
 declarations, Variant config, dictionary resource context and animation. Local
