@@ -358,30 +358,38 @@ internal sealed partial class SqliteDesignOwner
         lock (WriteGate)
         {
             using var connection = OpenConnection();
-            var module = GetModuleSettings(moduleId);
-            var metadata = ParseJsonObject(module.MetadataJson);
-            var variant = FindModuleVariant(metadata, node.Id);
-            if (IsVariantLockedForEditing(
-                    moduleId,
-                    variantId,
-                    JsonBool(variant, ["locked"])))
-            {
-                throw new InvalidOperationException(
-                    $"Module variant '{node.Name}' is locked.");
-            }
-
-            var config = variant["config"] as JsonObject
-                ?? throw new InvalidOperationException(
-                    "Module variant has no config.");
-            UpdateModuleConfigFieldValue(
-                connection,
-                module.RecordClassId,
-                config,
-                fieldId,
-                value);
-            variant["config"] = config;
-            _commitVariants(connection, [new(ProjectTreeNodeKind.ModuleVariant, moduleId, metadata.ToJsonString())]);
+            _commitVariants(connection, [PrepareModuleVariantFieldChange(connection, node, fieldId, value)]);
         }
+    }
+
+    internal VariantDocumentChange PrepareModuleVariantFieldChange(
+        SqliteConnection connection, ProjectTreeNode node, string fieldId, string value)
+    {
+        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out var variantId))
+            throw new InvalidOperationException($"Invalid Module Variant '{node.Id}'.");
+        var module = GetModuleSettings(moduleId);
+        var metadata = ParseJsonObject(module.MetadataJson);
+        var variant = FindModuleVariant(metadata, node.Id);
+        if (IsVariantLockedForEditing(
+                moduleId,
+                variantId,
+                JsonBool(variant, ["locked"])))
+        {
+            throw new InvalidOperationException(
+                $"Module variant '{node.Name}' is locked.");
+        }
+
+        var config = variant["config"] as JsonObject
+            ?? throw new InvalidOperationException(
+                "Module variant has no config.");
+        UpdateModuleConfigFieldValue(
+            connection,
+            module.RecordClassId,
+            config,
+            fieldId,
+            value);
+        variant["config"] = config;
+        return new(ProjectTreeNodeKind.ModuleVariant, moduleId, metadata.ToJsonString());
     }
 
     public string GetModuleVariantConfigFieldValue(

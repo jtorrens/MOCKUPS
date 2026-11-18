@@ -15,6 +15,7 @@ internal sealed record DesktopApplicationDataPorts(
     IResourceRecordFieldStore ResourceRecordFields,
     IComponentClassFieldStore ComponentFields,
     IVariantHistoryStore VariantHistory,
+    IVariantFieldChangeStore VariantFieldChanges,
     IPreviewInputRepository Preview,
     IComponentPreviewInputRepository ComponentPreview,
     IModuleInstanceTimelineStore Timeline,

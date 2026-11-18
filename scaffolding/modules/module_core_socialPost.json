@@ -22,16 +22,38 @@
     "resolver": "./socialPostModuleResolver",
     "renderable": "./socialPostModuleRenderable",
     "embeds": [
-      "bubble",
-      "contentRow",
-      "gallery",
-      "keyboard",
-      "media",
-      "navigation_bar",
-      "status_bar",
+      "label",
       "surface",
+      "cursor",
+      "textBox",
+      "iconRow",
+      "iconBar",
+      "collectionStack",
+      "badge",
+      "notification",
+      "notifications",
+      "listItem",
+      "list",
+      "codeIndicator",
+      "avatar",
+      "button",
+      "audio",
       "textInputBar",
-      "iconRow"
+      "keyboard",
+      "keypad",
+      "fingerprint",
+      "faceRecognition",
+      "drawPassword",
+      "password",
+      "media",
+      "bubble",
+      "status_bar",
+      "navigation_bar",
+      "incomingCallNotification",
+      "gallery",
+      "callParticipant",
+      "contentRow",
+      "surfaceStack"
     ]
   },
   "owners": {
@@ -1490,6 +1512,17 @@
       "actionsSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
         "overrides": {}
+      },
+      "floatingComponents": {
+        "items": [],
+        "motion": {
+          "transition": "slide",
+          "direction": "bottom",
+          "bounds": "screen",
+          "fade": true,
+          "translate": true,
+          "scale": false
+        }
       }
     }
   },
@@ -2867,6 +2900,101 @@
         "animationTimeline": {
           "sequenceItems": false
         }
+      },
+      {
+        "id": "floatingComponents",
+        "label": "Floating components",
+        "jsonKey": "floatingComponents",
+        "itemLabel": "Slot",
+        "fields": [
+          {
+            "id": "name",
+            "label": "Name",
+            "jsonKey": "name",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "Floating component",
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "componentSlot",
+            "label": "Component",
+            "jsonKey": "componentSlot",
+            "kind": "componentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "",
+            "componentType": "*",
+            "allowEmpty": true,
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "placement",
+            "label": "Placement",
+            "jsonKey": "placement",
+            "kind": "text",
+            "valueKind": "AlignmentPlacement",
+            "defaultValue": "{\"mode\": \"center\", \"alignX\": 0.5, \"alignY\": 0.5, \"offsetX\": 0, \"offsetY\": 0}",
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "startFrame",
+            "label": "In (frames)",
+            "jsonKey": "startFrame",
+            "kind": "number",
+            "valueKind": "Integer",
+            "defaultValue": "0",
+            "source": "runtime",
+            "minimum": -100000,
+            "maximum": 100000,
+            "increment": 1
+          },
+          {
+            "id": "visibleDurationFrames",
+            "label": "Visible duration (0 = Screen end)",
+            "jsonKey": "visibleDurationFrames",
+            "kind": "number",
+            "valueKind": "Integer",
+            "defaultValue": "0",
+            "source": "runtime",
+            "minimum": 0,
+            "maximum": 100000,
+            "increment": 1
+          }
+        ],
+        "canEditStructure": false,
+        "uiPresentation": "itemSections",
+        "itemRuntimePresentation": "sections",
+        "storageCollectionJsonKey": "floatingComponents",
+        "itemRuntimeVariantSlotJsonKey": "componentSlot",
+        "itemRuntimeContractJsonKey": "inputs",
+        "animationTimeline": {
+          "sequenceItems": false,
+          "preDurationFieldIds": [
+            "startFrame"
+          ],
+          "presenceDurationFieldId": "visibleDurationFrames",
+          "ownerPhase": {
+            "kind": "configMotion",
+            "configPath": [
+              "socialPost",
+              "floatingComponents",
+              "motion"
+            ]
+          }
+        },
+        "structureProjection": {
+          "sourceConfigPath": "socialPost.floatingComponents.items",
+          "sourceIdJsonKey": "id",
+          "runtimeIdJsonKey": "id",
+          "fieldBindings": {
+            "name": "name",
+            "componentSlot": "componentSlot",
+            "placement": "placement"
+          }
+        }
       }
     ],
     "showGallery": false,
@@ -3192,7 +3320,8 @@
         "accentActive": false
       }
     ],
-    "mediaSource": "system-preview://media/test-image.svg"
+    "mediaSource": "system-preview://media/test-image.svg",
+    "floatingComponents": []
   },
   "metadata": {
     "note": "Social Post defines its two-row header and one padded Media section."
@@ -4642,6 +4771,17 @@
         "actionsSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
           "overrides": {}
+        },
+        "floatingComponents": {
+          "items": [],
+          "motion": {
+            "transition": "slide",
+            "direction": "bottom",
+            "bounds": "screen",
+            "fade": true,
+            "translate": true,
+            "scale": false
+          }
         }
       }
     }
@@ -6339,6 +6479,17 @@
                   }
                 ]
               }
+            }
+          },
+          "floatingComponents": {
+            "items": [],
+            "motion": {
+              "transition": "slide",
+              "direction": "bottom",
+              "bounds": "screen",
+              "fade": true,
+              "translate": true,
+              "scale": false
             }
           }
         }
@@ -8106,6 +8257,96 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.floatingComponents",
+      "label": "Slots",
+      "valueKind": "StructuredCollection",
+      "jsonPath": [
+        "socialPost",
+        "floatingComponents",
+        "items"
+      ],
+      "defaultValue": "[]",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": {
+        "id": "floatingComponents",
+        "label": "Floating components",
+        "jsonKey": "items",
+        "itemLabel": "Slot",
+        "fields": [
+          {
+            "id": "name",
+            "label": "Name",
+            "jsonKey": "name",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "Floating component"
+          },
+          {
+            "id": "componentSlot",
+            "label": "Component",
+            "jsonKey": "componentSlot",
+            "kind": "componentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "",
+            "componentType": "*",
+            "allowEmpty": true
+          },
+          {
+            "id": "placement",
+            "label": "Placement",
+            "jsonKey": "placement",
+            "kind": "text",
+            "valueKind": "AlignmentPlacement",
+            "defaultValue": "{\"mode\": \"center\", \"alignX\": 0.5, \"alignY\": 0.5, \"offsetX\": 0, \"offsetY\": 0}"
+          }
+        ],
+        "canEditStructure": true,
+        "uiPresentation": "collection",
+        "itemRuntimePresentation": "card"
+      },
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.floatingMotion",
+      "label": "Enter / Exit motion",
+      "valueKind": "Motion",
+      "jsonPath": [
+        "socialPost",
+        "floatingComponents",
+        "motion"
+      ],
+      "defaultValue": "{\"transition\": \"slide\", \"direction\": \"bottom\", \"bounds\": \"screen\", \"fade\": true, \"translate\": true, \"scale\": false}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {
@@ -8716,6 +8957,35 @@
                 "visibleWhenValues": [
                   "float"
                 ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "floating-components",
+        "label": "Floating components",
+        "subtitle": "Screen placement and timed presence",
+        "icon": "layout",
+        "order": 95,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "floating-components",
+            "label": "Floating components",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.socialPost.floatingMotion",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.floatingComponents",
+                "order": 20,
+                "visible": true
               }
             ]
           }

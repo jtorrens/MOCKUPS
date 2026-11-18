@@ -1225,6 +1225,13 @@ internal sealed class RuntimeInputsCollectionEditor
                 ShowLabel: false));
         }
 
+        var embeddedGroups = ComponentInputGrouping.EmbeddedGroups(runtimeInputs
+            .Where(input => IsVisibleRuntimeValue(owner, input) && !hiddenInputIds.Contains(input.Id)).ToList());
+        foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(embeddedGroups))
+            sections.Add(CreateRuntimeGroupSubcard(groupId, embeddedGroups, input =>
+                CreateEmbeddedRuntimeInputControl(owner, runtimeContract, input, itemId,
+                    overrideAddress, PersistRuntimeContract)));
+
         foreach (var runtimeCollection in runtimeCollections
                      .Where((candidate) => string.IsNullOrWhiteSpace(candidate.UiParentCollectionJsonKey)))
         {
@@ -1259,9 +1266,14 @@ internal sealed class RuntimeInputsCollectionEditor
                 continue;
             }
 
-            throw new InvalidOperationException(
-                $"Runtime collection '{collection.Id}' sections presentation requires nested collection "
-                + $"'{runtimeCollection.Id}' to declare uiPresentation 'itemSections'.");
+            var collectionSections = runtimeItems.Select((runtimeItem, index) =>
+                new EditorInternalNavigationSection(ItemId(runtimeItem, index),
+                    $"{runtimeCollection.ItemLabel} {index + 1}", "Runtime inputs", EditorIcons.Component,
+                    CreateEmbeddedRuntimeCollectionItemContent(owner, runtimeContract, runtimeCollection,
+                        index, runtimeItem, childCollections, itemId, overrideAddress, PersistRuntimeContract))).ToList();
+            sections.Add(new EditorInternalNavigationSection(runtimeCollection.Id, runtimeCollection.Label,
+                "Runtime inputs", EditorIcons.Component,
+                new EditorSubcardLayoutHost(collectionSections, EditorSubcardLayout.SeparatedSections)));
         }
 
         return CreateSessionSubcardLayout(
@@ -1288,6 +1300,22 @@ internal sealed class RuntimeInputsCollectionEditor
             Margin = new Thickness(0, 0, 0, 36),
         };
         var parentItemId = ItemId(item, itemIndex);
+        var itemAddress = overrideAddress with { Path = [.. overrideAddress.Path,
+            ComponentOverridePathSegment.Field(collection.JsonKey), ComponentOverridePathSegment.Item(parentItemId)] };
+        async Task PersistItem(bool committed)
+        {
+            var items = DesignPreviewTestValues.CollectionItems(runtimeContract, collection).ToList();
+            items[itemIndex] = CloneObject(item);
+            runtimeContract[collection.JsonKey] = new JsonArray(items.Select(value => (JsonNode?)CloneObject(value)).ToArray());
+            await persistRuntimeContract(committed);
+        }
+        foreach (var input in collection.Fields.Where(input => IsVisibleRuntimeValue(owner, input)))
+            result.Children.Add(CreateEmbeddedRuntimeInputControl(owner, item, input,
+                temporalOwnerId, itemAddress, PersistItem));
+        if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey))
+            result.Children.Add(CreateEmbeddedChildRuntimeContent(owner, collection, item, temporalOwnerId,
+                itemAddress with { Path = [.. itemAddress.Path,
+                    ComponentOverridePathSegment.Field(RuntimeContractJsonKey(collection))] }, PersistItem));
         var editorHost = new ContentControl
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -1444,6 +1472,17 @@ internal sealed class RuntimeInputsCollectionEditor
                 temporalOwnerId,
                 overrideAddress,
                 persistRuntimeContract));
+        }
+        var collections = RuntimeInputDefinitionReader.ReadCollections(runtimeContract, new JsonObject());
+        foreach (var nested in collections.Where(value => string.IsNullOrWhiteSpace(value.UiParentCollectionJsonKey)))
+        {
+            var children = collections.Where(value => value.UiParentCollectionJsonKey == nested.JsonKey).ToList();
+            var items = DisplayItems(runtimeContract, nested);
+            var sections = items.Select((value, index) => new EditorInternalNavigationSection(
+                ItemId(value, index), $"{nested.ItemLabel} {index + 1}", "Runtime inputs", EditorIcons.Component,
+                CreateEmbeddedRuntimeCollectionItemContent(owner, runtimeContract, nested, index, value,
+                    children, temporalOwnerId, overrideAddress, persistRuntimeContract))).ToList();
+            result.Children.Add(new EditorSubcardLayoutHost(sections, EditorSubcardLayout.SeparatedSections));
         }
         return result;
     }
@@ -2655,6 +2694,19 @@ internal sealed class RuntimeInputsCollectionEditor
             EditorIcons.Component,
             content,
             Subcards: childSubcards,
+            SubcardLayout: EditorSubcardLayout.FlatStack);
+    }
+
+    private static EditorInternalNavigationSection CreateRuntimeGroupSubcard(
+        string groupId, IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups,
+        Func<ComponentInputDefinition, Control> createControl)
+    {
+        var content = new StackPanel { Spacing = 8 };
+        foreach (var input in groups[groupId]) content.Children.Add(createControl(input));
+        return new EditorInternalNavigationSection(groupId, ComponentInputGrouping.GroupLabel(groups[groupId]),
+            "Runtime inputs", EditorIcons.Component, content,
+            Subcards: ComponentInputGrouping.ChildGroupIds(groupId, groups)
+                .Select(child => CreateRuntimeGroupSubcard(child, groups, createControl)).ToList(),
             SubcardLayout: EditorSubcardLayout.FlatStack);
     }
 

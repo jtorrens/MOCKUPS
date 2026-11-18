@@ -66,7 +66,7 @@ public static class RuntimeInputValueKindContract
         return parsed;
     }
 
-    public static JsonNode CreateDefaultValue(JsonObject definition, string owner)
+    public static JsonNode? CreateDefaultValue(JsonObject definition, string owner)
     {
         var kind = JsonPath.RequiredString(definition, "kind", owner);
         var valueKindName = JsonPath.RequiredString(definition, "valueKind", owner);
@@ -96,10 +96,12 @@ public static class RuntimeInputValueKindContract
             throw new InvalidOperationException($"{owner} requires a string defaultValue.");
         }
 
-        var parsedDefault = ParseValue(
+        var parsedDefault = ParseEditableValue(
             valueKind,
             defaultValue,
+            definition["allowEmpty"]?.GetValue<bool>() == true,
             $"{owner} defaultValue");
+        if (parsedDefault is null) return null;
         ValidateDeclaredOptions(
             definition,
             valueKind,

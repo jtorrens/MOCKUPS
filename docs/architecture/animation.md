@@ -676,3 +676,11 @@ time. Seeking is stateless and therefore reversible. Social Post and Conversatio
 consume this common clock; their existing declared duration bounds remain in
 force. The media asset resolver clamps requests beyond the actual video to its
 last decoded timestamp, so a longer Screen holds the final frame.
+
+Floating Component collections use parallel parent-owned presence intervals.
+`startFrame` is the Screen-local In; `visibleDurationFrames = 0` continues to the
+Screen end. A positive duration establishes Out. The shared
+`resolveRuntimePresenceInterval` also serves Conversation: entry plays the common
+Motion forward, explicit early Out plays it backwards, and frames outside the
+interval contain no child. Child parameter animation uses its temporal owner,
+independently of Placement and the parent's presence Motion.

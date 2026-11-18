@@ -162,6 +162,7 @@ public sealed class ApplicationStartupCoordinator
                 project.ResourceRecordFields,
                 project.ComponentFields,
                 project.VariantHistory,
+                project.VariantFieldChanges,
                 project.Preview,
                 project.ComponentPreview,
                 project.Timeline,

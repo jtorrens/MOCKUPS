@@ -1,3 +1,4 @@
+import { resolveFloatingComponentCollection } from "./floatingComponentCollection.js";
 import { resolvePlaybackClock } from "./parameterAnimationResolver.js";
 import { requiredModuleSectionLayout } from "./moduleSectionLayout.js";
 import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
@@ -102,6 +103,7 @@ export function resolveSocialPostModule(
 
   return {
     id: "module.core.socialPost",
+    floatingComponents: resolveFloatingComponentCollection(payload, requiredRecord(socialPost, "floatingComponents", "module.core.socialPost"), "floatingComponents", "module.core.socialPost.floatingComponents"),
     headerLayout: requiredModuleSectionLayout(socialPost, "headerLayout", "module.core.socialPost"),
     footerLayout: requiredModuleSectionLayout(socialPost, "footerLayout", "module.core.socialPost"),
     messageLayout: requiredModuleSectionLayout(socialPost, "messageLayout", "module.core.socialPost"),

@@ -504,3 +504,11 @@ public interface IRenderSnapshotDataSource :
     EditorShell.ProjectTreeNode GetCurrentRenderShot(string shotId);
     ProductionOutputShotContext GetProductionOutputShotContext(string shotId);
 }
+
+public interface IVariantFieldChangeStore
+{
+    EditorShell.VariantFieldChangePreparation? Prepare(
+        EditorShell.ProjectTreeNode node, string fieldId, string value);
+    void Commit(EditorShell.ProjectTreeNode node, string fieldId, string value,
+        string revision, IReadOnlyDictionary<string, EditorShell.RecordCreationDraft> screenInputs);
+}

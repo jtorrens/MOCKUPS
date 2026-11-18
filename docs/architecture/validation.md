@@ -990,3 +990,33 @@ conversationModuleResolver cover static Play, owner/target isolation, source
 offsets, pause/resume and reverse seeks. previewAssetResolver covers actual
 video timestamps and final-frame clamping. The scoped validation selector includes
 these consumers when the common playback clock changes.
+
+### Floating Component contract coverage
+
+`FloatingComponentRuntimeTests.ProjectionAndReplacement` covers two distinct
+Component boundaries, independently edited Screen values, storage/projection
+round trips, and exact Variant replacement without resetting the other slot.
+The strict `FloatingComponentCollectionContract` validates authoring shape;
+`resolveFloatingComponentCollection` rejects mismatched prepared membership.
+Social Post's existing resolver suite covers the newly declared empty collection.
+The scoped validation owner selects Application, desktop UI, Social Post and
+Conversation coverage for shared projection, child resolution and presence changes.
+These suites require explicit test authorization; compilation alone does not
+establish rendered-pixel or real-UI behavior.
+
+`VariantComponentInsertionPreparesScreenValues` exercises the actual prepared
+Variant persistence boundary with Bubble and Notification: rollback-only
+preparation, rejection of missing required inputs, explicit Screen completion,
+unchanged-boundary preservation, and rejection of stale revisions. The same
+shared Dictionary form is used by `EditorFieldCommitCoordinator`; cancellation
+restores the stored control value and makes no commit. UI verification must cover
+new child fields appearing after selection, the disabled accept action until
+required values are provided, and cancellation without changes to Screens.
+
+The real Desktop review for this change used a disposable workstation copy:
+adding an unselected slot, selecting Bubble on a Variant used by five Screens,
+disabled acceptance before Actor selection, cancellation with no persisted
+Component or payload change, and explicit Actors persisted in all five Screen
+payloads. The complete sections surface was also opened to verify Message,
+Avatar, Media and Icon Row groups and edit the nested Bubble text. These manual
+checks do not replace the authorized regression suites or rendered motion checks.

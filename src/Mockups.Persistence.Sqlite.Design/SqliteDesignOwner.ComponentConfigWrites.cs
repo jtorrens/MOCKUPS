@@ -207,6 +207,13 @@ internal sealed partial class SqliteDesignOwner
         JsonObject config,
         JsonObject metadata)
     {
+        _commitVariants(connection, [PrepareComponentVariantUpdate(connection, variantNode, componentClassId, config, metadata)]);
+    }
+
+    internal VariantDocumentChange PrepareComponentVariantUpdate(
+        SqliteConnection connection, ProjectTreeNode variantNode, string componentClassId,
+        JsonObject config, JsonObject metadata)
+    {
         if (!VariantReferenceId.TryParse(
                 variantNode.Id,
                 out _,
@@ -234,15 +241,10 @@ internal sealed partial class SqliteDesignOwner
                 VariantEnvelopeContract.DefaultId,
                 StringComparison.Ordinal))
         {
-            PersistDefaultComponentConfig(
-                connection,
-                componentClassId,
-                config,
-                metadata);
-            return;
+            SetDefaultComponentVariantConfig(metadata, config);
         }
 
-        _commitVariants(connection, [new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString())]);
+        return new(ProjectTreeNodeKind.ComponentVariant, componentClassId, metadata.ToJsonString());
     }
 
     internal static JsonNode ComponentConfigJsonValue(

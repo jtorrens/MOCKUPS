@@ -1,3 +1,4 @@
+import { resolveRuntimePresenceInterval } from "./runtimeCollectionPresence.js";
 import { resolvePlaybackClock } from "./parameterAnimationResolver.js";
 import { embeddedComponentConfig } from "./runtimePreviewDocumentContract.js";
 import { resolveConfiguredIconRowComponentFromRecords, resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
@@ -794,33 +795,9 @@ function visibleMessages(
       timing,
       writesInBubble,
     );
-    if (frame < visibleAt || frame >= message.presenceEndFrame) return [];
-    const motionDurationFrames = Math.ceil(
-      motionTotalDurationMs(payload, messageMotion)
-        / 1000 * Math.max(1, payload.frameRate),
-    );
-    const explicitExit = message.hasExplicitPresenceEnd
-      && message.presenceEndFrame < automaticEndFrame;
-    const exitStartFrame = Math.max(visibleAt, message.presenceEndFrame - motionDurationFrames);
-    const presenceMotion = explicitExit && frame >= exitStartFrame
-      ? {
-          presenceMotionKind: "exit" as const,
-          presenceMotionFrame: resolveMotionFrame(payload, messageMotion, {
-            trigger: true,
-            elapsedMs: Math.max(0, frame - exitStartFrame)
-              / Math.max(1, payload.frameRate) * 1000,
-          }),
-        }
-      : motionDurationFrames > 0 && frame - visibleAt < motionDurationFrames
-        ? {
-            presenceMotionKind: "enter" as const,
-            presenceMotionFrame: resolveMotionFrame(payload, messageMotion, {
-              trigger: true,
-              elapsedMs: Math.max(0, frame - visibleAt)
-                / Math.max(1, payload.frameRate) * 1000,
-            }),
-          }
-        : {};
+    const presenceMotion = resolveRuntimePresenceInterval(payload, frame, visibleAt,
+      message.presenceEndFrame, message.hasExplicitPresenceEnd, automaticEndFrame, messageMotion);
+    if (!presenceMotion.visible) return [];
     const incomingTyping = isIncomingMessage
       && timing.incomingRevealMode === "typingIndicator"
       && actionFrame < effectiveWriteOnFrames;

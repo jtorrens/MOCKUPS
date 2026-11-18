@@ -7,12 +7,20 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProductionOwner
 {
-    internal void ReconcileVariantRuntimePayloads(
+    internal string VariantRuntimeBaseline(SqliteConnection connection, IEnumerable<string> ids) =>
+        System.Text.Json.JsonSerializer.Serialize(ids.Order(StringComparer.Ordinal)
+            .Select(id => _moduleInstanceRepository.Get(connection, id)).ToList());
+
+    internal IReadOnlyList<VariantScreenInputRequest> ReconcileVariantRuntimePayloads(
         SqliteConnection connection,
         SqliteTransaction transaction,
-        IReadOnlyDictionary<string, JsonObject> previousContracts)
+        IReadOnlyDictionary<string, JsonObject> previousContracts,
+        bool commit = true,
+        IReadOnlyDictionary<string, RecordCreationDraft>? screenInputs = null)
     {
+        var requests = new List<VariantScreenInputRequest>();
         var shots = new HashSet<string>(StringComparer.Ordinal);
+        var consumed = new HashSet<string>(StringComparer.Ordinal);
         foreach (var (id, previousContract) in previousContracts)
         {
             var instance = _moduleInstanceRepository.Get(connection, id);
@@ -21,13 +29,43 @@ internal sealed partial class SqliteProductionOwner
                 ParseJsonObject(instance.ContentJson), previousContract, contract);
             var runtime = PrepareModuleInstanceRuntimeDocument(connection, id, content);
             content = RuntimeInputDocumentContract.CreateContentForContract(runtime, runtime);
+            var settings = GetModuleInstanceVariantSettings(connection, id);
+            var config = ParseJsonObject(settings.ConfigJson);
+            var shot = _shotRepository.Get(connection, instance.ShotId);
+            var actors = _runtimeReferences.ActorOptions(connection, shot.ProjectId);
+            var definitionId = $"variant-runtime:{id}";
+            var definition = ProductionRuntimeCreationContract.Prepare(definitionId, content, runtime, config, actors);
+            if (definition.RequiresConfirmation)
+            {
+                requests.Add(new VariantScreenInputRequest(id, definition with {
+                    Title = $"Complete Runtime Inputs · {instance.Name}",
+                    Description = $"Choose the new required values for Screen '{instance.Name}' in Shot '{shot.Name}' before saving the Component change.",
+                    ActionLabel = "Continue",
+                }));
+                if (commit)
+                {
+                    if (screenInputs is null || !screenInputs.TryGetValue(id, out var draft))
+                        throw new InvalidOperationException($"Screen '{instance.Name}' requires explicit Runtime Inputs before the Variant change can be saved.");
+                    content = ProductionRuntimeCreationContract.Complete(definitionId, content, runtime, config, actors, draft);
+                    consumed.Add(id);
+                    runtime = PrepareModuleInstanceRuntimeDocument(connection, id, content);
+                    content = RuntimeInputDocumentContract.CreateContentForContract(runtime, runtime);
+                }
+            }
+            if (!commit) continue;
             var animation = RuntimeInputDocumentContract.RemoveOrphanedAnimationTracks(
                 ParseJsonObject(instance.AnimationJson), runtime, runtime);
             _moduleInstanceRepository.UpdateContentAndAnimation(connection, id,
                 content.ToJsonString(), animation.ToJsonString(), transaction);
             shots.Add(instance.ShotId);
         }
-        CompleteScreenWrite(connection, transaction, shots);
+        if (commit)
+        {
+            if (screenInputs is not null && screenInputs.Keys.Any(id => !consumed.Contains(id)))
+                throw new InvalidOperationException("Variant change contains undeclared Screen Runtime drafts.");
+            CompleteScreenWrite(connection, transaction, shots);
+        }
+        return requests;
     }
 
     public string GetModuleInstanceRuntimePreviewJson(

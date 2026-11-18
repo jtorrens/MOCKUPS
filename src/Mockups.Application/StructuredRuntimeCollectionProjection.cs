@@ -343,8 +343,15 @@ public static class StructuredRuntimeCollectionProjection
                     currentSlot,
                     $"{owner} current Runtime owner slot '{slotKey}'")
                 : "";
-        if (currentReference.Equals(reference, StringComparison.Ordinal)
-            && currentItem?[runtimeKey] is JsonObject currentRuntime)
+        var projection = JsonPath.RequiredObject(collection, "structureProjection", owner);
+        var bindings = JsonPath.RequiredObject(projection, "fieldBindings", owner);
+        var slotField = JsonPath.RequiredArray(collection, "fields", owner).OfType<JsonObject>()
+            .Single(field => JsonPath.RequiredString(field, "jsonKey", owner) == slotKey);
+        var structureOwnedSlot = bindings.ContainsKey(slotKey)
+            && JsonPath.String(slotField, "source", "") == "variant";
+        var sameBoundary = structureOwnedSlot && currentItem is not null && !currentItem.ContainsKey(slotKey)
+            || currentReference.Equals(reference, StringComparison.Ordinal);
+        if (sameBoundary && currentItem?[runtimeKey] is JsonObject currentRuntime)
         {
             projected[runtimeKey] = currentRuntime.DeepClone();
             return;

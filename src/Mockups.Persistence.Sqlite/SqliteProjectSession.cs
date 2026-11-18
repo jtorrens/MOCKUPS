@@ -15,6 +15,7 @@ public sealed class SqliteProjectSession
         IResourceRecordFieldStore resourceRecordFields,
         IComponentClassFieldStore componentFields,
         IVariantHistoryStore variantHistory,
+        IVariantFieldChangeStore variantFieldChanges,
         IPreviewInputRepository preview,
         IComponentPreviewInputRepository componentPreview,
         IModuleInstanceTimelineStore timeline,
@@ -47,6 +48,7 @@ public sealed class SqliteProjectSession
         ResourceRecordFields = resourceRecordFields;
         ComponentFields = componentFields;
         VariantHistory = variantHistory;
+        VariantFieldChanges = variantFieldChanges;
         Preview = preview;
         ComponentPreview = componentPreview;
         Timeline = timeline;
@@ -70,6 +72,8 @@ public sealed class SqliteProjectSession
         ActorPreview = actorPreview;
         ResourceAssetCleanup = resourceAssetCleanup;
     }
+
+    public IVariantFieldChangeStore VariantFieldChanges { get; }
 
     public IProjectPathResolver ProjectPaths { get; }
 

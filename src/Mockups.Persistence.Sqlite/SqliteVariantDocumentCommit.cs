@@ -2,6 +2,8 @@ using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System.Text.Json.Nodes;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -12,7 +14,14 @@ internal static class SqliteVariantDocumentCommit
         SqliteConnection connection,
         IReadOnlyList<VariantDocumentChange> changes,
         SqliteDesignOwner design,
-        SqliteProductionOwner production)
+        SqliteProductionOwner production) =>
+        Execute(context, connection, changes, design, production, true, null, null);
+
+    internal static VariantFieldChangePreparation Execute(
+        SqliteProjectContext context, SqliteConnection connection,
+        IReadOnlyList<VariantDocumentChange> changes, SqliteDesignOwner design,
+        SqliteProductionOwner production, bool commit, string? expectedRevision,
+        IReadOnlyDictionary<string, RecordCreationDraft>? screenInputs)
     {
         lock (context.WriteGate)
         {
@@ -46,6 +55,11 @@ internal static class SqliteVariantDocumentCommit
                     return production.ResolveModuleInstanceContract(connection, screen.ModuleId, screen.MetadataJson);
                 }, StringComparer.Ordinal);
 
+            var baseline = string.Join("\n", changes.Select(change => Metadata(connection, change, design)))
+                + production.VariantRuntimeBaseline(connection, previousContracts.Keys)
+                + System.Text.Json.JsonSerializer.Serialize(previousContracts)
+                + System.Text.Json.JsonSerializer.Serialize(changes);
+
             foreach (var change in changes)
                 design.StoreVariantDocument(connection, transaction, change);
 
@@ -57,8 +71,18 @@ internal static class SqliteVariantDocumentCommit
                          && target.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant))
                 design.PrepareVariantDependencies(connection, transaction, target.Kind, target.Id);
 
-            production.ReconcileVariantRuntimePayloads(connection, transaction, previousContracts);
-            transaction.Commit();
+            var requests = production.ReconcileVariantRuntimePayloads(connection, transaction, previousContracts, commit: false);
+            var revision = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
+                baseline + System.Text.Json.JsonSerializer.Serialize(requests))));
+            if (expectedRevision is not null && revision != expectedRevision)
+                throw new InvalidOperationException("The Variant or its Screens changed while completing Runtime Inputs. Reopen the change to prepare current values.");
+            if (commit)
+            {
+                production.ReconcileVariantRuntimePayloads(connection, transaction, previousContracts, true, screenInputs);
+                transaction.Commit();
+            }
+            else transaction.Rollback();
+            return new VariantFieldChangePreparation(revision, requests);
         }
     }
 
