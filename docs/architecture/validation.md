@@ -990,3 +990,5 @@ conversationModuleResolver cover static Play, owner/target isolation, source
 offsets, pause/resume and reverse seeks. previewAssetResolver covers actual
 video timestamps and final-frame clamping. The scoped validation selector includes
 these consumers when the common playback clock changes.
+
+Production tree Screen ordering selects the existing “Shot Screen tracks resolve independent lanes gaps and overlap priority” regression for the persisted order and prepared overlap layers. Check the tree controls separately at both ends of a multi-Screen Shot.

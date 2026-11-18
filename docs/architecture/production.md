@@ -581,3 +581,5 @@ the reference window but have no Shot or Screen Timeline projection. Setting or
 changing In projects them without rewriting their stored frames. Markers may
 exist before Screens or outside the current Shot duration; only markers inside
 the visible timeline range are painted.
+
+The Production tree presents a Shot’s Screens front to back. Raise and Lower move one layer through the existing Screen record move command. Screen start frames, durations and local animation tracks retain their authored values.

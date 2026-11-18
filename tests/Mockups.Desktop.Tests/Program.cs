@@ -22398,6 +22398,23 @@ static void ShotScreenTracksResolveIndependentLanes()
             new[] { lower.Id, top.Id },
             overlapTransition.Layers.Select((layer) => layer.Owner.OwnerId));
 
+        var lowerNode = shot.Children.Single(node => node.Id == lower.Id);
+        var beforeMove = database.GetShotModuleInstanceSlots(shot.Id);
+        database.NodeCommands.Move(lowerNode, -1);
+        var raised = database.GetShotModuleInstanceSlots(shot.Id);
+        Equal(lower.Id, raised[0].Id);
+        foreach (var screen in beforeMove)
+        {
+            var reordered = raised.Single(candidate => candidate.Id == screen.Id);
+            Equal(screen.StartFrame, reordered.StartFrame);
+            Equal(screen.StoredDurationFrames, reordered.StoredDurationFrames);
+        }
+        var raisedFrame = preparer.PrepareRequired(shot, null, "light", 0);
+        Equal(lower.Id, Required(raisedFrame.ScreenTransition).Layers.Last().Owner.OwnerId);
+        database.NodeCommands.Move(lowerNode, 1);
+        SequenceEqual(beforeMove.Select(screen => screen.Id),
+            database.GetShotModuleInstanceSlots(shot.Id).Select(screen => screen.Id));
+
         var topRange = ranges.Single((range) => range.ScreenId == top.Id);
         database.UpdateModuleInstanceField(
             top.Id,

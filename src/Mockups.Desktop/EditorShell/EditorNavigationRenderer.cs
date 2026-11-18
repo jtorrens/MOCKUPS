@@ -44,6 +44,8 @@ internal sealed class EditorNavigationRenderer
     private string _renderedActivePreviewNodeId = "";
     private string _renderedActiveProjectId = "";
 
+    private readonly Func<ProjectTreeNode, int, Task> _moveScreen;
+
     public EditorNavigationRenderer(
         Func<ProjectTreeNode?> selectedNode,
         Func<bool> isDark,
@@ -68,7 +70,8 @@ internal sealed class EditorNavigationRenderer
         Func<ProjectTreeNode, bool> canExposeChildren,
         Func<ProjectTreeNode, bool> isNodeEnabled,
         Func<string> activePreviewNodeId,
-        Func<ProjectTreeNode, EditorNavigationRowAction?> persistentAction)
+        Func<ProjectTreeNode, EditorNavigationRowAction?> persistentAction,
+        Func<ProjectTreeNode, int, Task> moveScreen)
     {
         _selectedNode = selectedNode;
         _isDark = isDark;
@@ -91,6 +94,7 @@ internal sealed class EditorNavigationRenderer
         _isNodeEnabled = isNodeEnabled;
         _activePreviewNodeId = activePreviewNodeId;
         _persistentAction = persistentAction;
+        _moveScreen = moveScreen;
     }
 
     internal static bool HasSamePresentation(
@@ -287,6 +291,13 @@ internal sealed class EditorNavigationRenderer
         var contextActions = new List<EditorNavigationRowAction>();
         if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
         {
+            if (siblingIndex > 0 || !isLastSibling)
+            {
+                options.Add(new("Raise Screen one layer", EditorIcons.Up,
+                    () => _ = _moveScreen(node, -1), siblingIndex > 0));
+                options.Add(new("Lower Screen one layer", EditorIcons.Down,
+                    () => _ = _moveScreen(node, 1), !isLastSibling));
+            }
             contextActions.Add(new(
                 "Copy Screen",
                 EditorIcons.Duplicate,

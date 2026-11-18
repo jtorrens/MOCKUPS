@@ -270,6 +270,13 @@ export function planScopedValidation(
         ["--", "--exact", "Bubble requires valid message size tokens for every direction"],
       ));
     }
+    if (file === "src/Mockups.Desktop/EditorShell/EditorNavigationRenderer.cs"
+      || file === "src/Mockups.Desktop/EditorShell/EditorNodeCommandController.cs") {
+      desktopUi = true;
+      add(npmStep("desktop:shot-screen-order", "test:focus:desktop",
+        "Screen layer controls must preserve independent timing and overlap priority",
+        ["--", "--exact", "Shot Screen tracks resolve independent lanes gaps and overlap priority"]));
+    }
     if ([
       "src/Mockups.Desktop.Host/Program.cs",
       "src/Mockups.Desktop.Host/WorkstationUpdateMaintenance.cs",

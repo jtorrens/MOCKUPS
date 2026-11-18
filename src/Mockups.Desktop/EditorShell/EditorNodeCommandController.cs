@@ -164,6 +164,20 @@ internal sealed class EditorNodeCommandController
         }
     }
 
+    public async Task MoveScreen(ProjectTreeNode screen, int offset)
+    {
+        using var activity = _operations.BeginActivity("Moving Screen…");
+        try
+        {
+            await _operations.ExecuteAsync(() => _database.Move(screen, offset));
+            await _reloadAndSelect(screen);
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Move {screen.Name}", exception);
+        }
+    }
+
     public async Task RenameNode(ProjectTreeNode node)
     {
         using var activity = _operations.BeginActivity("Renaming item…");

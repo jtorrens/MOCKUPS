@@ -282,7 +282,8 @@ public partial class MainWindow : SukiWindow
             productionShotContext.CanExposeChildren,
             productionShotContext.IsNavigationNodeEnabled,
             () => _previewController.ActiveNavigationNodeId,
-            _productionNavigationActions.NodeAction);
+            _productionNavigationActions.NodeAction,
+            _nodeCommands.MoveScreen);
         _previewController.PlaybackState.Changed += RefreshPreviewNavigationState;
         var fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             data.Presentation,
