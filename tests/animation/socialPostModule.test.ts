@@ -120,7 +120,6 @@ test("Social Post owns structure-projected Runtime row sections", () => {
     "socialPostRows",
     "socialPostFooterRows",
     "socialPostActions",
-    "floatingComponents",
   ]);
   assert.deepEqual(contract.rows.map(({ id }) => id), ["item_690ab7d988ef466c8d6b20406ef2e024", "item_d2a1bd7aeb5f49c49501136b62bc4389"]);
   assert.equal(contract.rows[0].content.slots[0].kind, "avatar");
@@ -688,16 +687,3 @@ test("Reel action and footer labels consume independent Screen Runtime values", 
     assert.equal(at(2).mediaCurrentTimeSeconds, 0.28);
   }
  });
-
-test("floating presence uses the same bounded interval for Bubble and Label", async () => {
-  const { resolveRuntimePresenceInterval } = await import("../../src/desktop-preview/runtimeCollectionPresence.js");
-  for (const componentType of ["bubble", "label"]) {
-    const payload = committedComponentFixture(componentType);
-    const motion = { transition: "slide", direction: "bottom", bounds: "screen", fade: true, translate: true, scale: false } as const;
-    assert.equal(resolveRuntimePresenceInterval(payload, 9, 10, 100, true, 150, motion).visible, false);
-    assert.equal(resolveRuntimePresenceInterval(payload, 10, 10, 100, true, 150, motion).presenceMotionKind, "enter");
-    assert.equal(resolveRuntimePresenceInterval(payload, 99, 10, 100, true, 150, motion).presenceMotionKind, "exit");
-    assert.equal(resolveRuntimePresenceInterval(payload, 100, 10, 100, true, 150, motion).visible, false);
-    assert.notEqual(resolveRuntimePresenceInterval(payload, 149, 10, 150, false, 150, motion).presenceMotionKind, "exit");
-  }
-});

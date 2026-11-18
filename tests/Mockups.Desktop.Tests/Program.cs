@@ -393,7 +393,6 @@ var tests = new (string Name, Action Run)[]
     ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Social Post composes two structure-projected header and footer rows", SocialPostComposesHeaderRows),
-    ("Variant Component insertion prepares required Screen values atomically", VariantComponentInsertionPreparesScreenValues),
     ("Social Post two Reel Screens persist independent labels without changing Variant", SocialPostReelScreenLabelsAreIndependent),
     ("Social Post Screen creation persists projected Runtime rows atomically", SocialPostScreenCreationIsAtomic),
     ("Production nested Runtime preview ignores Variant source Actors", ProductionNestedRuntimePreviewIgnoresSourceActors),
@@ -2625,17 +2624,17 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         true,
         RuntimeInputValueKindContract.CreateDefaultValue(
             Definition("boolean", "Boolean", "true"),
-            "Test Runtime Input")!.GetValue<bool>());
+            "Test Runtime Input").GetValue<bool>());
     Equal(
         12,
         RuntimeInputValueKindContract.CreateDefaultValue(
             Definition("number", "Integer", "12"),
-            "Test Runtime Input")!.GetValue<int>());
+            "Test Runtime Input").GetValue<int>());
     Equal(
         2,
         RuntimeInputValueKindContract.CreateDefaultValue(
             Definition("iconList", "IconTokenList", "[\"first\",\"second\"]"),
-            "Test Runtime Input")!.AsArray().Count);
+            "Test Runtime Input").AsArray().Count);
     Equal(
         "natural",
         RuntimeInputValueKindContract.CreateDefaultValue(
@@ -2643,7 +2642,7 @@ static void RuntimeInputDefaultsUseValueKindOwner()
                 "behaviorTiming",
                 "BehaviorTiming",
                 "{\"mode\":\"natural\",\"fixedFrames\":20,\"paceToken\":\"theme.motion.naturalPace.normal\"}"),
-            "Test Runtime Input")!["mode"]?.GetValue<string>());
+            "Test Runtime Input")["mode"]?.GetValue<string>());
     const string componentVariantSlot = """
         {"variantReference":"component_icon_row::variant::default","overrides":{}}
         """;
@@ -2655,7 +2654,7 @@ static void RuntimeInputDefaultsUseValueKindOwner()
                     "componentVariantSlot",
                     "ComponentVariantSlot",
                     componentVariantSlot),
-                "Test Runtime Input")!.AsObject(),
+                "Test Runtime Input").AsObject(),
             "Test Runtime Input"));
 
     var behaviorSource = Definition("text", "StringSingleLine", "Sample");
@@ -2683,12 +2682,12 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         0,
         RuntimeInputValueKindContract.CreateDefaultValue(
             projectedCollection,
-            "Test Runtime Input")!.AsArray().Count);
+            "Test Runtime Input").AsArray().Count);
     Equal(
         1,
         RuntimeInputValueKindContract.CreateDefaultValue(
             Definition("collection", "StructuredCollection", "[{\"id\":\"item_1\"}]"),
-            "Test Runtime Input")!.AsArray().Count);
+            "Test Runtime Input").AsArray().Count);
     Equal(
         "slide",
         RuntimeInputValueKindContract.ParseValue(
@@ -2700,31 +2699,31 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         RuntimeInputValueKindContract.ParseValue(
             ValueKind.AlignmentPlacement,
             "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}",
-            "Test Runtime Input")!["mode"]?.GetValue<string>());
+            "Test Runtime Input")["mode"]?.GetValue<string>());
     Equal(
         "10|20",
         RuntimeInputValueKindContract.ParseValue(
             ValueKind.IntegerPair,
             "10|20",
-            "Test Runtime Input")!.GetValue<string>());
+            "Test Runtime Input").GetValue<string>());
     Equal(
         "theme.spacing.m|theme.spacing.s",
         RuntimeInputValueKindContract.ParseValue(
             ValueKind.ThemeTokenPair,
             "theme.spacing.m|theme.spacing.s",
-            "Test Runtime Input")!.GetValue<string>());
+            "Test Runtime Input").GetValue<string>());
     Equal(
         "gray_100|gray_000",
         RuntimeInputValueKindContract.ParseValue(
             ValueKind.PaletteColorPair,
             "gray_100|gray_000",
-            "Test Runtime Input")!.GetValue<string>());
+            "Test Runtime Input").GetValue<string>());
     Equal(
         "gray_100|gray_000||1|0.5",
         RuntimeInputValueKindContract.ParseValue(
             ValueKind.PaletteColorAlphaPair,
             "gray_100|gray_000||1|0.5",
-            "Test Runtime Input")!.GetValue<string>());
+            "Test Runtime Input").GetValue<string>());
 
     Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.CreateDefaultValue(
         Definition("boolean", "Boolean", "perhaps"),
@@ -28871,57 +28870,6 @@ static void SocialPostComposesHeaderRows()
                     $"{owner}.rowSlot.overrides.contentRow slot.{key}");
             }
         }
-    }
-}
-
-static void VariantComponentInsertionPreparesScreenValues()
-{
-    foreach (var componentId in new[] { "component_project_foqn_s2_bubble", "component_project_foqn_s2_notification" })
-    {
-        var temporary = Path.Combine(Path.GetTempPath(), $"mockups-variant-inputs-{Guid.NewGuid():N}.sqlite");
-        File.Copy(ParityDatabasePath(), temporary);
-        try
-        {
-            var database = new SqliteProjectTestContext(temporary);
-            var tree = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
-            var variant = tree.Single(node => node.Kind == ProjectTreeNodeKind.ModuleVariant
-                && node.RecordClassId == "module.core.socialPost" && node.Id.EndsWith("::variant::reel", StringComparison.Ordinal));
-            var port = new SqliteVariantFieldChangeStore(database.Context, database.Design, database.Production);
-            var before = database.GetModuleVariantSettings(variant).ConfigJson;
-            var items = new JsonArray(new JsonObject {
-                ["id"] = "floating-regression", ["name"] = "Dialog",
-                ["componentSlot"] = new JsonObject { ["variantReference"] = $"{componentId}::variant::default", ["overrides"] = new JsonObject() },
-                ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":0.5,"alignY":0.5,"offsetX":0,"offsetY":0}""")
-            }).ToJsonString();
-            const string field = "module.core.socialPost.floatingComponents";
-            var emptyItems = JsonNode.Parse(items)!.AsArray();
-            emptyItems[0]!["componentSlot"] = null;
-            var emptyPrepared = port.Prepare(variant, field, emptyItems.ToJsonString())!;
-            Equal(0, emptyPrepared.Screens.Count);
-            Equal(before, database.GetModuleVariantSettings(variant).ConfigJson);
-            var prepared = port.Prepare(variant, field, items)!;
-            True(prepared.Screens.Count > 0);
-            Equal(before, database.GetModuleVariantSettings(variant).ConfigJson);
-            try { port.Commit(variant, field, items, prepared.Revision, new Dictionary<string, RecordCreationDraft>()); throw new Exception("Missing actors were accepted."); }
-            catch (InvalidOperationException error) { True(error.Message.Contains("requires explicit Runtime Inputs", StringComparison.Ordinal)); }
-            Equal(before, database.GetModuleVariantSettings(variant).ConfigJson);
-            var drafts = prepared.Screens.ToDictionary(screen => screen.ScreenId, screen =>
-                new RecordCreationDraft(screen.Definition.Id, screen.Definition.Fields.ToDictionary(
-                    value => value.Definition.Id, value => value.Definition.Options!.First(option => option.Value.Length > 0).Value)));
-            port.Commit(variant, field, items, prepared.Revision, drafts);
-            foreach (var request in prepared.Screens)
-            {
-                var runtime = JsonNode.Parse(database.GetModuleInstanceRuntimePreviewJson(request.ScreenId))!.AsObject();
-                var child = runtime["floatingComponents"]![0]!["inputs"]!.AsObject();
-                True(!child.ToJsonString().Contains("\"actorId\":\"system_preview_actor", StringComparison.Ordinal));
-                True(child["inputs"]!.AsArray().Count > 0);
-            }
-            var same = port.Prepare(variant, field, items)!;
-            Equal(0, same.Screens.Count);
-            try { port.Commit(variant, field, items, prepared.Revision, drafts); throw new Exception("Stale prepared change was accepted."); }
-            catch (InvalidOperationException error) { True(error.Message.Contains("changed while completing", StringComparison.Ordinal)); }
-        }
-        finally { SqliteConnection.ClearAllPools(); File.Delete(temporary); }
     }
 }
 

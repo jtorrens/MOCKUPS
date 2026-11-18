@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `42` is the only current schema. Authored Production rows belong
+Schema version `41` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -1077,12 +1077,3 @@ to `theme.spacing.none`. The shared dictionary and Content Stack editor layout
 expose this Variant-owned spacing token. Only the canonical workstation database
 is updated after Backup Hub publication; checkpoint captures repository parity.
 Startup validates the current contract without defaults or migration.
-
-### Floating Component collection (schema 42)
-
-Explicit canonical maintenance adds an empty `socialPost.floatingComponents`
-collection and its shared Motion to every Social Post configuration and complete
-Variant. The Module declares a structure-projected Runtime collection with
-independent Screen-owned child inputs, In and visible duration. Existing Screens
-receive an empty collection, preserving their appearance and authored values.
-Startup requires this contract and never creates the layer implicitly.

@@ -1,4 +1,3 @@
-import type { FloatingComponentCollection } from "./floatingComponentCollection.js";
 import type { ModuleSectionLayout } from "./moduleSectionLayout.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import type {
@@ -31,7 +30,6 @@ export interface SocialPostMessageContract {
 
 export interface SocialPostModuleContract {
   id: "module.core.socialPost";
-  floatingComponents: FloatingComponentCollection;
   headerLayout: ModuleSectionLayout;
   footerLayout: ModuleSectionLayout;
   messageLayout: ModuleSectionLayout;

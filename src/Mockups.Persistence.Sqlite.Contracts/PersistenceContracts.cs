@@ -644,7 +644,6 @@ internal interface IComponentClassRepository
 internal interface IProductionRuntimeReferences
 {
     IReadOnlySet<string> ActorIds(SqliteConnection connection, string projectId);
-    IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.FieldOption> ActorOptions(SqliteConnection connection, string projectId);
 }
 
 internal interface IModuleInstanceRepository

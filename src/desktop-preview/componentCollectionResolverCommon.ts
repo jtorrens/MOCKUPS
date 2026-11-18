@@ -90,7 +90,7 @@ export function resolveComponentCollectionItem(
     const present = presence.present;
     const exitFrame = presence.exitFrame;
     const rawInputs = requiredRecord(item, "inputs", `${itemPath}.inputs`);
-    const inputResolution = resolveComponentCollectionRuntimeInputs(
+    const inputResolution = resolveAnimatedInputs(
       timeline,
       animation,
       rawInputs,
@@ -142,7 +142,7 @@ export function resolveComponentCollectionItem(
     };
 }
 
-export function resolveComponentCollectionRuntimeInputs(
+function resolveAnimatedInputs(
   timeline: RuntimeOwnerTimeline,
   animation: Record<string, unknown>,
   inputs: Record<string, unknown>,

@@ -19,7 +19,6 @@ internal static class SocialPostModuleConfigContract
         RequireExactKeys(
             socialPost,
             [
-                "floatingComponents",
                 "headerLayout", "footerLayout", "messageLayout", "galleryLayout", "actionsLayout", "textInputLayout", "keyboardLayout",
                 "showFooter", "showActions", "showGallery", "actionsSlot", "galleryFloatHeight",
                 "useAppWallpaper",
@@ -125,7 +124,6 @@ internal static class SocialPostModuleConfigContract
             JsonPath.RequiredObject(socialPost, "messageBubbleInputs", owner),
             $"{owner}.messageBubbleInputs");
 
-        FloatingComponentCollectionContract.Validate(JsonPath.RequiredObject(socialPost, "floatingComponents", owner), $"{owner}.floatingComponents");
         ModuleRowCollectionContract.Validate(socialPost, "rows", owner);
         ModuleRowCollectionContract.Validate(socialPost, "footerRows", owner);
     }

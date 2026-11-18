@@ -82,6 +82,8 @@ public partial class MainWindow : SukiWindow
         var productionShotContext =
             application.ProductionShotContext;
         _workspaceCoordinator = application.WorkspaceCoordinator;
+        var fieldCommitCoordinator = new EditorFieldCommitCoordinator(
+            application.Operations);
         InitializeComponent();
         _operationActivityPresenter =
             new EditorOperationActivityPresenter(
@@ -305,8 +307,6 @@ public partial class MainWindow : SukiWindow
             pathBrowser.BrowseSvgFile,
             pathBrowser.BrowsePath,
             ReloadAndSelect);
-        var fieldCommitCoordinator = new EditorFieldCommitCoordinator(
-            application.Operations, data.VariantFieldChanges, domainDialogs.ShowRuntimeCreation);
         var dictionaryFieldServices = new EditorDictionaryFieldServices(
             data.Dictionary,
             data.Preview,

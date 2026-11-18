@@ -94,27 +94,3 @@ export function resolveRuntimeCollectionPresence(
     ...motionState,
   };
 }
-
-/** Parent-owned bounded presence, shared by messages and floating components. */
-export function resolveRuntimePresenceInterval(
-  payload: DesignPreviewPayload,
-  frame: number,
-  startFrame: number,
-  endFrame: number,
-  hasExplicitEnd: boolean,
-  automaticEndFrame: number,
-  motion: ComponentMotionContract,
-): { visible: boolean; presenceMotionKind?: "enter" | "exit"; presenceMotionFrame?: ComponentMotionFrameContract } {
-  if (frame < startFrame || frame >= endFrame) return { visible: false };
-  const duration = Math.ceil(motionTotalDurationMs(payload, motion) / 1000 * Math.max(1, payload.frameRate));
-  const exitStart = Math.max(startFrame, endFrame - duration);
-  const kind = hasExplicitEnd && endFrame < automaticEndFrame && frame >= exitStart
-    ? "exit" : duration > 0 && frame - startFrame < duration ? "enter" : undefined;
-  return { visible: true, ...(kind ? {
-    presenceMotionKind: kind,
-    presenceMotionFrame: resolveMotionFrame(payload, motion, {
-      trigger: true,
-      elapsedMs: Math.max(0, frame - (kind === "exit" ? exitStart : startFrame)) / Math.max(1, payload.frameRate) * 1000,
-    }),
-  } : {}) };
-}

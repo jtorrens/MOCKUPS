@@ -572,7 +572,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         {
             var previous = DesignPreviewTestValues.CollectionValue(item, input);
             var nextReference = next;
-            var referenceChanged = (selectsComponent || input.ValueKind == ValueKind.ComponentVariantSlot)
+            var referenceChanged = selectsComponent
                 && !previous.Equals(nextReference, StringComparison.Ordinal);
             if (referenceChanged)
             {

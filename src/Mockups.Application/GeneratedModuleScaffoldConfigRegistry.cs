@@ -286,20 +286,6 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "actionsLayout", "placement"],
             "",
             []),
-        ["module.core.socialPost.floatingComponents"] = new(
-            "module.core.socialPost",
-            "module.core.socialPost.floatingComponents",
-            ValueKind.StructuredCollection,
-            ["socialPost", "floatingComponents", "items"],
-            "",
-            []),
-        ["module.core.socialPost.floatingMotion"] = new(
-            "module.core.socialPost",
-            "module.core.socialPost.floatingMotion",
-            ValueKind.Motion,
-            ["socialPost", "floatingComponents", "motion"],
-            "",
-            []),
         ["module.core.socialPost.footerHeight"] = new(
             "module.core.socialPost",
             "module.core.socialPost.footerHeight",

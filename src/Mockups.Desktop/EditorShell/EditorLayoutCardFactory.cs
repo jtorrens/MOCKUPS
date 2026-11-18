@@ -483,21 +483,17 @@ internal sealed class EditorLayoutCardFactory
             });
         var control = new DictionaryFieldControl(field, services);
         _activeFieldControls.Register(control);
-        var commitsInFlight = 0;
-        var runtimeContractDirty = false;
         control.ValueCommitted += async (_, value) =>
         {
-            commitsInFlight++;
             using var previewUpdate = _fieldCommitCoordinator.BeginPreviewUpdate();
             try
             {
-                if (!await _fieldCommitCoordinator.CommitAsync(
+                await _fieldCommitCoordinator.CommitAsync(
                     control,
                     value,
                     (draftValue) => _fieldValues.ToStorageValue(node, field.Definition.Id, draftValue),
                     () => _fieldValues.CurrentStoredValue(node, field.Definition.Id),
-                    (storedValue) => _fieldValues.Persist(node, field.Definition.Id, storedValue),
-                    node, field.Definition.Id)) return;
+                    (storedValue) => _fieldValues.Persist(node, field.Definition.Id, storedValue));
                 await _fieldValues.ApplyPostCommitEffectsAsync(
                     node,
                     field.Definition.Id,
@@ -516,21 +512,8 @@ internal sealed class EditorLayoutCardFactory
             {
                 _messages.Error($"Editor field {field.Definition.Id}", exception);
             }
-            finally
-            {
-                commitsInFlight--;
-                if (commitsInFlight == 0 && runtimeContractDirty)
-                {
-                    runtimeContractDirty = false;
-                    _scheduleActiveEditorReload(node);
-                }
-            }
         };
-        control.RuntimeContractChanged += (_, _) =>
-        {
-            if (commitsInFlight > 0) runtimeContractDirty = true;
-            else _scheduleActiveEditorReload(node);
-        };
+        control.RuntimeContractChanged += (_, _) => _scheduleActiveEditorReload(node);
         return control;
     }
 

@@ -180,23 +180,6 @@ export function planScopedValidation(
   let database = false;
 
   for (const file of files) {
-    if ([
-      "src/Mockups.Application/VariantFieldChangePreparation.cs",
-      "src/Mockups.Persistence.Sqlite/SqliteVariantFieldChangeStore.cs",
-      "src/Mockups.Persistence.Sqlite/SqliteVariantDocumentCommit.cs",
-      "src/Mockups.Persistence.Sqlite.Design/SqliteDesignOwner.VariantFieldChanges.cs",
-      "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.RuntimeDocuments.cs",
-      "src/Mockups.Desktop/EditorShell/EditorFieldCommitCoordinator.cs",
-      "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
-      "src/Mockups.Desktop/EditorShell/EditorLayoutCardFactory.cs",
-    ].includes(file)) {
-      desktopCompile = true;
-      desktopUi = true;
-      add(npmStep("desktop:variant-required-inputs", "test:focus:desktop",
-        "prepared Component insertion must gather explicit Screen values and commit atomically",
-        ["--", "--exact", "Variant Component insertion prepares required Screen values atomically"]));
-    }
-
     if (isRetiredRepositoryPath(file)) {
       architectureRetired = true;
       continue;
@@ -622,19 +605,6 @@ export function planScopedValidation(
       desktopCore = true;
       desktopUi = true;
       continue;
-    }
-    if (file === "src/desktop-preview/floatingComponentCollection.ts"
-      || file === "src/desktop-preview/runtimeCollectionPresence.ts"
-      || file === "src/desktop-preview/componentCollectionResolverCommon.ts"
-      || file === "src/Mockups.Application/FloatingComponentCollectionContract.cs"
-      || file === "src/Mockups.Application/StructuredRuntimeCollectionProjection.cs"
-      || file === "src/Mockups.Application/RuntimeInputDocumentContract.cs"
-      || file === "src/Mockups.Application/RuntimeInputValueKindContract.cs") {
-      application = true;
-      desktopCompile = true;
-      desktopUi = true;
-      previewTests.add("tests/animation/socialPostModule.test.ts");
-      previewTests.add("tests/animation/conversationModuleResolver.test.ts");
     }
     if (file === "src/Mockups.Application/ModuleRowCollectionContract.cs"
       || file.startsWith("src/desktop-preview/moduleRowSection")

@@ -7,7 +7,6 @@ using System.Text.Json.Nodes;
 
 var tests = new (string Name, Action Run)[]
 {
-    ("Floating component slots preserve Screen values and reset changed boundaries", FloatingComponentRuntimeTests.ProjectionAndReplacement),
     ("Projected child Runtime contracts expose complete independently owned Screen values", ProjectedChildRuntimeTests.CompleteContractsHaveOneOwner),
     ("Theme token families preserve complete catalogs and metadata", ThemeTokenFamilyTests.CatalogAndMetadataStayComplete),
     ("Social Post Screen labels survive structure projection independently", SocialPostRuntimeLabelTests.ScreenLabelsSurviveProjection),

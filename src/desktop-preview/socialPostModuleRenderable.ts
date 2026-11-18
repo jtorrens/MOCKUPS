@@ -1,4 +1,3 @@
-import { floatingComponentCollectionToRenderable } from "./floatingComponentCollection.js";
 import { placeModuleSection, sectionContentBox, sectionFlowEdge } from "./moduleSectionLayout.js";
 import { iconRowComponentToRenderableAt, measureIconRowComponent } from "./iconRowComponentRenderable.js";
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
@@ -203,7 +202,6 @@ export function socialPostModuleToRenderable(
   if (composer.keyboard) children.push(withZIndex(composer.keyboard, 50));
   if (status) children.push(withZIndex(status, 20));
   if (navigation) children.push(withZIndex(navigation, 30));
-  children.push(floatingComponentCollectionToRenderable(payload, contract.floatingComponents, componentClassToRenderable));
   return {
     id: contract.id,
     type: "group",

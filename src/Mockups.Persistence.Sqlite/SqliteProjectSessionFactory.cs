@@ -118,7 +118,6 @@ internal static class SqliteProjectSessionFactory
             new SqliteComponentClassFieldPort(
                 componentDocuments),
             new SqliteVariantHistoryPort(design),
-            new SqliteVariantFieldChangeStore(context, design, production),
             previewInputs,
             new SqliteComponentPreviewInputPort(design),
             new SqliteModuleInstanceTimelinePort(production),

@@ -139,11 +139,29 @@ public static class RuntimeInputDocumentContract
             var defaultItem = defaults[index] as JsonObject
                 ?? throw new InvalidOperationException(
                     $"Projected runtime collection default item at index {index} must be an object.");
-            var next = typedDefinition is null
-                ? defaultItem.DeepClone().AsObject()
-                : StructuredCollectionDocumentContract.StoredClone(
-                    new JsonArray(defaultItem.DeepClone()), typedDefinition,
-                    "Projected runtime collection defaults")[0]!.DeepClone().AsObject();
+            var next = defaultItem.DeepClone().AsObject();
+            if (collectionDefinition?["structureProjection"] is JsonObject)
+            {
+                var persistedKeys = DefinitionObjects(
+                        collectionDefinition,
+                        "fields",
+                        "Projected runtime collection",
+                        required: true)
+                    .Where(IsRuntimeDefinition)
+                    .Select((field) => JsonPath.RequiredString(
+                        field,
+                        "jsonKey",
+                        "Projected runtime collection field"))
+                    .Append("id")
+                    .ToHashSet(StringComparer.Ordinal);
+                foreach (var key in next
+                             .Select((entry) => entry.Key)
+                             .Where((key) => !persistedKeys.Contains(key))
+                             .ToList())
+                {
+                    next.Remove(key);
+                }
+            }
             var id = JsonPath.RequiredString(
                 next,
                 "id",
@@ -287,7 +305,7 @@ public static class RuntimeInputDocumentContract
             current,
             DefinitionObjects(previousContract, "inputs", "Previous Runtime contract"),
             DefinitionObjects(nextContract, "inputs", "Next Runtime contract"),
-            nextContract, previousContract);
+            nextContract);
         if (current["schemaVersion"] is { } version) mapped["schemaVersion"] = version.DeepClone();
         var previousCollections = DefinitionObjects(previousContract, "collections", "Previous Runtime contract")
             .ToDictionary(definition => JsonPath.RequiredString(definition, "id", "Runtime collection"), StringComparer.Ordinal);
@@ -311,8 +329,7 @@ public static class RuntimeInputDocumentContract
             }
             mapped[nextKey] = ReconcileCollectionValues(
                 currentItems, previous, next,
-                nextContract[JsonPath.RequiredString(next, "jsonKey", "Runtime collection")] as JsonArray,
-                previousContract[JsonPath.RequiredString(previous, "jsonKey", "Runtime collection")] as JsonArray);
+                nextContract[JsonPath.RequiredString(next, "jsonKey", "Runtime collection")] as JsonArray);
         }
         return CreateContentForContract(mapped, nextContract);
     }
@@ -384,8 +401,7 @@ public static class RuntimeInputDocumentContract
         JsonObject current,
         IReadOnlyList<JsonObject> previousFields,
         IReadOnlyList<JsonObject> nextFields,
-        JsonObject nextDefaults,
-        JsonObject? previousDefaults = null)
+        JsonObject nextDefaults)
     {
         var previousById = previousFields.Where(IsRuntimeDefinition)
             .ToDictionary(field => JsonPath.RequiredString(field, "id", "Runtime field"), StringComparer.Ordinal);
@@ -404,8 +420,7 @@ public static class RuntimeInputDocumentContract
             {
                 result[nextKey] = ReconcileCollectionValues(
                     value as JsonArray ?? throw new InvalidOperationException($"Runtime field '{id}' must be an array."),
-                    previousCollection, nextCollection, nextDefaults[nextKey] as JsonArray,
-                    previousDefaults?[previousKey] as JsonArray);
+                    previousCollection, nextCollection, nextDefaults[nextKey] as JsonArray);
             }
         }
         return result;
@@ -415,25 +430,21 @@ public static class RuntimeInputDocumentContract
         JsonArray current,
         JsonObject previous,
         JsonObject next,
-        JsonArray? nextDefaults,
-        JsonArray? previousDefaults = null)
+        JsonArray? nextDefaults)
     {
         RuntimeCollectionDocumentContract.Validate(current, "Current Runtime collection");
         var previousFields = DefinitionObjects(previous, "fields", "Previous Runtime collection");
         var nextFields = DefinitionObjects(next, "fields", "Next Runtime collection");
         var defaultsById = (nextDefaults ?? new JsonArray()).OfType<JsonObject>()
             .ToDictionary(item => JsonPath.RequiredString(item, "id", "Runtime collection default"), StringComparer.Ordinal);
-        var previousById = (previousDefaults ?? new JsonArray()).OfType<JsonObject>()
-            .ToDictionary(item => JsonPath.RequiredString(item, "id", "Previous Runtime item"), StringComparer.Ordinal);
         var result = new JsonArray();
         foreach (var item in current.OfType<JsonObject>())
         {
             var id = JsonPath.RequiredString(item, "id", "Runtime collection item");
             if ((next.ContainsKey("storageCollectionJsonKey") || next.ContainsKey("structureProjection"))
                 && !defaultsById.ContainsKey(id)) continue;
-            previousById.TryGetValue(id, out var previousItem);
             var mapped = ReconcileFields(item, previousFields, nextFields,
-                defaultsById.TryGetValue(id, out var defaults) ? defaults : new JsonObject(), previousItem);
+                defaultsById.TryGetValue(id, out var defaults) ? defaults : new JsonObject());
             var fieldContract = new JsonObject
             {
                 ["inputs"] = new JsonArray(nextFields.Select(field => field.DeepClone()).ToArray()),
@@ -449,23 +460,6 @@ public static class RuntimeInputDocumentContract
             foreach (var field in previousFields)
                 nextItem.Remove(JsonPath.RequiredString(field, "jsonKey", "Previous Runtime field"));
             foreach (var (key, value) in values) nextItem[key] = value?.DeepClone();
-            var slotKey = JsonPath.String(next, "itemRuntimeVariantSlotJsonKey", "");
-            var runtimeKey = JsonPath.String(next, "itemRuntimeContractJsonKey", "");
-            if (next["structureProjection"] is JsonObject && slotKey.Length > 0 && runtimeKey.Length > 0)
-            {
-                if (previousItem is null || defaults is null)
-                    throw new InvalidOperationException($"Projected Runtime item '{id}' requires previous and next prepared contracts.");
-                var previousSlotKey = JsonPath.RequiredString(previous, "itemRuntimeVariantSlotJsonKey", "Previous Runtime collection");
-                var previousRuntimeKey = JsonPath.RequiredString(previous, "itemRuntimeContractJsonKey", "Previous Runtime collection");
-                var previousReference = previousItem[previousSlotKey]?["variantReference"]?.GetValue<string>();
-                var nextReference = defaults[slotKey]?["variantReference"]?.GetValue<string>();
-                var nextRuntime = JsonPath.RequiredObject(defaults, runtimeKey, "Next Runtime item");
-                nextItem[runtimeKey] = nextReference is not null && nextReference == previousReference
-                    ? ReconcileContentForContract(
-                        JsonPath.RequiredObject(item, previousRuntimeKey, "Current Runtime item"),
-                        JsonPath.RequiredObject(previousItem, previousRuntimeKey, "Previous Runtime item"), nextRuntime)
-                    : nextRuntime.DeepClone();
-            }
             result.Add(nextItem);
         }
         return result;
