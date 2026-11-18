@@ -1,7 +1,6 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import {
   colorForMode,
-  iconTokenStyle,
   numberToken,
   renderScale,
   selectedColor,
@@ -24,6 +23,7 @@ export const KeyboardPopupConnectorHeightRatio = 0.34;
 const keyboardKeyPaths: Readonly<Partial<Record<string, string>>> = {
   shift: "M12 3 L21 12 H16 V21 H8 V12 H3 Z",
   backspace: "M9 5 H21 V19 H9 L3 12 Z M12 9 L18 15 M18 9 L12 15",
+  emoji: "M22 12 A10 10 0 1 1 2 12 A10 10 0 1 1 22 12 Z M8 14 Q12 18 16 14 M8.5 8.5 V9 M15.5 8.5 V9",
 };
 
 function keyboardVectorGlyph(id: string, box: RenderableBox, pathData: string, color: string, zIndex = 0): RenderableNode {
@@ -209,7 +209,6 @@ function keyboardRowNodes(
     x += width + keyGap;
 
     const displayText = key.kind === "space" ? "" : key.label;
-    const usesEmojiIcon = key.id === "emoji";
     const vectorPath = keyboardKeyPaths[key.id];
     const isEmojiKey = key.kind === "emoji"
       || (key.kind === "character" && /\p{Extended_Pictographic}/u.test(key.label));
@@ -260,15 +259,6 @@ function keyboardRowNodes(
       },
       vectorPath
         ? keyboardVectorGlyph(`${keyboard.id}.key.${rowIndex}.${index}.icon`, box, vectorPath, keyColor)
-        : usesEmojiIcon
-        ? {
-            id: `${keyboard.id}.key.${rowIndex}.${index}.icon`,
-            type: "icon",
-            frame: 0,
-            box: centeredSquareBox(box, Math.min(box.width, box.height) * 0.48),
-            text: "system_emoji",
-            style: iconTokenStyle(payload, "system_emoji", keyColor),
-          }
         : {
         id: `${keyboard.id}.key.${rowIndex}.${index}.text`,
         type: "text",

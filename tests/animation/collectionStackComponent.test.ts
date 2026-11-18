@@ -517,11 +517,13 @@ test("embedded Runtime actions reject filtered entries and inferred play identit
     ],
     fieldIds,
     trackValue = true,
+    values = {},
   }: {
     actions?: unknown;
     definitions?: unknown;
     fieldIds?: unknown;
     trackValue?: unknown;
+    values?: Record<string, unknown>;
   }) => resolveCollectionStackComponent({
     ...payload,
     localFrame: 2,
@@ -553,6 +555,7 @@ test("embedded Runtime actions reject filtered entries and inferred play identit
           play: false,
           actionFrame: 0,
           duration: 4,
+          ...values,
         },
         present: true,
         presenceMotion: { transition: "none", direction: "bottom", bounds: "parent", fade: false, translate: false, scale: false },
@@ -561,6 +564,22 @@ test("embedded Runtime actions reject filtered entries and inferred play identit
       }],
     }),
   });
+
+  for (const [targetKey, targetMode, value] of [
+    ["displayMode", "option", "detail"],
+    ["fullScreen", "toggle", true],
+  ] as const) {
+    const action = { ...validAction, targetInputId: targetKey, targetMode };
+    const definitions = [{ id: `stable.${targetKey}`, jsonKey: targetKey, valueKind: targetMode === "option" ? "OptionToken" : "Boolean" }];
+    for (const play of [false, true]) {
+      const resolved = resolve({ actions: [action], definitions,
+        values: { [targetKey]: value, play, actionFrame: 3 } });
+      assert.equal(resolved.items[0]?.inputs.play, play);
+      assert.equal(resolved.items[0]?.inputs.actionFrame, 3);
+      assert.equal(resolved.items[0]?.inputs[targetKey], value);
+    }
+    assert.throws(() => resolve({ actions: [action], definitions: [], values: { [targetKey]: value } }), /target value.*has no stable field id/);
+  }
 
   const malformed: [string, Parameters<typeof resolve>[0]][] = [
     ["null actions", { actions: null }],

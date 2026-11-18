@@ -99,7 +99,7 @@ test("Audio requires its prepared Runtime playback time", () => {
   );
 });
 
-test("Keyboard Shift and Backspace remain vector glyphs in normal scaled and popup states", () => {
+test("Keyboard Shift Backspace and Emoji remain theme-independent vector glyphs in normal scaled and popup states", () => {
   const payload = withValues(withInputDefaults(committedComponentFixture("keyboard")), {
     text: "a", currentCharacter: 0,
   });
@@ -107,12 +107,12 @@ test("Keyboard Shift and Backspace remain vector glyphs in normal scaled and pop
   function flatten(node: RenderableNode): RenderableNode[] {
     return [node, ...(node.children ?? []).flatMap(flatten)];
   }
-  for (const key of ["shift", "backspace"]) {
+  for (const key of ["shift", "backspace", "emoji"]) {
     for (const effect of ["none", "scale", "popup"] as const) {
       const rowIndex = keyboard.rows.findIndex(row => row.some(item => item.id === key));
       assert.ok(rowIndex >= 0);
       const keyIndex = keyboard.rows[rowIndex].findIndex(item => item.id === key);
-      const nodes = flatten(keyboardComponentToRenderable(payload, {
+      const nodes = flatten(keyboardComponentToRenderable({ ...payload, iconMappingJson: JSON.stringify({ tokens: {} }) }, {
         ...keyboard, pressedKey: key, pressedEffect: effect,
       }));
       const prefix = `${keyboard.id}.key.${rowIndex}.${keyIndex}.`;
@@ -121,7 +121,7 @@ test("Keyboard Shift and Backspace remain vector glyphs in normal scaled and pop
       assert.equal(content[0].type, "path");
       assert.equal(content[0].text, undefined);
       assert.equal(content[0].style!.viewBox, "0 0 24 24");
-      assert.equal(nodes.some(node => node.type === "text" && /[⇧⌫]/u.test(node.text ?? "")), false);
+      assert.equal(nodes.some(node => node.type === "text" && /[⇧⌫☺]/u.test(node.text ?? "")), false);
       if (effect === "popup") assert.ok(content[0].id.endsWith(".popover.icon"));
     }
   }

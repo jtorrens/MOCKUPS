@@ -2,6 +2,14 @@
 
 Status: normative.
 
+Embedded Runtime actions distinguish declared animatable play fields from
+transient transport signals for `targetMode: option` or `toggle` commands. A
+target command requires the target's stable field identity. If its play signal
+is not a declared or explicitly forwarded field, collection preparation keeps
+the already prepared signal and elapsed time; it does not invent a parameter
+track identity for transport. Declared play fields retain the common animated
+clock resolution and strict stable-id validation.
+
 ## One frame clock
 
 Preview uses one absolute Shot playhead internally. Editors project that clock

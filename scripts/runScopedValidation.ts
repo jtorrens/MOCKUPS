@@ -227,6 +227,11 @@ export function planScopedValidation(
       previewTests.add("tests/animation/bubbleComponent.test.ts");
       typecheck = true;
     }
+    if (file === "src/desktop-preview/componentCollectionResolverCommon.ts") {
+      previewTests.add("tests/animation/collectionStackComponent.test.ts");
+      previewTests.add("tests/animation/componentStackComponent.test.ts");
+      typecheck = true;
+    }
     if (file === "src/desktop-preview/keyboardComponentRenderable.ts") {
       previewTests.add("tests/animation/atomicTemporalComponents.test.ts");
       previewTests.add("tests/animation/keyboardPopupGeometry.test.ts");

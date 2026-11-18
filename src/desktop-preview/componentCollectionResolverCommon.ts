@@ -287,6 +287,20 @@ function resolveAnimatedActions(
     const playFieldId = mappedPlayFieldId
       || actionPlayFieldId
       || optionalString(playDefinition ?? {}, "id");
+    const targetMode = optionalString(action, "targetMode");
+    if (targetMode === "option" || targetMode === "toggle") {
+      const targetKey = requiredString(action, "targetInputId", `embedded runtime action '${id}' target`);
+      const targetDefinition = definitions.find((definition) => optionalString(definition, "jsonKey") === targetKey);
+      const targetFieldId = Object.hasOwn(runtimeFieldIds, targetKey)
+        ? requiredString(runtimeFieldIds, targetKey, `embedded runtime action '${id}' forwarded target field`)
+        : optionalString(targetDefinition ?? {}, "id");
+      if (!targetFieldId) {
+        throw new Error(`Embedded runtime action '${id}' target value '${targetKey}' has no stable field id`);
+      }
+      // Target actions also own transient transport values. Only a declared
+      // play field has a parameter track; preserve prepared transport otherwise.
+      if (!playFieldId) continue;
+    }
     if (!Object.hasOwn(values, playJsonKey)) continue;
     if (!Object.hasOwn(values, timeJsonKey)) values[timeJsonKey] = 0;
     if (!playFieldId) {

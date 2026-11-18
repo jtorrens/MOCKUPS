@@ -583,10 +583,11 @@ Variant, navigation and local Overrides without a Component selector.
 
 ## Keyboard pressed popup
 
-Shift and Backspace paint owner-defined vector paths in centered square boxes,
+Shift, Backspace and Emoji paint owner-defined vector paths in centered square boxes,
 both on the key and in its pressed popup. Their labels remain semantic input
 identities, never painted font glyphs. The same generic path primitive reaches
 Preview and Render, using the configured key foreground color.
+These functional key glyphs do not require an Icon Theme mapping.
 
 Keyboard owns the complete pressed-key composition as one continuous
 head/connector/key path with:
