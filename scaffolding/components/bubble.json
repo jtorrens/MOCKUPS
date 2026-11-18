@@ -165,7 +165,8 @@
       "iconRowVerticalPaddingToken": "theme.spacing.none",
       "incomingTextSizeToken": "theme.typography.sizes.s",
       "outgoingTextSizeToken": "theme.typography.sizes.s",
-      "systemTextSizeToken": "theme.typography.sizes.s"
+      "systemTextSizeToken": "theme.typography.sizes.s",
+      "audioAvatarVisibility": "followChat"
     }
   },
   "defaultVariant": {
@@ -301,7 +302,8 @@
         "iconRowVerticalPaddingToken": "theme.spacing.none",
         "incomingTextSizeToken": "theme.typography.sizes.s",
         "outgoingTextSizeToken": "theme.typography.sizes.s",
-        "systemTextSizeToken": "theme.typography.sizes.s"
+        "systemTextSizeToken": "theme.typography.sizes.s",
+        "audioAvatarVisibility": "followChat"
       }
     }
   },
@@ -488,7 +490,8 @@
           "iconRowVerticalPaddingToken": "theme.spacing.none",
           "incomingTextSizeToken": "theme.typography.sizes.s",
           "outgoingTextSizeToken": "theme.typography.sizes.s",
-          "systemTextSizeToken": "theme.typography.sizes.s"
+          "systemTextSizeToken": "theme.typography.sizes.s",
+          "audioAvatarVisibility": "followChat"
         }
       }
     }
@@ -2730,6 +2733,48 @@
       }
     },
     {
+      "id": "component.bubble.media.audioAvatarVisibility",
+      "label": "Audio avatar",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "bubble",
+        "audioAvatarVisibility"
+      ],
+      "defaultValue": "followChat",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "followChat",
+          "label": "Follow chat type",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "individualAndGroup",
+          "label": "Also in individual chats",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "Incoming audio avatar: follow the chat identity policy or allow it in individual chats too. Requires Show avatar in the Audio variant.",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
       "id": "component.bubble.media.image.editor",
       "label": "Image variant",
       "valueKind": "ComponentVariantSlot",
@@ -3651,6 +3696,11 @@
               {
                 "id": "component.bubble.media.audio.editor",
                 "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.media.audioAvatarVisibility",
+                "order": 60,
                 "visible": true
               }
             ]

@@ -9,6 +9,10 @@ internal static class BubbleComponentConfigContract
     public static void Validate(JsonObject config, string context)
     {
         var bubble = JsonPath.RequiredObject(config, "bubble", context);
+        FieldOptionContract.ValidateValue(
+            ComponentClassFieldCatalog.Get("component.bubble.media.audioAvatarVisibility").Options!,
+            JsonPath.RequiredString(bubble, "audioAvatarVisibility", $"{context}.bubble"),
+            $"{context}.bubble.audioAvatarVisibility");
         var actorLabel = JsonPath.RequiredObject(bubble, "actorLabelSlot", $"{context}.bubble");
         foreach (var key in new[] { "showLabel", "showIncoming", "showOutgoing", "showSystem" })
             JsonPath.RequiredBoolean(actorLabel, key, $"{context}.bubble.actorLabelSlot");

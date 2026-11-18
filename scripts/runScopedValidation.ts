@@ -233,12 +233,12 @@ export function planScopedValidation(
       || file === "scaffolding/components/bubble.json") {
       add(npmStep(
         "preview:bubble-direction-sizes", "test:focus:preview",
-        "Bubble direction sizes, Actor label visibility and direction text colors must cross Variant and Overrides",
+        "Bubble multimedia spacing, audio avatar policy, direction sizes and Actor labels must cross Variant and Overrides",
         ["--", "tests/animation/bubbleComponent.test.ts"],
       ));
       add(npmStep(
         "application:bubble-direction-sizes", "test:focus:application",
-        "Bubble configuration requires direction tokens and Boolean Actor label switches",
+        "Bubble configuration requires direction tokens, Boolean Actor label switches and an explicit audio avatar policy",
         ["--", "--exact", "Bubble requires valid message size tokens for every direction"],
       ));
     }

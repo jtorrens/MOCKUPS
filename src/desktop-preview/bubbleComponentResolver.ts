@@ -118,6 +118,12 @@ export function resolveBubbleComponent(
   const actorPreview = actorIdentityVisible && state === "incoming"
     ? resolveBubbleActorPreview(preview)
     : undefined;
+  const audioAvatarVisibility = requiredString(
+    bubble, "audioAvatarVisibility", "component.bubble.audioAvatarVisibility",
+  );
+  if (audioAvatarVisibility !== "followChat" && audioAvatarVisibility !== "individualAndGroup") {
+    throw new Error(`Unsupported Bubble audioAvatarVisibility ${audioAvatarVisibility}`);
+  }
   const fullText = requiredPossiblyEmptyString(
     preview,
     "sampleText",
@@ -157,7 +163,11 @@ export function resolveBubbleComponent(
     requiredString(preview, "mediaType", "component.bubble.input.mediaType"),
   );
   const showTextBox = fullText.trim().length > 0
-    || (mediaType !== "image" && mediaType !== "sticker");
+    || mediaType === "none";
+  const audioActorPreview = mediaType === "audio" && state === "incoming"
+    && (actorIdentityVisible || audioAvatarVisibility === "individualAndGroup")
+    ? resolveBubbleActorPreview(preview)
+    : undefined;
   const imageMediaConfig = mediaType === "image" || mediaType === "sticker"
     ? embeddedComponentConfig(
         componentBaseConfigs,
@@ -182,7 +192,7 @@ export function resolveBubbleComponent(
         "component.bubble.audioSlot",
       )
     : undefined;
-  if (audioConfig && !actorPreview) {
+  if (audioConfig && !audioActorPreview) {
     audioConfig = mergeComponentDefaults(audioConfig, {
       audio: {
         avatarSlot: {
@@ -342,7 +352,7 @@ export function resolveBubbleComponent(
       audio: audioConfig
         ? resolveAudioComponentFromRecords(
             audioConfig,
-            bubbleAudioInputs(preview, actorPreview, maxWidth),
+            bubbleAudioInputs(preview, audioActorPreview, maxWidth),
             componentBaseConfigs,
             "component.bubble.audio",
           )

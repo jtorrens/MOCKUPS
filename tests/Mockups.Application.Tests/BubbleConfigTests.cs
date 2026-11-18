@@ -6,12 +6,26 @@ internal static class BubbleConfigTests
     public static void DirectionSizesAreRequired()
     {
         var config = JsonNode.Parse("""
-            {"bubble":{"incomingTextSizeToken":"theme.typography.sizes.s",
+            {"bubble":{"audioAvatarVisibility":"followChat","incomingTextSizeToken":"theme.typography.sizes.s",
             "outgoingTextSizeToken":"theme.typography.sizes.m",
             "systemTextSizeToken":"theme.typography.sizes.l",
             "actorLabelSlot":{"showLabel":true,"showIncoming":true,"showOutgoing":false,"showSystem":false}}}
             """)!.AsObject();
         CurrentComponentConfigContract.Validate("bubble", config, "fixture");
+        foreach (var value in new[] { "followChat", "individualAndGroup" })
+        {
+            config["bubble"]!["audioAvatarVisibility"] = value;
+            CurrentComponentConfigContract.Validate("bubble", config, "fixture");
+        }
+        foreach (var invalid in new JsonNode?[] { null, JsonValue.Create(""), JsonValue.Create("always"), JsonValue.Create(true) })
+        {
+            var candidate = config.DeepClone().AsObject();
+            candidate["bubble"]!.AsObject().Remove("audioAvatarVisibility");
+            if (invalid is not null) candidate["bubble"]!["audioAvatarVisibility"] = invalid.DeepClone();
+            try { CurrentComponentConfigContract.Validate("bubble", candidate, "fixture"); }
+            catch (InvalidOperationException error) when (error.Message.Contains("audioAvatarVisibility", StringComparison.Ordinal)) { continue; }
+            throw new InvalidOperationException("Bubble accepted invalid or missing audioAvatarVisibility.");
+        }
         foreach (var key in new[] { "incomingTextSizeToken", "outgoingTextSizeToken", "systemTextSizeToken" })
         {
             foreach (var invalid in new JsonNode?[] { null, JsonValue.Create(""), JsonValue.Create("theme.iconSizes.m") })

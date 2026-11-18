@@ -331,10 +331,21 @@ scale, offset, crop and corner geometry. The Bubble Surface and the embedded
 Media Surface remain the layout and clipping containers, but their background,
 border, relief, shadow and Bubble tail are transparent for that presentation.
 Normal image, video and audio messages retain their authored Surface styling.
-When an image or sticker message has empty or whitespace-only authored text,
+When a multimedia message (image, sticker, video or audio) has empty or whitespace-only authored text,
 Bubble omits the Text Box from its resolved presentation: it reserves neither
 the Text Box dimensions nor the text-to-media gap. Authored text keeps the
-normal Text Box layout, and video and audio retain their existing behavior.
+normal Text Box layout, including while write-on has not yet revealed any characters.
+Text-only messages retain their Text Box. Media, status and Icon Row keep their
+own dimensions and spacing; fixed Bubble dimensions remain explicitly authored.
+
+Bubble owns `audioAvatarVisibility` at its Audio boundary, exposed by the
+Dictionary in the Media card beside Audio variant. Required `followChat`
+uses the parent's identity visibility gate; `individualAndGroup` also permits
+the incoming audio avatar when that gate is hidden in an individual chat.
+Both policies respect the embedded Audio Variant's `showAvatar` master switch.
+The avatar uses the exact message Actor. This policy changes neither the
+external Bubble avatar nor its Actor label, and keeps outgoing/system audio
+avatars hidden. Audio continues to own avatar styling and layout.
 
 The generic structured-collection editor exposes an item's declared nested
 Runtime contract as Runtime-input fields. Nested collection commits persist the

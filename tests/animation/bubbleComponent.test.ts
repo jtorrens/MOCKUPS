@@ -257,8 +257,8 @@ test("Bubble resolves Sticker through the image Media viewport with transparent 
   assert.ok((clip.style?.borderRadius as number) > 0);
 });
 
-test("Bubble omits empty image and Sticker text without reserving its layout", () => {
-  for (const mediaType of ["image", "sticker"] as const) {
+test("Bubble omits empty multimedia text without reserving its layout", () => {
+  for (const mediaType of ["image", "sticker", "video", "audio"] as const) {
     let expectedLayout: {
       surface: NonNullable<RenderableNode["box"]>;
       media: NonNullable<RenderableNode["box"]>;
@@ -296,11 +296,55 @@ test("Bubble omits empty image and Sticker text without reserving its layout", (
         surface: requiredNode(rendered, "component.bubble.surface").box!,
         media: requiredNode(rendered, `component.bubble.${mediaType}`).box!,
       };
+      const withText = resolveBubbleComponent({
+        ...source,
+        designPreviewJson: JSON.stringify({ ...preview, sampleText: "Caption" }),
+      });
+      assert.equal(withText.showTextBox, true);
+      assert.ok(findNode(bubbleComponentToRenderable(source, withText), "component.bubble.textBox"));
       if (!expectedLayout) {
         expectedLayout = layout;
       } else {
         assert.deepEqual(layout, expectedLayout);
       }
+    }
+  }
+});
+
+test("Bubble audio avatar policy preserves the message Actor and Audio master switch", () => {
+  for (const variantId of ["default", "default_copy"]) {
+    const source = committedComponentFixture("bubble", variantId);
+    const catalog = JSON.parse(source.componentBaseConfigsJson);
+    const reference = `component_project_foqn_s2_bubble::variant::${variantId}`;
+    for (const audioAvatarVisibility of ["followChat", "individualAndGroup"]) {
+      for (const showAvatar of [false, true]) {
+        source.configJson = JSON.stringify(prepareComponentConfiguration(catalog, "bubble", reference, {
+          bubble: { audioAvatarVisibility, audioSlot: { overrides: { audio: { avatarSlot: { showAvatar } } } } },
+        }));
+        for (const actorIdentityVisible of [false, true]) {
+          for (const state of ["incoming", "outgoing", "system"]) {
+            const preview = JSON.parse(source.designPreviewJson);
+            Object.assign(preview, { state, actorIdentityVisible, mediaType: "audio", sampleText: "" });
+            const resolved = resolveBubbleComponent({ ...source, designPreviewJson: JSON.stringify(preview) });
+            const expected = showAvatar && state === "incoming"
+              && (actorIdentityVisible || audioAvatarVisibility === "individualAndGroup");
+            const audio = resolved.mediaSlot.audio!;
+            assert.equal(audio.avatarSlot.showAvatar, expected);
+            const renderedAudio = requiredNode(bubbleComponentToRenderable(source, resolved), "component.bubble.audio");
+            assert.equal(Boolean(findNode(renderedAudio, "component.audio.avatar")), expected);
+            if (expected) assert.deepEqual(audio.avatarSlot.avatar!.actor, preview.actor);
+            if (!actorIdentityVisible) {
+              assert.equal(resolved.avatarSlot.showAvatar, false);
+              assert.equal(resolved.actorLabelSlot.showLabel, false);
+            }
+          }
+        }
+      }
+    }
+    for (const invalid of [undefined, "", "always", true]) {
+      const config = JSON.parse(source.configJson);
+      config.bubble.audioAvatarVisibility = invalid;
+      assert.throws(() => resolveBubbleComponent({ ...source, configJson: JSON.stringify(config) }), /audioAvatarVisibility/);
     }
   }
 });
