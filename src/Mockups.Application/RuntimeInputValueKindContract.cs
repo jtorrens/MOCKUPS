@@ -129,7 +129,8 @@ public static class RuntimeInputValueKindContract
     public static BehaviorTimingDefinition? ReadBehaviorTimingDefinition(
         JsonObject definition,
         IReadOnlyList<JsonObject>? ownerDefinitions,
-        string owner)
+        string owner,
+        string sourceIdentityKey = "id")
     {
         var valueKind = JsonPath.RequiredString(definition, "valueKind", owner);
         if (!valueKind.Equals(ValueKind.BehaviorTiming.ToString(), StringComparison.Ordinal))
@@ -158,8 +159,7 @@ public static class RuntimeInputValueKindContract
         if (ownerDefinitions is not null)
         {
             var sources = ownerDefinitions.Where((candidate) =>
-                    ExplicitDefinitionIdentity(candidate, "id") == sourceFieldId
-                    || ExplicitDefinitionIdentity(candidate, "sourceInputId") == sourceFieldId)
+                    ExplicitDefinitionIdentity(candidate, sourceIdentityKey) == sourceFieldId)
                 .Distinct()
                 .ToList();
             if (sources.Count != 1)
@@ -185,14 +185,16 @@ public static class RuntimeInputValueKindContract
 
     public static void ValidateBehaviorTimingDefinitions(
         IReadOnlyList<JsonObject> definitions,
-        string owner)
+        string owner,
+        string sourceIdentityKey = "id")
     {
         for (var index = 0; index < definitions.Count; index++)
         {
             _ = ReadBehaviorTimingDefinition(
                 definitions[index],
                 definitions,
-                $"{owner}[{index}]");
+                $"{owner}[{index}]",
+                sourceIdentityKey);
         }
     }
 

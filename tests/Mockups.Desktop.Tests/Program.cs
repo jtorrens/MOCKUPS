@@ -23411,12 +23411,10 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var stateInputs = collections.Single((collection) => collection.Id == "stackStateInputs");
         var stateSelection = slots.Fields.Single((input) => input.Id == "runtimeStateId");
         SequenceEqual(
-            ["name", "alternatives", "gapBeforeMode", "gapBeforeToken", "gapBeforeWeight", "runtimeStateId",
+            ["name", "gapBeforeMode", "gapBeforeToken", "gapBeforeWeight", "runtimeStateId",
                 "runtimeStateTransition", "runtimeStateElapsedMs", "runtimeStateFromId"],
             slots.Fields.Select((field) => field.Id).ToList());
-        Equal(
-            true,
-            slots.Fields.Single((field) => field.Id == "alternatives").StructuredCollection is not null);
+        True(slots.Fields.All(field => field.Id != "alternatives"));
         Equal(
             true,
             slots.Fields.Where((field) => field.Id != "runtimeStateId").All((field) => field.ActionOnly));
@@ -28979,7 +28977,10 @@ static void ProjectedScreenChildEditsPersistAndRender()
         var metrics = reopened.GetDevicePreviewMetrics(shot.DeviceOverrideId
             ?? reopened.GetActorSettings(shot.OwnerActorId).DefaultDeviceId);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload).GetAwaiter().GetResult();
-        True(html.Contains("Independent Screen caption", StringComparison.Ordinal));
+        var renderedText = System.Net.WebUtility.HtmlDecode(
+            System.Text.RegularExpressions.Regex.Replace(html, "<[^>]+>", " "));
+        renderedText = System.Text.RegularExpressions.Regex.Replace(renderedText, @"\s+", " ");
+        True(renderedText.Contains("Independent Screen caption", StringComparison.Ordinal));
         True(!html.Contains("preview-error", StringComparison.Ordinal));
     }
     finally { File.Delete(temporary); }

@@ -210,7 +210,46 @@ function apply(
         node[rawDefinition.targetResolvedJsonKey] = runtimeOwner[rawDefinition.resolvedJsonKey];
       }
     }
-    if (ownedEntries.length > 0) delete node[storageKey];
+    if (ownedEntries.length > 0) {
+      // Close transport aliases at the prepared child boundary. Runtime owners
+      // retain their stable IDs; render-facing values use the declared targets.
+      const targets = new Map(ownedEntries.map(({ targetKey, rawDefinition }) => [rawDefinition.jsonKey as string, targetKey]));
+      const fieldTargets = new Map(ownedEntries
+        .filter(({ rawDefinition }) => typeof rawDefinition.sourceInputId === "string")
+        .map(({ rawDefinition }) => [rawDefinition.id as string, rawDefinition.sourceInputId as string]));
+      if (Array.isArray(node.inputs)) {
+        node.inputs = node.inputs.map(value => {
+          if (!isRecord(value)) throw new Error("Prepared Runtime input must be an object");
+          const target = targets.get(value.jsonKey as string);
+          const definition: JsonRecord = target ? {
+            ...value, jsonKey: target,
+            id: requiredString(value, "sourceInputId", "Prepared forwarded input source identity"),
+          } : { ...value };
+          for (const [contractKey, referenceKey] of [["naturalTiming", "sourceFieldId"], ["transition", "targetInputId"]] as const) {
+            const contract = definition[contractKey];
+            if (isRecord(contract)) {
+              const fieldTarget = fieldTargets.get(contract[referenceKey] as string);
+              if (fieldTarget) definition[contractKey] = { ...contract, [referenceKey]: fieldTarget };
+            }
+          }
+          return definition;
+        });
+      }
+      if (Array.isArray(node.actions)) {
+        for (const action of node.actions) {
+          if (!isRecord(action)) throw new Error("Prepared Runtime action must be an object");
+          for (const key of ["durationInputId", "durationBehaviorTimingInputId"]) {
+            const fieldTarget = fieldTargets.get(action[key] as string);
+            if (fieldTarget) action[key] = fieldTarget;
+          }
+          for (const key of ["playInputId", "timeJsonKey", "targetInputId", "targetFromJsonKey"]) {
+            const target = targets.get(action[key] as string);
+            if (target) action[key] = target;
+          }
+        }
+      }
+      delete node[storageKey];
+    }
   }
 
   for (const [key, child] of Object.entries(node)) {
@@ -224,8 +263,8 @@ function projectChildRuntimeDocuments(
   structuralSource: unknown[], definition: JsonRecord, runtime: JsonRecord,
 ): unknown[] {
   const projection = optionalObject(definition, "projection", "Forwarded collection");
-  const child = projection && optionalObject(projection, "childCollection", "Forwarded projection");
-  if (!child) return structuredClone(structuralSource);
+  if (!Object.hasOwn(projection, "childCollection")) return structuredClone(structuralSource);
+  const child = optionalObject(projection, "childCollection", "Forwarded projection");
   const key = (name: string) => requiredString(child, name, "Child Runtime projection");
   const items = runtime[key("jsonKey")];
   if (!Array.isArray(items) || items.some(item => !isRecord(item))) {

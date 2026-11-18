@@ -197,7 +197,7 @@ public static class RuntimeInputForwardingContract
                     ["id"] = stateId,
                     [parentItemIdJsonKey] = parentId,
                     [variantReferenceJsonKey] = state[variantReferenceJsonKey]?.DeepClone(),
-                    [runtimeContractJsonKey] = EffectivePreview(sourceContract, sourceContract),
+                    [runtimeContractJsonKey] = ProjectCompleteRuntimeOwner(sourceContract),
                 };
                 foreach (var metadataKey in metadataKeys)
                     value[metadataKey] = state[metadataKey]?.DeepClone()
@@ -239,6 +239,24 @@ public static class RuntimeInputForwardingContract
         if (!ObjectItems(collections, "Effective Preview collections")
             .Any((candidate) => Text(candidate["id"]) == Text(runtimeCollection["id"])))
             collections.Add(runtimeCollection);
+    }
+
+    private static JsonObject ProjectCompleteRuntimeOwner(JsonObject source)
+    {
+        var fixture = source.DeepClone().AsObject();
+        if (ForwardedDefinitions(source) is { } forwards)
+        {
+            var sourceIds = ForwardedDefinitionItems(forwards)
+                .Select(definition => Text(definition["sourceInputId"]))
+                .ToHashSet(StringComparer.Ordinal);
+            if (fixture["inputs"] is JsonArray fields)
+                for (var index = fields.Count - 1; index >= 0; index--)
+                    if (sourceIds.Contains(Text(fields[index]?["id"]))) fields.RemoveAt(index);
+            if (fixture["actions"] is JsonArray actions)
+                for (var index = actions.Count - 1; index >= 0; index--)
+                    if (LiftAction(actions[index]!.AsObject(), forwards) is not null) actions.RemoveAt(index);
+        }
+        return EffectivePreview(fixture, source);
     }
 
     private static void CollectForwardedOwners(JsonNode? node, HashSet<JsonObject> owners)

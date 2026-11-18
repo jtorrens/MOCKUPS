@@ -747,7 +747,8 @@ internal sealed partial class SqliteCurrentDatabaseValidator
             ValidateBehaviorTimingDefinitions(
                 forwardedDefinitions,
                 owner,
-                $"{path}.{RuntimeInputForwardingContract.StorageKey}");
+                $"{path}.{RuntimeInputForwardingContract.StorageKey}",
+                "sourceInputId");
         }
 
         foreach (var (key, child) in obj)
@@ -777,13 +778,15 @@ internal sealed partial class SqliteCurrentDatabaseValidator
     private void ValidateBehaviorTimingDefinitions(
         IReadOnlyList<JsonObject> definitions,
         string owner,
-        string path)
+        string path,
+        string sourceIdentityKey = "id")
     {
         try
         {
             RuntimeInputValueKindContract.ValidateBehaviorTimingDefinitions(
                 definitions,
-                $"{owner} at {path}");
+                $"{owner} at {path}",
+                sourceIdentityKey);
         }
         catch (InvalidOperationException exception)
         {

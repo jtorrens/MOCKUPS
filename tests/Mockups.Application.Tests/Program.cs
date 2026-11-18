@@ -59,6 +59,7 @@ var tests = new (string Name, Action Run)[]
     ("Production collection creation requires Actors but not media", ProductionCollectionCreationRequiresActorsButNotMedia),
     ("Production media preserves absent authored resources", ProductionMediaPreservesAuthoredResources),
     ("Dynamic Runtime selectors close exact local IDs for animation", DynamicRuntimeSelectorsCloseExactLocalIds),
+    ("BehaviorTiming separates local and forwarding source identities", BehaviorTimingIdentityTests.ExactOwnerIdentities),
     ("Shot Manager readonly documents expose only the strict stable projection", ShotManagerReadonlyDocumentsAreStrict),
     ("editor operations execute away from the caller thread", EditorOperationsRunOnWorker),
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
@@ -1270,7 +1271,7 @@ static void ForwardedStatesRequireExplicitMutation()
                 ["items"] = new JsonObject
                 {
                     ["id"] = $"{prefix}.states", ["jsonKey"] = key,
-                    ["collection"] = new JsonObject { ["id"] = prefix, ["fields"] = new JsonArray() },
+                    ["collection"] = new JsonObject { ["id"] = prefix, ["label"] = prefix, ["itemLabel"] = "State", ["fields"] = new JsonArray(new JsonObject { ["id"] = stateKey, ["jsonKey"] = stateKey, ["label"] = "State", ["kind"] = "text", ["valueKind"] = "StringSingleLine", ["defaultValue"] = "initial" }) },
                     ["projection"] = projection,
                 },
             },

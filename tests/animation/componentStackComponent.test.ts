@@ -675,7 +675,7 @@ test("Module Content Stack Variant horizontal padding bounds the shared Preview 
     };
     source.configJson = JSON.stringify({ systemComposition: composition });
     source.designPreviewJson = JSON.stringify({ showStatusBar: false, showNavigationBar: false });
-    source.themeTokensJson = JSON.stringify({ spacing: { none: 0, [token]: value } });
+    source.themeTokensJson = JSON.stringify({ modes: { light: {} }, spacing: { none: 0, [token]: value } });
     const node = systemCompositionModuleToRenderable(source);
     assert.deepEqual(node.box, { x: 0, y: 0, width: 360, height: 720 });
     assert.deepEqual(node.children?.[0]?.box, { x: inset, y: 0, width: 360 - 2 * inset, height: 720 });
@@ -745,5 +745,34 @@ test("Projected child Runtime documents cross only their declared stable boundar
     runtime.children[0].parent = "wrong-parent";
     source.designPreviewJson = JSON.stringify(runtime);
     assert.throws(() => prepareRuntimePreviewPayload(source), /does not match its declared boundary/);
+  }
+});
+
+test("Prepared forwarding closes field and action transport keys once", () => {
+  for (const name of ["caption", "password"]) {
+    const source = payload([]);
+    const fieldId = `forwarded.${name}`;
+    const jsonKey = `transport_${name}`;
+    const definition = { id: fieldId, jsonKey, sourceInputId: name };
+    const timing = { id: "forwarded.timing", jsonKey: "transportTiming", sourceInputId: "timing",
+      naturalTiming: { sourceFieldId: fieldId, unit: "grapheme", baseFramesPerUnit: 2 } };
+    source.configJson = JSON.stringify({ owner: {
+      [name]: "Design", timing: {}, inputs: [definition, timing],
+      actions: [{ id: "play", playInputId: jsonKey, playFieldId: fieldId, timeJsonKey: jsonKey, durationBehaviorTimingInputId: timing.id }],
+      $forwardedInputs: { [name]: definition, timing },
+    } });
+    source.designPreviewJson = JSON.stringify({ inputs: [definition, timing], [jsonKey]: "Screen", transportTiming: { mode: "fixed", fixedFrames: 12 } });
+    const prepared = prepareRuntimePreviewPayload(source);
+    const owner = JSON.parse(prepared.configJson).owner;
+    assert.equal(owner[name], "Screen");
+    assert.deepEqual(owner.inputs, [
+      { ...definition, id: name, jsonKey: name },
+      { ...timing, id: "timing", jsonKey: "timing", naturalTiming: { ...timing.naturalTiming, sourceFieldId: name } },
+    ]);
+    assert.equal(owner.actions[0].durationBehaviorTimingInputId, "timing");
+    assert.equal(owner.actions[0].playInputId, name);
+    assert.equal(owner.actions[0].playFieldId, fieldId);
+    assert.equal(owner.actions[0].timeJsonKey, name);
+    assert.equal(JSON.parse(source.configJson).owner.actions[0].playInputId, jsonKey);
   }
 });

@@ -461,6 +461,15 @@ export function planScopedValidation(
         ["--", "--exact", "forwarded runtime collections expose slot state actions"],
       ));
     }
+    if (["src/Mockups.Application/RuntimeInputValueKindContract.cs",
+      "src/Mockups.Persistence.Sqlite/SqliteCurrentDatabaseValidator.cs"].includes(file)) {
+      add(npmStep("application:timing-identities", "test:focus:application",
+        "Runtime timing must distinguish declared local and forwarding identities",
+        ["--", "--exact", "BehaviorTiming separates local and forwarding source identities"]));
+      add(npmStep("desktop:lock-screen-timing", "test:focus:desktop",
+        "Lock Screen creation and rendering must retain exact nested timing fields",
+        ["--", "--exact", "Lock Screen composes its runtime Stack and optional system bars"]));
+    }
     if ([
       "src/Mockups.Application/DesignPreviewTestValues.cs",
       "src/Mockups.Application/RuntimeInputAnimationValueContract.cs",

@@ -13,6 +13,18 @@ internal static class ProjectedChildRuntimeTests
                   {"id":"caption-field","jsonKey":"caption","label":"Caption","kind":"text","valueKind":"StringSingleLine","defaultValue":"saved caption"}
                 ],"actorId":"saved-actor","caption":"saved caption","collections":[]}
                 """)!.AsObject();
+            var captionKey = prefix == "panels" ? "forwardedCaption" : "caption";
+            if (prefix == "panels")
+            {
+                var declaration = sourceRuntime["inputs"]![1]!.DeepClone().AsObject();
+                declaration["id"] = "forwarded.caption";
+                declaration["sourceInputId"] = "caption-field";
+                declaration["jsonKey"] = captionKey;
+                sourceRuntime[RuntimeInputForwardingContract.StorageKey] = new JsonObject
+                {
+                    ["caption"] = declaration,
+                };
+            }
             var structural = new JsonArray(new JsonObject
             {
                 ["id"] = "parent-01", ["title"] = "First",
@@ -64,9 +76,9 @@ internal static class ProjectedChildRuntimeTests
                 throw new Exception("Runtime conversion cannot reintroduce the structural source.");
             if (content[prefix]![0]!["choices"] is not null)
                 throw new Exception("Variant structure cannot be a second persisted Runtime owner.");
-            content["childValues"]![0]!["runtime"]!["caption"] = "Screen caption";
+            content["childValues"]![0]!["runtime"]![captionKey] = "Screen caption";
             var refreshed = RuntimeInputForwardingContract.EffectivePreview(content, config);
-            if (refreshed["childValues"]![0]!["runtime"]!["caption"]!.GetValue<string>() != "Screen caption"
+            if (refreshed["childValues"]![0]!["runtime"]![captionKey]!.GetValue<string>() != "Screen caption"
                 || sourceRuntime["caption"]!.GetValue<string>() != "saved caption")
                 throw new Exception("Screen edits must survive projection without changing Design defaults.");
             var owners = RuntimeInputContractTraversal.Contracts(refreshed, config, []).ToList();

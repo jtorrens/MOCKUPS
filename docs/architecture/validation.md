@@ -818,6 +818,12 @@ Variants with their initial scaffold values.
 
 ## Manual UI validation
 
+Timing identity separation is covered by `BehaviorTiming separates local and
+forwarding source identities`, including a negative control that rejects a
+source alias as a missing local field. The projected child fixtures cover both
+native and explicitly forwarded fields. The Screen render regression joins
+rendered text nodes so authored line wrapping cannot cause a false failure.
+
 Projected child Runtime ownership is covered by Application regression
 `Projected child Runtime contracts expose complete independently owned Screen values`
 using two differently named projection fixtures, and Preview regression

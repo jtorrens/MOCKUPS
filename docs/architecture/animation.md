@@ -383,6 +383,11 @@ new trailing horizon. The compact animation track may additionally expose its
 
 ## Behavioral timing
 
+BehaviorTiming references use the exact sibling `id` in a prepared Runtime
+contract. Raw forwarding declarations validate against their explicit
+`sourceInputId` namespace before rebasing. The two namespaces are never searched
+as interchangeable identities.
+
 Reusable action duration uses dictionary `BehaviorTiming`:
 
 - fixed mode resolves authored frames;

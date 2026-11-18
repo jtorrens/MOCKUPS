@@ -19,16 +19,21 @@ internal static class ProductionRuntimeTraversalTests
                 ["itemLabel"] = "Item", ["fields"] = new JsonArray(),
             };
             if (runtimeKey == "inputs")
+            {
+                collection["fields"]!.AsArray().Add(JsonNode.Parse("""
+                    {"id":"variant","jsonKey":"variantReference","label":"Variant","kind":"componentVariant","valueKind":"ComponentVariant","componentType":"*","defaultValue":"example::variant::default"}
+                    """));
                 collection["componentItems"] = new JsonObject
                 {
                     ["variantReferenceJsonKey"] = "variantReference",
                     ["overridesJsonKey"] = "overrides", ["inputsJsonKey"] = runtimeKey,
                 };
+            }
             else collection["itemRuntimeContractJsonKey"] = runtimeKey;
             var runtime = new JsonObject
             {
                 ["collections"] = new JsonArray(collection),
-                ["items"] = new JsonArray(new JsonObject { ["id"] = "item-a", [runtimeKey] = child.DeepClone() }),
+                ["items"] = new JsonArray(new JsonObject { ["id"] = "item-a", ["variantReference"] = "example::variant::default", ["overrides"] = new JsonObject(), [runtimeKey] = child.DeepClone() }),
                 ["sourceSnapshot"] = child.DeepClone(),
             };
             var content = runtime.DeepClone().AsObject();

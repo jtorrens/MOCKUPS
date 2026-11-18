@@ -394,6 +394,12 @@ Screen Payload exposes the Module's Runtime Inputs in General and each projected
 child's complete Runtime contract beneath its slot. The explicit child collection
 projection carries the child's declarations and saved default values, including
 its nested Runtime owners; it is not limited to fields individually marked Forward.
+For a field explicitly forwarded by that child, its forwarded declaration is
+its single editable identity; the native source declaration is not exposed a
+second time. Actions are lifted through the same declared identities. Preview
+preparation closes those transport keys into their declared local targets while
+preserving stable animation field ids. A missing optional child projection does
+not declare a child boundary.
 Creation captures those defaults once into Screen-owned content. Temporary Design
 Test Values are never a Production source. Existing Screen edits remain independent
 of subsequent default changes.

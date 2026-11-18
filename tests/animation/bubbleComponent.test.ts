@@ -334,7 +334,10 @@ test("Bubble audio avatar policy preserves the message Actor and Audio master sw
             assert.equal(audio.avatarSlot.showAvatar, expected);
             const renderedAudio = requiredNode(bubbleComponentToRenderable(source, resolved), "component.bubble.audio");
             assert.equal(Boolean(findNode(renderedAudio, "component.audio.avatar")), expected);
-            if (expected) assert.deepEqual(audio.avatarSlot.avatar!.actor, preview.actor);
+            if (expected) {
+              const { id, displayName, shortName, initials, avatar } = preview.actor;
+              assert.deepEqual(audio.avatarSlot.avatar!.actor, { id, displayName, shortName, initials, avatar });
+            }
             if (!actorIdentityVisible) {
               assert.equal(resolved.avatarSlot.showAvatar, false);
               assert.equal(resolved.actorLabelSlot.showLabel, false);
