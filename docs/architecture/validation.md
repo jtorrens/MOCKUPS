@@ -818,6 +818,26 @@ Variants with their initial scaffold values.
 
 ## Manual UI validation
 
+Projected child Runtime ownership is covered by Application regression
+`Projected child Runtime contracts expose complete independently owned Screen values`
+using two differently named projection fixtures, and Preview regression
+`Projected child Runtime documents cross only their declared stable boundaries`.
+The latter rejects an incorrect parent identity as a bounded negative control.
+The Application fixture also rejects declaring a child collection as parent
+metadata, which would create a second persisted Runtime owner.
+`RuntimeInputForwardingContract` owns declarations and parent/child projection;
+`RuntimePreviewDocumentContract` guards the exact transport boundary before dispatch.
+Schema 41 rejects the obsolete duplicated payload contract. The scoped selection
+includes these owners and the existing Production nested-preview regression.
+`Projected Screen child edits persist and render without duplicated structure`
+reopens a disposable Screen after the shared persistence mutation and checks its
+rendered caption and declaration-only parent payload.
+It also prepares the animated state selector after stripping parent structure,
+covering `RuntimeInputAnimationValueContract` option closure against the explicit
+Variant source rather than a duplicate Runtime collection.
+Manual review must edit both the root Actor and a child Runtime value through
+Screen Payload, revisit the Screen and verify its rendered content.
+
 Choose relevant checks for the changed contracts and report which were actually
 exercised. This checklist is not a claim that every item ran:
 

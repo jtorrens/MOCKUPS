@@ -463,6 +463,7 @@ export function planScopedValidation(
     }
     if ([
       "src/Mockups.Application/DesignPreviewTestValues.cs",
+      "src/Mockups.Application/RuntimeInputAnimationValueContract.cs",
       "src/Mockups.Application/RuntimeInputValueKindContract.cs",
       "src/Mockups.Desktop/EditorShell/StructuredCollectionItemFactory.cs",
     ].includes(file)) {
@@ -492,17 +493,32 @@ export function planScopedValidation(
       "src/Mockups.Application/ProductionRuntimeCreationContract.cs",
       "src/Mockups.Application/ProductionRuntimeFixtureIsolationContract.cs",
       "src/Mockups.Application/RuntimeInputContractTraversal.cs",
+      "src/Mockups.Application/RuntimeInputForwardingContract.cs",
       "src/desktop-preview/runtimePreviewDocumentContract.ts",
+      "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
+      "src/Mockups.Application/RuntimeInputDocumentContract.cs",
+      "src/Mockups.Application/DesignPreviewTestValues.cs",
       "src/Mockups.Desktop/EditorShell/NestedRuntimeRecordReferenceResolver.cs",
       "src/Mockups.Desktop/EditorShell/ProductionPreviewRuntimeResolver.cs",
       "src/Mockups.Desktop/EditorShell/DesignPreviewInputPreparer.cs",
       "src/Mockups.Application/CollectionFieldAvailability.cs",
       "src/Mockups.Application/StructuredRuntimeCollectionProjection.cs",
     ].includes(file)) {
+      previewTests.add("tests/animation/componentStackComponent.test.ts");
+      add(npmStep(
+        "application:projected-child-runtime", "test:focus:application",
+        "Projected children retain complete Runtime declarations with one persisted owner",
+        ["--", "--exact", "Projected child Runtime contracts expose complete independently owned Screen values"],
+      ));
       add(npmStep(
         "desktop:production-nested-preview", "test:focus:desktop",
         "Production reference hydration and rendered HTML must exclude Variant source actors",
         ["--", "--exact", "Production nested Runtime preview ignores Variant source Actors"],
+      ));
+      add(npmStep(
+        "desktop:projected-child-runtime", "test:focus:desktop",
+        "Child edits must survive persistence and render without a second structural payload",
+        ["--", "--exact", "Projected Screen child edits persist and render without duplicated structure"],
       ));
       add(npmStep(
         "application:production-runtime-traversal", "test:focus:application",

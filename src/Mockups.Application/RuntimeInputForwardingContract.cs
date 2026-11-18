@@ -116,6 +116,15 @@ public static class RuntimeInputForwardingContract
     private static void DeclareProjectedStateTransport(JsonObject collection, JsonObject projection)
     {
         var fields = JsonPath.RequiredArray(collection, "fields", "Forwarded state collection");
+        // Structure remains in the Variant source. Only the declared state
+        // selector and metadata belong to this projected Runtime owner; child
+        // documents have their own explicitly declared collection below.
+        var projectedKeys = MetadataKeys(projection).Append(
+            JsonPath.RequiredString(projection, "stateJsonKey", "Forwarded state projection"))
+            .ToHashSet(StringComparer.Ordinal);
+        for (var index = fields.Count - 1; index >= 0; index--)
+            if (!projectedKeys.Contains(JsonPath.RequiredString(fields[index]!.AsObject(), "jsonKey", "Forwarded state field")))
+                fields.RemoveAt(index);
         foreach (var (projectionKey, label, kind, valueKind, defaultValue) in new[]
                  {
                      ("transitionJsonKey", "Transition", "boolean", "Boolean", "false"),
@@ -188,7 +197,7 @@ public static class RuntimeInputForwardingContract
                     ["id"] = stateId,
                     [parentItemIdJsonKey] = parentId,
                     [variantReferenceJsonKey] = state[variantReferenceJsonKey]?.DeepClone(),
-                    [runtimeContractJsonKey] = EffectivePreview(new JsonObject(), sourceContract),
+                    [runtimeContractJsonKey] = EffectivePreview(sourceContract, sourceContract),
                 };
                 foreach (var metadataKey in metadataKeys)
                     value[metadataKey] = state[metadataKey]?.DeepClone()
@@ -348,6 +357,9 @@ public static class RuntimeInputForwardingContract
                     $"Projection itemMetadataJsonKeys entry {index} must be a non-empty string.");
             result.Add(key);
         }
+        if (projection["childCollection"] is JsonObject child
+            && result.Contains(JsonPath.RequiredString(child, "sourceCollectionJsonKey", "Child Runtime projection"), StringComparer.Ordinal))
+            throw new InvalidOperationException("A projected child Runtime collection cannot also be parent item metadata.");
         return result;
     }
 

@@ -396,6 +396,7 @@ var tests = new (string Name, Action Run)[]
     ("Social Post two Reel Screens persist independent labels without changing Variant", SocialPostReelScreenLabelsAreIndependent),
     ("Social Post Screen creation persists projected Runtime rows atomically", SocialPostScreenCreationIsAtomic),
     ("Production nested Runtime preview ignores Variant source Actors", ProductionNestedRuntimePreviewIgnoresSourceActors),
+    ("Projected Screen child edits persist and render without duplicated structure", ProjectedScreenChildEditsPersistAndRender),
     ("Screen creation requires Actors only from the selected Variant", ScreenCreationUsesSelectedVariant),
     ("Social Post editor exposes its current generic header contract", SocialPostEditorExposesCurrentHeaderContract),
     ("Production animation activation keeps Payload and navigation mounted", () => ProductionScalarCommitKeepsScreenPayloadMounted(false, true)),
@@ -28942,6 +28943,44 @@ static void SocialPostReelScreenLabelsAreIndependent()
             True(reader.Read());
             return string.Join("\n", reader.GetString(0), reader.GetString(1), reader.GetString(2));
         }
+    }
+    finally { File.Delete(temporary); }
+}
+
+static void ProjectedScreenChildEditsPersistAndRender()
+{
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-child-runtime-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var screen = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
+            .Single(node => node.Id == "module_instance_89d6def6c70f4db4af92655d73321e34");
+        var runtime = JsonNode.Parse(database.GetModuleInstanceRuntimePreviewJson(screen.Id))!.AsObject();
+        var collections = RuntimeInputDefinitionReader.ReadCollections(runtime, new JsonObject());
+        var child = collections.Single(c => c.UiParentCollectionJsonKey.Length > 0);
+        var item = runtime[child.JsonKey]![0]!.AsObject();
+        var values = item[child.ItemRuntimeContractJsonKey]!.DeepClone().AsObject();
+        values["summaryText"] = "Independent Screen caption";
+        database.UpdateModuleInstanceRuntimeCollectionValue(screen.Id, child.StorageJsonKey,
+            item["id"]!.GetValue<string>(), child.ItemRuntimeContractJsonKey, values);
+        var reopened = new SqliteProjectTestContext(temporary);
+        var content = JsonNode.Parse(reopened.GetModuleInstanceSettings(screen.Id).ContentJson)!.AsObject();
+        Equal("Independent Screen caption", content[child.StorageJsonKey]![0]![child.ItemRuntimeContractJsonKey]!["summaryText"]!.GetValue<string>());
+        var parent = collections.Single(c => c.JsonKey == child.UiParentCollectionJsonKey);
+        var declared = parent.Fields.Select(f => f.JsonKey).Append("id").ToHashSet(StringComparer.Ordinal);
+        True(content[parent.StorageJsonKey]![0]!.AsObject().All(pair => declared.Contains(pair.Key)));
+        var data = new DesignPreviewPayloadDataSource(reopened.PreviewInputs, reopened.Production,
+            reopened.Resources, reopened.Resources, reopened.ProjectPaths);
+        var payload = new ProductionPreviewPayloadPreparer(data,
+            new ProductionPreviewRuntimeResolver(reopened.Resources, reopened.ProjectPaths))
+            .PrepareRequired(screen, null, "light", 20);
+        var shot = reopened.GetShotSettings(screen.Parent!.Id);
+        var metrics = reopened.GetDevicePreviewMetrics(shot.DeviceOverrideId
+            ?? reopened.GetActorSettings(shot.OwnerActorId).DefaultDeviceId);
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload).GetAwaiter().GetResult();
+        True(html.Contains("Independent Screen caption", StringComparison.Ordinal));
+        True(!html.Contains("preview-error", StringComparison.Ordinal));
     }
     finally { File.Delete(temporary); }
 }

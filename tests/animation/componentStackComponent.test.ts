@@ -710,3 +710,40 @@ test("Forwarded collections bind their declared collection identity independentl
     assert.equal(config.owner.$forwardedInputs, undefined);
   }
 });
+
+test("Projected child Runtime documents cross only their declared stable boundaries", () => {
+  for (const collectionId of ["slots", "panels"]) {
+    const source = payload([]);
+    const structural = [{ id: "parent-a", children: [{
+      id: "child-a", variant: "class-a::variant::default", values: { caption: "Design" },
+    }] }];
+    const childRuntime = { inputs: [{ id: "caption-field", jsonKey: "caption" }], caption: "Screen" };
+    const runtime = {
+      collections: [
+        { id: collectionId, jsonKey: "parents", fields: [] },
+        { id: "children", jsonKey: "children", fields: [
+          { id: "parent-link", jsonKey: "parent" }, { id: "variant-link", jsonKey: "variant" },
+        ], itemRuntimeContractJsonKey: "runtime" },
+      ],
+      parents: [{ id: "parent-a" }], parents__variantSource: structural,
+      children: [{ id: "child-a", parent: "parent-a", variant: "class-a::variant::default", runtime: childRuntime }],
+    };
+    source.configJson = JSON.stringify({ owner: {
+      items: structural, $forwardedInputs: { items: {
+        id: `forwarded.${collectionId}`, jsonKey: "parents", collection: { id: collectionId },
+        projection: { childCollection: {
+          jsonKey: "children", sourceCollectionJsonKey: "children", parentItemIdJsonKey: "parent",
+          variantReferenceJsonKey: "variant", runtimeContractJsonKey: "runtime", sourceRuntimeContractJsonKey: "values",
+        } },
+      } },
+    } });
+    source.designPreviewJson = JSON.stringify(runtime);
+    const prepared = prepareRuntimePreviewPayload(source);
+    const config = JSON.parse(prepared.configJson);
+    assert.deepEqual(config.owner.__runtimeCollectionSources.items[0].children[0].values, childRuntime);
+    assert.equal(structural[0].children[0].values.caption, "Design");
+    runtime.children[0].parent = "wrong-parent";
+    source.designPreviewJson = JSON.stringify(runtime);
+    assert.throws(() => prepareRuntimePreviewPayload(source), /does not match its declared boundary/);
+  }
+});

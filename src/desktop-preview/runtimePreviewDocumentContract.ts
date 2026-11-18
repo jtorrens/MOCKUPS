@@ -197,7 +197,7 @@ function apply(
           throw new Error(`${runtimeCollectionSourcesKey} must be an object when present`);
         }
         const sources = isRecord(currentSources) ? currentSources : {};
-        sources[targetKey] = source;
+        sources[targetKey] = projectChildRuntimeDocuments(source, rawDefinition, runtimeOwner);
         node[runtimeCollectionSourcesKey] = sources;
       }
       if (
@@ -216,6 +216,42 @@ function apply(
   for (const [key, child] of Object.entries(node)) {
     if (key !== storageKey) apply(child, sources, ownerId, frameValue);
   }
+}
+
+/** The projection declares the exact parent/child identities and document
+ * boundary. Child Runtime values replace that boundary before registry dispatch. */
+function projectChildRuntimeDocuments(
+  structuralSource: unknown[], definition: JsonRecord, runtime: JsonRecord,
+): unknown[] {
+  const projection = optionalObject(definition, "projection", "Forwarded collection");
+  const child = projection && optionalObject(projection, "childCollection", "Forwarded projection");
+  if (!child) return structuredClone(structuralSource);
+  const key = (name: string) => requiredString(child, name, "Child Runtime projection");
+  const items = runtime[key("jsonKey")];
+  if (!Array.isArray(items) || items.some(item => !isRecord(item))) {
+    throw new Error("Projected child Runtime values must be object items");
+  }
+  const byId = new Map((items as JsonRecord[]).map(item => [requiredString(item, "id", "Child Runtime item"), item]));
+  if (byId.size !== items.length) throw new Error("Duplicate projected child Runtime identity");
+  return structuralSource.map(parentValue => {
+    if (!isRecord(parentValue)) throw new Error("Projected Runtime parent must be an object");
+    const parent = structuredClone(parentValue);
+    const parentId = requiredString(parent, "id", "Projected Runtime parent");
+    const children = parent[key("sourceCollectionJsonKey")];
+    if (!Array.isArray(children)) throw new Error("Projected Runtime parent requires its declared child collection");
+    for (const value of children) {
+      if (!isRecord(value)) throw new Error("Projected Runtime child must be an object");
+      const id = requiredString(value, "id", "Projected Runtime child");
+      const current = byId.get(id);
+      if (!current || current[key("parentItemIdJsonKey")] !== parentId
+        || current[key("variantReferenceJsonKey")] !== value[key("variantReferenceJsonKey")]) {
+        throw new Error(`Projected Runtime child '${id}' does not match its declared boundary`);
+      }
+      value[key("sourceRuntimeContractJsonKey")] = structuredClone(
+        requiredRecord(current, key("runtimeContractJsonKey"), `Projected Runtime child '${id}'`));
+    }
+    return parent;
+  });
 }
 
 interface RuntimeSource {

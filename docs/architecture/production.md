@@ -388,7 +388,27 @@ structured fields and their explicit `itemRuntimeContractJsonKey` or
 undeclared metadata are not effective Runtime owners. Reference hydration consumes
 the prepared Runtime document only; it never traverses raw Variant config.
 Forwarded collections bind by their declared `collection.id` and `jsonKey`;
-the forwarding field id is a separate identity, not the collection id. An actual nested Runtime
+the forwarding field id is a separate identity, not the collection id.
+
+Screen Payload exposes the Module's Runtime Inputs in General and each projected
+child's complete Runtime contract beneath its slot. The explicit child collection
+projection carries the child's declarations and saved default values, including
+its nested Runtime owners; it is not limited to fields individually marked Forward.
+Creation captures those defaults once into Screen-owned content. Temporary Design
+Test Values are never a Production source. Existing Screen edits remain independent
+of subsequent default changes.
+The projected parent stores only its declared state selector, transport and item
+metadata. Component structure remains in the Variant; the projected child document
+is the single persisted owner of that child's Runtime values. Preparation crosses
+the declared parent id, child id, exact Variant reference and Runtime document keys
+before dispatch, without matching field names or introducing a concrete-owner path.
+`uiParentCollectionJsonKey` groups the payload controls visually; commits still
+address the child's declared storage root and stable item id. UI grouping never
+manufactures a nested persistence address.
+Animated selectors close their options against the declared structural source
+and their values against the Screen document. Reading options does not copy that
+source into the persisted Runtime payload.
+An actual nested Runtime
 Actor still cannot reference System Preview fixtures. The shared navigation Add
 command publishes failures through the editor message surface.
 

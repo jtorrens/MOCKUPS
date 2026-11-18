@@ -205,6 +205,14 @@ public static class RuntimeInputDocumentContract
                 "Projected runtime collection");
         }
 
+        if (collectionDefinition?.ContainsKey("storageCollectionJsonKey") == true)
+        {
+            var declared = RuntimeInputDefinitionReader.ReadCollections(
+                new JsonObject { ["collections"] = new JsonArray(collectionDefinition.DeepClone()) },
+                new JsonObject(), includeHidden: true).Single();
+            return StructuredCollectionDocumentContract.StoredClone(result, declared,
+                $"Projected Runtime collection '{declared.Id}'");
+        }
         return result;
     }
 

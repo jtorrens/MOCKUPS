@@ -1169,7 +1169,6 @@
             "projection": {
               "itemMetadataJsonKeys": [
                 "name",
-                "alternatives",
                 "gapBeforeMode",
                 "gapBeforeToken",
                 "gapBeforeWeight"
@@ -2398,7 +2397,6 @@
               "projection": {
                 "itemMetadataJsonKeys": [
                   "name",
-                  "alternatives",
                   "gapBeforeMode",
                   "gapBeforeToken",
                   "gapBeforeWeight"

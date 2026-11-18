@@ -261,7 +261,14 @@ public static class DesignPreviewTestValues
                 jsonKey,
                 OptionalArray(preview, jsonKey, "Design Preview current collection"),
                 OptionalArray(TestValues(preview), jsonKey, "Design Test Values collection"));
-            preview[jsonKey] = new JsonArray(sourceItems.Select((item) => (JsonNode?)item).ToArray());
+            var effectiveItems = new JsonArray(sourceItems.Select((item) => (JsonNode?)item).ToArray());
+            // Projected Runtime storage contains declared values only. The
+            // separate source snapshot supplies structure to the preparation
+            // boundary; it must never become a second Runtime payload.
+            preview[jsonKey] = string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey)
+                ? effectiveItems
+                : StructuredCollectionDocumentContract.StoredClone(
+                    effectiveItems, collection, $"Projected Runtime collection '{collection.Id}'");
         }
     }
 

@@ -1061,6 +1061,14 @@ Authored token values and Theme numeric/color values remain unchanged. Three
 scaffold collection fields previously using OptionToken for Theme sizes now use
 ThemeToken. Startup validates the current contract without converting metadata.
 
+### Projected child Runtime ownership (schema 41)
+
+Explicit maintenance moves the Runtime values previously nested in projected
+parent structure into the declared child Runtime documents, preserving exact
+stable identities, actors, authored values and animation tracks. Parent payloads
+retain only declared state values and metadata. No startup repair or legacy
+reader exists; schema validation rejects the previous persistence contract.
+
 ### Content Stack horizontal padding (schema 40)
 
 Explicit maintenance adds required `horizontalPaddingToken` to every System

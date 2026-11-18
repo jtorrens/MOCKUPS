@@ -1691,7 +1691,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 {
                     itemSubcards = itemSubcards
                         .Concat(CreateChildRuntimeCollectionSubcards(
-                            owner, preview, item, address, actions, childCollections))
+                            owner, preview, item, actions, childCollections))
                         .ToList();
                 }
                 return new StructuredCollectionItemContent(content, itemSubcards);
@@ -1720,7 +1720,6 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputOwner owner,
         JsonObject preview,
         JsonObject parentItem,
-        StructuredCollectionAddress parentAddress,
         IReadOnlyList<ComponentPreviewActionDefinition> actions,
         IReadOnlyList<RuntimeInputCollectionDefinition> childCollections)
     {
@@ -1735,17 +1734,9 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 var childItem = childItems[index];
                 var childItemId = ItemId(childItem, index);
-                var childAddress = parentAddress with
-                {
-                    Owners =
-                    [
-                        .. parentAddress.Owners,
-                        new StructuredCollectionOwnerSegment(
-                            parentAddress.CollectionJsonKey,
-                            parentId),
-                    ],
-                    CollectionJsonKey = childCollection.JsonKey,
-                };
+                // UiParent describes grouping, not persisted nesting. This
+                // declared child collection owns an independent storage root.
+                var childAddress = StructuredCollectionAddress.Root(childCollection.StorageJsonKey);
                 var childContent = CreateTestValueCollectionItemContent(
                     owner,
                     preview,

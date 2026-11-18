@@ -162,10 +162,20 @@ public static class RuntimeInputAnimationValueContract
             var collectionNode = values[collection.StorageJsonKey]
                 ?? values[collection.JsonKey];
             if (collectionNode is not JsonArray items) continue;
+            IReadOnlyList<JsonObject> effectiveItems = items.OfType<JsonObject>().ToArray();
+            if (!string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey))
+            {
+                // Dynamic selector options belong to the declared structural
+                // source, while selected values belong to this Runtime owner.
+                var context = runtimePreview.DeepClone().AsObject();
+                context[collection.JsonKey] = items.DeepClone();
+                context.Remove("testValues");
+                effectiveItems = DesignPreviewTestValues.CollectionItems(context, collection);
+            }
             AddCollectionDeclarations(
                 declarations,
                 collection,
-                items.OfType<JsonObject>().ToArray(),
+                effectiveItems,
                 "",
                 [],
                 []);
