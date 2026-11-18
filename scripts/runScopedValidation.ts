@@ -490,9 +490,16 @@ export function planScopedValidation(
       "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.RuntimeDocuments.cs",
       "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.ModuleVariants.cs",
       "src/Mockups.Application/ProductionRuntimeCreationContract.cs",
+      "src/Mockups.Application/ProductionRuntimeFixtureIsolationContract.cs",
+      "src/Mockups.Application/RuntimeInputContractTraversal.cs",
       "src/Mockups.Application/CollectionFieldAvailability.cs",
       "src/Mockups.Application/StructuredRuntimeCollectionProjection.cs",
     ].includes(file)) {
+      add(npmStep(
+        "application:production-runtime-traversal", "test:focus:application",
+        "Creation and isolation must visit only declared Runtime boundaries",
+        ["--", "--exact", "Production Runtime traversal visits only declared value boundaries"],
+      ));
       add(npmStep(
         "desktop:screen-creation-variant",
         "test:focus:desktop",

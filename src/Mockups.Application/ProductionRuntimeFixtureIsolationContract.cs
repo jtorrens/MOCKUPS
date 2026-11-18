@@ -10,8 +10,8 @@ public static class ProductionRuntimeFixtureIsolationContract
         JsonObject config,
         string owner)
     {
-        ValidateContract(runtime, config, owner);
-        VisitNestedContracts(runtime, owner);
+        foreach (var location in RuntimeInputContractTraversal.Contracts(runtime, config, []))
+            ValidateContract(location.Runtime, location.Config, owner);
     }
 
     private static void ValidateContract(
@@ -94,22 +94,4 @@ public static class ProductionRuntimeFixtureIsolationContract
         }
     }
 
-    private static void VisitNestedContracts(JsonNode? node, string owner)
-    {
-        if (node is JsonArray array)
-        {
-            foreach (var child in array) VisitNestedContracts(child, owner);
-            return;
-        }
-        if (node is not JsonObject value) return;
-
-        if (value["inputs"] is JsonArray || value["collections"] is JsonArray)
-        {
-            ValidateContract(value, new JsonObject(), owner);
-        }
-        foreach (var (_, child) in value)
-        {
-            VisitNestedContracts(child, owner);
-        }
-    }
 }

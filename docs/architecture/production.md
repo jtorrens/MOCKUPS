@@ -381,6 +381,14 @@ explicit Shot interval.
 Screen payload is authored in Preview because that is where its effect can be
 checked, but ownership remains with the Screen instance.
 
+Creation requirements and fixture-isolation validation share
+`RuntimeInputContractTraversal`. It visits declared Runtime collections,
+structured fields and their explicit `itemRuntimeContractJsonKey` or
+`componentItems.inputsJsonKey` boundaries. Variant source snapshots and other
+undeclared metadata are not effective Runtime owners. An actual nested Runtime
+Actor still cannot reference System Preview fixtures. The shared navigation Add
+command publishes failures through the editor message surface.
+
 Screen creation prepares both its required-value form and its atomic write
 from the exact selected Module Variant, using the same Variant settings owner
 as existing Screens. Structure projection and field availability use that

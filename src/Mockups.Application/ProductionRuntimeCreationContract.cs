@@ -1,3 +1,4 @@
+using PathPart = Mockups.DesktopEditorShell.EditorShell.RuntimeInputPathPart;
 using System.Text.Json.Nodes;
 using Mockups.DesktopEditorShell.Common;
 
@@ -160,11 +161,8 @@ public static class ProductionRuntimeCreationContract
                 actorOptions,
                 requirements);
         }
-        VisitNestedContracts(
-            prototype,
-            [],
-            actorOptions,
-            requirements);
+        foreach (var location in RuntimeInputContractTraversal.ItemContracts(prototype, collection, []))
+            VisitContract(location.Runtime, location.Config, location.Path, actorOptions, requirements);
 
         return requirements
             .Where((requirement) => ValueAt(prototype, requirement.Path) is not null)
@@ -180,17 +178,8 @@ public static class ProductionRuntimeCreationContract
         IReadOnlyList<FieldOption> actorOptions)
     {
         var requirements = new List<Requirement>();
-        VisitContract(
-            runtime,
-            config,
-            [],
-            actorOptions,
-            requirements);
-        VisitNestedContracts(
-            runtime,
-            [],
-            actorOptions,
-            requirements);
+        foreach (var location in RuntimeInputContractTraversal.Contracts(runtime, config, []))
+            VisitContract(location.Runtime, location.Config, location.Path, actorOptions, requirements);
 
         return requirements
             .Where((requirement) => ValueAt(content, requirement.Path) is not null)
@@ -345,40 +334,6 @@ public static class ProductionRuntimeCreationContract
         }
     }
 
-    private static void VisitNestedContracts(
-        JsonNode? node,
-        IReadOnlyList<PathPart> path,
-        IReadOnlyList<FieldOption> actorOptions,
-        List<Requirement> requirements)
-    {
-        if (node is JsonArray array)
-        {
-            for (var index = 0; index < array.Count; index++)
-            {
-                VisitNestedContracts(
-                    array[index],
-                    [.. path, PathPart.Index(index)],
-                    actorOptions,
-                    requirements);
-            }
-            return;
-        }
-        if (node is not JsonObject value) return;
-
-        if (value["inputs"] is JsonArray || value["collections"] is JsonArray)
-        {
-            VisitContract(value, new JsonObject(), path, actorOptions, requirements);
-        }
-        foreach (var (key, child) in value)
-        {
-            VisitNestedContracts(
-                child,
-                [.. path, PathPart.Property(key)],
-                actorOptions,
-                requirements);
-        }
-    }
-
     private static bool IsProductionActor(ComponentInputDefinition input) =>
         input.ValueKind == ValueKind.RecordReference
         && input.TableId.Equals("actors", StringComparison.Ordinal);
@@ -479,9 +434,4 @@ public static class ProductionRuntimeCreationContract
         public IReadOnlyList<PathPart> Path => Paths[0];
     }
 
-    private sealed record PathPart(string? Name, int? ArrayIndex)
-    {
-        public static PathPart Property(string name) => new(name, null);
-        public static PathPart Index(int index) => new(null, index);
-    }
 }

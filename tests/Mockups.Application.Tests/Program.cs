@@ -54,6 +54,7 @@ var tests = new (string Name, Action Run)[]
     ("collection field transitions use declared identities in the shared mutation owner", CollectionFieldTransitionsUseDeclaredIdentities),
     ("collection animation preserves fixed boundaries and exact declared paths", StructuredCollectionAnimationTests.FixedBoundariesAndDeclaredPaths),
     ("Runtime contract changes preserve values by declared identity", StructuredCollectionAnimationTests.ContractChangesPreserveDeclaredIdentity),
+    ("Production Runtime traversal visits only declared value boundaries", ProductionRuntimeTraversalTests.DeclaredBoundariesExcludeSourceDocuments),
     ("Production collection creation requires Actors but not media", ProductionCollectionCreationRequiresActorsButNotMedia),
     ("Production media preserves absent authored resources", ProductionMediaPreservesAuthoredResources),
     ("Dynamic Runtime selectors close exact local IDs for animation", DynamicRuntimeSelectorsCloseExactLocalIds),

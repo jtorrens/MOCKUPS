@@ -123,17 +123,24 @@ internal sealed class EditorNodeCommandController
             _operations,
             ShowInfoDialog,
             _browsePath);
-        var child = await workflow.TryAdd(parent);
-        if (child is null) return;
-
-        if (EditorAddOperationCatalog.Require(parent).Kind
-            == EditorAddOperationKind.RefreshIconThemes)
+        try
         {
-            await _loadProjectTree();
-            return;
-        }
+            var child = await workflow.TryAdd(parent);
+            if (child is null) return;
 
-        await _reloadAndSelect(child);
+            if (EditorAddOperationCatalog.Require(parent).Kind
+                == EditorAddOperationKind.RefreshIconThemes)
+            {
+                await _loadProjectTree();
+                return;
+            }
+
+            await _reloadAndSelect(child);
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Add item to {parent.Name}", exception);
+        }
     }
 
     public async void DuplicateNode(ProjectTreeNode node)
