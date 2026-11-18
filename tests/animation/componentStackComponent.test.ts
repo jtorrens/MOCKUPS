@@ -1,3 +1,4 @@
+import { systemCompositionModuleToRenderable } from "../../src/desktop-preview/systemCompositionModuleRenderable.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -654,4 +655,33 @@ test("Component Stack fill viewport clips an intrinsic content slot without shri
   assert.equal(renderable.style?.overflow, "hidden");
   assert.equal(renderable.box?.height, 720);
   assert.equal(renderable.children?.[0]?.box?.height, 800);
+});
+
+
+test("Module Content Stack Variant horizontal padding bounds the shared Preview and Render layout", () => {
+  for (const [token, value, inset] of [["none", 0, 0], ["m", 20, 20], ["xxl", 400, 180]] as const) {
+    const source = payload([]);
+    const slot = { variantReference: "stub::variant::default", overrides: {} };
+    const composition = {
+      statusBarSlot: slot,
+      navigationBarSlot: slot,
+      stackInputs: {
+        sizingMode: "fill",
+        horizontalPaddingToken: `theme.spacing.${token}`,
+        startGapToken: "theme.spacing.none",
+        endGapToken: "theme.spacing.none",
+        items: [],
+      },
+    };
+    source.configJson = JSON.stringify({ systemComposition: composition });
+    source.designPreviewJson = JSON.stringify({ showStatusBar: false, showNavigationBar: false });
+    source.themeTokensJson = JSON.stringify({ spacing: { none: 0, [token]: value } });
+    const node = systemCompositionModuleToRenderable(source);
+    assert.deepEqual(node.box, { x: 0, y: 0, width: 360, height: 720 });
+    assert.deepEqual(node.children?.[0]?.box, { x: inset, y: 0, width: 360 - 2 * inset, height: 720 });
+    const incomplete = structuredClone(composition);
+    Reflect.deleteProperty(incomplete.stackInputs, "horizontalPaddingToken");
+    source.configJson = JSON.stringify({ systemComposition: incomplete });
+    assert.throws(() => systemCompositionModuleToRenderable(source), /horizontalPaddingToken/);
+  }
 });

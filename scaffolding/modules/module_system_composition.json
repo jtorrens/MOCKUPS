@@ -1245,7 +1245,8 @@
             },
             "valueKind": "StructuredCollection"
           }
-        }
+        },
+        "horizontalPaddingToken": "theme.spacing.none"
       }
     }
   },
@@ -2473,7 +2474,8 @@
               },
               "valueKind": "StructuredCollection"
             }
-          }
+          },
+          "horizontalPaddingToken": "theme.spacing.none"
         }
       }
     }
@@ -2842,6 +2844,34 @@
       "unit": "",
       "embeddedSlot": null,
       "themeTokenFamily": "spacing"
+    },
+    {
+      "id": "module.system.composition.stackHorizontalPadding",
+      "label": "Horizontal padding",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "systemComposition",
+        "stackInputs",
+        "horizontalPaddingToken"
+      ],
+      "defaultValue": "theme.spacing.none",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "themeTokenFamily": "spacing"
     }
   ],
   "editorLayout": {
@@ -2923,6 +2953,11 @@
               {
                 "id": "module.system.composition.stackEndGap",
                 "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.system.composition.stackHorizontalPadding",
+                "order": 35,
                 "visible": true
               },
               {

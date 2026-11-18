@@ -8,7 +8,7 @@ import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.
 import { parseObject } from "./componentResolverCommon.js";
 import type { SystemCompositionComponentSlot } from "./systemCompositionModuleContract.js";
 import { resolveSystemCompositionModuleFrame } from "./systemCompositionModuleResolver.js";
-import { previewPayloadInBox, previewScreenBox } from "./componentRenderableCommon.js";
+import { numberToken, renderScale, previewPayloadInBox, previewScreenBox } from "./componentRenderableCommon.js";
 import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { resolveInternalComponentStackLayout } from "./componentStackComponentResolver.js";
@@ -39,10 +39,12 @@ export function systemCompositionModuleToRenderable(payload: DesignPreviewPayloa
     : undefined;
   const contentTop = screen.y + (status?.box?.height ?? 0);
   const contentBottom = navigation?.box?.y ?? screen.y + screen.height;
+  const horizontalPadding = Math.min(screen.width / 2, Math.max(0,
+    numberToken(payload, contract.horizontalPaddingToken) * renderScale(payload)));
   const contentBox = {
-    x: screen.x,
+    x: screen.x + horizontalPadding,
     y: contentTop,
-    width: screen.width,
+    width: Math.max(0, screen.width - horizontalPadding * 2),
     height: Math.max(0, contentBottom - contentTop),
   };
   const stackPayload = previewPayloadInBox(payload, contentBox);

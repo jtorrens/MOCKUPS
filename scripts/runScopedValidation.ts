@@ -227,6 +227,12 @@ export function planScopedValidation(
       previewTests.add("tests/animation/bubbleComponent.test.ts");
       typecheck = true;
     }
+    if (file.startsWith("src/desktop-preview/systemCompositionModule")
+      || file === "src/Mockups.Application/SystemCompositionModuleConfigContract.cs"
+      || file === "scaffolding/modules/module_system_composition.json") {
+      previewTests.add("tests/animation/componentStackComponent.test.ts");
+      typecheck = true;
+    }
     if (file === "src/desktop-preview/componentCollectionResolverCommon.ts") {
       previewTests.add("tests/animation/collectionStackComponent.test.ts");
       previewTests.add("tests/animation/componentStackComponent.test.ts");

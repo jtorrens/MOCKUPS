@@ -544,6 +544,15 @@ the slot or its declared component boundary, not to its index. A content-sized
 slot retains its intrinsic size inside a fill viewport; the viewport clips
 overflow instead of shrinking the slot to make it fit.
 
+System Composition Module Variants require
+`systemComposition.stackInputs.horizontalPaddingToken`. The dictionary exposes
+it as Horizontal padding, restricted to `theme.spacing.*`. The Module insets
+the content viewport equally on both horizontal sides before preparing child
+measurement and placement, after reserving system chrome. Start/end gaps remain
+vertical. Excessive padding saturates at half the viewport width. Preview and
+Render consume the same module renderable; child maximum widths use the inset
+viewport. Existing Variants explicitly store `theme.spacing.none`.
+
 ### Surface Stack
 
 Surface Stack is the reusable Component form of that layout. Its Variant owns

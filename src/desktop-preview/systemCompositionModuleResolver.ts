@@ -26,6 +26,7 @@ export function resolveSystemCompositionModuleFrame(
       variantReference: requiredString(navigationBarSlot, "variantReference", "module.system.composition.navigationBarSlot.variantReference"),
       overrides: requiredRecord(navigationBarSlot, "overrides", "module.system.composition.navigationBarSlot.overrides"),
     },
+    horizontalPaddingToken: requiredString(stackInputs, "horizontalPaddingToken", "module.system.composition.stackInputs.horizontalPaddingToken"),
     stackInputs,
     showStatusBar: requiredBoolean(
       runtime,

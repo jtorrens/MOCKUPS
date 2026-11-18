@@ -986,6 +986,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["systemComposition", "stackInputs", "endGapToken"],
             "",
             []),
+        ["module.system.composition.stackHorizontalPadding"] = new(
+            "module.system.composition",
+            "module.system.composition.stackHorizontalPadding",
+            ValueKind.ThemeToken,
+            ["systemComposition", "stackInputs", "horizontalPaddingToken"],
+            "",
+            []),
         ["module.system.composition.stackItems"] = new(
             "module.system.composition",
             "module.system.composition.stackItems",

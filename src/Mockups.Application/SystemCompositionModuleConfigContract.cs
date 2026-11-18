@@ -15,6 +15,7 @@ internal static class SystemCompositionModuleConfigContract
         RequireSlot(composition, "statusBarSlot", owner);
         RequireSlot(composition, "navigationBarSlot", owner);
         var stackInputs = JsonPath.RequiredObject(composition, "stackInputs", owner);
+        JsonPath.RequiredString(stackInputs, "horizontalPaddingToken", $"{owner}.stackInputs");
         JsonPath.RequiredArray(stackInputs, "items", $"{owner}.stackInputs");
     }
 

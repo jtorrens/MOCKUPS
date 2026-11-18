@@ -1060,3 +1060,12 @@ also scopes formerly unrestricted color inputs to the common color catalog.
 Authored token values and Theme numeric/color values remain unchanged. Three
 scaffold collection fields previously using OptionToken for Theme sizes now use
 ThemeToken. Startup validates the current contract without converting metadata.
+
+### Content Stack horizontal padding (schema 40)
+
+Explicit maintenance adds required `horizontalPaddingToken` to every System
+Composition Module config and complete Variant stackInputs document, initialized
+to `theme.spacing.none`. The shared dictionary and Content Stack editor layout
+expose this Variant-owned spacing token. Only the canonical workstation database
+is updated after Backup Hub publication; checkpoint captures repository parity.
+Startup validates the current contract without defaults or migration.

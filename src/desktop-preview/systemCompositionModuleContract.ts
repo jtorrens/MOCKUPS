@@ -2,6 +2,7 @@ export interface SystemCompositionModuleContract {
   id: "systemComposition";
   statusBarSlot: SystemCompositionComponentSlot;
   navigationBarSlot: SystemCompositionComponentSlot;
+  horizontalPaddingToken: string;
   stackInputs: Record<string, unknown>;
   showStatusBar: boolean;
   showNavigationBar: boolean;
