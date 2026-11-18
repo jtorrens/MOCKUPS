@@ -386,7 +386,9 @@ Creation requirements, fixture-isolation validation and Preview record-reference
 structured fields and their explicit `itemRuntimeContractJsonKey` or
 `componentItems.inputsJsonKey` boundaries. Variant source snapshots and other
 undeclared metadata are not effective Runtime owners. Reference hydration consumes
-the prepared Runtime document only; it never traverses raw Variant config. An actual nested Runtime
+the prepared Runtime document only; it never traverses raw Variant config.
+Forwarded collections bind by their declared `collection.id` and `jsonKey`;
+the forwarding field id is a separate identity, not the collection id. An actual nested Runtime
 Actor still cannot reference System Preview fixtures. The shared navigation Add
 command publishes failures through the editor message surface.
 

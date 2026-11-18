@@ -492,6 +492,7 @@ export function planScopedValidation(
       "src/Mockups.Application/ProductionRuntimeCreationContract.cs",
       "src/Mockups.Application/ProductionRuntimeFixtureIsolationContract.cs",
       "src/Mockups.Application/RuntimeInputContractTraversal.cs",
+      "src/desktop-preview/runtimePreviewDocumentContract.ts",
       "src/Mockups.Desktop/EditorShell/NestedRuntimeRecordReferenceResolver.cs",
       "src/Mockups.Desktop/EditorShell/ProductionPreviewRuntimeResolver.cs",
       "src/Mockups.Desktop/EditorShell/DesignPreviewInputPreparer.cs",

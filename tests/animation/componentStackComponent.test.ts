@@ -685,3 +685,28 @@ test("Module Content Stack Variant horizontal padding bounds the shared Preview 
     assert.throws(() => systemCompositionModuleToRenderable(source), /horizontalPaddingToken/);
   }
 });
+
+
+test("Forwarded collections bind their declared collection identity independently of the forwarding field", () => {
+  for (const collectionId of ["stackStates", "messageStates"]) {
+    const source = payload([]);
+    const jsonKey = `forwarded_${collectionId}`;
+    const item = { id: "item-a", caption: "Production value" };
+    source.configJson = JSON.stringify({ owner: {
+      items: [{ id: "item-a", caption: "Design value" }],
+      $forwardedInputs: { items: {
+        id: `forwarded.owner.${collectionId}`, jsonKey,
+        collection: { id: collectionId, fields: [{ id: "caption", jsonKey: "caption" }] },
+      } },
+    } });
+    source.designPreviewJson = JSON.stringify({
+      collections: [{ id: collectionId, jsonKey, fields: [{ id: "caption", jsonKey: "caption" }] }],
+      [jsonKey]: [item],
+      [`${jsonKey}__variantSource`]: [{ id: "item-a", caption: "Design value" }],
+    });
+    const prepared = prepareRuntimePreviewPayload(source);
+    const config = JSON.parse(prepared.configJson);
+    assert.deepEqual(config.owner.items, [item]);
+    assert.equal(config.owner.$forwardedInputs, undefined);
+  }
+});

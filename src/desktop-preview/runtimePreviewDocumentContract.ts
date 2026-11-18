@@ -145,8 +145,11 @@ function apply(
       if (!isRecord(rawDefinition) || typeof rawDefinition.jsonKey !== "string") {
         throw new Error(`Invalid forwarded runtime input definition ${targetKey}`);
       }
+      const sourceFieldId = isRecord(rawDefinition.collection)
+        ? requiredString(rawDefinition.collection, "id", `Forwarded collection '${targetKey}'`)
+        : requiredString(rawDefinition, "id", `Forwarded input '${targetKey}'`);
       const matches = sources.filter((source) =>
-        source.fieldId === rawDefinition.id
+        source.fieldId === sourceFieldId
         && source.jsonKey === rawDefinition.jsonKey
         && (source.ownerId === "" || source.ownerId === ownerId));
       if (matches.length > 1) {
