@@ -21,6 +21,23 @@ import { wrapMotionFrame } from "./previewMotionHelpers.js";
 export const KeyboardPopupWidthRatio = 1.3;
 export const KeyboardPopupConnectorHeightRatio = 0.34;
 
+const keyboardKeyPaths: Readonly<Partial<Record<string, string>>> = {
+  shift: "M12 3 L21 12 H16 V21 H8 V12 H3 Z",
+  backspace: "M9 5 H21 V19 H9 L3 12 Z M12 9 L18 15 M18 9 L12 15",
+};
+
+function keyboardVectorGlyph(id: string, box: RenderableBox, pathData: string, color: string, zIndex = 0): RenderableNode {
+  return {
+    id, type: "path", frame: 0,
+    box: centeredSquareBox(box, Math.min(box.width, box.height) * 0.48),
+    style: {
+      pathData, viewBox: "0 0 24 24", preserveAspectRatio: "xMidYMid meet",
+      fill: "none", stroke: color, strokeWidth: 1.8,
+      strokeLinecap: "round", strokeLinejoin: "round", zIndex,
+    },
+  };
+}
+
 export interface KeyboardPopupGeometry {
   shapeBox: RenderableBox;
   labelBox: RenderableBox;
@@ -193,6 +210,7 @@ function keyboardRowNodes(
 
     const displayText = key.kind === "space" ? "" : key.label;
     const usesEmojiIcon = key.id === "emoji";
+    const vectorPath = keyboardKeyPaths[key.id];
     const isEmojiKey = key.kind === "emoji"
       || (key.kind === "character" && /\p{Extended_Pictographic}/u.test(key.label));
     const isSpecial = key.kind !== "character" && key.kind !== "space";
@@ -222,6 +240,7 @@ function keyboardRowNodes(
         Math.max(0, numberToken(payload, keyboard.keyCornerRadiusToken) * scale),
         keyBorderColor,
         keyBorderWidth,
+        vectorPath,
       );
     }
 
@@ -239,7 +258,9 @@ function keyboardRowNodes(
           shadow: keyShadow,
         },
       },
-      usesEmojiIcon
+      vectorPath
+        ? keyboardVectorGlyph(`${keyboard.id}.key.${rowIndex}.${index}.icon`, box, vectorPath, keyColor)
+        : usesEmojiIcon
         ? {
             id: `${keyboard.id}.key.${rowIndex}.${index}.icon`,
             type: "icon",
@@ -301,6 +322,7 @@ function keyboardPopoverNodes(
   radius: number,
   borderColor: string,
   borderWidth: number,
+  vectorPath?: string,
 ): RenderableNode[] {
   const geometry = keyboardPopupGeometry(keyboardBox, keyBox, radius);
 
@@ -323,7 +345,9 @@ function keyboardPopoverNodes(
         zIndex: 20,
       },
       children: [
-        {
+        vectorPath
+          ? keyboardVectorGlyph(`${keyboard.id}.key.${idSuffix}.popover.icon`, geometry.labelBox, vectorPath, color, 21)
+          : {
           id: `${keyboard.id}.key.${idSuffix}.popover.text`,
           type: "text",
           frame: 0,

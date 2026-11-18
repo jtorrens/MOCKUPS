@@ -11,6 +11,8 @@ import { resolveDrawPasswordComponent } from "../../src/desktop-preview/drawPass
 import { resolveFaceRecognitionComponent } from "../../src/desktop-preview/faceRecognitionComponentResolver.js";
 import { resolveFingerprintComponent } from "../../src/desktop-preview/fingerprintComponentResolver.js";
 import { resolveKeyboardComponent } from "../../src/desktop-preview/keyboardComponentResolver.js";
+import { keyboardComponentToRenderable } from "../../src/desktop-preview/keyboardComponentRenderable.js";
+import type { RenderableNode } from "../../src/visual/renderable/types.js";
 import { resolveKeypadComponent } from "../../src/desktop-preview/keypadComponentResolver.js";
 import { resolveMediaComponent } from "../../src/desktop-preview/mediaComponentResolver.js";
 import { mediaComponentToRenderableAt } from "../../src/desktop-preview/mediaComponentRenderable.js";
@@ -95,6 +97,34 @@ test("Audio requires its prepared Runtime playback time", () => {
     () => resolveAudioComponent(withDocument(source, preview)),
     /component\.audio\.input\.currentTimeSeconds/,
   );
+});
+
+test("Keyboard Shift and Backspace remain vector glyphs in normal scaled and popup states", () => {
+  const payload = withValues(withInputDefaults(committedComponentFixture("keyboard")), {
+    text: "a", currentCharacter: 0,
+  });
+  const keyboard = resolveKeyboardComponent(payload);
+  function flatten(node: RenderableNode): RenderableNode[] {
+    return [node, ...(node.children ?? []).flatMap(flatten)];
+  }
+  for (const key of ["shift", "backspace"]) {
+    for (const effect of ["none", "scale", "popup"] as const) {
+      const rowIndex = keyboard.rows.findIndex(row => row.some(item => item.id === key));
+      assert.ok(rowIndex >= 0);
+      const keyIndex = keyboard.rows[rowIndex].findIndex(item => item.id === key);
+      const nodes = flatten(keyboardComponentToRenderable(payload, {
+        ...keyboard, pressedKey: key, pressedEffect: effect,
+      }));
+      const prefix = `${keyboard.id}.key.${rowIndex}.${keyIndex}.`;
+      const content = nodes.filter(node => node.id.startsWith(prefix) && (node.id.endsWith(".text") || node.id.endsWith(".icon")));
+      assert.equal(content.length, 1);
+      assert.equal(content[0].type, "path");
+      assert.equal(content[0].text, undefined);
+      assert.equal(content[0].style!.viewBox, "0 0 24 24");
+      assert.equal(nodes.some(node => node.type === "text" && /[⇧⌫]/u.test(node.text ?? "")), false);
+      if (effect === "popup") assert.ok(content[0].id.endsWith(".popover.icon"));
+    }
+  }
 });
 
 test("Audio Play uses centered vector geometry independent of playback and font metrics", () => {
