@@ -492,9 +492,17 @@ export function planScopedValidation(
       "src/Mockups.Application/ProductionRuntimeCreationContract.cs",
       "src/Mockups.Application/ProductionRuntimeFixtureIsolationContract.cs",
       "src/Mockups.Application/RuntimeInputContractTraversal.cs",
+      "src/Mockups.Desktop/EditorShell/NestedRuntimeRecordReferenceResolver.cs",
+      "src/Mockups.Desktop/EditorShell/ProductionPreviewRuntimeResolver.cs",
+      "src/Mockups.Desktop/EditorShell/DesignPreviewInputPreparer.cs",
       "src/Mockups.Application/CollectionFieldAvailability.cs",
       "src/Mockups.Application/StructuredRuntimeCollectionProjection.cs",
     ].includes(file)) {
+      add(npmStep(
+        "desktop:production-nested-preview", "test:focus:desktop",
+        "Production reference hydration and rendered HTML must exclude Variant source actors",
+        ["--", "--exact", "Production nested Runtime preview ignores Variant source Actors"],
+      ));
       add(npmStep(
         "application:production-runtime-traversal", "test:focus:application",
         "Creation and isolation must visit only declared Runtime boundaries",

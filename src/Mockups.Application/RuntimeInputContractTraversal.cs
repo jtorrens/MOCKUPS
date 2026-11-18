@@ -2,18 +2,18 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed record RuntimeInputPathPart(string? Name, int? ArrayIndex)
+public sealed record RuntimeInputPathPart(string? Name, int? ArrayIndex)
 {
     public static RuntimeInputPathPart Property(string name) => new(name, null);
     public static RuntimeInputPathPart Index(int index) => new(null, index);
 }
 
-internal sealed record RuntimeInputContractLocation(
+public sealed record RuntimeInputContractLocation(
     JsonObject Runtime, JsonObject Config, IReadOnlyList<RuntimeInputPathPart> Path);
 
 // Walk only declared value boundaries. Source snapshots and definition metadata
 // can contain complete Design contracts, but are not Production Runtime owners.
-internal static class RuntimeInputContractTraversal
+public static class RuntimeInputContractTraversal
 {
     public static IEnumerable<RuntimeInputContractLocation> Contracts(
         JsonObject runtime, JsonObject config, IReadOnlyList<RuntimeInputPathPart> path)

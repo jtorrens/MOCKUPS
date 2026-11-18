@@ -55,7 +55,6 @@ internal sealed class ProductionPreviewRuntimeResolver
                 payload.ProjectId,
                 themeMode,
                 payload.PaletteColors);
-        _nestedRecordInputResolver.Resolve(config, themeMode, payload.PaletteColors);
         var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
 
         _nestedRecordInputResolver.ResolveDeclaredValues(

@@ -30,7 +30,10 @@ internal sealed class NestedRuntimeRecordReferenceResolver
         IReadOnlyDictionary<string, string> paletteColors,
         bool allowSystemPreviewFixtures = false)
     {
-        Visit(root, themeMode, paletteColors, allowSystemPreviewFixtures);
+        if (root is not JsonObject runtime)
+            throw new InvalidOperationException("Nested Runtime resolution requires an object document.");
+        foreach (var location in RuntimeInputContractTraversal.Contracts(runtime, new JsonObject(), []).ToArray())
+            ResolveDeclaredInputs(location.Runtime, themeMode, paletteColors, allowSystemPreviewFixtures);
     }
 
     public void ResolveDeclaredValues(
@@ -253,33 +256,6 @@ internal sealed class NestedRuntimeRecordReferenceResolver
                     themeMode,
                     paletteColors);
             }
-        }
-    }
-
-    private void Visit(
-        JsonNode? node,
-        string themeMode,
-        IReadOnlyDictionary<string, string> paletteColors,
-        bool allowSystemPreviewFixtures)
-    {
-        switch (node)
-        {
-            case JsonArray array:
-                foreach (var child in array.ToList())
-                {
-                    Visit(child, themeMode, paletteColors, allowSystemPreviewFixtures);
-                }
-                break;
-            case JsonObject obj:
-                ResolveDeclaredInputs(obj, themeMode, paletteColors, allowSystemPreviewFixtures);
-                foreach (var (key, child) in obj.ToList())
-                {
-                    if (!key.Equals("inputs", StringComparison.Ordinal) || child is not JsonArray)
-                    {
-                        Visit(child, themeMode, paletteColors, allowSystemPreviewFixtures);
-                    }
-                }
-                break;
         }
     }
 

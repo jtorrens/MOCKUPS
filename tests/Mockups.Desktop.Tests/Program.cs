@@ -395,6 +395,7 @@ var tests = new (string Name, Action Run)[]
     ("Social Post composes two structure-projected header and footer rows", SocialPostComposesHeaderRows),
     ("Social Post two Reel Screens persist independent labels without changing Variant", SocialPostReelScreenLabelsAreIndependent),
     ("Social Post Screen creation persists projected Runtime rows atomically", SocialPostScreenCreationIsAtomic),
+    ("Production nested Runtime preview ignores Variant source Actors", ProductionNestedRuntimePreviewIgnoresSourceActors),
     ("Screen creation requires Actors only from the selected Variant", ScreenCreationUsesSelectedVariant),
     ("Social Post editor exposes its current generic header contract", SocialPostEditorExposesCurrentHeaderContract),
     ("Production animation activation keeps Payload and navigation mounted", () => ProductionScalarCommitKeepsScreenPayloadMounted(false, true)),
@@ -28943,6 +28944,37 @@ static void SocialPostReelScreenLabelsAreIndependent()
         }
     }
     finally { File.Delete(temporary); }
+}
+
+static void ProductionNestedRuntimePreviewIgnoresSourceActors()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var screen = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
+        .Single(node => node.Id == "module_instance_89d6def6c70f4db4af92655d73321e34");
+    var dataSource = new DesignPreviewPayloadDataSource(database.PreviewInputs,
+        database.Production, database.Resources, database.Resources, database.ProjectPaths);
+    var preparer = new ProductionPreviewPayloadPreparer(dataSource,
+        new ProductionPreviewRuntimeResolver(database.Resources, database.ProjectPaths));
+    foreach (var frame in new[] { 0, 20 })
+    {
+        var payload = preparer.PrepareRequired(screen, null, "light", frame);
+        var runtime = JsonNode.Parse(payload.DesignPreviewJson)!.AsObject();
+        var locations = RuntimeInputContractTraversal.Contracts(runtime,
+            JsonNode.Parse(payload.ConfigJson)!.AsObject(), []).ToArray();
+        True(locations.Length > 1);
+        foreach (var location in locations.Where(location => location.Runtime["actorId"] is JsonValue))
+        {
+            var actorId = location.Runtime["actorId"]!.GetValue<string>();
+            True(!SystemPreviewFixtureCatalog.IsActor(actorId));
+            Equal(actorId, location.Runtime["actor"]?["id"]?.GetValue<string>());
+        }
+        var shot = database.GetShotSettings(screen.Parent!.Id);
+        var metrics = database.GetDevicePreviewMetrics(shot.DeviceOverrideId
+            ?? database.GetActorSettings(shot.OwnerActorId).DefaultDeviceId);
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload).GetAwaiter().GetResult();
+        True(!html.Contains("preview-error", StringComparison.Ordinal));
+        True(html.Contains("New notification", StringComparison.Ordinal));
+    }
 }
 
 static void ScreenCreationUsesSelectedVariant()

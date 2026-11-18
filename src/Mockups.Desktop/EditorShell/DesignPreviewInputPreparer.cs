@@ -167,11 +167,6 @@ internal sealed class DesignPreviewInputPreparer(
                 _capture.Transient,
                 _previewInputData.ComponentVariantConfig,
                 _previewInputData.ComponentVariantRuntimeContract);
-            _nestedRecordInputResolver.Resolve(
-                config,
-                themeMode,
-                payload.PaletteColors,
-                _allowSystemPreviewFixtures);
             _runtimePreview = preview;
             var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
             var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
