@@ -185,7 +185,8 @@ public partial class MainWindow : SukiWindow
         _previewController.ConfigureScreenTimelineKeyboardNavigation(
             _screenTimeline.TryStepFrame,
             _screenTimeline.TryMoveToNavigationFrame,
-            _screenTimeline.TryNudgeSelection);
+            _screenTimeline.TryNudgeSelection,
+            _screenTimeline.TryNudgeKeyframeAtPlayhead);
         _previewControlsDock =
             new PreviewControlsDockController(
                 this,

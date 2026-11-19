@@ -1127,6 +1127,9 @@ internal sealed class PreviewScreenTimelineController : IDisposable
     public bool TryMoveToNavigationFrame(int direction) =>
         _surface.TryMoveToNavigationFrame(direction);
 
+    public bool TryNudgeKeyframeAtPlayhead(int delta) =>
+        _surface.TryNudgeKeyframeAtPlayhead(delta);
+
     public bool TryNudgeSelection(int delta) =>
         _surface.TryNudgeSelection(delta);
 
@@ -1537,6 +1540,29 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _playheadSnapFrame = null;
         if (next != _frame) _setFrame(next);
         return true;
+    }
+
+    private Task _pendingKeyframeNudge = Task.CompletedTask;
+
+    public bool TryNudgeKeyframeAtPlayhead(int delta)
+    {
+        if (_snapshot is null) return false;
+        if (_selectedAnimationContent?.MoveKeyframeAtFrame is not null && _selectedLane is not null)
+            _pendingKeyframeNudge = MoveAfterAsync(_pendingKeyframeNudge, _snapshot.ScreenId, _selectedLane.Key, delta);
+        return true;
+    }
+
+    private async Task MoveAfterAsync(Task previous, string screenId, string laneKey, int delta)
+    {
+        await previous;
+        if (_snapshot?.ScreenId != screenId || _selectedLane?.Key != laneKey
+            || _selectedAnimationContent?.MoveKeyframeAtFrame is not { } move) return;
+        var source = _frame;
+        var destination = source + delta;
+        if (destination < _snapshot.MinimumFrame || destination > _snapshot.MaximumFrame) return;
+        if (await move(source, delta) && _snapshot?.ScreenId == screenId
+            && _selectedLane?.Key == laneKey && _frame == source)
+            _setFrame(destination);
     }
 
     public bool TryNudgeSelection(int delta)

@@ -207,6 +207,7 @@ internal sealed class ModuleInstanceAnimationEditor
         var activeTrackCount = resolvedTargets.Count;
         var content = new StackPanel { Spacing = EditorUiDensity.Card(12) };
         Func<int, bool>? tryNudgeSelectedKeyframe = null;
+        Func<int, int, Task<bool>>? moveKeyframeAtFrame = null;
         Action? clearKeyframeSelection = null;
         if (resolvedTargets.Count == 0)
         {
@@ -235,12 +236,13 @@ internal sealed class ModuleInstanceAnimationEditor
             content.Children.Add(timelineEditor.Content);
             tryNudgeSelectedKeyframe = timelineEditor.TryNudgeSelectedKeyframe;
             clearKeyframeSelection = timelineEditor.ClearKeyframeSelection;
+            moveKeyframeAtFrame = timelineEditor.MoveKeyframeAtFrame;
         }
         return new AnimationTargetEditorContent(
             content,
             activeTrackCount,
             tryNudgeSelectedKeyframe,
-            clearKeyframeSelection);
+            clearKeyframeSelection, moveKeyframeAtFrame);
     }
 
     private AnimationTimelineEditorContent CreateTimelineEditor(
@@ -809,6 +811,28 @@ internal sealed class ModuleInstanceAnimationEditor
                 destination));
             return true;
         }
+        async Task<bool> MoveKeyframeAtFrame(int frame, int delta)
+        {
+            var target = selected;
+            if (target.Target is null || target.Track is not { } track) return false;
+            var keyframe = track.Keyframes.FirstOrDefault(key =>
+                key.Enabled && MarkerTimelineFrame(target, key) == frame);
+            if (keyframe is null) return false;
+            var destination = keyframe.Frame + delta;
+            if (MarkerTimelineFrame(target, keyframe with { Frame = destination }) != frame + delta
+                || track.Keyframes.Any(key => key.Frame == destination)) return false;
+
+            var moved = false;
+            await SaveAndRefresh(candidate =>
+            {
+                var source = candidate.Track(track.FieldId, track.TargetId)?.Keyframes
+                    .FirstOrDefault(key => key.Id == keyframe.Id);
+                return moved = source is { Enabled: true } && source.Frame == keyframe.Frame
+                    && candidate.TryMoveKeyframe(track.FieldId, track.TargetId, source.Frame, destination);
+            });
+            return moved && document.Track(track.FieldId, track.TargetId)?.Keyframes
+                .Any(key => key.Id == keyframe.Id && key.Frame == destination) == true;
+        }
         void ClearKeyframeSelection()
         {
             selectedKeyframeId = null;
@@ -818,7 +842,7 @@ internal sealed class ModuleInstanceAnimationEditor
         return new AnimationTimelineEditorContent(
             root,
             TryNudgeSelectedKeyframe,
-            ClearKeyframeSelection);
+            ClearKeyframeSelection, MoveKeyframeAtFrame);
     }
 
     private Control CreateTrackDetail(
@@ -1251,26 +1275,6 @@ internal sealed class ModuleInstanceAnimationEditor
                             args.Handled = true;
                             return;
                         }
-                        if (dragging || !canDrag
-                            || (args.Key != Key.Left && args.Key != Key.Right)) return;
-                        var destination = keyframe.Frame
-                            + (args.Key == Key.Left ? -1 : 1);
-                        var destinationTimelineFrame = AnimationTimelineCoordinateSpace.MarkerFrame(
-                            usesOwnerTimeline,
-                            destination,
-                            target.Target?.ScreenFrameForLocalFrame
-                                ?? ((frame) => (int)Math.Round(frame)));
-                        var occupied = target.Track!.Keyframes.Any((candidate) =>
-                            candidate.Id != keyframe.Id && candidate.Frame == destination);
-                        if (destinationTimelineFrame < minimumTimelineFrame
-                            || destinationTimelineFrame > maximumTimelineFrame
-                            || occupied)
-                        {
-                            args.Handled = true;
-                            return;
-                        }
-                        _ = moveKeyframe(target, keyframe, destination);
-                        args.Handled = true;
                     };
                 }
             }
@@ -1634,8 +1638,10 @@ internal sealed record AnimationTargetEditorContent(
     Control Content,
     int ActiveTrackCount,
     Func<int, bool>? TryNudgeSelectedKeyframe = null,
-    Action? ClearKeyframeSelection = null);
+    Action? ClearKeyframeSelection = null,
+    Func<int, int, Task<bool>>? MoveKeyframeAtFrame = null);
 internal sealed record AnimationTimelineEditorContent(
     Control Content,
     Func<int, bool> TryNudgeSelectedKeyframe,
-    Action ClearKeyframeSelection);
+    Action ClearKeyframeSelection,
+    Func<int, int, Task<bool>> MoveKeyframeAtFrame);

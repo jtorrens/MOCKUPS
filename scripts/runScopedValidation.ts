@@ -396,6 +396,8 @@ export function planScopedValidation(
         ["--", "--exact", name]));
     }
     if ([
+      "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
+      "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
       "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationValueResolver.cs",
       "src/Mockups.Desktop/EditorShell/AnimationTimelineCoordinateSpace.cs",
       "src/Mockups.Desktop/EditorShell/TimelineKeyframeDrag.cs",

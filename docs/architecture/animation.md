@@ -329,6 +329,14 @@ snapshot to its mounted animation bindings (including track-owned duration
 fields), then requests the normal Preview refresh without reloading navigation.
 Animation-only refreshes retain the Payload surface and dictionary controls.
 
+In a Production timeline, Left and Right step the playhead by one frame independently
+of zoom and pointer position. Shift with either arrow moves the enabled keyframe at
+the playhead on the selected lane and property track. Repeated nudges are serialized.
+The playhead follows a confirmed move. An empty frame, an occupied destination or a
+timeline boundary leaves the keyframe and playhead in place. Editing controls retain
+their own keyboard input. The main window, detached timeline and Preview WebView
+route these shortcuts to the same timeline commands.
+
 A mutation reads the current animation document inside the operation gate and
 prepares one complete snapshot after the write. Single-Screen ranges use the
 same range projection as Shot ranges, but load only that Screen and its explicit

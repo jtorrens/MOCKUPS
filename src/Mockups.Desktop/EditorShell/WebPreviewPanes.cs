@@ -1022,11 +1022,12 @@ internal abstract class WebPreviewPane : Grid
                 let isDragging = false;
 
                 document.addEventListener("keydown", (event) => {
-                  if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+                  if (event.metaKey || event.ctrlKey || event.altKey) return;
+                  if (event.shiftKey && !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
                   if (!["ArrowLeft", "ArrowRight", "PageUp", "PageDown", ",", "."].includes(event.key)) return;
                   const target = event.target instanceof Element ? event.target : null;
                   if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
-                  invokeCSharpAction(`mockups-preview-key:${event.key}`);
+                  invokeCSharpAction(`mockups-preview-key:${event.shiftKey ? "Shift+" : ""}${event.key}`);
                   event.preventDefault();
                   event.stopPropagation();
                 }, true);

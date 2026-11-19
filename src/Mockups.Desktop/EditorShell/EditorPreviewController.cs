@@ -471,6 +471,7 @@ internal sealed class EditorPreviewController : IDisposable
         _referenceVideoController;
     private Func<int, bool>? _stepScreenTimelineFrame;
     private Func<int, bool>? _moveToScreenTimelineNavigationFrame;
+    private Func<int, bool>? _nudgeKeyframeAtPlayhead;
     private Func<int, bool>? _nudgeScreenTimelineSelection;
 
     public EditorPreviewController(
@@ -638,11 +639,13 @@ internal sealed class EditorPreviewController : IDisposable
     public void ConfigureScreenTimelineKeyboardNavigation(
         Func<int, bool> stepFrame,
         Func<int, bool> moveToNavigationFrame,
-        Func<int, bool> nudgeSelection)
+        Func<int, bool> nudgeSelection,
+        Func<int, bool> nudgeKeyframeAtPlayhead)
     {
         _stepScreenTimelineFrame = stepFrame;
         _moveToScreenTimelineNavigationFrame = moveToNavigationFrame;
         _nudgeScreenTimelineSelection = nudgeSelection;
+        _nudgeKeyframeAtPlayhead = nudgeKeyframeAtPlayhead;
     }
 
     private void AddCurrentDesignContextToHistory()
@@ -2855,8 +2858,8 @@ internal sealed class EditorPreviewController : IDisposable
             return;
         }
 
-        var isNudgeKey = args.Key is Key.OemComma or Key.OemPeriod;
-        if (!isNudgeKey && !_previewPanel.IsPointerOver)
+        var globalShortcut = args.Key is Key.Left or Key.Right or Key.OemComma or Key.OemPeriod;
+        if (!globalShortcut && !_previewPanel.IsPointerOver)
         {
             return;
         }
@@ -2869,56 +2872,52 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void TryHandleTimelineNavigationKey(KeyEventArgs args)
     {
-        if (args.Handled
-            || args.KeyModifiers != KeyModifiers.None
-            || PreviewInputOwnsNavigationKeys(args.Source))
-        {
-            return;
-        }
-
-        var handled = args.Key switch
-        {
-            Key.Left => _stepScreenTimelineFrame?.Invoke(-1) == true,
-            Key.Right => _stepScreenTimelineFrame?.Invoke(1) == true,
-            Key.PageUp =>
-                _moveToScreenTimelineNavigationFrame?.Invoke(-1) == true,
-            Key.PageDown =>
-                _moveToScreenTimelineNavigationFrame?.Invoke(1) == true,
-            Key.OemComma =>
-                _nudgeScreenTimelineSelection?.Invoke(-1) == true,
-            Key.OemPeriod =>
-                _nudgeScreenTimelineSelection?.Invoke(1) == true,
-            _ => false,
-        };
-        if (handled) args.Handled = true;
+        if (args.Handled || PreviewInputOwnsNavigationKeys(args.Source)) return;
+        args.Handled = HandleTimelineKey(args.Key, args.KeyModifiers);
     }
+
+    private bool HandleTimelineKey(Key key, KeyModifiers modifiers) => (key, modifiers) switch
+    {
+        (Key.Left, KeyModifiers.None) => _stepScreenTimelineFrame?.Invoke(-1) == true,
+        (Key.Right, KeyModifiers.None) => _stepScreenTimelineFrame?.Invoke(1) == true,
+        (Key.Left, KeyModifiers.Shift) => _nudgeKeyframeAtPlayhead?.Invoke(-1) == true,
+        (Key.Right, KeyModifiers.Shift) => _nudgeKeyframeAtPlayhead?.Invoke(1) == true,
+        (Key.PageUp, KeyModifiers.None) => _moveToScreenTimelineNavigationFrame?.Invoke(-1) == true,
+        (Key.PageDown, KeyModifiers.None) => _moveToScreenTimelineNavigationFrame?.Invoke(1) == true,
+        (Key.OemComma, KeyModifiers.None) => _nudgeScreenTimelineSelection?.Invoke(-1) == true,
+        (Key.OemPeriod, KeyModifiers.None) => _nudgeScreenTimelineSelection?.Invoke(1) == true,
+        _ => false,
+    };
 
     internal void OnDetachedPreviewKeyDown(object? sender, KeyEventArgs args) =>
         OnPreviewPanelKeyDown(sender, args);
 
     private void OnWebPreviewNavigationKey(string key)
     {
-        _ = key switch
+        var (nativeKey, modifiers) = key switch
         {
-            "ArrowLeft" => _stepScreenTimelineFrame?.Invoke(-1),
-            "ArrowRight" => _stepScreenTimelineFrame?.Invoke(1),
-            "PageUp" => _moveToScreenTimelineNavigationFrame?.Invoke(-1),
-            "PageDown" => _moveToScreenTimelineNavigationFrame?.Invoke(1),
-            "," => _nudgeScreenTimelineSelection?.Invoke(-1),
-            "." => _nudgeScreenTimelineSelection?.Invoke(1),
-            _ => false,
+            "Shift+ArrowLeft" => (Key.Left, KeyModifiers.Shift),
+            "Shift+ArrowRight" => (Key.Right, KeyModifiers.Shift),
+            "ArrowLeft" => (Key.Left, KeyModifiers.None),
+            "ArrowRight" => (Key.Right, KeyModifiers.None),
+            "PageUp" => (Key.PageUp, KeyModifiers.None),
+            "PageDown" => (Key.PageDown, KeyModifiers.None),
+            "," => (Key.OemComma, KeyModifiers.None),
+            "." => (Key.OemPeriod, KeyModifiers.None),
+            _ => (Key.None, KeyModifiers.None),
         };
+        HandleTimelineKey(nativeKey, modifiers);
     }
 
-    private static bool PreviewInputOwnsNavigationKeys(object? source)
+    private bool PreviewInputOwnsNavigationKeys(object? source)
     {
         if (source is not Visual visual) return false;
         return visual
             .GetVisualAncestors()
             .Prepend(visual)
-            .Any((candidate) => candidate is TextBox
+            .Any((candidate) => !ReferenceEquals(candidate, _shotFrameSlider) && candidate is TextBox { IsReadOnly: false }
                 or NumericUpDown
-                or RangeBase
+                or Slider
                 or ComboBox
                 or EditorInstantComboBox
                 or NativeWebView);

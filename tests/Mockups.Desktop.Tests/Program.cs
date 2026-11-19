@@ -7326,6 +7326,8 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted(bool pinWhileEditing
                     "messages",
                     $"Screen '{node.Id}' content").Count > 0)
             .Id;
+        if (activateAnimation)
+            database.UpdateModuleInstanceAnimationJson(screenId, EmptyDocument().ToJson());
         using var session = HeadlessUnitTestSession.StartNew(
             typeof(HeadlessTestApplication));
         session.Dispatch(() =>
@@ -7465,6 +7467,34 @@ static void ProductionScalarCommitKeepsScreenPayloadMounted(bool pinWhileEditing
                     Thread.Sleep(10);
                 }
                 True(mountedSurface.GetVisualDescendants().Contains(toggle));
+                var track = new ModuleInstanceAnimationDocument(
+                    database.GetModuleInstanceSettings(screenId).AnimationJson).Tracks.Single();
+                var keyframe = track.Keyframes.Single(key => key.Frame == 0);
+                var keySource = Required(window.FindControl<Button>("ProductionWorkspaceButton"));
+                void Press(Control source, Key key, KeyModifiers modifiers = KeyModifiers.None) =>
+                    source.RaiseEvent(new KeyEventArgs
+                    {
+                        RoutedEvent = InputElement.KeyDownEvent, Key = key, KeyModifiers = modifiers,
+                    });
+                preview.SetProductionScreenTimelineFrame(screenId, 0);
+                Press(keySource, Key.Right);
+                Equal(1, preview.ProductionScreenTimelineFrame(screenId));
+                Press(keySource, Key.Right, KeyModifiers.Shift);
+                Equal(1, preview.ProductionScreenTimelineFrame(screenId));
+                Press(keySource, Key.Left);
+                Equal(0, preview.ProductionScreenTimelineFrame(screenId));
+                Press(mountedField.GetVisualDescendants().OfType<TextBox>().First(), Key.Right);
+                Equal(0, preview.ProductionScreenTimelineFrame(screenId));
+                Press(keySource, Key.Right, KeyModifiers.Shift);
+                True(SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return preview.ProductionScreenTimelineFrame(screenId) == 1;
+                }, TimeSpan.FromSeconds(15)));
+                var persisted = new ModuleInstanceAnimationDocument(
+                    database.GetModuleInstanceSettings(screenId).AnimationJson);
+                Equal(1, Required(persisted.Track(track.FieldId, track.TargetId)).Keyframes
+                    .Single(key => key.Id == keyframe.Id).Frame);
                 CloseTestWindow(window);
                 return;
             }
