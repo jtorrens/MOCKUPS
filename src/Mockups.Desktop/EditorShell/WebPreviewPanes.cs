@@ -32,14 +32,10 @@ internal abstract class WebPreviewPane : Grid
     private readonly EditorLoadingScrim _contextLoading = new();
     private readonly HashSet<long> _updateActivities = [];
     private bool _renderActivity;
-    private readonly TextBlock _updateStatus = new()
-    {
-        Text = "Actualizando Preview…",
-        Name = "PreviewUpdateStatus",
-        IsVisible = false,
-        IsHitTestVisible = false,
-        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-    };
+    public static readonly Avalonia.DirectProperty<WebPreviewPane, bool> IsUpdatingProperty =
+        Avalonia.AvaloniaProperty.RegisterDirect<WebPreviewPane, bool>(nameof(IsUpdating), pane => pane.IsUpdating);
+    private bool _isUpdating;
+    public bool IsUpdating => _isUpdating;
     protected bool IsContextPreparing => _contextLoading.IsVisible;
     private readonly object _rasterBufferGate = new();
     private readonly Dictionary<string, Bitmap> _rasterBuffer = new(StringComparer.Ordinal);
@@ -52,7 +48,6 @@ internal abstract class WebPreviewPane : Grid
 
     protected WebPreviewPane()
     {
-        RowDefinitions = new RowDefinitions("*,Auto");
         WebView = new NativeWebView
         {
             Background = Brushes.Transparent,
@@ -63,8 +58,6 @@ internal abstract class WebPreviewPane : Grid
         Children.Add(WebView);
         Children.Add(_nativeRasterFrame);
         Children.Add(_contextLoading);
-        Grid.SetRow(_updateStatus, 1);
-        Children.Add(_updateStatus);
     }
 
     public void SetUpdateActivity(EditorOperationActivity activity)
@@ -81,7 +74,7 @@ internal abstract class WebPreviewPane : Grid
     }
 
     private void RefreshUpdateStatus() =>
-        _updateStatus.IsVisible = _renderActivity || _updateActivities.Count > 0;
+        SetAndRaise(IsUpdatingProperty, ref _isUpdating, _renderActivity || _updateActivities.Count > 0);
 
     protected void BeginPresentationContext()
     {

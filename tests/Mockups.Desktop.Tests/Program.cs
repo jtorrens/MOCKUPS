@@ -10499,12 +10499,19 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 try
                 {
                     Wait(() => entered.Task.IsCompleted);
+                    var pane = (DesignWebPreviewPane)Required(window.FindControl<ContentControl>("DesignPreviewHost")!.Content);
+                    window.UpdateLayout();
+                    var frameBounds = pane.Children[0].Bounds;
+                    True(frameBounds.Height > 0);
                     edit = controller.SetDesignPreviewTestValue(owner, targetKey, editedValue);
+                    window.UpdateLayout();
+                    Equal(frameBounds, pane.Children[0].Bounds);
                     var updateStatus = Required(window.GetVisualDescendants().OfType<TextBlock>()
                         .SingleOrDefault(text => text.Name == "PreviewUpdateStatus"));
                     True(updateStatus.IsVisible,
                         "Preview activity must be visible while the value edit is still queued.");
-                    Equal("Actualizando Preview…", updateStatus.Text);
+                    Equal("Actualizando preview…", updateStatus.Text);
+                    Equal(window.FindControl<TextBox>("ShellMessagesTextBox")!.Parent, updateStatus.Parent);
                     playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     True(targetAtPlay is null, "Play must wait for the preceding edit at the shared gate.");
                 }
@@ -11007,15 +11014,14 @@ static void PreviewOwnerChangesClearPresentation()
         pane.BeginContextUpdate("shot-a");
         True(!loading.IsVisible);
         True(view.IsVisible);
-        var updateStatus = pane.Children.OfType<TextBlock>().Single(text => text.Name == "PreviewUpdateStatus");
         pane.SetUpdateActivity(new(1, "Actualizando Preview…", true, EditorActivitySurface.Preview));
         pane.SetUpdateActivity(new(2, "Actualizando Preview…", true, EditorActivitySurface.Preview));
-        True(updateStatus.IsVisible);
+        True(pane.IsUpdating);
         True(view.IsVisible); // Activity does not discard the resident frame.
         pane.SetUpdateActivity(new(1, "Actualizando Preview…", false, EditorActivitySurface.Preview));
-        True(updateStatus.IsVisible); // Earlier completion cannot hide a newer update.
+        True(pane.IsUpdating); // Earlier completion cannot hide a newer update.
         pane.SetUpdateActivity(new(2, "Actualizando Preview…", false, EditorActivitySurface.Preview));
-        True(!updateStatus.IsVisible);
+        True(!pane.IsUpdating);
         foreach (var owner in new[] { "screen-a", "screen-b", "shot-b", "shot-a" })
         {
             pane.BeginContextUpdate(owner);

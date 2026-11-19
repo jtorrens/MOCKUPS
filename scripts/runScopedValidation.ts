@@ -364,6 +364,7 @@ export function planScopedValidation(
         ["--", "--exact", "pinned Production Preview keeps its active Screen while editing Design"]));
     }
     if ([
+      "src/Mockups.Desktop/MainWindow.axaml",
       "src/Mockups.Desktop/EditorShell/RuntimeTestActionControl.cs",
       "src/Mockups.Desktop/EditorShell/EditorFieldCommitCoordinator.cs",
       "src/Mockups.Desktop/EditorShell/EditorLayoutCardFactory.cs",

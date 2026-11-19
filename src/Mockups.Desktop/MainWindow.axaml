@@ -415,16 +415,31 @@
                                 Padding="10,6"
                                 CornerRadius="8"
                                 Background="#14000000">
-                            <TextBox x:Name="ShellMessagesTextBox"
-                                     MinHeight="30"
-                                     MaxHeight="96"
-                                     AcceptsReturn="True"
-                                     IsReadOnly="True"
-                                     TextWrapping="Wrap"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                     BorderThickness="0"
-                                     Background="Transparent"
-                                     Text="No messages" />
+                            <Grid>
+                                <Grid.Styles>
+                                    <Style Selector="TextBox.previewUpdating">
+                                        <Setter Property="Opacity" Value="0" />
+                                        <Setter Property="IsHitTestVisible" Value="False" />
+                                    </Style>
+                                </Grid.Styles>
+                                <TextBox x:Name="ShellMessagesTextBox"
+                                         Classes.previewUpdating="{CompiledBinding #PreviewUpdateStatus.IsVisible}"
+                                         MinHeight="30"
+                                         MaxHeight="96"
+                                         AcceptsReturn="True"
+                                         IsReadOnly="True"
+                                         TextWrapping="Wrap"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         Text="No messages" />
+                                <TextBlock x:Name="PreviewUpdateStatus"
+                                           Text="Actualizando preview…"
+                                           VerticalAlignment="Center"
+                                           Margin="8,0"
+                                           IsHitTestVisible="False"
+                                           IsVisible="{CompiledBinding #DesignPreviewHost.((editor:WebPreviewPane)Content).IsUpdating, FallbackValue=False}" />
+                            </Grid>
                         </Border>
                     </Grid>
                     </DockPanel>

@@ -748,7 +748,8 @@ waiting for the shared operation gate. Preparation and final rendering keep the
 same nonblocking status visible through publication or error, without hiding the
 resident frame. `EditorOperationCoordinator` activities declare their presentation
 surface explicitly: Workspace retains its shared scrim, Preview uses the native
-status row in `WebPreviewPane`, outside WebView airspace and raster content.
+message box below the frame. The status overlays the existing message without
+changing its measured space or the WebView and raster viewport.
 Activity ids are independently released, so an older completion cannot dismiss
 a newer pending edit. Playback frames do not independently announce updates.
 The collection editor retains its mounted view after its own successful scalar
