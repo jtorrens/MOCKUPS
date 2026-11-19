@@ -10488,6 +10488,10 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                     if (busy) targetAtPlay = controller.CaptureDesignPreviewTransientState(owner)
                         .Values[ComponentPreviewTransientValues.ActionTargetValueKey(initial.ScopeKey, actionId)];
                 };
+                var pane = (DesignWebPreviewPane)Required(window.FindControl<ContentControl>("DesignPreviewHost")!.Content);
+                var status = Required(window.FindControl<TextBlock>("PreviewUpdateStatus"));
+                Wait(() => !pane.IsUpdating);
+                True(!status.IsVisible);
                 var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 var blocker = operations.ExecuteAsync(async _ =>
@@ -10500,19 +10504,28 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 try
                 {
                     Wait(() => entered.Task.IsCompleted);
-                    var pane = (DesignWebPreviewPane)Required(window.FindControl<ContentControl>("DesignPreviewHost")!.Content);
-                    window.UpdateLayout();
-                    var frameBounds = pane.Children[0].Bounds;
-                    True(frameBounds.Height > 0);
+                    // A headless window has no browser surface. Present a resident bitmap
+                    // through the same pane used for raster Preview and measure it in the shell.
+                    pane.ShowPreparedRasterFrame(owner.Id, Path.Combine("assets", "system",
+                        "application", "mockups-app-icon-1024.png"));
+                    var image = pane.Children.OfType<Image>().Single();
+                    Rect VisibleFrame()
+                    {
+                        window.UpdateLayout();
+                        True(image.IsEffectivelyVisible && image.Source is not null);
+                        True(image.Bounds.Width > 0 && image.Bounds.Height > 0);
+                        var origin = image.TranslatePoint(default, window)
+                            ?? throw new InvalidOperationException("The Preview frame is detached.");
+                        return new Rect(origin, image.Bounds.Size);
+                    }
+                    var beforeUpdate = VisibleFrame();
+                    True(!status.IsVisible);
                     edit = controller.SetDesignPreviewTestValue(owner, targetKey, editedValue);
-                    window.UpdateLayout();
-                    Equal(frameBounds, pane.Children[0].Bounds);
-                    var updateStatus = Required(window.GetVisualDescendants().OfType<TextBlock>()
-                        .SingleOrDefault(text => text.Name == "PreviewUpdateStatus"));
-                    True(updateStatus.IsVisible,
+                    Equal(beforeUpdate, VisibleFrame());
+                    True(!edit.IsCompleted && status.IsEffectivelyVisible,
                         "Preview activity must be visible while the value edit is still queued.");
-                    Equal("Actualizando preview…", updateStatus.Text);
-                    Equal(window.FindControl<TextBox>("ShellMessagesTextBox")!.Parent, updateStatus.Parent);
+                    Equal("Actualizando preview…", status.Text);
+                    Equal(window.FindControl<TextBox>("ShellMessagesTextBox")!.Parent, status.Parent);
                     playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     True(targetAtPlay is null, "Play must wait for the preceding edit at the shared gate.");
                 }
@@ -10584,6 +10597,8 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 var restoreFrame = controller.SetDesignPreviewActionFrame(owner, actionId, 3);
                 Wait(() => restoreFrame.IsCompleted);
                 restoreFrame.GetAwaiter().GetResult();
+                Wait(() => !pane.IsUpdating);
+                True(!status.IsVisible);
 
                 // An old control must not redirect an action to the new owner,
                 // even when that owner declares the same action id (fullScreen).
