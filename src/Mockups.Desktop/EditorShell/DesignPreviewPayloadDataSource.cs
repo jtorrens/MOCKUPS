@@ -47,7 +47,8 @@ internal sealed record DesignPreviewModuleInstanceSource(
     string AppConfigJson,
     string AnimationJson,
     int FrameRate,
-    int VerticalOffsetPx);
+    int VerticalOffsetPx,
+    DeviceModuleTransparencyOverride Transparency);
 
 internal sealed record DesignPreviewShotSlot(
     string Id,
@@ -234,7 +235,7 @@ internal sealed class DesignPreviewPayloadDataSource
             ProjectAncestor(node).Id);
     }
 
-    public DesignPreviewModuleInstanceSource LoadModuleInstance(string moduleInstanceId)
+    public DesignPreviewModuleInstanceSource LoadModuleInstance(string moduleInstanceId, string deviceId)
     {
         var instance = _timeline.GetModuleInstanceSettings(moduleInstanceId);
         var module =
@@ -251,7 +252,9 @@ internal sealed class DesignPreviewPayloadDataSource
             app.ConfigJson,
             instance.AnimationJson,
             shot.Fps,
-            instance.VerticalOffsetPx);
+            instance.VerticalOffsetPx,
+            DeviceSettingsFieldContract.PreviewMetrics(
+                instance.EffectiveDeviceSettings(_database.GetDeviceSettings(deviceId))).ModuleTransparency);
     }
 
     public string LoadComponentBaseConfigs(string projectId, IEnumerable<string> owners) =>

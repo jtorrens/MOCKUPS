@@ -274,6 +274,13 @@ export function planScopedValidation(
       || file === "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs") {
       previewTests.add("tests/animation/screenTransitionRenderable.test.ts");
     }
+    if (["DesignPreviewPayloadFactory.cs", "DesignPreviewPayloadDataSource.cs",
+      "WebDesignPreviewRenderer.cs", "RenderJobSnapshotFactory.cs", "PreparedProductionPreview.cs",
+      "renderDesignPreviewMarkup.tsx", "deviceModuleTransparency.ts"].includes(path.basename(file))) {
+      add(npmStep("desktop:screen-layer-transparency", "test:focus:desktop",
+        "overlapping Screen backgrounds retain their effective Device transparency in Preview and Render",
+        ["--", "--exact", "Overlapping Screens preserve each layer's background in Preview and Render"]));
+    }
     if (file === "src/Mockups.Desktop/EditorShell/EditorNavigationRenderer.cs"
       || file === "src/Mockups.Desktop/EditorShell/EditorNodeCommandController.cs") {
       desktopUi = true;

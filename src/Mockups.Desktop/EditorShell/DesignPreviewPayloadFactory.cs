@@ -61,7 +61,8 @@ internal sealed record DesignPreviewPayload(
     ScreenTransitionPayload? ScreenTransition = null,
     string RuntimeRecordReferencesJson = "{}",
     string ProjectId = "",
-    string SystemPreviewFixtureRoot = "");
+    string SystemPreviewFixtureRoot = "",
+    DeviceModuleTransparencyOverride? ScreenTransparency = null);
 
 internal static class DesignPreviewPayloadLayers
 {
@@ -236,7 +237,9 @@ internal static class DesignPreviewPayloadFactory
         var selected = isScreen ? new[] { slots.Single(slot => slot.Id == node.Id) }
             : slots.Where(slot => Math.Max(0, startFrame) < slot.StartFrame + slot.EffectiveDurationFrames
                 && Math.Min(shot.DurationFrames - 1, Math.Max(startFrame, endFrame)) >= slot.StartFrame).ToArray();
-        var sources = selected.ToDictionary(slot => slot.Id, slot => dataSource.LoadModuleInstance(slot.Id));
+        var themes = selected.ToDictionary(slot => slot.Id, slot => themeForScreen(slot.Id));
+        var sources = selected.ToDictionary(slot => slot.Id,
+            slot => dataSource.LoadModuleInstance(slot.Id, themes[slot.Id].DeviceId));
         cancellationToken.ThrowIfCancellationRequested();
         var componentBaseConfigs = sources.Values.Select(source => source.RecordClassId)
             .Distinct(StringComparer.Ordinal).ToDictionary(owner => owner,
@@ -245,7 +248,7 @@ internal static class DesignPreviewPayloadFactory
         foreach (var slot in selected)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var theme = themeForScreen(slot.Id);
+            var theme = themes[slot.Id];
             var owner = FromModuleInstance(dataSource, slot.Id, sources[slot.Id], theme.DeviceId, themeMode, theme,
                 0, respectAuthoredAppearance, componentBaseConfigs[sources[slot.Id].RecordClassId]) with
             {
@@ -338,7 +341,8 @@ internal static class DesignPreviewPayloadFactory
             deviceId,
             instance.FrameRate,
             LocalFrame: Math.Max(0, screenFrame ?? 0),
-            ProjectId: instance.ProjectId);
+            ProjectId: instance.ProjectId,
+            ScreenTransparency: instance.Transparency);
     }
 
     private static ProjectTreeNode ScreenNode(string screenId) =>

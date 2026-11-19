@@ -206,6 +206,10 @@ internal static class WebDesignPreviewRenderer
         DesignPreviewPayload payload,
         bool includeAuthoringTargets)
     {
+        var transparency = payload.Kind == "moduleInstance"
+            ? payload.ScreenTransparency ?? throw new InvalidOperationException(
+                $"Screen '{payload.OwnerId}' has no prepared transparency policy.")
+            : metrics.ModuleTransparency;
         return new
         {
             kind = payload.Kind,
@@ -295,14 +299,14 @@ internal static class WebDesignPreviewRenderer
                 screenHeight = metrics.ScreenHeight,
                 moduleTransparency = new
                 {
-                    enabled = metrics.ModuleTransparency.Enabled,
-                    mode = metrics.ModuleTransparency.Mode,
-                    paletteColor = metrics.ModuleTransparency.PaletteColor,
-                    backgroundOpacity = metrics.ModuleTransparency.BackgroundOpacity,
-                    fixedStart = metrics.ModuleTransparency.FixedStart,
-                    minimumOpaqueExtent = metrics.ModuleTransparency.MinimumOpaqueExtent,
-                    gradientHeight = metrics.ModuleTransparency.GradientHeight,
-                    variableOffset = metrics.ModuleTransparency.VariableOffset,
+                    enabled = transparency.Enabled,
+                    mode = transparency.Mode,
+                    paletteColor = transparency.PaletteColor,
+                    backgroundOpacity = transparency.BackgroundOpacity,
+                    fixedStart = transparency.FixedStart,
+                    minimumOpaqueExtent = transparency.MinimumOpaqueExtent,
+                    gradientHeight = transparency.GradientHeight,
+                    variableOffset = transparency.VariableOffset,
                 },
             },
         };

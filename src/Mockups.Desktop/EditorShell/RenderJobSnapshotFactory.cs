@@ -382,11 +382,6 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
         var store = new RenderSnapshotStore(batchRoot, create: true);
         var storedAssets = new HashSet<string>(StringComparer.Ordinal);
         var snapshots = new List<RenderJobSnapshot>();
-        var device = _database.GetDeviceSettings(preparation.DeviceId);
-        var screenMetrics = draft.Screens.ToDictionary(screen => screen.ScreenId,
-            screen => DeviceSettingsFieldContract.PreviewMetrics(
-                DeviceSettingsFieldContract.ApplyScreenOverrides(device, screen.DeviceOverridesJson,
-                    $"Screen '{screen.ScreenId}' Device overrides")), StringComparer.Ordinal);
         foreach (var summary in preparation.Summaries)
         {
             var requestedAppearance = summary.Appearance;
@@ -403,20 +398,12 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
             for (var frame = 0; frame < draft.TotalFrames; frame++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var activeScreen = draft.Screens.FirstOrDefault(
-                    (candidate) =>
-                        frame >= candidate.StartFrame
-                        && frame < candidate.StartFrame
-                            + candidate.DurationFrames);
-                var frameMetrics = activeScreen is null
-                    ? preparation.Metrics
-                    : screenMetrics[activeScreen.ScreenId];
                 var payload = sequence.AtFrame(frame);
                 var html = payload is null
                     ? DesignWebPreviewPane.BuildTransparentRasterHtml(
                         preparation.Metrics)
                     : await DesignWebPreviewPane.BuildRasterHtmlAsync(
-                        frameMetrics,
+                        preparation.Metrics,
                         payload);
                 cancellationToken.ThrowIfCancellationRequested();
                 foreach (var key in PreviewAssetRegistry.Keys(html))

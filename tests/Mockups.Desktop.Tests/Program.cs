@@ -161,6 +161,7 @@ var tests = new (string Name, Action Run)[]
     ("Chromium raster failures retain worker diagnostics", ChromiumRasterFailuresRetainWorkerDiagnostics),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
     ("Production render uses transparency for Shot Screen gaps", ProductionRenderUsesTransparencyForShotScreenGaps),
+    ("Overlapping Screens preserve each layer's background in Preview and Render", OverlappingScreensPreserveBackgrounds),
     ("transparent Shot frames preserve the raster surface contract", TransparentShotFramesPreserveRasterSurfaceContract),
     ("Render snapshot store interns repeated font assets", RenderSnapshotStoreInternsAssets),
     ("Render Queue persists and completes batch children independently", RenderQueueChildrenAreIndependent),
@@ -18597,6 +18598,55 @@ static void ProductionRenderUsesTransparencyForShotScreenGaps()
     finally
     {
         File.Delete(temporary);
+    }
+}
+
+static void OverlappingScreensPreserveBackgrounds()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = CanonicalProjectNodes(database);
+    var shot = nodes.Single(node => node.Id == "shot_8b1e872a2bd845f9aabd262361c58fb2");
+    var overlay = database.GetModuleInstanceSettings("module_instance_fa93e9d7387c49a19e90356167eb75e7");
+    var reel = nodes.Single(node => node.Id == "module_instance_d0250899685c403daf7a22f1c021df43");
+    var frame = overlay.StartFrame + 1;
+    var inputs = new DesignPreviewPayloadDataSource(database.PreviewInputs, database.Production,
+        database.Resources, database.Resources, database.ProjectPaths);
+    var preparer = new ProductionPreviewPayloadPreparer(inputs,
+        new ProductionPreviewRuntimeResolver(database.Resources, database.ProjectPaths));
+    var baseline = preparer.PrepareRequired(reel, null, "dark", frame);
+    var preview = preparer.PrepareRequired(shot, null, "dark", frame);
+    var render = Required(preparer.PrepareRenderSequence(shot, RenderThemeStrategy.Screen, "",
+        baseline.DeviceId, "dark", frame, frame, CancellationToken.None).AtFrame(frame));
+    var device = database.GetDeviceSettings(baseline.DeviceId);
+    var metrics = DeviceSettingsFieldContract.PreviewMetrics(overlay.EffectiveDeviceSettings(device));
+    var previewHtml = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, preview).GetAwaiter().GetResult();
+    var renderHtml = DesignWebPreviewPane.BuildRasterHtmlAsync(metrics, render).GetAwaiter().GetResult();
+    foreach (var html in new[] { previewHtml, renderHtml })
+    {
+        var lower = html.IndexOf("data-renderable-id=\"design_preview.screen.layer.0\"", StringComparison.Ordinal);
+        var upper = html.IndexOf("data-renderable-id=\"design_preview.screen.layer.1\"", StringComparison.Ordinal);
+        True(lower >= 0 && upper > lower);
+        True(html[lower..upper].Contains("data-renderable-id=\"wallpaper.image\"", StringComparison.Ordinal));
+        True(html[upper..].Contains("data-renderable-id=\"device.moduleTransparency.background\"", StringComparison.Ordinal));
+    }
+
+    using var rasterizer = new ChromiumPreviewRasterizer();
+    var path = Path.Combine(Path.GetTempPath(), $"mockups-overlay-{Guid.NewGuid():N}.png");
+    try
+    {
+        var baselineHtml = DesignWebPreviewPane.BuildRasterHtmlAsync(metrics, baseline).GetAwaiter().GetResult();
+        var expected = GalleryGapPixel(baselineHtml);
+        Equal((byte)255, expected.Alpha);
+        Equal(expected, GalleryGapPixel(renderHtml));
+    }
+    finally { File.Delete(path); }
+
+    SkiaSharp.SKColor GalleryGapPixel(string html)
+    {
+        rasterizer.RasterizeAsync(html, (int)metrics.CanvasWidth, (int)metrics.CanvasHeight,
+            path, "png", 100, 1, CancellationToken.None).GetAwaiter().GetResult();
+        using var bitmap = SkiaSharp.SKBitmap.Decode(path);
+        return bitmap.GetPixel(bitmap.Width / 2, (int)(bitmap.Height * 0.705));
     }
 }
 

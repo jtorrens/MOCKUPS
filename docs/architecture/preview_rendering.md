@@ -128,7 +128,9 @@ phase-relative clock. Time before the boundary holds Motion at progress zero;
 entry holds the owner-local action at frame zero and exit
 holds its final frame. The action delay also holds frame zero. The generic
 Screen transition resolver composes those already selected owners in lane order
-and reuses the common Motion geometry and easing with the Shot's exact duration.
+on a shared canvas. Each Screen carries the transparency policy of its effective Device,
+including its own overrides, through Preview and Render. Each layer applies that
+policy to its own background and mask before stacking. The compositor reuses the common Motion geometry and easing with the Shot's exact duration.
 Registries and concrete Module owners remain unaware of neighboring Screens.
 The generic payload-layer contract is the single owner of transition-envelope
 projection. Semantic reads use its highest ordered owner, transformations map
