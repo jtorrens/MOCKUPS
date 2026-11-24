@@ -38,6 +38,7 @@ import {
 } from "./previewMotionHelpers.js";
 import type { ComponentMotionContract } from "./previewComponentContracts.js";
 import { resolvedTextInputBarRuntimeConfig } from "./textInputBarComponentResolver.js";
+import { resolvePaletteColor } from "./previewColorHelpers.js";
 import { renderScale } from "./previewGeometryHelpers.js";
 import { resolvedRuntimeRecordReference } from "./runtimeRecordReferenceCatalog.js";
 import {
@@ -53,7 +54,11 @@ export function resolveConversationModule(
   const config = parseObject(payload.configJson);
   const conversation = requiredRecord(config, "conversation", "module config");
   const screenFrame = rootScreenFrame(payload);
-  const resolvedMessages = conversationMessages(preview);
+  const resolvedMessages = conversationMessages(
+    preview,
+    payload,
+    requiredBoolean(conversation, "customMessageIdentity", "module.core.chat"),
+  );
   const timing = conversationTiming(preview);
   const showKeyboard = requiredBoolean(
     conversation,
@@ -555,13 +560,40 @@ function typingIndicatorAnimation(
   throw new Error(`Unsupported Conversation typing indicator animation ${value}`);
 }
 
-function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[] {
+function conversationMessages(
+  preview: JsonRecord,
+  payload: DesignPreviewPayload,
+  customIdentity: boolean,
+): ResolvedConversationMessage[] {
   const messages = requiredObjectArray(preview, "messages", "module.conversation runtime");
   return messages.map((message, index) => {
     const path = `module.core.chat.messages[${index}]`;
+    const actor = requiredRecord(message, "actor", path);
+    const senderLabelColor = customIdentity
+      ? resolvePaletteColor(payload, requiredString(message, "senderPaletteColor", path))
+      : undefined;
+    const senderName = customIdentity ? requiredString(message, "senderName", `${path}.senderName`) : undefined;
+    if (customIdentity && !payload.systemAvatarImageUri) {
+      throw new Error("Missing shared system avatar");
+    }
     return {
       id: requiredString(message, "id", `${path}.id`),
-      actor: requiredRecord(message, "actor", path),
+      senderLabelColor,
+      actor: senderName === undefined ? actor : {
+        id: actor.id,
+        displayName: senderName,
+        shortName: senderName,
+        initials: Array.from(senderName)[0],
+        avatar: {
+          imageUri: payload.systemAvatarImageUri,
+          backgroundColor: senderLabelColor,
+          textColor: "#ffffff",
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+          baseSize: 640,
+        },
+      },
       state: requiredString(message, "direction", path),
       text: requiredPossiblyEmptyString(message, "text", `${path}.text`),
       statusState: conversationStatusState(requiredString(

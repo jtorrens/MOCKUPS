@@ -282,6 +282,7 @@ function messageNodes(
         actorId: message.actor?.id ?? "",
         actorName: message.actor?.displayName ?? "",
         actor: message.actor,
+        senderLabelColor: message.senderLabelColor,
         actorIdentityVisible: message.actorIdentityVisible,
         mediaType: message.mediaType,
         mediaSource: message.mediaSource,
@@ -360,22 +361,25 @@ function messageNodes(
     width: screen.width,
     height: viewportHeight,
   };
-  const targetOverflow = Math.max(0, gap + totalHeight - viewportHeight);
+  const fromBottom = requiredBoolean(conversation, "messagesFromBottom", "module.core.chat");
+  const stackOrigin = (height: number) => fromBottom
+    ? bottom - height
+    : Math.min(top + gap, bottom - height);
+  const targetOrigin = stackOrigin(totalHeight);
   const previousEntries = messageReflow
     ? resolveEntries(messageReflow.fromMessages)
     : entries;
   const previousHeight = previousEntries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
     + Math.max(0, previousEntries.length - 1) * gap;
-  const previousOverflow = Math.max(0, gap + previousHeight - viewportHeight);
   const scrollProgress = messageReflow?.progress ?? 1;
   const previousYById = new Map<string, number>();
-  let previousY = top + gap - previousOverflow;
+  let previousY = stackOrigin(previousHeight);
   previousEntries.forEach((entry) => {
     previousYById.set(entry.id, previousY);
     previousY += entry.finalBounds.height + gap;
   });
   const targetYById = new Map<string, number>();
-  let nextTargetY = top + gap - targetOverflow;
+  let nextTargetY = targetOrigin;
   targetEntries.forEach((entry) => {
     targetYById.set(entry.id, nextTargetY);
     nextTargetY += entry.finalBounds.height + gap;
@@ -415,7 +419,7 @@ function messageNodes(
       ?? (previousEntryY === undefined
         ? undefined
         : previousEntryY + reflowDeltaForRemovedEntry(message.id))
-      ?? top + gap - targetOverflow
+      ?? targetOrigin
         + entries.slice(0, index).reduce(
           (sum, current) => sum + current.finalBounds.height + gap,
           0,

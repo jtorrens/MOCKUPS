@@ -188,7 +188,7 @@ function resolvedActor(
         label: string;
         shortName: string;
         initials: string;
-        avatar: string;
+        systemAvatar: string;
         backgroundColor: string;
         textColor: string;
       }>;
@@ -196,7 +196,7 @@ function resolvedActor(
     const actor = manifest.actors.find((candidate) =>
       candidate.id === actorId);
     assert.ok(actor, `Missing System Preview Actor fixture '${actorId}'`);
-    const avatar = readFileSync(path.join(fixtureRoot, actor.avatar));
+    const avatar = readFileSync(path.join(fixtureRoot, "..", "avatars", actor.systemAvatar));
     return {
       id: actor.id,
       displayName: actor.label,

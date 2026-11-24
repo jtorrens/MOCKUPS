@@ -267,7 +267,7 @@ const expectedExternalResources = new Map([
   ["src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj", []],
   [
     "src/Mockups.Application/Mockups.Application.csproj",
-    ["src/desktop-preview/desktopPreviewManifest.json"],
+    ["src/desktop-preview/desktopPreviewManifest.json", "assets/system/avatars/sample-one.svg", "assets/system/avatars/sample-two.svg"],
   ],
   ["src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj", []],
   ["src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj", []],

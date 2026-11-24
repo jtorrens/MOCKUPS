@@ -20,7 +20,7 @@ public static class SystemPreviewFixtureCatalog
             "Sample One",
             "One",
             "SO",
-            "avatars/sample-one.svg",
+            SystemAvatarResources.DefaultAvatar,
             "#3657D6",
             "#FFFFFF"),
         new(
@@ -28,7 +28,7 @@ public static class SystemPreviewFixtureCatalog
             "Sample Two",
             "Two",
             "ST",
-            "avatars/sample-two.svg",
+            "sample-two.svg",
             "#C84C73",
             "#FFFFFF"),
     ];
@@ -117,13 +117,7 @@ public static class SystemPreviewFixtureCatalog
                 candidate.Id.Equals(actorId, StringComparison.Ordinal))
             ?? throw new InvalidOperationException(
                 $"Missing System Preview Actor fixture '{actorId}'.");
-        var avatarPath = ResolveRelative(actor.AvatarRelativePath);
-        if (!File.Exists(avatarPath))
-        {
-            throw new InvalidOperationException(
-                $"Missing System Preview avatar fixture '{actor.AvatarRelativePath}'.");
-        }
-        var imageUri = $"data:image/svg+xml;base64,{Convert.ToBase64String(File.ReadAllBytes(avatarPath))}";
+        var imageUri = SystemAvatarResources.ImageUri(actor.AvatarResource);
         return new JsonObject
         {
             ["id"] = actor.Id,
@@ -190,7 +184,7 @@ public static class SystemPreviewFixtureCatalog
     {
         foreach (var actor in Actors)
         {
-            RequireFile(ResolveRelative(actor.AvatarRelativePath));
+            _ = SystemAvatarResources.ImageUri(actor.AvatarResource);
         }
         foreach (var media in Media)
         {
@@ -241,7 +235,7 @@ public static class SystemPreviewFixtureCatalog
         string Label,
         string ShortName,
         string Initials,
-        string AvatarRelativePath,
+        string AvatarResource,
         string BackgroundColor,
         string TextColor);
 

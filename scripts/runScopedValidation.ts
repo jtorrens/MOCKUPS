@@ -221,7 +221,10 @@ export function planScopedValidation(
       previewTests.add("tests/animation/conversationModuleResolver.test.ts");
       previewTests.add("tests/animation/previewAssetResolver.test.ts");
     }
-    if (file === "src/desktop-preview/conversationModuleResolver.ts"
+    if (file.startsWith("src/desktop-preview/conversationModule")
+      || file.startsWith("assets/system/avatars/")
+      || file === "src/Mockups.Application/SystemAvatarResources.cs"
+      || file === "scaffolding/modules/module_core_chat.json"
       || file === "docs/architecture/animation.md") {
       previewTests.add("tests/animation/conversationModuleResolver.test.ts");
       previewTests.add("tests/animation/bubbleComponent.test.ts");

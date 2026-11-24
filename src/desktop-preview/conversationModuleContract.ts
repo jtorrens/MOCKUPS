@@ -28,6 +28,7 @@ export interface ConversationMessageContract {
   localFrame: number;
   id: string;
   actor: JsonRecord;
+  senderLabelColor?: string;
   actorIdentityVisible: boolean;
   state: string;
   text: string;

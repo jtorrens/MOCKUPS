@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import Database from "better-sqlite3";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import {
@@ -686,6 +687,48 @@ test("Conversation positions each message from the resolved Bubble alignment", (
   assert.ok(Math.abs(system!.x - (screenLeft + gutter)) < 0.001);
   assert.ok(Math.abs((incoming!.x + incoming!.width) - (screenRight - gutter)) < 0.001);
   assert.ok(Math.abs((outgoing!.x + outgoing!.width / 2) - screenCenter) < 0.001);
+});
+
+test("Bottom-origin Conversation and custom senders", () => {
+  const source = committedConversationPayload(true);
+  const config = JSON.parse(source.configJson);
+  config.conversation.messagesFromBottom = true;
+  config.conversation.customMessageIdentity = true;
+  config.conversation.bubbleSlot.overrides.bubble = {
+    actorLabelSlot: { showLabel: true, showIncoming: true, useActorColor: false },
+    avatarSlot: { showAvatar: true },
+  };
+  source.configJson = JSON.stringify(config);
+  const runtime = JSON.parse(source.designPreviewJson);
+  runtime.conversationType = "group";
+  runtime.messages = runtime.messages.slice(0, 2);
+  const senders = [
+    { name: "Ana", color: "palette_project_foqn_s2_blue" },
+    { name: "Luis", color: "palette_project_foqn_s2_aqua_green" },
+  ];
+  source.systemAvatarImageUri = "data:image/svg+xml;base64," + readFileSync(
+    new URL("../../assets/system/avatars/sample-one.svg", import.meta.url),
+  ).toString("base64");
+  for (const [index, sender] of senders.entries()) {
+    Object.assign(runtime.messages[index], {
+      direction: "incoming", senderName: sender.name, senderPaletteColor: sender.color,
+    });
+  }
+  source.designPreviewJson = JSON.stringify(runtime);
+  source.runtimeContractJson = JSON.stringify(runtime);
+  setConversationFrame(source, 239);
+  const viewport = findNode(conversationModuleToRenderable(source), "module.core.chat.messages")!;
+  const bubbles = findNodes(viewport, "component.bubble");
+  assert.equal(bubbles.length, senders.length);
+  const bounds = bubbles.map(renderableVisualBounds);
+  assert.ok(bounds[0]!.y < bounds[1]!.y);
+  assert.ok(Math.abs(bounds[1]!.y + bounds[1]!.height - viewport.box!.y - viewport.box!.height) < 0.001);
+  for (const [index, sender] of senders.entries()) {
+    const label = findNode(bubbles[index]!, "component.bubble.actorLabel.text")!;
+    assert.equal(label.text, sender.name);
+    assert.equal(label.style?.textColor, source.paletteColors![sender.color]);
+    assert.ok(JSON.stringify(bubbles[index]).includes(source.systemAvatarImageUri));
+  }
 });
 
 test("Conversation reserves outgoing Bubble final height throughout write-on", () => {

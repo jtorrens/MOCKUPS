@@ -386,3 +386,8 @@ Create-only workstation bootstrap seeds `data/icon-library`; maintenance copies
 the canonical library back to that parity snapshot, never over an existing
 workstation library. Backup Hub includes and restores the complete library with
 the database through the journal described in data persistence.
+
+System portraits live in `assets/system/avatars`. Application embeds the SVGs
+and exposes their image URIs through `SystemAvatarResources`. Design fixture
+Actors reference those portraits. Conversation uses the primary portrait for
+custom message identities in Design, Production and Render.

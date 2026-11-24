@@ -34,6 +34,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["conversation", "bubbleSlot"],
             "bubble",
             []),
+        ["module.core.chat.customMessageIdentity"] = new(
+            "module.core.chat",
+            "module.core.chat.customMessageIdentity",
+            ValueKind.Boolean,
+            ["conversation", "customMessageIdentity"],
+            "",
+            []),
         ["module.core.chat.headerAvatar.editor"] = new(
             "module.core.chat",
             "module.core.chat.headerAvatar.editor",
@@ -144,6 +151,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             "module.core.chat.messageReflowTiming",
             ValueKind.MotionTiming,
             ["conversation", "messageReflowTiming"],
+            "",
+            []),
+        ["module.core.chat.messagesFromBottom"] = new(
+            "module.core.chat",
+            "module.core.chat.messagesFromBottom",
+            ValueKind.Boolean,
+            ["conversation", "messagesFromBottom"],
             "",
             []),
         ["module.core.chat.messageViewportMotion"] = new(

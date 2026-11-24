@@ -16,6 +16,8 @@ internal static class ConversationModuleConfigContract
         var conversation = JsonPath.RequiredObject(config, "conversation", context);
         var owner = $"{context}.conversation";
 
+        JsonPath.RequiredBoolean(conversation, "messagesFromBottom", owner);
+        JsonPath.RequiredBoolean(conversation, "customMessageIdentity", owner);
         JsonPath.RequiredBoolean(conversation, "showHeader", owner);
         JsonPath.RequiredBoolean(conversation, "showHeaderSeparator", owner);
         JsonPath.RequiredBoolean(conversation, "useAppWallpaper", owner);

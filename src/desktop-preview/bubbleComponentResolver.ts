@@ -379,7 +379,9 @@ export function resolveBubbleComponent(
         "placement",
         "component.bubble.actorLabel.placement",
       ),
-      textColorOverride: actorLabelVisible && actorLabelUseActorColor
+      textColorOverride: typeof preview.senderLabelColor === "string"
+        ? preview.senderLabelColor
+        : actorLabelVisible && actorLabelUseActorColor
         ? labelActorPreview!.avatar.backgroundColor
         : undefined,
       label: actorLabelConfig

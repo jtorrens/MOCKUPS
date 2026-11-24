@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="../../assets/system/avatars/*.svg" LogicalName="Mockups.Avatars.%(Filename)%(Extension)" />
     <EmbeddedResource Include="../desktop-preview/desktopPreviewManifest.json" LogicalName="Mockups.DesktopPreviewManifest.json" />
   </ItemGroup>
 

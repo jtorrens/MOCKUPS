@@ -470,6 +470,14 @@ Design or Production workspace and selects the exact tree item.
 
 ## Conversation message ownership
 
+The Conversation Variant owns the switches `messagesFromBottom` and
+`customMessageIdentity`. Bottom-origin layout anchors the latest Bubble at
+the viewport bottom and applies the existing reflow to earlier Bubbles in
+chronological order. In custom identity mode each message supplies its own
+`senderName` and `senderPaletteColor`. Its visible name takes that Palette
+color, and its avatar uses the shared system portrait. Bubble retains its
+direction and chat visibility controls. Both switches default to false.
+
 The Actor attached to a conversation message describes the message owner and
 is independent from the Shot owner:
 

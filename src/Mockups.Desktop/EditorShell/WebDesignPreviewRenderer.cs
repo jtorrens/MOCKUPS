@@ -233,6 +233,7 @@ internal static class WebDesignPreviewRenderer
             paletteNeutralColors = payload.PaletteNeutralColors,
             projectMediaRoot = payload.ProjectMediaRoot,
             projectMediaFiles = payload.ProjectMediaFiles,
+            systemAvatarImageUri = SystemAvatarResources.ImageUri(SystemAvatarResources.DefaultAvatar),
             systemPreviewFixtureRoot = payload.SystemPreviewFixtureRoot,
             fontFaces = payload.FontFaces.Select((face) => new
             {

@@ -225,7 +225,9 @@
         "fade": false,
         "translate": true,
         "scale": false
-      }
+      },
+      "messagesFromBottom": false,
+      "customMessageIdentity": false
     },
     "appearanceMode": "inherit"
   },
@@ -1310,7 +1312,9 @@
         ],
         "showIconRow": false,
         "actionsRevealed": false,
-        "mediaCutout": false
+        "mediaCutout": false,
+        "senderName": "User",
+        "senderPaletteColor": "palette_project_foqn_s2_blue"
       },
       {
         "direction": "outgoing",
@@ -2159,7 +2163,9 @@
         ],
         "showIconRow": false,
         "actionsRevealed": false,
-        "mediaCutout": false
+        "mediaCutout": false,
+        "senderName": "User",
+        "senderPaletteColor": "palette_project_foqn_s2_blue"
       },
       {
         "direction": "system",
@@ -3008,7 +3014,9 @@
         ],
         "showIconRow": false,
         "actionsRevealed": false,
-        "mediaCutout": false
+        "mediaCutout": false,
+        "senderName": "User",
+        "senderPaletteColor": "palette_project_foqn_s2_blue"
       }
     ],
     "collections": [
@@ -3794,6 +3802,28 @@
               "itemRuntimePresentation": "inline",
               "itemRuntimeVariantSlotJsonKey": "iconRowSlot"
             }
+          },
+          {
+            "id": "senderName",
+            "label": "Custom sender name",
+            "jsonKey": "senderName",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "User",
+            "uiGroupId": "message",
+            "uiGroupLabel": "Message",
+            "uiOrder": 13
+          },
+          {
+            "id": "senderPaletteColor",
+            "label": "Custom sender color",
+            "jsonKey": "senderPaletteColor",
+            "kind": "text",
+            "valueKind": "PaletteColorToken",
+            "defaultValue": "palette_project_foqn_s2_blue",
+            "uiGroupId": "message",
+            "uiGroupLabel": "Message",
+            "uiOrder": 14
           }
         ],
         "itemActions": [
@@ -4049,7 +4079,9 @@
           "fade": false,
           "translate": true,
           "scale": false
-        }
+        },
+        "messagesFromBottom": false,
+        "customMessageIdentity": false
       },
       "appearanceMode": "inherit"
     }
@@ -4928,6 +4960,58 @@
       },
       "unit": "",
       "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.messagesFromBottom",
+      "label": "Messages from bottom",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "conversation",
+        "messagesFromBottom"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.customMessageIdentity",
+      "label": "Custom message names and colors",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "conversation",
+        "customMessageIdentity"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {
@@ -5024,6 +5108,16 @@
               {
                 "id": "module.core.chat.messageReflowTiming",
                 "order": 37,
+                "visible": true
+              },
+              {
+                "id": "module.core.chat.messagesFromBottom",
+                "order": 31,
+                "visible": true
+              },
+              {
+                "id": "module.core.chat.customMessageIdentity",
+                "order": 32,
                 "visible": true
               }
             ]

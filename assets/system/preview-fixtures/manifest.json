@@ -6,7 +6,7 @@
       "label": "Sample One",
       "shortName": "One",
       "initials": "SO",
-      "avatar": "avatars/sample-one.svg",
+      "systemAvatar": "sample-one.svg",
       "backgroundColor": "#3657D6",
       "textColor": "#FFFFFF"
     },
@@ -15,7 +15,7 @@
       "label": "Sample Two",
       "shortName": "Two",
       "initials": "ST",
-      "avatar": "avatars/sample-two.svg",
+      "systemAvatar": "sample-two.svg",
       "backgroundColor": "#C84C73",
       "textColor": "#FFFFFF"
     }
