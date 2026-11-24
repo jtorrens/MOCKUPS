@@ -277,6 +277,10 @@ export function planScopedValidation(
       || file === "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs") {
       previewTests.add("tests/animation/screenTransitionRenderable.test.ts");
     }
+    if (["DeviceMetricRules.cs", "DeviceSettingsFieldContract.cs", "DevicePreviewMetrics.cs",
+      "WebDesignPreviewRenderer.cs", "designPreviewPayload.ts", "deviceModuleTransparency.ts"].includes(path.basename(file))) {
+      previewTests.add("tests/animation/deviceModuleTransparency.test.ts");
+    }
     if (["DesignPreviewPayloadFactory.cs", "DesignPreviewPayloadDataSource.cs",
       "WebDesignPreviewRenderer.cs", "RenderJobSnapshotFactory.cs", "PreparedProductionPreview.cs",
       "renderDesignPreviewMarkup.tsx", "deviceModuleTransparency.ts"].includes(path.basename(file))) {

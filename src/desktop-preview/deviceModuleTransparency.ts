@@ -21,14 +21,14 @@ export function applyDeviceModuleTransparency(
 
   const screen = screenBox(payload);
   const content = removeModuleBackgrounds(module);
-  const contentBottom = bottomVisiblePixel(content, screen);
-  const start = policy.mode === "fixed"
-    ? screen.y + policy.fixedStart
-    : Math.max(
-        screen.y + policy.minimumOpaqueExtent,
-        contentBottom + policy.variableOffset,
-      );
-  const end = start + policy.gradientHeight;
+  const towardTop = policy.transparentEdge === "top";
+  const opaqueExtent = policy.mode === "fixed"
+    ? policy.fixedStart
+    : Math.max(policy.minimumOpaqueExtent,
+        visibleContentExtent(content, screen, towardTop) + policy.variableOffset);
+  const opaqueEnd = towardTop
+    ? screen.y + screen.height - opaqueExtent
+    : screen.y + opaqueExtent;
   const background: RenderableNode = {
     id: "device.moduleTransparency.background",
     type: "surface",
@@ -51,10 +51,10 @@ export function applyDeviceModuleTransparency(
       overflow: "hidden",
       opacityMask: {
         axis: "vertical",
-        start,
-        end,
-        beforeOpacity: 1,
-        afterOpacity: 0,
+        start: towardTop ? opaqueEnd - policy.gradientHeight : opaqueEnd,
+        end: towardTop ? opaqueEnd : opaqueEnd + policy.gradientHeight,
+        beforeOpacity: towardTop ? 0 : 1,
+        afterOpacity: towardTop ? 1 : 0,
       },
     },
     children: [background, ...(content.children ?? [])],
@@ -70,6 +70,7 @@ export function requiredDeviceModuleTransparency(
   const required = [
     "enabled",
     "mode",
+    "transparentEdge",
     "paletteColor",
     "backgroundOpacity",
     "fixedStart",
@@ -90,6 +91,9 @@ export function requiredDeviceModuleTransparency(
   }
   if (value.mode !== "fixed" && value.mode !== "variable") {
     throw new Error("Preview Device moduleTransparency.mode must be 'fixed' or 'variable'.");
+  }
+  if (value.transparentEdge !== "top" && value.transparentEdge !== "bottom") {
+    throw new Error("Preview Device moduleTransparency.transparentEdge must be 'top' or 'bottom'.");
   }
   if (typeof value.paletteColor !== "string" || !value.paletteColor.trim()) {
     throw new Error("Preview Device moduleTransparency.paletteColor must be a non-empty string.");
@@ -114,6 +118,7 @@ export function requiredDeviceModuleTransparency(
   return {
     enabled: value.enabled,
     mode: value.mode,
+    transparentEdge: value.transparentEdge,
     paletteColor: value.paletteColor,
     backgroundOpacity,
     fixedStart,
@@ -132,18 +137,23 @@ function removeModuleBackgrounds(node: RenderableNode): RenderableNode {
   };
 }
 
-function bottomVisiblePixel(node: RenderableNode, screen: RenderableBox) {
-  const bottoms: number[] = [];
-  collectPaintBottoms(node, identity, screen, 1, bottoms);
-  return bottoms.length ? Math.max(...bottoms) : screen.y;
+function visibleContentExtent(node: RenderableNode, screen: RenderableBox, towardTop: boolean) {
+  let extent = 0;
+  collectVisiblePaint(node, identity, screen, 1, (box) => {
+    const distance = towardTop
+      ? screen.y + screen.height - box.y
+      : box.y + box.height - screen.y;
+    extent = Math.max(extent, distance);
+  });
+  return extent;
 }
 
-function collectPaintBottoms(
+function collectVisiblePaint(
   node: RenderableNode,
   parentMatrix: Matrix,
-  inheritedClip: RenderableBox | undefined,
+  inheritedClip: RenderableBox,
   inheritedOpacity: number,
-  bottoms: number[],
+  visit: (box: RenderableBox) => void,
 ) {
   const opacity = inheritedOpacity * nodeOpacity(node);
   if (opacity <= 0) return;
@@ -152,14 +162,15 @@ function collectPaintBottoms(
   const clip = node.style?.overflow === "hidden" && transformedBox
     ? intersectBoxes(inheritedClip, transformedBox)
     : inheritedClip;
+  if (!clip) return;
   if (node.type !== "group" && transformedBox) {
     const visible = intersectBoxes(clip, transformedBox);
     if (visible && visible.width > 0 && visible.height > 0) {
-      bottoms.push(visible.y + visible.height);
+      visit(visible);
     }
   }
   for (const child of node.children ?? []) {
-    collectPaintBottoms(child, matrix, clip, opacity, bottoms);
+    collectVisiblePaint(child, matrix, clip, opacity, visit);
   }
 }
 

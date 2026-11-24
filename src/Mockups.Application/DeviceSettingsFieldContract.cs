@@ -13,6 +13,7 @@ public static class DeviceSettingsFieldContract
     [
         "device.metrics.moduleTransparency.enabled",
         "device.metrics.moduleTransparency.mode",
+        "device.metrics.moduleTransparency.transparentEdge",
         "device.metrics.moduleTransparency.paletteColor",
         "device.metrics.moduleTransparency.backgroundOpacity",
         "device.metrics.moduleTransparency.fixedStart",
@@ -34,6 +35,7 @@ public static class DeviceSettingsFieldContract
         "device.metrics.statusBar.height",
         "device.metrics.moduleTransparency.enabled",
         "device.metrics.moduleTransparency.mode",
+        "device.metrics.moduleTransparency.transparentEdge",
         "device.metrics.moduleTransparency.paletteColor",
         "device.metrics.moduleTransparency.backgroundOpacity",
         "device.metrics.moduleTransparency.fixedStart",
@@ -195,6 +197,11 @@ public static class DeviceSettingsFieldContract
                     ["moduleTransparency", "mode"],
                     JsonValue.Create(value)!);
                 break;
+            case "device.metrics.moduleTransparency.transparentEdge":
+                JsonPath.Set(metrics,
+                    ["moduleTransparency", "transparentEdge"],
+                    JsonValue.Create(value)!);
+                break;
             case "device.metrics.moduleTransparency.paletteColor":
                 JsonPath.Set(metrics,
                     ["moduleTransparency", "paletteColor"],
@@ -288,6 +295,11 @@ public static class DeviceSettingsFieldContract
                     JsonPath.RequiredObject(metrics,
                         "moduleTransparency", context),
                     "mode", context),
+            "device.metrics.moduleTransparency.transparentEdge" =>
+                JsonPath.RequiredString(
+                    JsonPath.RequiredObject(metrics,
+                        "moduleTransparency", context),
+                    "transparentEdge", context),
             "device.metrics.moduleTransparency.paletteColor" =>
                 JsonPath.RequiredString(
                     JsonPath.RequiredObject(metrics,

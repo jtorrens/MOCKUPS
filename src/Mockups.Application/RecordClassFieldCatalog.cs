@@ -354,8 +354,13 @@ public static class RecordClassFieldCatalog
             Options:
             [
                 new("fixed", "Fixed"),
-                new("variable", "Variable · content bottom"),
+                new("variable", "Variable · content edge"),
             ]),
+        ["device.metrics.moduleTransparency.transparentEdge"] = new(
+            "device.metrics.moduleTransparency.transparentEdge",
+            "Transparent edge",
+            ValueKind.OptionToken,
+            Options: [new("top", "Top"), new("bottom", "Bottom")]),
         ["device.metrics.moduleTransparency.paletteColor"] = new(
             "device.metrics.moduleTransparency.paletteColor",
             "Background color",

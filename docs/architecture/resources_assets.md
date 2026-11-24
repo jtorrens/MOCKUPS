@@ -171,6 +171,7 @@ A Device owns one strict current metrics document:
     "mode": "fixed",
     "paletteColor": "gray_000",
     "backgroundOpacity": 1,
+    "transparentEdge": "bottom",
     "fixedStart": 1278,
     "minimumOpaqueExtent": 1278,
     "gradientHeight": 639,
@@ -191,17 +192,18 @@ device-specific layout rules.
 `moduleTransparency` is the Device-owned global Module wallpaper override and
 is required even when disabled. Its Palette token resolves in the same Project
 and is tracked as an exact resource reference. Values are authored in Device
-units. `fixed` uses `fixedStart`; `variable` resolves its start on every frame
-from the last visible pixel of the complete Module foreground before any
-substitute background or opacity mask exists, then adds `variableOffset` and
-compares that result with `minimumOpaqueExtent`. The larger coordinate is the
-gradient start, so the complete Module remains fully opaque from the Device top
-through at least that minimum extent.
+units. `transparentEdge` selects the top or bottom transparent edge and can
+be overridden on the Screen. Existing Devices use bottom. The opaque extent
+runs from the opposite edge toward the selected edge. Fixed mode uses
+`fixedStart` as that extent. Variable mode measures the foremost visible
+foreground pixel toward the selected edge after transforms and clipping, adds
+`variableOffset`, and keeps at least `minimumOpaqueExtent` opaque. Empty
+foreground contributes zero extent.
 The original wallpaper is absent. The substitute Palette surface uses only
 `backgroundOpacity`; the Module foreground retains its authored alpha and no
 additional opacity is applied to it. The foreground is then composed over that
 surface, and one separate global mask is applied to the complete result. That
-mask remains fully opaque from the Device top through the resolved start and
+mask remains fully opaque through the resolved extent and
 fades to zero over `gradientHeight`. The variable offset changes the start
 before this mask is constructed; it never moves either painted layer. No
 legacy `opacity` or fade keys, aliases or missing-object defaults are accepted.

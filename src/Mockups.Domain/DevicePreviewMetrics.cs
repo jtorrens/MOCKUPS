@@ -18,6 +18,7 @@ public sealed record DevicePreviewMetrics(
 public sealed record DeviceModuleTransparencyOverride(
     bool Enabled,
     string Mode,
+    string TransparentEdge,
     string PaletteColor,
     double BackgroundOpacity,
     double FixedStart,
@@ -28,6 +29,7 @@ public sealed record DeviceModuleTransparencyOverride(
     public static DeviceModuleTransparencyOverride Disabled { get; } = new(
         false,
         "fixed",
+        "bottom",
         "gray_000",
         1,
         0,

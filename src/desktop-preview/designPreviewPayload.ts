@@ -11,6 +11,7 @@ export interface PreviewFramePayload {
 export interface DeviceModuleTransparencyPayload {
   enabled: boolean;
   mode: "fixed" | "variable";
+  transparentEdge: "top" | "bottom";
   paletteColor: string;
   backgroundOpacity: number;
   fixedStart: number;

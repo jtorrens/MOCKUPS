@@ -302,6 +302,7 @@ internal static class WebDesignPreviewRenderer
                 {
                     enabled = transparency.Enabled,
                     mode = transparency.Mode,
+                    transparentEdge = transparency.TransparentEdge,
                     paletteColor = transparency.PaletteColor,
                     backgroundOpacity = transparency.BackgroundOpacity,
                     fixedStart = transparency.FixedStart,

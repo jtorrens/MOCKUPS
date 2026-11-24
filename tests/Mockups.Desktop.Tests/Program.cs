@@ -12650,6 +12650,7 @@ static void DeviceMetricDocumentsAreStrict()
     var transparency = new DeviceModuleTransparencyOverride(
         true,
         "variable",
+        "bottom",
         "palette.background",
         0.5,
         0,
@@ -13714,6 +13715,7 @@ static void ResourceRepositoriesPreserveFocusedContract()
                 "device.metrics.statusBar.height",
                 "device.metrics.moduleTransparency.enabled",
                 "device.metrics.moduleTransparency.mode",
+                "device.metrics.moduleTransparency.transparentEdge",
                 "device.metrics.moduleTransparency.paletteColor",
                 "device.metrics.moduleTransparency.backgroundOpacity",
                 "device.metrics.moduleTransparency.fixedStart",
@@ -21056,11 +21058,15 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             initialContext,
             "device.metrics.moduleTransparency.fixedStart",
             "123");
+        values.CommitRecordReferenceOverrideField(
+            initialContext,
+            "device.metrics.moduleTransparency.transparentEdge",
+            "top");
         var overridden = database.GetModuleInstanceSettings(screenNode.Id);
         var overrideJson = JsonPath.ParseRequiredObject(
             overridden.DeviceOverridesJson,
             "Screen Device settings test");
-        Equal(2, overrideJson.Count);
+        Equal(3, overrideJson.Count);
         Equal(
             "0.25",
             overrideJson["device.metrics.moduleTransparency.backgroundOpacity"]?.GetValue<string>());
@@ -21104,6 +21110,8 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             .LoadSnapshot(database.LoadProjectTree())
             .Shot(shotNode.Id);
         Equal(alternateDeviceId, preview.DeviceId);
+        Equal("top", preview.Screens.Single(candidate => candidate.ScreenId == screenNode.Id)
+            .DeviceMetrics.ModuleTransparency.TransparentEdge);
         Equal(123d,
             preview.Screens.Single((candidate) =>
                 candidate.ScreenId == screenNode.Id)

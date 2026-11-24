@@ -52,6 +52,7 @@ public static class DeviceMetricRules
             {
                 ["enabled"] = false,
                 ["mode"] = "fixed",
+                ["transparentEdge"] = "bottom",
                 ["paletteColor"] = "gray_000",
                 ["backgroundOpacity"] = 1,
                 ["fixedStart"] = Math.Round(height * 0.5),
@@ -97,7 +98,7 @@ public static class DeviceMetricRules
             "Device metrics");
         RequireExactKeys(
             moduleTransparency,
-            ["enabled", "mode", "paletteColor", "backgroundOpacity", "fixedStart", "minimumOpaqueExtent", "gradientHeight", "variableOffset"],
+            ["enabled", "mode", "transparentEdge", "paletteColor", "backgroundOpacity", "fixedStart", "minimumOpaqueExtent", "gradientHeight", "variableOffset"],
             [],
             "Device metrics.moduleTransparency");
         if (JsonPath.OptionalObject(metrics, "frame", "Device metrics") is { } frame)
@@ -132,6 +133,13 @@ public static class DeviceMetricRules
         {
             throw new InvalidOperationException(
                 "Device metrics.moduleTransparency.mode must be 'fixed' or 'variable'.");
+        }
+        var transparentEdge = JsonPath.RequiredString(
+            moduleTransparency, "transparentEdge", "Device metrics.moduleTransparency");
+        if (transparentEdge is not ("top" or "bottom"))
+        {
+            throw new InvalidOperationException(
+                "Device metrics.moduleTransparency.transparentEdge must be 'top' or 'bottom'.");
         }
         var moduleTransparencyPaletteColor = JsonPath.RequiredString(
             moduleTransparency,
@@ -173,6 +181,7 @@ public static class DeviceMetricRules
             new DeviceModuleTransparencyOverride(
                 moduleTransparencyEnabled,
                 moduleTransparencyMode,
+                transparentEdge,
                 moduleTransparencyPaletteColor,
                 moduleTransparencyBackgroundOpacity,
                 moduleTransparencyFixedStart,

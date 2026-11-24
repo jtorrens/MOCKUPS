@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { chromium } from "playwright";
+import { renderableToSvg } from "../../src/desktop-preview/RenderableSvgAdapter.js";
 import type { RenderableNode } from "../../src/visual/renderable/types.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import {
@@ -29,6 +31,7 @@ const payload: DesignPreviewPayload = {
     moduleTransparency: {
       enabled: true,
       mode: "fixed",
+      transparentEdge: "bottom",
       paletteColor: "gray_020",
       backgroundOpacity: 0.75,
       fixedStart: 80,
@@ -132,6 +135,60 @@ test("variable Device module transparency advances beyond the minimum with visib
     beforeOpacity: 1,
     afterOpacity: 0,
   });
+});
+
+test("top transparency mirrors fixed distance and tracks the transformed upper content edge", () => {
+  for (const mode of ["fixed", "variable"] as const) {
+    const rendered = applyDeviceModuleTransparency({
+      ...payload,
+      previewFrame: {
+        ...payload.previewFrame,
+        moduleTransparency: {
+          ...payload.previewFrame.moduleTransparency,
+          mode, transparentEdge: "top", fixedStart: 55, variableOffset: -5,
+        },
+      },
+    }, module);
+    const end = mode === "fixed" ? 145 : 50;
+    assert.deepEqual(rendered.style?.opacityMask, {
+      axis: "vertical", start: end - 40, end, beforeOpacity: 0, afterOpacity: 1,
+    });
+  }
+});
+
+test("the selected Screen edge is transparent in the painted output", async () => {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    for (const transparentEdge of ["top", "bottom"] as const) {
+      const rendered = applyDeviceModuleTransparency({
+        ...payload,
+        previewFrame: {
+          ...payload.previewFrame,
+          moduleTransparency: {
+            ...payload.previewFrame.moduleTransparency, transparentEdge, backgroundOpacity: 1,
+          },
+        },
+      }, module);
+      const alphas = await page.evaluate(async (svg) => {
+        const image = new Image();
+        image.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context = canvas.getContext("2d")!;
+        context.drawImage(image, 0, 0);
+        return [1, 100, 198].map(y => context.getImageData(2, y, 1, 1).data[3]);
+      }, renderableToSvg(rendered));
+      const [top, middle, bottom] = alphas;
+      assert.equal(top, transparentEdge === "top" ? 0 : 255);
+      assert.equal(bottom, transparentEdge === "bottom" ? 0 : 255);
+      assert.ok(middle! > 0 && middle! < 255);
+    }
+  } finally {
+    await browser.close();
+  }
 });
 
 test("disabled Device module transparency preserves the exact Module tree", () => {
