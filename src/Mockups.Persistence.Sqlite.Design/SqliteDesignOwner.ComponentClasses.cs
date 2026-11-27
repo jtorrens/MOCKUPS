@@ -94,10 +94,18 @@ internal sealed partial class SqliteDesignOwner
     {
         lock (WriteGate)
         {
-            var current = GetComponentClassSettings(componentClassId);
+            using var connection = OpenConnection();
+            var current = GetComponentClassSettings(connection, componentClassId);
             var proposed = replacement.Validate(current.DesignPreviewJson,
                 ParseJsonObject(current.ConfigJson), $"Component '{componentClassId}' Design Preview");
             if (JsonNode.DeepEquals(ParseJsonObject(current.DesignPreviewJson), proposed)) return;
+            if (DesignPreviewTestValues.Animation(proposed) is not null)
+            {
+                foreach (var variant in VariantEnvelopeContract.Read(ParseJsonObject(current.MetadataJson), "variants", componentClassId))
+                    RuntimePreviewDocumentContract.PrepareFixture(proposed.DeepClone().AsObject(), variant.Config,
+                        id => GetComponentVariantConfig(connection, id),
+                        id => GetComponentVariantRuntimeContract(connection, id));
+            }
             _componentClassRepository.UpdateDesignPreview(componentClassId, replacement.ProposedJson);
         }
     }

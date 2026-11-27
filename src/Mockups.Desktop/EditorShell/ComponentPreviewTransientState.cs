@@ -18,6 +18,7 @@ internal sealed record ComponentPreviewTransientState(
         IReadOnlyList<RuntimeInputCollectionDefinition> collections)
     {
         var keys = inputs.Select(input => $"{ScopeKey}:{input.JsonKey}").ToHashSet(StringComparer.Ordinal);
+        keys.Add(ComponentPreviewTransientValues.AnimationKey(ScopeKey));
         var roots = collections.Select(collection => collection.StorageJsonKey).ToHashSet(StringComparer.Ordinal);
         var capturedRoots = JsonPath.ParseRequiredObject(CollectionTestValuesJson, "Captured Test Values collections");
         var savedRoots = new JsonObject(capturedRoots.Where(pair => roots.Contains(pair.Key))
@@ -63,6 +64,7 @@ internal sealed record ComponentPreviewTransientState(
 
 internal static class ComponentPreviewTransientValues
 {
+    public static string AnimationKey(string scope) => $"{scope}:fixture:animation";
     public static string ActionStateKey(string scope, string id) => $"{scope}:action:{id}:state";
     public static string ActionTimeKey(string scope, string id) => $"{scope}:action:{id}:time";
     public static string ActionTargetFromKey(string scope, string id) => $"{scope}:action:{id}:target-from";
@@ -126,6 +128,10 @@ internal static class ComponentPreviewTransientValues
                 authoring[storageKey] = value?.DeepClone();
             }
         }
+        if (state.Values.TryGetValue(AnimationKey(state.ScopeKey), out var edit))
+            DesignPreviewTestValues.SetAnimation(authoring, ModuleInstanceAnimationDocumentContract.Parse(edit, "Fixture animation"));
+        else if (state.HasCollectionTestValues && DesignPreviewTestValues.Animation(preview) is { } animation)
+            DesignPreviewTestValues.SetAnimation(authoring, animation);
         var envelope = RuntimePreviewDocumentContract.PrepareFixture(
             authoring,
             config,

@@ -30,7 +30,8 @@ internal sealed class ModuleInstanceAnimationDocument
         string fieldId,
         string targetId,
         JsonNode initialValue,
-        string interpolation)
+        string interpolation,
+        int initialFrame = 0)
     {
         if (HasTrack(fieldId, targetId)) return;
         var track = new JsonObject
@@ -42,7 +43,7 @@ internal sealed class ModuleInstanceAnimationDocument
                 new JsonObject
                 {
                     ["id"] = $"keyframe-{Guid.NewGuid():N}",
-                    ["frame"] = 0,
+                    ["frame"] = initialFrame,
                     ["value"] = initialValue.DeepClone(),
                     ["interpolation"] = interpolation,
                     ["enabled"] = true,

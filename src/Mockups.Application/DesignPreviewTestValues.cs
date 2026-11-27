@@ -33,8 +33,21 @@ public static class DesignPreviewTestValues
             }
         }
 
+        if (!JsonNode.DeepEquals(Animation(effectivePreview), Animation(persistedPreview)))
+            differences.Add(new Difference("animation", "Event keyframes"));
         return differences;
     }
+    public static JsonObject? Animation(JsonObject preview)
+    {
+        if (TestValues(preview) is not { } values || !values.ContainsKey("animation")) return null;
+        var animation = JsonPath.RequiredObject(values, "animation", "Design Test Values");
+        ModuleInstanceAnimationDocumentContract.Validate(animation, "Design Test Values animation");
+        return animation;
+    }
+
+    public static void SetAnimation(JsonObject preview, JsonObject animation) =>
+        TestValuesForWrite(preview)["animation"] = animation.DeepClone();
+
     public static JsonObject Parse(string json)
     {
         return JsonPath.ParseRequiredObject(json, "Design Preview JSON");
@@ -56,7 +69,7 @@ public static class DesignPreviewTestValues
 
         foreach (var (key, value) in testValues)
         {
-            if (sourcedCollectionKeys.Contains(key))
+            if (key == "animation" || sourcedCollectionKeys.Contains(key))
             {
                 continue;
             }
@@ -243,7 +256,9 @@ public static class DesignPreviewTestValues
             }
         }
 
+        var fixtureAnimation = Animation(preview);
         preview.Remove("testValues");
+        if (fixtureAnimation is not null) SetAnimation(preview, fixtureAnimation);
     }
 
     private static void ApplyCollectionSources(

@@ -33,6 +33,7 @@ type RuntimeOwnerDocument = {
 const databasePath = parityDatabasePath();
 
 const focusedCharacterizations = {
+  reactionEmitter: "tests/animation/reactionEmitterComponent.test.ts",
   label: "tests/animation/calculatedText.test.ts",
   cursor: "tests/animation/cursorFrameResolution.test.ts",
   textBox: "tests/animation/cursorFrameResolution.test.ts",

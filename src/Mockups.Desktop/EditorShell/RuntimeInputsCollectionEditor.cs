@@ -8,6 +8,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -62,6 +63,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<ProjectTreeNode, string, int, string?, Task> _setActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _currentActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _maximumActionFrame;
+    private readonly Func<ProjectTreeNode, string, int, string?, Task>? _editFixtureEvent;
     private readonly Func<ProjectTreeNode, string, string, Task> _setPreviewTestValue;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
@@ -136,7 +138,8 @@ internal sealed class RuntimeInputsCollectionEditor
         Func<string, bool> navigateToNode,
         Action<EditorEmbeddedContext> openEmbeddedContext,
         ModuleInstanceAnimationEditor? animationEditor = null,
-        Action<ProjectTreeNode>? reloadAndSelect = null)
+        Action<ProjectTreeNode>? reloadAndSelect = null,
+        Func<ProjectTreeNode, string, int, string?, Task>? editFixtureEvent = null)
     {
         _previewInputData =
             new ComponentPreviewInputDataSource(
@@ -169,6 +172,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _setActionFrame = setActionFrame;
         _currentActionFrame = currentActionFrame;
         _maximumActionFrame = maximumActionFrame;
+        _editFixtureEvent = editFixtureEvent;
         _setPreviewTestValue = setPreviewTestValue;
         _discardCommittedProductionRuntimeValue =
             discardCommittedProductionRuntimeValue;
@@ -834,7 +838,55 @@ internal sealed class RuntimeInputsCollectionEditor
                 _reloadAndSelect?.Invoke(owner.Node);
             }
         };
+        if (!owner.IsInstance && input.Animation is { EventOutputJsonKey.Length: > 0 }
+            && DesignPreviewTestValues.Animation(preview) is { } fixture)
+            return WithFixtureEventControls(owner, input, control, preview, fixture, () => pendingChange);
         return DecorateAnimationToggle(owner, input, "", control, ownerInputs);
+    }
+
+    private Control WithFixtureEventControls(
+        RuntimeInputOwner owner, ComponentInputDefinition input, DictionaryFieldControl control,
+        JsonObject preview, JsonObject fixture, Func<Task> pendingChange)
+    {
+        var transport = ComponentPreviewActions.ReadApplicable(preview).Single(action => action.DefinesModuleDuration);
+        var panel = new StackPanel { Spacing = 4 };
+        panel.Children.Add(control);
+        var commands = CreateActionPanel();
+        async Task EditEvent(bool remove)
+        {
+            try
+            {
+                await pendingChange();
+                var frame = _currentActionFrame(owner.Node, transport.Id);
+                await (_editFixtureEvent ?? throw new InvalidOperationException("Missing fixture event editor."))(
+                    owner.Node, input.Id, frame, remove ? null : control.Value);
+                _testValuesChanged();
+                _reloadAndSelect?.Invoke(owner.Node);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception error) { _messages.Error("Edit event keyframe", error); }
+        }
+        var add = EditorTimelineTransport.CreateNavigationButton(
+            EditorTimelineTransport.CreateKeyframeGlyph(true), "Set event at current frame");
+        add.Click += async (_, _) => await EditEvent(false);
+        commands.Children.Add(add);
+        var remove = EditorTimelineTransport.CreateNavigationButton(
+            EditorTimelineTransport.CreateKeyframeGlyph(false), "Remove event at current frame");
+        remove.Click += async (_, _) => await EditEvent(true);
+        commands.Children.Add(remove);
+        panel.Children.Add(commands);
+        var markers = CreateActionPanel();
+        var track = new ModuleInstanceAnimationDocument(fixture.ToJsonString()).Track(input.Id, "");
+        foreach (var key in track?.Keyframes ?? [])
+        {
+            var marker = EditorTimelineTransport.CreateNavigationButton(
+                new TextBlock { Text = key.Frame.ToString(CultureInfo.InvariantCulture) },
+                $"Go to event at frame {key.Frame}");
+            marker.Click += async (_, _) => await _setActionFrame(owner.Node, transport.Id, key.Frame, null);
+            markers.Children.Add(marker);
+        }
+        panel.Children.Add(markers);
+        return panel;
     }
 
     private static bool RuntimeInputIsEnabled(

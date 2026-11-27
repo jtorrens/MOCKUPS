@@ -2187,6 +2187,34 @@ internal sealed class EditorPreviewController : IDisposable
     public Task RestoreDesignPreviewAction(ProjectTreeNode node, string actionId) =>
         RunDesignActionAsync(node, () => _designInputsPanel.RestoreAction(actionId));
 
+    public Task EditFixtureEvent(ProjectTreeNode node, string fieldId, int frame, string? selected)
+        => EditDesignPreviewInputsAsync(node, (payload, state) =>
+        {
+            var config = DesignPreviewTestValues.Parse(payload.ConfigJson);
+            var preview = _designInputPreparer.ApplyTransient(
+                DesignPreviewTestValues.Parse(payload.RuntimeContractJson), config, state);
+            var input = RuntimeInputDefinitionReader.ReadInputs(preview, config)
+                .Single(item => item.Id == fieldId && item.Animation is { EventOutputJsonKey.Length: > 0 });
+            var fixture = DesignPreviewTestValues.Animation(preview)
+                ?? throw new InvalidOperationException("Event editing requires the fixture animation document.");
+            var document = new ModuleInstanceAnimationDocument(fixture.ToJsonString());
+            var track = document.Track(input.Id, "");
+            if (selected is null)
+            {
+                if (track?.Keyframes.Count == 1 && track.Keyframes[0].Frame == frame) document.RemoveTrack(fieldId, "");
+                else document.RemoveKeyframe(fieldId, "", frame);
+            }
+            else
+            {
+                var value = DesignPreviewTestValues.ValueNode(input, selected);
+                RuntimeInputValueKindContract.ValidateRuntimeValue(
+                    RuntimeInputOptionSourceContract.Close(input, preview), value, "Fixture event value");
+                if (track is null) document.AddTrack(input.Id, "", value!, "hold", frame);
+                else document.UpsertKeyframe(input.Id, "", frame, value!, "hold");
+            }
+            return document.ToJson();
+        }, document => _designInputsPanel.SetFixtureAnimation(node, document));
+
     public Task SetDesignPreviewTestValue(ProjectTreeNode node, string jsonKey, string value) =>
         EditDesignPreviewInputsAsync(node,
             (payload, capture) => _designInputPreparer.UpdateValue(payload, capture, jsonKey, value),

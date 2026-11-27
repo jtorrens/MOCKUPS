@@ -1,6 +1,7 @@
+import { requiredNumberValue } from "./previewValueHelpers.js";
 import { optionalString, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { optionalObject, optionalObjectArray, requiredObjectArray, type JsonRecord } from "./previewJsonHelpers.js";
-import { resolveParameterAnimation, type ResolvedParameterAnimation } from "./parameterAnimationResolver.js";
+import { resolveParameterAnimation, resolveTimelineEvents, type ResolvedParameterAnimation } from "./parameterAnimationResolver.js";
 
 export type RuntimeNestedAnimationField = {
   fieldId: string;
@@ -50,14 +51,19 @@ export function resolveRuntimeAnimationValues(
     }
     const valueKind = field.definition.valueKind === "IntegerPair" ? "integerPair"
       : field.definition.valueKind === "DecimalPair" ? "decimalPair" : undefined;
-    const resolution = resolveParameterAnimation(
-      animation,
-      field.fieldId,
-      targetId,
-      localFrame(field.fieldId),
-      field.values[field.jsonKey],
-      valueKind,
-    );
+    const frame = localFrame(field.fieldId);
+    let resolution: ResolvedParameterAnimation;
+    if (Object.hasOwn(field.definition, "eventOutputJsonKey")) {
+      const output = requiredString(field.definition, "eventOutputJsonKey", "Runtime event track");
+      if (Object.hasOwn(field.values, output)) throw new Error(`Event output '${output}' already exists`);
+      const duration = requiredNumberValue(field.definition.eventDurationFrames, "Runtime event lifetime");
+      field.values[output] = resolveTimelineEvents(animation, field.fieldId, targetId, frame, duration);
+      resolution = { value: field.values[field.jsonKey], animated: true };
+    } else {
+      resolution = resolveParameterAnimation(
+        animation, field.fieldId, targetId, frame, field.values[field.jsonKey], valueKind,
+      );
+    }
     field.values[field.jsonKey] = resolution.value;
     resolutions.set(field.fieldId, resolution);
     fields.push({ ...field, resolution });

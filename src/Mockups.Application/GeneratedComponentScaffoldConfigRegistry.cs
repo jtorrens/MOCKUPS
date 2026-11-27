@@ -75,6 +75,8 @@ internal static class GeneratedComponentScaffoldConfigRegistry
                 return true;
             case "password":
                 return true;
+            case "reactionEmitter":
+                return true;
             case "status_bar":
                 StatusBarComponentConfigContract.Validate(config, context);
                 return true;

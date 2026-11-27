@@ -449,6 +449,11 @@ internal static class DesignPreviewPayloadFactory
             runtimePreview,
             effectiveThemeMode,
             theme.PaletteColors);
+        var instance = new JsonObject();
+        if (DesignPreviewTestValues.Animation(effectivePreview) is { } animation)
+        {
+            instance["animation"] = animation.DeepClone();
+        }
         var designPreviewJson = runtimePreview.ToJsonString();
         return new DesignPreviewPayload(
             "componentClass",
@@ -470,6 +475,7 @@ internal static class DesignPreviewPayloadFactory
             runtimeContractJson,
             effectiveThemeMode,
             settings.ComponentBaseConfigsJson,
+            InstanceJson: instance.ToJsonString(),
             ProjectId: settings.ProjectId,
             SystemPreviewFixtureRoot: SystemPreviewFixtureCatalog.Root);
     }

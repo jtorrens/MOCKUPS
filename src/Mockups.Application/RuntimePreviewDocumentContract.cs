@@ -48,6 +48,8 @@ public static class RuntimePreviewDocumentContract
             componentVariantConfig,
             componentRuntimeValues);
         RuntimeInputOptionSourceContract.ValidateValues(prepared, effectiveConfig);
+        if (DesignPreviewTestValues.Animation(prepared) is { } animation)
+            RuntimeInputAnimationValueContract.ValidateFixture(prepared, effectiveConfig, animation);
         return prepared;
     }
 
@@ -227,6 +229,15 @@ internal static class RuntimeTemporalPhaseContract
 {
     public static void Hydrate(JsonObject runtimeContract, JsonObject effectiveConfig)
     {
+        foreach (var input in JsonPath.OptionalObjectArray(runtimeContract, "inputs", "Runtime Preview"))
+        {
+            if (!input.ContainsKey("eventOutputJsonKey")) continue;
+            var path = JsonPath.OptionalStringArray(input, "eventDurationConfigPath", "Runtime event track");
+            if (path.Count == 0 || JsonPath.Get(effectiveConfig, path.ToArray()) is not JsonValue value
+                || !value.TryGetValue<int>(out var frames) || frames <= 0)
+                throw new InvalidOperationException("Runtime event duration must resolve to a positive frame count.");
+            input["eventDurationFrames"] = frames;
+        }
         HydrateTimeline(
             JsonPath.OptionalObject(runtimeContract, "animationTimeline", "Runtime Preview document"),
             effectiveConfig,

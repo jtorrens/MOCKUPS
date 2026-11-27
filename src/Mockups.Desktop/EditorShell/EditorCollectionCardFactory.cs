@@ -47,6 +47,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Func<ProjectTreeNode, string, int, string?, Task> _setPreviewActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _currentPreviewActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _maximumPreviewActionFrame;
+    private readonly Func<ProjectTreeNode, string, int, string?, Task>? _editFixtureEvent;
     private readonly Func<ProjectTreeNode, string, string, Task> _setPreviewTestValue;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
@@ -115,7 +116,8 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Func<int> shotFrame,
         Action<int> setShotFrame,
         Action toggleProductionPlayback,
-        EditorSessionUiState sessionUiState)
+        EditorSessionUiState sessionUiState,
+        Func<ProjectTreeNode, string, int, string?, Task>? editFixtureEvent = null)
     {
         _children = children;
         _nodeCommands = nodeCommands;
@@ -146,6 +148,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _setPreviewActionFrame = setPreviewActionFrame;
         _currentPreviewActionFrame = currentPreviewActionFrame;
         _maximumPreviewActionFrame = maximumPreviewActionFrame;
+        _editFixtureEvent = editFixtureEvent;
         _setPreviewTestValue = setPreviewTestValue;
         _discardCommittedProductionRuntimeValue =
             discardCommittedProductionRuntimeValue;
@@ -407,6 +410,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _navigateToNode,
             _openEmbeddedContext,
             animationEditor,
-            _reloadAndSelect);
+            _reloadAndSelect,
+            _editFixtureEvent);
     }
 }

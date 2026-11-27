@@ -676,7 +676,14 @@ public static class RuntimeAnimationFrameOrigin
             if (enabledKeyframes.Count > 0)
             {
                 resolving.Remove(fieldId);
-                var last = Math.Max(0, Number(enabledKeyframes[^1]["frame"]));
+                var lastFrame = Number(enabledKeyframes[^1]["frame"]);
+                if (definition.ContainsKey("eventOutputJsonKey"))
+                {
+                    var end = phase + Math.Max(0, lastFrame + JsonPath.RequiredInteger(
+                        definition, "eventDurationFrames", "Runtime event track"));
+                    return new FieldTiming(phase, end, end);
+                }
+                var last = Math.Max(0, lastFrame);
                 return new FieldTiming(phase, phase + last, phase + last + 1);
             }
             var fieldTimeline = FieldTimeline(definition);

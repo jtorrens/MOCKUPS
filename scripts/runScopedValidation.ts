@@ -214,6 +214,19 @@ export function planScopedValidation(
         ["--", "--exact", "Theme token families preserve complete catalogs and metadata"],
       ));
     }
+    if (file.includes("reactionEmitter")
+      || ["DesignPreviewTestValues.cs", "RuntimeInputsCollectionEditor.cs", "ComponentPreviewTransientState.cs",
+        "EditorPreviewController.cs", "ComponentInputsPanel.cs", "DesignPreviewInputPreparer.cs",
+        "ModuleInstanceAnimationDocument.cs", "FieldDefinition.cs", "RuntimeInputDefinitionReader.cs",
+        "RuntimeInputAnimationValueContract.cs", "parameterAnimationResolver.ts", "runtimeNestedAnimationFields.ts", "runtimeOwnerTimeline.ts",
+        "RuntimeAnimationFrameOrigin.cs", "RuntimePreviewDocumentContract.cs", "DesignPreviewPayloadFactory.cs",
+        "ComponentPreviewActionRuntimeValue.cs"].some(name => file.endsWith("/" + name))) {
+      previewTests.add("tests/animation/reactionEmitterComponent.test.ts");
+      desktopUi = true;
+      add(npmStep("desktop:fixture-event-edit", "test:focus:desktop",
+        "Fixture event authoring shares the selected playhead and temporary Design state",
+        ["--", "--exact", "Design event keys follow the fixture transport and reset"]));
+    }
     if (file === "src/desktop-preview/parameterAnimationResolver.ts"
       || file === "src/desktop-preview/socialPostModuleResolver.ts") {
       previewTests.add("tests/animation/parameterAnimationResolver.test.ts");

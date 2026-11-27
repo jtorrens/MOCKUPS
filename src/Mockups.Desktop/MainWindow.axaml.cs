@@ -477,7 +477,8 @@ public partial class MainWindow : SukiWindow
             _previewController.ProductionShotFrame,
             _previewController.SetProductionShotFrame,
             _previewController.ToggleProductionPlayback,
-            _editorSessionUiState);
+            _editorSessionUiState,
+            _previewController.EditFixtureEvent);
         _editorContent = new EditorContentController(
             new EditorContentPreparationService(
                 data.Layouts,

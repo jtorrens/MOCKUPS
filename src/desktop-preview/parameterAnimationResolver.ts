@@ -118,6 +118,21 @@ export function resolveParameterAnimation(
   };
 }
 
+/** Each enabled keyframe fires exactly once on the target owner's clock. */
+export function resolveTimelineEvents(animation: JsonRecord, fieldId: string, targetId: string, frame: number, duration: number) {
+  if (!Number.isInteger(duration) || duration <= 0) throw new Error("Event duration must be a positive frame count");
+  const events = [];
+  for (const key of parameterKeyframes(animation, fieldId, targetId) ?? []) {
+    if (key.frame > frame) break;
+    if (frame - key.frame >= duration) continue;
+    if (typeof key.id !== "string" || !key.id.trim() || key.interpolation !== "hold") {
+      throw new Error(`Event track '${fieldId}' requires stable ids and hold keyframes`);
+    }
+    events.push({ id: key.id, value: key.value, age: frame - key.frame });
+  }
+  return events;
+}
+
 function parameterKeyframes(animation: JsonRecord, fieldId: string, targetId: string) {
   validateTransientAnimationDocument(animation);
   const track = optionalObjectArray(animation, "tracks", "runtime owner animation")
@@ -129,6 +144,7 @@ function parameterKeyframes(animation: JsonRecord, fieldId: string, targetId: st
   return optionalObjectArray(track, "keyframes", "runtime animation track")
     .filter((keyframe) => keyframe.enabled !== false)
     .map((keyframe) => ({
+      id: keyframe.id,
       frame: requiredNumberValue(keyframe.frame, "runtime animation keyframe frame"),
       value: keyframe.value,
       interpolation: Object.hasOwn(keyframe, "interpolation")

@@ -179,7 +179,8 @@ public sealed record AnimationFieldDefinition(
     IReadOnlyList<string> Interpolations,
     bool ExtendsOwnerDuration = true,
     string BaseDurationFieldId = "",
-    int MinimumEnabledKeyframes = 2);
+    int MinimumEnabledKeyframes = 2,
+    string EventOutputJsonKey = "");
 
 public sealed record BehaviorTimingDefinition(
     string SourceFieldId,

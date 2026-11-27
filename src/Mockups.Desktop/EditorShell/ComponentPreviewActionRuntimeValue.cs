@@ -25,7 +25,7 @@ internal static class ComponentPreviewActionRuntimeValue
             return RuntimeTimeline.DurationFrames(
                 preview.ToJsonString(),
                 preview.ToJsonString(),
-                "{}",
+                DesignPreviewTestValues.Animation(preview)?.ToJsonString() ?? "{}",
                 1,
                 themeTokensJson,
                 fps);

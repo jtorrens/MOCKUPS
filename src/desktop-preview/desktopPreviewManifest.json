@@ -95,7 +95,8 @@
         "incomingCallNotification",
         "gallery",
         "callParticipant",
-        "contentRow"
+        "contentRow",
+        "reactionEmitter"
       ]
     },
     "badge": {
@@ -401,8 +402,17 @@
         "incomingCallNotification",
         "gallery",
         "callParticipant",
-        "contentRow"
+        "contentRow",
+        "reactionEmitter"
       ]
+    },
+    "reactionEmitter": {
+      "category": "component",
+      "recordClassId": "component.reactionEmitter",
+      "contract": "./reactionEmitterComponentContract",
+      "resolver": "./reactionEmitterComponentResolver",
+      "renderable": "./reactionEmitterComponentRenderable",
+      "embeds": []
     }
   },
   "modules": {

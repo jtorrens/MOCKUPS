@@ -37,6 +37,7 @@ const capabilities = (
 });
 
 export const desktopPreviewComponentCapabilities = {
+  reactionEmitter: capabilities(["playEmissions"], [], ["ownerTimeline"]),
   label: capabilities([], [], ["calculatedText"]),
   surface: capabilities(),
   cursor: capabilities([], [], ["cursorBlink"]),

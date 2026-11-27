@@ -54,6 +54,8 @@ import { notificationsComponentToRenderable } from "./notificationsComponentRend
 import { resolveNotificationsComponent } from "./notificationsComponentResolver.js";
 import { passwordComponentToRenderable } from "./passwordComponentRenderable.js";
 import { resolvePasswordComponent } from "./passwordComponentResolver.js";
+import { reactionEmitterComponentToRenderable } from "./reactionEmitterComponentRenderable.js";
+import { resolveReactionEmitterComponent } from "./reactionEmitterComponentResolver.js";
 import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { surfaceComponentToRenderable } from "./surfaceComponentRenderable.js";
@@ -120,6 +122,8 @@ export const generatedComponentScaffoldFactories = {
     notificationsComponentToRenderable(payload, resolveNotificationsComponent(payload), renderChild),
   password: (payload, assignedBox) =>
     passwordComponentToRenderable(payload, resolvePasswordComponent(payload), assignedBox),
+  reactionEmitter: (payload, assignedBox) =>
+    reactionEmitterComponentToRenderable(payload, resolveReactionEmitterComponent(payload), assignedBox),
   status_bar: (payload) =>
     statusBarComponentToRenderable(payload, resolveStatusBarComponent(payload)),
   surface: (payload) =>

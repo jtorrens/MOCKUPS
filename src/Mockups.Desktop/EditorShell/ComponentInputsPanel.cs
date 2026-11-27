@@ -339,6 +339,13 @@ internal sealed class ComponentPreviewInputSession
         return true;
     }
 
+    public void SetFixtureAnimation(ProjectTreeNode node, string document)
+    {
+        var scope = ComponentPreviewTransientValues.ScopeKey(node, isInstance: false);
+        _values[ComponentPreviewTransientValues.AnimationKey(scope)] = document;
+        _refreshPreview();
+    }
+
     public void SetExternalInputValue(string jsonKey, string value)
     {
         if (string.IsNullOrWhiteSpace(_scopeKey) || string.IsNullOrWhiteSpace(jsonKey))

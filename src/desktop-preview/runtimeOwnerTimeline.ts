@@ -410,10 +410,13 @@ export class RuntimeOwnerTimeline {
     const keyframes = enabledKeyframes(this.track(fieldId, targetId));
     if (keyframes.length > 0) {
       resolving.delete(fieldId);
-      const last = Math.max(0, requiredNumberValue(
-        keyframes[keyframes.length - 1]!.frame,
-        "runtime animation keyframe frame",
-      ));
+      const lastFrame = requiredNumberValue(keyframes[keyframes.length - 1]!.frame, "runtime animation keyframe frame");
+      if (Object.hasOwn(definition, "eventOutputJsonKey")) {
+        const duration = requiredNumberValue(definition.eventDurationFrames, "Runtime event duration");
+        const end = phase + Math.max(0, lastFrame + duration);
+        return { origin: phase, completion: end, endExclusive: end };
+      }
+      const last = Math.max(0, lastFrame);
       return {
         origin: phase,
         completion: phase + last,

@@ -273,11 +273,15 @@ internal sealed class DesignPreviewInputPreparer(
                 payload.PaletteColors,
                 _allowSystemPreviewFixtures);
 
+            var instance = ParseJsonObject(payload.InstanceJson);
+            if (DesignPreviewTestValues.Animation(preview) is { } animation)
+                instance["animation"] = animation.DeepClone();
             var preparedPreviewJson = preview.ToJsonString();
             var result = payload with
             {
                 ConfigJson = config.ToJsonString(),
                 DesignPreviewJson = preparedPreviewJson,
+                InstanceJson = instance.ToJsonString(),
                 RuntimeContractJson = runtimeContractJson,
                 ProjectMediaFiles = PreviewMediaDirectoryCatalog.Resolve(
                     payload.ProjectMediaRoot,

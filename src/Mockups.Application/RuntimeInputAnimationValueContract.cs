@@ -61,6 +61,28 @@ public static class RuntimeInputAnimationValueContract
         return result;
     }
 
+    public static void ValidateFixture(JsonObject preview, JsonObject config, JsonObject animation)
+    {
+        var targets = ReadTargets(preview, config, preview).ToDictionary(t => (t.FieldId, t.TargetId));
+        foreach (var track in JsonPath.RequiredArray(animation, "tracks", "Design animation").Cast<JsonObject>())
+        {
+            var fieldId = JsonPath.RequiredString(track, "fieldId", "Design animation");
+            var targetId = track["targetId"]?.GetValue<string>() ?? "";
+            if (!targets.TryGetValue((fieldId, targetId), out var target))
+                throw new InvalidOperationException($"Design animation targets undeclared field '{fieldId}'/'{targetId}'.");
+            foreach (var key in JsonPath.RequiredArray(track, "keyframes", "Design animation").Cast<JsonObject>())
+                ValidateKeyframe(target.Input, key, $"Design animation field '{fieldId}'");
+        }
+    }
+
+    private static void ValidateKeyframe(ComponentInputDefinition definition, JsonObject keyframe, string owner)
+    {
+        var interpolation = JsonPath.RequiredString(keyframe, "interpolation", owner);
+        if (!definition.Animation!.Interpolations.Contains(interpolation, StringComparer.Ordinal))
+            throw new InvalidOperationException($"{owner} interpolation '{interpolation}' is not declared.");
+        RuntimeInputValueKindContract.ValidateRuntimeValue(definition, keyframe["value"], owner);
+    }
+
     public static void Validate(
         JsonObject runtimePreview,
         JsonObject animation,
@@ -86,28 +108,12 @@ public static class RuntimeInputAnimationValueContract
                 throw new InvalidOperationException(
                     $"{owner} targets undeclared Runtime Input '{fieldId}'/'{targetId}'.");
             }
-            var animationDefinition = definition.Animation!;
             foreach (var keyframe in JsonPath.RequiredArray(
                          track,
                          "keyframes",
                          $"{owner} track '{fieldId}'").OfType<JsonObject>())
             {
-                var keyframeOwner = $"{owner} track '{fieldId}' keyframe";
-                var interpolation = JsonPath.RequiredString(
-                    keyframe,
-                    "interpolation",
-                    keyframeOwner);
-                if (!animationDefinition.Interpolations.Contains(
-                        interpolation,
-                        StringComparer.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        $"{keyframeOwner} interpolation '{interpolation}' is not declared.");
-                }
-                RuntimeInputValueKindContract.ValidateRuntimeValue(
-                    definition,
-                    keyframe["value"],
-                    keyframeOwner);
+                ValidateKeyframe(definition, keyframe, $"{owner} track '{fieldId}' keyframe");
             }
             if (definition.Kind != ComponentInputKind.RecordReference)
             {

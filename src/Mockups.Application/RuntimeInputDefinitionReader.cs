@@ -664,17 +664,12 @@ public static class RuntimeInputDefinitionReader
                 completion,
                 "minimumEnabledKeyframes",
                 "Runtime Input animationTimeline completion");
-        return interpolations.Count > 0
-            ? new AnimationFieldDefinition(
-                interpolations,
-                extendsOwnerDuration,
-                baseDurationFieldId,
-                minimumEnabledKeyframes)
-            : new AnimationFieldDefinition(
-                ["hold"],
-                extendsOwnerDuration,
-                baseDurationFieldId,
-                minimumEnabledKeyframes);
+        var eventOutput = JsonString(input, "eventOutputJsonKey");
+        if (eventOutput.Length > 0 && !interpolations.SequenceEqual(["hold"]))
+            throw new InvalidOperationException("Runtime event tracks require hold interpolation.");
+        return new AnimationFieldDefinition(
+            interpolations.Count > 0 ? interpolations : ["hold"],
+            extendsOwnerDuration, baseDurationFieldId, minimumEnabledKeyframes, eventOutput);
     }
 
     private static ComponentInputTransitionDefinition? ReadInputTransitionDefinition(JsonObject input)

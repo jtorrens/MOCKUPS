@@ -103,6 +103,7 @@ var tests = new (string Name, Action Run)[]
     ("fixed Component collection boundaries preserve sequential Override commits", FixedComponentCollectionBoundariesPreserveSequentialOverrides),
     ("Design Preview actions reject incomplete declarative contracts", PreviewActionContractsAreStrict),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
+    ("Design event keys follow the fixture transport and reset", DesignEventKeysFollowFixtureTransport),
     ("Design Test Values preserve strict transient documents", DesignTestValuesPreserveStrictDocuments),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
     ("Typography Style keeps only its explicit inherited sentinels", TypographyStyleKeepsOnlyExplicitSentinels),
@@ -10659,6 +10660,53 @@ static void DesignActionsSerialize(string componentId, string actionId, string l
                 SequenceEqual(ownerBefore.Values.OrderBy(pair => pair.Key),
                     controller.CaptureDesignPreviewTransientState(owner).Values.OrderBy(pair => pair.Key));
                 Equal(before, database.GetComponentClassSettings(componentId).DesignPreviewJson);
+            }
+            finally { CloseTestWindow(window); Dispatcher.UIThread.RunJobs(); }
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally { File.Delete(temporary); }
+}
+
+static void DesignEventKeysFollowFixtureTransport()
+{
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".fixture-events-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = CreateTestWindow(temporary);
+            window.Show();
+            try
+            {
+                var select = Required(typeof(MainWindow).GetMethod("SelectNodeById",
+                    BindingFlags.Instance | BindingFlags.NonPublic, null, [typeof(string)], null));
+                var database = new SqliteProjectTestContext(temporary);
+                const string component = "component_system_reactionEmitter";
+                var owner = CanonicalProjectNodes(database).Single(node => node.Id == component + "::variant::default");
+                var before = database.GetComponentClassSettings(component).DesignPreviewJson;
+                True((bool)Required(select.Invoke(window, [owner.Id])));
+                var host = Required(window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
+                var controller = Required(typeof(MainWindow).GetField("_previewController",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
+                Button? ButtonNamed(string tip) => (host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
+                    .SingleOrDefault(button => ToolTip.GetTip(button) as string == tip);
+                void Wait(Func<bool> condition) => True(SpinWait.SpinUntil(() =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return condition();
+                }, TimeSpan.FromSeconds(20)), "Fixture event editor: " + window.FindControl<TextBox>("ShellMessagesTextBox")?.Text);
+                Wait(() => ButtonNamed("Go to event at frame 16") is not null);
+                Required(ButtonNamed("Go to event at frame 16")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Wait(() => controller.CurrentDesignPreviewActionFrame(owner, "playEmissions") == 16);
+                Required(ButtonNamed("Remove event at current frame")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Wait(() => ButtonNamed("Go to event at frame 8") is not null && ButtonNamed("Go to event at frame 16") is null);
+                Equal(before, database.GetComponentClassSettings(component).DesignPreviewJson);
+                var reset = Required((host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
+                    .Single(button => button.Content as string == "Reset test values"));
+                reset.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Wait(() => ButtonNamed("Go to event at frame 16") is not null);
             }
             finally { CloseTestWindow(window); Dispatcher.UIThread.RunJobs(); }
         }, CancellationToken.None).GetAwaiter().GetResult();
@@ -23163,6 +23211,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",
     "Conversation Module exposes its Test Values Runtime in the real editor",
+    "Design event keys follow the fixture transport and reset",
     "Design collection defaults save the current scoped Test Values",
     "Design fixed collection defaults save the current scoped Test Values",
     "pinned Module Variant Preview survives changing editor selection",
