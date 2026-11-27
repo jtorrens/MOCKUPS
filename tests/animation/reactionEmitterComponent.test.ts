@@ -7,18 +7,19 @@ import { resolveTimelineEvents } from "../../src/desktop-preview/parameterAnimat
 
 test("event tracks preserve repeated values and owner-relative age on nonsequential seeks", () => {
   const burst = { count: 4, intervalFrames: 3 };
-  const keys = [{ id: "a", frame: 20, value: "heart", burst },
-    { id: "b", frame: 24, value: "heart", burst: { count: 1, intervalFrames: 0 } }];
+  const keys = [{ id: "a", frame: 20, value: "heart" },
+    { id: "b", frame: 24, value: "heart" }];
   const animation = { tracks: [{ fieldId: "reaction", keyframes: keys },
     { fieldId: "flash", targetId: "lamp", keyframes: [
-      { id: "c", frame: 0, value: true, burst: { count: 2, intervalFrames: 0 } },
+      { id: "c", frame: 0, value: true },
     ] }] };
-  assert.deepEqual(resolveTimelineEvents(animation, "reaction", "", 29, 8),
+  assert.deepEqual(resolveTimelineEvents(animation, "reaction", "", 29, 8, burst),
     [{ id: "a:1", value: "heart", age: 6 }, { id: "a:2", value: "heart", age: 3 },
-      { id: "a:3", value: "heart", age: 0 }, { id: "b:0", value: "heart", age: 5 }]);
-  assert.deepEqual(resolveTimelineEvents(animation, "reaction", "", 19, 8), []);
-  assert.deepEqual(resolveTimelineEvents(animation, "reaction", "", 37, 8), []);
-  assert.deepEqual(resolveTimelineEvents(animation, "flash", "lamp", 0, 8),
+      { id: "a:3", value: "heart", age: 0 }, { id: "b:0", value: "heart", age: 5 },
+      { id: "b:1", value: "heart", age: 2 }]);
+  assert.deepEqual(resolveTimelineEvents(animation, "reaction", "", 19, 8, burst), []);
+  assert.deepEqual(resolveTimelineEvents(animation, "reaction", "", 41, 8, burst), []);
+  assert.deepEqual(resolveTimelineEvents(animation, "flash", "lamp", 0, 8, { count: 2, intervalFrames: 0 }),
     [{ id: "c:0", value: true, age: 0 }, { id: "c:1", value: true, age: 0 }]);
 });
 
@@ -27,7 +28,7 @@ test("reaction glyphs grow from configured scale and opacity and expire at the e
   const fixture = JSON.parse(payload.designPreviewJson);
   const animation = fixture.testValues.animation;
   const at = (frame: number) => {
-    const emissions = resolveTimelineEvents(animation, "emit", "", frame, 48);
+    const emissions = resolveTimelineEvents(animation, "emit", "", frame, 48, JSON.parse(payload.configJson).reactionEmitter.burst);
     const prepared = { ...payload, designPreviewJson: JSON.stringify({ emissions }) };
     return reactionEmitterComponentToRenderable(prepared, resolveReactionEmitterComponent(prepared)).children!;
   };

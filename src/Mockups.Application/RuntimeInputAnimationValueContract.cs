@@ -80,8 +80,7 @@ public static class RuntimeInputAnimationValueContract
         var interpolation = JsonPath.RequiredString(keyframe, "interpolation", owner);
         if (!definition.Animation!.Interpolations.Contains(interpolation, StringComparer.Ordinal))
             throw new InvalidOperationException($"{owner} interpolation '{interpolation}' is not declared.");
-        if (definition.Animation.EventOutputJsonKey.Length > 0) _ = EventBurst.Read(keyframe);
-        else if (keyframe.ContainsKey("burst")) throw new InvalidOperationException($"{owner} is not an event track.");
+        if (keyframe.ContainsKey("burst")) throw new InvalidOperationException($"{owner} cannot declare a keyframe burst.");
         RuntimeInputValueKindContract.ValidateRuntimeValue(definition, keyframe["value"], owner);
     }
 

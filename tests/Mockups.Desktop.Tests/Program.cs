@@ -10703,20 +10703,6 @@ static void DesignEventKeysFollowFixtureTransport()
                 Wait(() => ButtonNamed("Go to event at frame 16") is not null);
                 Required(ButtonNamed("Go to event at frame 16")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Wait(() => controller.CurrentDesignPreviewActionFrame(owner, "playEmissions") == 16);
-                DictionaryFieldControl BurstField(string id) => Required((host.Content as Control)?.GetLogicalDescendants()
-                    .OfType<DictionaryFieldControl>().Single(field => field.FieldId == "animation.burst." + id));
-                BurstField("count").SetValue("4");
-                BurstField("intervalFrames").SetValue("3");
-                Required(ButtonNamed("Set event at current frame")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() =>
-                {
-                    var capture = controller.CaptureDesignPreviewTransientState(owner);
-                    if (!capture.Values.TryGetValue(ComponentPreviewTransientValues.AnimationKey(capture.ScopeKey), out var json))
-                        return false;
-                    return new ModuleInstanceAnimationDocument(json).Track("emit", "")?.Keyframes
-                        .Single(key => key.Frame == 16).Burst == new EventBurst(4, 3);
-                });
-                Wait(() => ButtonNamed("Go to event at frame 16") is not null);
                 Required(ButtonNamed("Remove event at current frame")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Wait(() => ButtonNamed("Go to event at frame 8") is not null && ButtonNamed("Go to event at frame 16") is null);
                 Equal(before, database.GetComponentClassSettings(component).DesignPreviewJson);

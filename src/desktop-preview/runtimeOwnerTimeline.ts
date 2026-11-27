@@ -416,8 +416,7 @@ export class RuntimeOwnerTimeline {
       const lastFrame = requiredNumberValue(keyframes[keyframes.length - 1]!.frame, "runtime animation keyframe frame");
       if (Object.hasOwn(definition, "eventOutputJsonKey")) {
         const duration = requiredNumberValue(definition.eventDurationFrames, "Runtime event duration");
-        const end = phase + keyframes.reduce((latest, key) =>
-          Math.max(latest, requiredNumberValue(key.frame, "Event frame") + eventBurst(key.burst).lastOffset + duration), 0);
+        const end = phase + lastFrame + eventBurst(definition.eventBurst).lastOffset + duration;
         return { origin: phase, completion: end, endExclusive: end };
       }
       const last = Math.max(0, lastFrame);

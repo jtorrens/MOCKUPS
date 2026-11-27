@@ -215,7 +215,7 @@ export function planScopedValidation(
       ));
     }
     if (file.includes("reactionEmitter")
-      || ["eventBurst.ts", "EventBurst.cs", "EventBurstFields.cs", "RuntimeCollectionItemPresentation.cs",
+      || ["eventBurst.ts", "EventBurst.cs", "RuntimeCollectionItemPresentation.cs",
         "ModuleInstanceAnimationEditor.cs", "DesignPreviewTestValues.cs", "RuntimeInputsCollectionEditor.cs", "ComponentPreviewTransientState.cs",
         "EditorPreviewController.cs", "ComponentInputsPanel.cs", "DesignPreviewInputPreparer.cs",
         "ModuleInstanceAnimationDocument.cs", "FieldDefinition.cs", "RuntimeInputDefinitionReader.cs",

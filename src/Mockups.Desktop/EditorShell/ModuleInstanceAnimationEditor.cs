@@ -148,8 +148,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 fieldId,
                 targetId,
                 value,
-                animationDefinition.Interpolations.First(),
-                burst: animationDefinition.EventOutputJsonKey.Length > 0 ? EventBurst.Single : null);
+                animationDefinition.Interpolations.First());
             return;
         }
 
@@ -965,8 +964,6 @@ internal sealed class ModuleInstanceAnimationEditor
                         .ToList()),
                 selectedInterpolation),
             DictionaryServices(node));
-        var burstFields = animation.EventOutputJsonKey.Length > 0
-            ? new EventBurstFields(editingKeyframe?.Burst ?? EventBurst.Single) : null;
         Task SaveValue(string value, string interpolation, int frame)
         {
             return saveMutation((candidate) =>
@@ -978,7 +975,7 @@ internal sealed class ModuleInstanceAnimationEditor
                     ValueNode(
                         target.Input.ValueKind,
                         value),
-                    interpolation, burstFields?.Value);
+                    interpolation);
                 return true;
             });
         }
@@ -1001,14 +998,6 @@ internal sealed class ModuleInstanceAnimationEditor
         valueControl.IsEnabled = true;
         valueControl.ValueCommitted += (_, value) => _ = SaveValue(value, interpolationControl.Value, editingFrame);
         panel.Children.Add(valueControl);
-        if (burstFields is not null)
-        {
-            burstFields.Committed += () =>
-            {
-                if (editingKeyframe is not null) _ = SaveValue(valueControl.Value, selectedInterpolation, editingFrame);
-            };
-            panel.Children.Add(burstFields);
-        }
         interpolationControl.IsEnabled = true;
         interpolationControl.ValueCommitted += (_, interpolation) =>
         {

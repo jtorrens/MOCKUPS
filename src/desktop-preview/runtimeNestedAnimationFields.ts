@@ -57,7 +57,7 @@ export function resolveRuntimeAnimationValues(
       const output = requiredString(field.definition, "eventOutputJsonKey", "Runtime event track");
       if (Object.hasOwn(field.values, output)) throw new Error(`Event output '${output}' already exists`);
       const duration = requiredNumberValue(field.definition.eventDurationFrames, "Runtime event lifetime");
-      field.values[output] = resolveTimelineEvents(animation, field.fieldId, targetId, frame, duration);
+      field.values[output] = resolveTimelineEvents(animation, field.fieldId, targetId, frame, duration, field.definition.eventBurst);
       resolution = { value: field.values[field.jsonKey], animated: true };
     } else {
       resolution = resolveParameterAnimation(

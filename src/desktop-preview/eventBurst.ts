@@ -2,7 +2,7 @@ import { isRecord } from "./previewJsonHelpers.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
 
 export function eventBurst(value: unknown) {
-  if (!isRecord(value)) throw new Error("Event keyframe requires a burst");
+  if (!isRecord(value)) throw new Error("Event track requires a prepared burst");
   const count = requiredNumberValue(value.count, "Event burst count");
   const interval = requiredNumberValue(value.intervalFrames, "Event burst interval");
   if (!Number.isInteger(count) || count < 1 || count > 1000

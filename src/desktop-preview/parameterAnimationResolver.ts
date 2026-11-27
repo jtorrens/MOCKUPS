@@ -120,13 +120,13 @@ export function resolveParameterAnimation(
 }
 
 /** Project live births from owner-local triggers at the requested frame. */
-export function resolveTimelineEvents(animation: JsonRecord, fieldId: string, targetId: string, frame: number, duration: number) {
+export function resolveTimelineEvents(animation: JsonRecord, fieldId: string, targetId: string, frame: number, duration: number, burstConfig: unknown) {
   if (!Number.isInteger(duration) || duration <= 0) throw new Error("Event duration must be a positive frame count");
+  const burst = eventBurst(burstConfig);
   const events = [];
   for (const key of parameterKeyframes(animation, fieldId, targetId) ?? []) {
     if (key.frame > frame) break;
     const age = frame - key.frame;
-    const burst = eventBurst(key.burst);
     if (age >= burst.lastOffset + duration) continue;
     if (typeof key.id !== "string" || !key.id.trim() || key.interpolation !== "hold") {
       throw new Error(`Event track '${fieldId}' requires stable ids and hold keyframes`);
@@ -152,7 +152,6 @@ function parameterKeyframes(animation: JsonRecord, fieldId: string, targetId: st
     .filter((keyframe) => keyframe.enabled !== false)
     .map((keyframe) => ({
       id: keyframe.id,
-      burst: keyframe.burst,
       frame: requiredNumberValue(keyframe.frame, "runtime animation keyframe frame"),
       value: keyframe.value,
       interpolation: Object.hasOwn(keyframe, "interpolation")

@@ -67,6 +67,10 @@
         "alignY": 1,
         "offsetX": 0,
         "offsetY": 0
+      },
+      "burst": {
+        "count": 1,
+        "intervalFrames": 0
       }
     }
   },
@@ -113,6 +117,10 @@
           "alignY": 1,
           "offsetX": 0,
           "offsetY": 0
+        },
+        "burst": {
+          "count": 1,
+          "intervalFrames": 0
         }
       }
     }
@@ -161,6 +169,10 @@
         "eventDurationConfigPath": [
           "reactionEmitter",
           "duration"
+        ],
+        "eventBurstConfigPath": [
+          "reactionEmitter",
+          "burst"
         ]
       }
     ],
@@ -221,55 +233,35 @@
                 "frame": 0,
                 "value": "heart",
                 "enabled": true,
-                "interpolation": "hold",
-                "burst": {
-                  "count": 1,
-                  "intervalFrames": 0
-                }
+                "interpolation": "hold"
               },
               {
                 "id": "emit_laugh",
                 "frame": 8,
                 "value": "laugh",
                 "enabled": true,
-                "interpolation": "hold",
-                "burst": {
-                  "count": 1,
-                  "intervalFrames": 0
-                }
+                "interpolation": "hold"
               },
               {
                 "id": "emit_clap",
                 "frame": 16,
                 "value": "clap",
                 "enabled": true,
-                "interpolation": "hold",
-                "burst": {
-                  "count": 1,
-                  "intervalFrames": 0
-                }
+                "interpolation": "hold"
               },
               {
                 "id": "emit_fire",
                 "frame": 24,
                 "value": "fire",
                 "enabled": true,
-                "interpolation": "hold",
-                "burst": {
-                  "count": 1,
-                  "intervalFrames": 0
-                }
+                "interpolation": "hold"
               },
               {
                 "id": "emit_surprise",
                 "frame": 32,
                 "value": "surprise",
                 "enabled": true,
-                "interpolation": "hold",
-                "burst": {
-                  "count": 1,
-                  "intervalFrames": 0
-                }
+                "interpolation": "hold"
               }
             ]
           }
@@ -584,6 +576,66 @@
       "valuePattern": "",
       "valuePatternMessage": "",
       "embeddedSlot": null
+    },
+    {
+      "id": "component.reactionEmitter.count",
+      "label": "Count",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "reactionEmitter",
+        "burst",
+        "count"
+      ],
+      "defaultValue": "1",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 1,
+        "maximum": 1000,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.reactionEmitter.intervalFrames",
+      "label": "Interval (frames)",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "reactionEmitter",
+        "burst",
+        "intervalFrames"
+      ],
+      "defaultValue": "0",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 10000,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {
@@ -701,6 +753,24 @@
               {
                 "id": "component.reactionEmitter.reactions",
                 "order": 10,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "emission",
+            "label": "Emission",
+            "order": 40,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.reactionEmitter.count",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.reactionEmitter.intervalFrames",
+                "order": 20,
                 "visible": true
               }
             ]

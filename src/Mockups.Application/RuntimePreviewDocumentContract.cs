@@ -237,6 +237,10 @@ internal static class RuntimeTemporalPhaseContract
                 || !value.TryGetValue<int>(out var frames) || frames <= 0)
                 throw new InvalidOperationException("Runtime event duration must resolve to a positive frame count.");
             input["eventDurationFrames"] = frames;
+            var burstPath = JsonPath.OptionalStringArray(input, "eventBurstConfigPath", "Runtime event track");
+            if (burstPath.Count == 0 || JsonPath.Get(effectiveConfig, burstPath.ToArray()) is not JsonObject burst)
+                throw new InvalidOperationException("Runtime event burst must resolve to a burst configuration.");
+            input["eventBurst"] = EventBurst.Read(burst).ToJson();
         }
         HydrateTimeline(
             JsonPath.OptionalObject(runtimeContract, "animationTimeline", "Runtime Preview document"),

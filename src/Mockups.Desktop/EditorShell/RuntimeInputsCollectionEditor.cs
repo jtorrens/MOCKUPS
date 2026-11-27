@@ -63,7 +63,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<ProjectTreeNode, string, int, string?, Task> _setActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _currentActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _maximumActionFrame;
-    private readonly Func<ProjectTreeNode, string, int, string?, EventBurst, Task>? _editFixtureEvent;
+    private readonly Func<ProjectTreeNode, string, int, string?, Task>? _editFixtureEvent;
     private readonly Func<ProjectTreeNode, string, string, Task> _setPreviewTestValue;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
@@ -139,7 +139,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<EditorEmbeddedContext> openEmbeddedContext,
         ModuleInstanceAnimationEditor? animationEditor = null,
         Action<ProjectTreeNode>? reloadAndSelect = null,
-        Func<ProjectTreeNode, string, int, string?, EventBurst, Task>? editFixtureEvent = null)
+        Func<ProjectTreeNode, string, int, string?, Task>? editFixtureEvent = null)
     {
         _previewInputData =
             new ComponentPreviewInputDataSource(
@@ -852,8 +852,6 @@ internal sealed class RuntimeInputsCollectionEditor
         var panel = new StackPanel { Spacing = 4 };
         panel.Children.Add(control);
         var track = new ModuleInstanceAnimationDocument(fixture.ToJsonString()).Track(input.Id, "");
-        var burst = new EventBurstFields(EventBurst.Single);
-        panel.Children.Add(burst);
         int? selectedFrame = null;
         void PresentFrame()
         {
@@ -861,7 +859,6 @@ internal sealed class RuntimeInputsCollectionEditor
             if (selectedFrame == frame) return;
             selectedFrame = frame;
             var key = track?.Keyframes.FirstOrDefault(candidate => candidate.Frame == frame);
-            burst.Present(key?.Burst ?? EventBurst.Single);
             if (key?.Value is { } value) control.SetValue(value.GetValue<string>());
         }
         PreviewPlaybackStateBinding.Attach(panel, _playbackState, PresentFrame);
@@ -872,7 +869,7 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 var frame = _currentActionFrame(owner.Node, transport.Id);
                 await (_editFixtureEvent ?? throw new InvalidOperationException("Missing fixture event editor."))(
-                    owner.Node, input.Id, frame, remove ? null : control.Value, burst.Value);
+                    owner.Node, input.Id, frame, remove ? null : control.Value);
                 _testValuesChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             }
@@ -2571,8 +2568,7 @@ internal sealed class RuntimeInputsCollectionEditor
                                     input,
                                     baseValue)
                                     ?? JsonValue.Create(baseValue)!,
-                                input.Animation.Interpolations.First(),
-                                burst: input.Animation.EventOutputJsonKey.Length > 0 ? EventBurst.Single : null);
+                                input.Animation.Interpolations.First());
                         }
                         return true;
                     });
