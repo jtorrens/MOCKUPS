@@ -28964,14 +28964,15 @@ static void SocialPostComposesHeaderRows()
             "mediaCutout",
             "galleryMediaCutout",
             "mediaSource",
+            "emitReaction",
         ],
         inputs.Select((input) => input.Id).ToList());
     var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
     SequenceEqual(
-        ["socialPostRows", "socialPostFooterRows", "socialPostActions"],
+        ["socialPostRows", "socialPostFooterRows", "socialPostActions", "reactionCatalog"],
         collections.Select((collection) => collection.Id).ToList());
     SequenceEqual(
-        ["socialPostRows", "socialPostFooterRows", "socialPostActions"],
+        ["socialPostRows", "socialPostFooterRows", "socialPostActions", "reactionCatalog"],
         collections.Select((collection) => collection.JsonKey).ToList());
     var runtimeRows = JsonPath.RequiredArray(preview, "socialPostRows", "Social Post Runtime");
     Equal(2, runtimeRows.Count);

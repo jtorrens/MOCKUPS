@@ -154,7 +154,7 @@ public static class StructuredRuntimeCollectionProjection
             $"{owner}.structureProjection");
         var sourceConfig = sourceVariantSlotPath.Length == 0
             ? config
-            : ResolveSourceVariantConfig(
+            : ComponentVariantSlotDocumentContract.ResolveConfigAtPath(
                 config,
                 sourceVariantSlotPath,
                 componentVariantConfig,
@@ -355,49 +355,6 @@ public static class StructuredRuntimeCollectionProjection
                 $"{owner} cannot create Runtime values for Component Variant '{reference}'.");
         }
         projected[runtimeKey] = componentRuntimeValues(reference).DeepClone();
-    }
-
-    private static JsonObject ResolveSourceVariantConfig(
-        JsonObject config,
-        string sourceVariantSlotPath,
-        Func<string, JsonObject>? componentVariantConfig,
-        string owner)
-    {
-        if (componentVariantConfig is null)
-        {
-            throw new InvalidOperationException(
-                $"{owner} structureProjection sourceVariantSlotPath "
-                + $"'{sourceVariantSlotPath}' requires a Component Variant config resolver.");
-        }
-        var slot = JsonPath.Get(
-            config,
-            sourceVariantSlotPath.Split(
-                '.',
-                StringSplitOptions.RemoveEmptyEntries)) as JsonObject
-            ?? throw new InvalidOperationException(
-                $"{owner} structureProjection sourceVariantSlotPath "
-                + $"'{sourceVariantSlotPath}' must resolve to an exact Component Variant slot.");
-        RequireExactKeys(
-            slot,
-            ["variantReference", "overrides"],
-            $"{owner} source Component Variant slot");
-        var variantReference = JsonPath.RequiredString(
-            slot,
-            "variantReference",
-            $"{owner} source Component Variant slot");
-        if (!VariantReferenceId.TryParse(variantReference, out _, out _))
-        {
-            throw new InvalidOperationException(
-                $"{owner} source Component Variant slot requires one complete Variant reference.");
-        }
-        var effective = componentVariantConfig(variantReference).DeepClone().AsObject();
-        ComponentConfigOverrideMerger.MergeInto(
-            effective,
-            JsonPath.RequiredObject(
-                slot,
-                "overrides",
-                $"{owner} source Component Variant slot"));
-        return effective;
     }
 
     private static void RequireExactKeys(

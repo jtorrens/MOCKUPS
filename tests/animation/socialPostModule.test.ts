@@ -33,6 +33,10 @@ function fixture(variantId = "default") {
     const defaultVariant = metadata.variants.find((variant) => variant.id === variantId);
     assert.ok(defaultVariant);
     const runtime = JSON.parse(module.design_preview_json) as Record<string, unknown>;
+    const emitter = JSON.parse(committedComponentFixture("reactionEmitter").configJson).reactionEmitter;
+    const event = (runtime.inputs as Array<Record<string, unknown>>).find(input => input.id === "emitReaction")!;
+    event.eventDurationFrames = emitter.duration;
+    event.eventBurst = emitter.burst;
     // Explicit prepared fixture for the Default Icon Row boundary; Reel uses
     // its authored action identities and Runtime values from the Module fixture.
     if (variantId === "default") {
@@ -115,11 +119,13 @@ test("Social Post owns structure-projected Runtime row sections", () => {
     "mediaCutout",
     "galleryMediaCutout",
     "mediaSource",
+    "emitReaction",
   ]);
   assert.deepEqual(runtime.collections.map(({ id }) => id), [
     "socialPostRows",
     "socialPostFooterRows",
     "socialPostActions",
+    "reactionCatalog",
   ]);
   assert.deepEqual(contract.rows.map(({ id }) => id), ["item_690ab7d988ef466c8d6b20406ef2e024", "item_d2a1bd7aeb5f49c49501136b62bc4389"]);
   assert.equal(contract.rows[0].content.slots[0].kind, "avatar");
@@ -687,3 +693,30 @@ test("Reel action and footer labels consume independent Screen Runtime values", 
     assert.equal(at(2).mediaCurrentTimeSeconds, 0.28);
   }
  });
+
+test("Social Post draws each Screen's emissions above its media and below its interface", () => {
+  const source = fixture("reel");
+  const config = JSON.parse(source.configJson);
+  const draw = (value: string, frame: number) => socialPostModuleToRenderable({
+    ...source, localFrame: frame, configJson: JSON.stringify(config),
+    instanceJson: JSON.stringify({ animation: { schemaVersion: 2, tracks: [{
+      id: "reactions", fieldId: "emitReaction", keyframes: [
+        { id: "birth", frame: 10, value, enabled: true, interpolation: "hold" },
+      ],
+    }] } }),
+  });
+  config.socialPost.showReactionEmitter = true;
+  const first = draw("fire", 15);
+  const layers = first.children!.map(node => node.id);
+  const emitter = layers.indexOf("component.reactionEmitter");
+  assert.ok(layers.indexOf("module.core.socialPost.media") >= 0);
+  assert.ok(layers.indexOf("module.core.socialPost.media") < emitter);
+  assert.ok(emitter < layers.indexOf("module.core.socialPost.actions"));
+  assert.equal(requiredNode(first, "emission.birth:0").text, "🔥");
+  assert.equal(requiredNode(draw("clap", 15), "emission.birth:0").text, "👏");
+  assert.equal(findNode(draw("fire", 9), "emission.birth:0"), undefined);
+  config.socialPost.showReactionEmitter = false;
+  assert.equal(findNode(draw("fire", 15), "component.reactionEmitter"), undefined);
+  config.socialPost.showReactionEmitter = true;
+  assert.equal(requiredNode(draw("fire", 15), "emission.birth:0").text, "🔥");
+});

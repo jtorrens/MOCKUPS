@@ -110,6 +110,9 @@ export function resolveSocialPostModule(
     textInputLayout: requiredModuleSectionLayout(socialPost, "textInputLayout", "module.core.socialPost"),
     keyboardLayout: requiredModuleSectionLayout(socialPost, "keyboardLayout", "module.core.socialPost"),
     showFooter: requiredBoolean(socialPost, "showFooter", "module.core.socialPost"),
+    showReactionEmitter: requiredBoolean(socialPost, "showReactionEmitter", "module.core.socialPost"),
+    reactionEmitterSlot: requiredTypedSlot(socialPost, componentBaseConfigs, "reactionEmitterSlot", "reactionEmitter"),
+    reactionEmissions: requiredObjectArray(preview, "reactionEmissions", "module.core.socialPost"),
     showActions: requiredBoolean(socialPost, "showActions", "module.core.socialPost"),
     actions: resolveIconRowComponentFromRecords(
       embeddedComponentConfig(componentBaseConfigs, requiredTypedSlot(socialPost, componentBaseConfigs, "actionsSlot", "iconRow"), "iconRow", "module.core.socialPost.actionsSlot"),

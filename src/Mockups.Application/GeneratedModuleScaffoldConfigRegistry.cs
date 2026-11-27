@@ -524,6 +524,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "messageTextInputBarSlot"],
             "textInputBar",
             []),
+        ["module.core.socialPost.reactionEmitter"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.reactionEmitter",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "reactionEmitterSlot"],
+            "reactionEmitter",
+            []),
         ["module.core.socialPost.rowGapToken"] = new(
             "module.core.socialPost",
             "module.core.socialPost.rowGapToken",
@@ -606,6 +613,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             "module.core.socialPost.showNavigationBar",
             ValueKind.Boolean,
             ["socialPost", "showNavigationBar"],
+            "",
+            []),
+        ["module.core.socialPost.showReactionEmitter"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.showReactionEmitter",
+            ValueKind.Boolean,
+            ["socialPost", "showReactionEmitter"],
             "",
             []),
         ["module.core.socialPost.showStatusBar"] = new(

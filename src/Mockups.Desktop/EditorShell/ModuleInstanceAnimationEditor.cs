@@ -1334,7 +1334,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 target.FieldId,
                 target.TargetId,
                 target.Input.Label,
-                target.Input,
+                target.InputWithOptions,
                 target.BaseValue,
                 RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(
                     preview, preview, animation, target.FieldId, target.TargetId, themeTokens, frameRate),

@@ -193,8 +193,14 @@ export function socialPostModuleToRenderable(
     : background(payload);
   const children: RenderableNode[] = [backgroundNode];
   if (media) children.push(media);
-  if (header) children.push(header);
-  if (gallery) children.push(gallery);
+  const emitter = contract.showReactionEmitter
+    ? componentNode(payload, componentBaseConfigs, "reactionEmitter", contract.reactionEmitterSlot,
+        { emissions: contract.reactionEmissions }, undefined, screen)
+    : undefined;
+  const overlays = emitter ? [gallery, emitter, header] : [header, gallery];
+  for (const layer of overlays) {
+    if (layer) children.push(layer);
+  }
   if (message) children.push(message);
   if (actions) children.push(actions);
   if (footer) children.push(footer);

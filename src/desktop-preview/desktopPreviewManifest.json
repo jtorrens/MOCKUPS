@@ -499,7 +499,8 @@
         "status_bar",
         "surface",
         "textInputBar",
-        "iconRow"
+        "iconRow",
+        "reactionEmitter"
       ]
     },
     "module.core.videoCall": {

@@ -529,8 +529,11 @@ export function planScopedValidation(
     }
     if (file.startsWith("src/desktop-preview/socialPostModule")
       || file.startsWith("src/desktop-preview/contentRowComponent")
+      || file === "src/Mockups.Application/RuntimePreviewDocumentContract.cs"
+      || file === "src/Mockups.Domain/ComponentVariantSlotDocumentContract.cs"
       || file === "scaffolding/modules/module_core_socialPost.json"
       || file === "src/Mockups.Application/StructuredRuntimeCollectionProjection.cs") {
+      previewTests.add("tests/animation/socialPostModule.test.ts");
       add(npmStep(
         "desktop:reel-screen-labels",
         "test:focus:desktop",

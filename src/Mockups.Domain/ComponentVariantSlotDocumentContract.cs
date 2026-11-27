@@ -13,6 +13,18 @@ public static class ComponentVariantSlotDocumentContract
         "overrides",
     };
 
+    public static JsonObject ResolveConfigAtPath(
+        JsonObject config, string slotPath, Func<string, JsonObject>? variantConfig, string owner)
+    {
+        if (variantConfig is null)
+            throw new InvalidOperationException($"{owner} requires a Component Variant config resolver for '{slotPath}'.");
+        var slot = JsonPath.Get(config, slotPath.Split('.')) as JsonObject
+            ?? throw new InvalidOperationException($"{owner} '{slotPath}' must resolve to an exact Component Variant slot.");
+        var effective = variantConfig(VariantReference(slot, owner)).DeepClone().AsObject();
+        ComponentConfigOverrideMerger.MergeInto(effective, JsonPath.RequiredObject(slot, "overrides", owner));
+        return effective;
+    }
+
     public static JsonObject Parse(string json, string owner)
     {
         var slot = JsonPath.ParseRequiredObject(json, owner);

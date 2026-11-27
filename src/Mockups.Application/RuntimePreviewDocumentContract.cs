@@ -41,7 +41,7 @@ public static class RuntimePreviewDocumentContract
             effectiveConfig,
             componentVariantConfig,
             componentRuntimeValues);
-        RuntimeTemporalPhaseContract.Hydrate(prepared, effectiveConfig);
+        RuntimeTemporalPhaseContract.Hydrate(prepared, effectiveConfig, componentVariantConfig);
         PrepareNestedRuntimeContracts(
             prepared,
             effectiveConfig,
@@ -227,18 +227,22 @@ public static class RuntimePreviewDocumentContract
 /// </summary>
 internal static class RuntimeTemporalPhaseContract
 {
-    public static void Hydrate(JsonObject runtimeContract, JsonObject effectiveConfig)
+    public static void Hydrate(JsonObject runtimeContract, JsonObject effectiveConfig, Func<string, JsonObject>? variantConfig)
     {
         foreach (var input in JsonPath.OptionalObjectArray(runtimeContract, "inputs", "Runtime Preview"))
         {
             if (!input.ContainsKey("eventOutputJsonKey")) continue;
+            var eventConfig = input.ContainsKey("sourceVariantSlotPath")
+                ? ComponentVariantSlotDocumentContract.ResolveConfigAtPath(effectiveConfig,
+                    JsonPath.RequiredString(input, "sourceVariantSlotPath", "Runtime event track"), variantConfig, "Runtime event track")
+                : effectiveConfig;
             var path = JsonPath.OptionalStringArray(input, "eventDurationConfigPath", "Runtime event track");
-            if (path.Count == 0 || JsonPath.Get(effectiveConfig, path.ToArray()) is not JsonValue value
+            if (path.Count == 0 || JsonPath.Get(eventConfig, path.ToArray()) is not JsonValue value
                 || !value.TryGetValue<int>(out var frames) || frames <= 0)
                 throw new InvalidOperationException("Runtime event duration must resolve to a positive frame count.");
             input["eventDurationFrames"] = frames;
             var burstPath = JsonPath.OptionalStringArray(input, "eventBurstConfigPath", "Runtime event track");
-            if (burstPath.Count == 0 || JsonPath.Get(effectiveConfig, burstPath.ToArray()) is not JsonObject burst)
+            if (burstPath.Count == 0 || JsonPath.Get(eventConfig, burstPath.ToArray()) is not JsonObject burst)
                 throw new InvalidOperationException("Runtime event burst must resolve to a burst configuration.");
             input["eventBurst"] = EventBurst.Read(burst).ToJson();
         }

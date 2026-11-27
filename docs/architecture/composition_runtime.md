@@ -666,6 +666,13 @@ Overrides through the existing configured-Icon-Row preparation, as cosmetic
 Variant content. It owns no command schema or independent collection lifecycle.
 Reel is a complete Social Post Variant, not another implementation or route.
 
+Each Social Post Variant owns an enable switch and a fixed Reaction Emitter slot.
+The post draws that Component across the Screen above Media and Gallery and below
+interface layers. Each Screen owns its `emitReaction` event track. Its hold
+keyframes select emoticon ids at Screen-local frames. Disabling the layer preserves
+the track. The projected catalog and event timing both use the effective emitter
+slot, including its local Overrides.
+
 ### Social Post action and row Runtime labels
 
 Social Post declares `socialPostActions` as a structure-projected Runtime

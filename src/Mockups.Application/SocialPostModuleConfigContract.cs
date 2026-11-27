@@ -20,7 +20,7 @@ internal static class SocialPostModuleConfigContract
             socialPost,
             [
                 "headerLayout", "footerLayout", "messageLayout", "galleryLayout", "actionsLayout", "textInputLayout", "keyboardLayout",
-                "showFooter", "showActions", "showGallery", "actionsSlot", "galleryFloatHeight",
+                "showFooter", "showActions", "showReactionEmitter", "showGallery", "actionsSlot", "reactionEmitterSlot", "galleryFloatHeight",
                 "useAppWallpaper",
                 "showHeader",
                 "headerHeight",
@@ -55,7 +55,7 @@ internal static class SocialPostModuleConfigContract
 
         foreach (var key in new[]
         {
-            "showFooter", "showActions", "showGallery",
+            "showFooter", "showActions", "showReactionEmitter", "showGallery",
             "useAppWallpaper",
             "showHeader",
             "showStatusBar",
@@ -72,6 +72,7 @@ internal static class SocialPostModuleConfigContract
         foreach (var key in new[] { "headerLayout", "footerLayout", "messageLayout", "galleryLayout", "actionsLayout", "textInputLayout", "keyboardLayout" })
             ModuleSectionLayoutContract.Validate(socialPost, key, owner);
         ValidateSlot(socialPost, "actionsSlot", owner);
+        ValidateSlot(socialPost, "reactionEmitterSlot", owner);
         if (JsonPath.RequiredNumber(socialPost, "galleryFloatHeight", owner) <= 0)
             throw new InvalidOperationException($"{owner}.galleryFloatHeight must be positive.");
         var headerHeight = JsonPath.RequiredNumber(socialPost, "headerHeight", owner);

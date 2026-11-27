@@ -31,7 +31,8 @@
       "status_bar",
       "surface",
       "textInputBar",
-      "iconRow"
+      "iconRow",
+      "reactionEmitter"
     ]
   },
   "owners": {
@@ -1490,6 +1491,11 @@
       "actionsSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
         "overrides": {}
+      },
+      "showReactionEmitter": false,
+      "reactionEmitterSlot": {
+        "variantReference": "component_system_reactionEmitter::variant::default",
+        "overrides": {}
       }
     }
   },
@@ -1904,6 +1910,50 @@
         "animationInterpolations": [
           "hold"
         ]
+      },
+      {
+        "id": "emitReaction",
+        "label": "Emissions",
+        "jsonKey": "emitReaction",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "heart",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "reactionEmitter",
+        "uiGroupLabel": "Reaction Emitter",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ],
+        "eventOutputJsonKey": "reactionEmissions",
+        "optionsSourceCollectionJsonKey": "reactionCatalog",
+        "optionsSourceValueJsonKey": "id",
+        "optionsSourceLabelJsonKey": "glyph",
+        "eventDurationConfigPath": [
+          "reactionEmitter",
+          "duration"
+        ],
+        "eventBurstConfigPath": [
+          "reactionEmitter",
+          "burst"
+        ],
+        "sourceVariantSlotPath": "socialPost.reactionEmitterSlot"
       }
     ],
     "collections": [
@@ -2867,6 +2917,37 @@
         "animationTimeline": {
           "sequenceItems": false
         }
+      },
+      {
+        "id": "reactionCatalog",
+        "label": "Emoticons",
+        "jsonKey": "reactionCatalog",
+        "itemLabel": "Emoticon",
+        "fields": [
+          {
+            "id": "glyph",
+            "label": "Emoticon",
+            "jsonKey": "glyph",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "🙂",
+            "source": "variant"
+          }
+        ],
+        "canEditStructure": false,
+        "structureProjection": {
+          "sourceConfigPath": "reactionEmitter.reactions",
+          "sourceIdJsonKey": "id",
+          "runtimeIdJsonKey": "id",
+          "fieldBindings": {
+            "glyph": "glyph"
+          },
+          "sourceVariantSlotPath": "socialPost.reactionEmitterSlot"
+        },
+        "animationTimeline": {
+          "sequenceItems": false
+        },
+        "storageCollectionJsonKey": "reactionCatalog"
       }
     ],
     "showGallery": false,
@@ -3192,7 +3273,30 @@
         "accentActive": false
       }
     ],
-    "mediaSource": "system-preview://media/test-image.svg"
+    "mediaSource": "system-preview://media/test-image.svg",
+    "emitReaction": "heart",
+    "reactionCatalog": [
+      {
+        "id": "heart",
+        "glyph": "❤️"
+      },
+      {
+        "id": "laugh",
+        "glyph": "😂"
+      },
+      {
+        "id": "clap",
+        "glyph": "👏"
+      },
+      {
+        "id": "fire",
+        "glyph": "🔥"
+      },
+      {
+        "id": "surprise",
+        "glyph": "😮"
+      }
+    ]
   },
   "metadata": {
     "note": "Social Post defines its two-row header and one padded Media section."
@@ -4641,6 +4745,11 @@
         "galleryFloatHeight": 160,
         "actionsSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        },
+        "showReactionEmitter": false,
+        "reactionEmitterSlot": {
+          "variantReference": "component_system_reactionEmitter::variant::default",
           "overrides": {}
         }
       }
@@ -6340,6 +6449,11 @@
                 ]
               }
             }
+          },
+          "showReactionEmitter": false,
+          "reactionEmitterSlot": {
+            "variantReference": "component_system_reactionEmitter::variant::default",
+            "overrides": {}
           }
         }
       }
@@ -8106,6 +8220,62 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.showReactionEmitter",
+      "label": "Enable reaction emitter",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "socialPost",
+        "showReactionEmitter"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.reactionEmitter",
+      "label": "Emitter Variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "reactionEmitterSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_system_reactionEmitter::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "reactionEmitter",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "reactionEmitter",
+        "label": "Reaction Emitter",
+        "recordClassId": "component.reactionEmitter"
+      },
+      "structuredCollection": null
     }
   ],
   "editorLayout": {
@@ -8718,6 +8888,36 @@
                 ]
               }
             ]
+          }
+        ]
+      },
+      {
+        "id": "reactionEmitter",
+        "label": "Reaction Emitter",
+        "subtitle": "Emoticon particles",
+        "icon": "button-icon",
+        "order": 54,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "reactionEmitter",
+            "label": "Reaction Emitter",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.socialPost.showReactionEmitter",
+                "order": 1,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.reactionEmitter",
+                "order": 10,
+                "visible": true
+              }
+            ],
+            "presentation": "separatedSections"
           }
         ]
       }

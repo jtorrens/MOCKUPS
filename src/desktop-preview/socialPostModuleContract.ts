@@ -39,6 +39,9 @@ export interface SocialPostModuleContract {
   keyboardLayout: ModuleSectionLayout;
   showFooter: boolean;
   showActions: boolean;
+  showReactionEmitter: boolean;
+  reactionEmitterSlot: SocialPostComponentSlot;
+  reactionEmissions: Record<string, unknown>[];
   actions: IconRowDesignContract;
   galleryFloatHeight: number;
   useAppWallpaper: boolean;

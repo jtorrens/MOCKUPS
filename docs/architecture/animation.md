@@ -426,7 +426,9 @@ A Runtime input can declare an event output with `eventOutputJsonKey` and
 a positive lifetime from `eventDurationConfigPath` in the effective Variant.
 The same Variant supplies `eventBurstConfigPath`, with a positive integer `count`
 and nonnegative integer `intervalFrames` shared by every trigger. Each enabled
-hold keyframe selects an item and its emission frame. Birth number i occurs at trigger frame
+hold keyframe selects an item and its emission frame. Embedded event inputs can
+declare `sourceVariantSlotPath` to resolve both timing paths against their exact
+Component Variant and local Overrides during shared Runtime preparation. Birth number i occurs at trigger frame
 plus i times the interval, starting with i = 0. Zero interval creates simultaneous
 births. Each particle retains identity from the stable keyframe id and its
 ordinal within the burst. Frame projection returns only live births and their

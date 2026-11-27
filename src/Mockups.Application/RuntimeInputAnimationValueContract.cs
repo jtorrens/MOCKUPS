@@ -11,8 +11,11 @@ public sealed record RuntimeInputAnimationTargetDefinition(
     string TargetId,
     ComponentInputDefinition Input,
     string BaseValue,
-    IReadOnlyList<string> OwnerItemIds)
+    IReadOnlyList<string> OwnerItemIds,
+    JsonObject ValueOwner)
 {
+    public ComponentInputDefinition InputWithOptions => RuntimeInputOptionSourceContract.Close(Input, ValueOwner);
+
     public string FieldId => RuntimeNestedAnimationFieldContract.Join(FieldPath.Select(segment => segment.Id).ToArray());
 
     public (string FieldId, string TargetId) Rebase(IReadOnlyDictionary<string, string> ids) =>
@@ -71,7 +74,7 @@ public static class RuntimeInputAnimationValueContract
             if (!targets.TryGetValue((fieldId, targetId), out var target))
                 throw new InvalidOperationException($"Design animation targets undeclared field '{fieldId}'/'{targetId}'.");
             foreach (var key in JsonPath.RequiredArray(track, "keyframes", "Design animation").Cast<JsonObject>())
-                ValidateKeyframe(target.Input, key, $"Design animation field '{fieldId}'");
+                ValidateKeyframe(target.InputWithOptions, key, $"Design animation field '{fieldId}'");
         }
     }
 
@@ -97,7 +100,7 @@ public static class RuntimeInputAnimationValueContract
                 runtimePreview)
             .ToDictionary(
                 (target) => (target.FieldId, target.TargetId),
-                (target) => target.Input);
+                (target) => target.InputWithOptions);
 
         foreach (var track in JsonPath.RequiredArray(animation, "tracks", owner)
                      .OfType<JsonObject>())
@@ -217,10 +220,11 @@ public static class RuntimeInputAnimationValueContract
                     declarations,
                     fieldId,
                     targetId,
-                    RuntimeInputOptionSourceContract.Close(input, values),
+                    input,
                     DesignPreviewTestValues.CollectionValue(values, input),
                     fieldPath,
-                    ownerItemIds);
+                    ownerItemIds,
+                    values);
             }
             if (input.StructuredCollection is null
                 || values[input.JsonKey] is not JsonArray nestedItems)
@@ -298,9 +302,10 @@ public static class RuntimeInputAnimationValueContract
         ComponentInputDefinition input,
         string baseValue,
         IReadOnlyList<RuntimeAnimationFieldSegment> fieldPath,
-        IReadOnlyList<string> ownerItemIds)
+        IReadOnlyList<string> ownerItemIds,
+        JsonObject values)
     {
-        if (!declarations.TryAdd((fieldId, targetId), new(fieldPath, targetId, input, baseValue, ownerItemIds)))
+        if (!declarations.TryAdd((fieldId, targetId), new(fieldPath, targetId, input, baseValue, ownerItemIds, values)))
         {
             throw new InvalidOperationException(
                 $"Duplicate Runtime Input animation target '{fieldId}'/'{targetId}'.");

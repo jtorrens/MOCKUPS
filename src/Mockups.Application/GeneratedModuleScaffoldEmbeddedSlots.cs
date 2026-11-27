@@ -133,6 +133,12 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "component.textInputBar",
             ["socialPost", "messageTextInputBarSlot"]),
         new(
+            "module.core.socialPost.reactionEmitter",
+            "reactionEmitter",
+            "Reaction Emitter",
+            "component.reactionEmitter",
+            ["socialPost", "reactionEmitterSlot"]),
+        new(
             "module.core.videoCall.footerSurface",
             "surface",
             "Footer surface",
