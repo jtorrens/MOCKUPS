@@ -32,9 +32,7 @@
   "config": {
     "reactionEmitter": {
       "size": 32,
-      "height": 190,
       "duration": 48,
-      "spread": 22,
       "fadeStart": 70,
       "entryFrames": 5,
       "entryScale": 15,
@@ -60,7 +58,16 @@
           "id": "surprise",
           "glyph": "😮"
         }
-      ]
+      ],
+      "riseHeightPercent": 26,
+      "dispersionWidth": 44,
+      "placement": {
+        "mode": "insideEdge",
+        "alignX": 0.5,
+        "alignY": 1,
+        "offsetX": 0,
+        "offsetY": 0
+      }
     }
   },
   "defaultVariant": {
@@ -71,9 +78,7 @@
     "config": {
       "reactionEmitter": {
         "size": 32,
-        "height": 190,
         "duration": 48,
-        "spread": 22,
         "fadeStart": 70,
         "entryFrames": 5,
         "entryScale": 15,
@@ -99,7 +104,16 @@
             "id": "surprise",
             "glyph": "😮"
           }
-        ]
+        ],
+        "riseHeightPercent": 26,
+        "dispersionWidth": 44,
+        "placement": {
+          "mode": "insideEdge",
+          "alignX": 0.5,
+          "alignY": 1,
+          "offsetX": 0,
+          "offsetY": 0
+        }
       }
     }
   },
@@ -207,35 +221,55 @@
                 "frame": 0,
                 "value": "heart",
                 "enabled": true,
-                "interpolation": "hold"
+                "interpolation": "hold",
+                "burst": {
+                  "count": 1,
+                  "intervalFrames": 0
+                }
               },
               {
                 "id": "emit_laugh",
                 "frame": 8,
                 "value": "laugh",
                 "enabled": true,
-                "interpolation": "hold"
+                "interpolation": "hold",
+                "burst": {
+                  "count": 1,
+                  "intervalFrames": 0
+                }
               },
               {
                 "id": "emit_clap",
                 "frame": 16,
                 "value": "clap",
                 "enabled": true,
-                "interpolation": "hold"
+                "interpolation": "hold",
+                "burst": {
+                  "count": 1,
+                  "intervalFrames": 0
+                }
               },
               {
                 "id": "emit_fire",
                 "frame": 24,
                 "value": "fire",
                 "enabled": true,
-                "interpolation": "hold"
+                "interpolation": "hold",
+                "burst": {
+                  "count": 1,
+                  "intervalFrames": 0
+                }
               },
               {
                 "id": "emit_surprise",
                 "frame": 32,
                 "value": "surprise",
                 "enabled": true,
-                "interpolation": "hold"
+                "interpolation": "hold",
+                "burst": {
+                  "count": 1,
+                  "intervalFrames": 0
+                }
               }
             ]
           }
@@ -277,20 +311,20 @@
       "embeddedSlot": null
     },
     {
-      "id": "component.reactionEmitter.height",
-      "label": "Rise height",
+      "id": "component.reactionEmitter.riseHeightPercent",
+      "label": "Rise height (% of screen)",
       "valueKind": "Integer",
       "jsonPath": [
         "reactionEmitter",
-        "height"
+        "riseHeightPercent"
       ],
-      "defaultValue": "190",
+      "defaultValue": "26",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": {
-        "minimum": 1,
-        "maximum": 2000,
+        "minimum": 0,
+        "maximum": 100,
         "increment": 1,
         "decimalPlaces": 0,
         "useSlider": false
@@ -299,7 +333,7 @@
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
+      "unit": "%",
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
@@ -335,20 +369,20 @@
       "embeddedSlot": null
     },
     {
-      "id": "component.reactionEmitter.spread",
-      "label": "Horizontal spread",
+      "id": "component.reactionEmitter.dispersionWidth",
+      "label": "Dispersion width",
       "valueKind": "Integer",
       "jsonPath": [
         "reactionEmitter",
-        "spread"
+        "dispersionWidth"
       ],
-      "defaultValue": "22",
+      "defaultValue": "44",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": {
         "minimum": 0,
-        "maximum": 1000,
+        "maximum": 2000,
         "increment": 1,
         "decimalPlaces": 0,
         "useSlider": false
@@ -357,7 +391,7 @@
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
+      "unit": "px",
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
@@ -510,9 +544,39 @@
         ],
         "itemPresentation": {
           "titleFieldId": "glyph",
-          "fallbackIcon": "component"
+          "fallbackIcon": "component",
+          "firstItemBadge": "",
+          "subtitleFieldIds": [
+            "glyph"
+          ],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "",
+          "iconValueMap": {}
         }
       },
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.reactionEmitter.placement",
+      "label": "Emitter origin",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "reactionEmitter",
+        "placement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0.5,\"alignY\":1,\"offsetX\":0,\"offsetY\":0}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
@@ -579,7 +643,7 @@
                 "visible": true
               },
               {
-                "id": "component.reactionEmitter.height",
+                "id": "component.reactionEmitter.riseHeightPercent",
                 "order": 20,
                 "visible": true
               },
@@ -589,13 +653,18 @@
                 "visible": true
               },
               {
-                "id": "component.reactionEmitter.spread",
+                "id": "component.reactionEmitter.dispersionWidth",
                 "order": 40,
                 "visible": true
               },
               {
                 "id": "component.reactionEmitter.fadeStart",
                 "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.reactionEmitter.placement",
+                "order": 60,
                 "visible": true
               }
             ]

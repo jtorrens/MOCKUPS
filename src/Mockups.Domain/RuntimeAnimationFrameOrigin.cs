@@ -679,8 +679,9 @@ public static class RuntimeAnimationFrameOrigin
                 var lastFrame = Number(enabledKeyframes[^1]["frame"]);
                 if (definition.ContainsKey("eventOutputJsonKey"))
                 {
-                    var end = phase + Math.Max(0, lastFrame + JsonPath.RequiredInteger(
-                        definition, "eventDurationFrames", "Runtime event track"));
+                    var duration = JsonPath.RequiredInteger(definition, "eventDurationFrames", "Runtime event track");
+                    var end = phase + Math.Max(0, enabledKeyframes.Max(key =>
+                        Number(key["frame"]) + EventBurst.Read(key).LastOffset + duration));
                     return new FieldTiming(phase, end, end);
                 }
                 var last = Math.Max(0, lastFrame);

@@ -1,3 +1,4 @@
+import { eventBurst } from "./eventBurst.js";
 import { optionalString, requiredString } from "./componentResolverCommon.js";
 import { isRecord, optionalObject, optionalObjectArray } from "./previewJsonHelpers.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
@@ -268,6 +269,8 @@ export class RuntimeOwnerTimeline {
   }
 
   fieldCompletionFrame(fieldId: string, targetId: string) {
+    if (Object.hasOwn(this.fieldDefinition(fieldId, targetId), "eventOutputJsonKey"))
+      return this.itemOwnerFrame(targetId, this.fieldCompletionLocal(fieldId, targetId));
     const keyframes = enabledKeyframes(this.track(fieldId, targetId));
     if (keyframes.length > 0) {
       return this.itemOwnerFrame(
@@ -413,7 +416,8 @@ export class RuntimeOwnerTimeline {
       const lastFrame = requiredNumberValue(keyframes[keyframes.length - 1]!.frame, "runtime animation keyframe frame");
       if (Object.hasOwn(definition, "eventOutputJsonKey")) {
         const duration = requiredNumberValue(definition.eventDurationFrames, "Runtime event duration");
-        const end = phase + Math.max(0, lastFrame + duration);
+        const end = phase + keyframes.reduce((latest, key) =>
+          Math.max(latest, requiredNumberValue(key.frame, "Event frame") + eventBurst(key.burst).lastOffset + duration), 0);
         return { origin: phase, completion: end, endExclusive: end };
       }
       const last = Math.max(0, lastFrame);

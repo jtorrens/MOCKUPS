@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { parseObject, requiredObjectArray } from "./previewJsonHelpers.js";
-import { requiredNumberValue, requiredRecord, requiredString } from "./previewValueHelpers.js";
+import { requiredNumberValue, requiredPlacement, requiredRecord, requiredString } from "./previewValueHelpers.js";
 import type { ReactionEmitterDesignContract } from "./reactionEmitterComponentContract.js";
 
 function integer(owner: Record<string, unknown>, key: string, min: number, max: number) {
@@ -12,7 +12,9 @@ function integer(owner: Record<string, unknown>, key: string, min: number, max: 
 function driftForEvent(id: string) {
   let hash = 2166136261;
   for (const char of id) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
-  return (hash >>> 0) / 0xffffffff * 2 - 1;
+  hash = Math.imul(hash ^ (hash >>> 16), 0x85ebca6b);
+  hash = Math.imul(hash ^ (hash >>> 13), 0xc2b2ae35);
+  return ((hash ^ (hash >>> 16)) >>> 0) / 0xffffffff * 2 - 1;
 }
 
 export function resolveReactionEmitterComponent(payload: DesignPreviewPayload): ReactionEmitterDesignContract {
@@ -45,6 +47,11 @@ export function resolveReactionEmitterComponent(payload: DesignPreviewPayload): 
       scale: initialScale + (1 - initialScale) * enter,
       opacity: (initialOpacity + (1 - initialOpacity) * enter) * fade });
   }
-  return { size: integer(config, "size", 1, 512), height: integer(config, "height", 1, 2000),
-    spread: integer(config, "spread", 0, 1000), particles };
+  return {
+    size: integer(config, "size", 1, 512),
+    riseHeightPercent: integer(config, "riseHeightPercent", 0, 100),
+    dispersionWidth: integer(config, "dispersionWidth", 0, 2000),
+    placement: requiredPlacement(config, "placement", "Emitter origin"),
+    particles,
+  };
 }

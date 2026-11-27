@@ -1,7 +1,10 @@
+import type { AlignmentPlacementContract } from "./previewComponentContracts.js";
+
 export interface ReactionEmitterDesignContract {
   size: number;
-  height: number;
-  spread: number;
+  riseHeightPercent: number;
+  dispersionWidth: number;
+  placement: AlignmentPlacementContract;
   particles: Array<{
     id: string;
     glyph: string;

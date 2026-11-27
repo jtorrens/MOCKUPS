@@ -63,7 +63,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<ProjectTreeNode, string, int, string?, Task> _setActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _currentActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _maximumActionFrame;
-    private readonly Func<ProjectTreeNode, string, int, string?, Task>? _editFixtureEvent;
+    private readonly Func<ProjectTreeNode, string, int, string?, EventBurst, Task>? _editFixtureEvent;
     private readonly Func<ProjectTreeNode, string, string, Task> _setPreviewTestValue;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
@@ -139,7 +139,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<EditorEmbeddedContext> openEmbeddedContext,
         ModuleInstanceAnimationEditor? animationEditor = null,
         Action<ProjectTreeNode>? reloadAndSelect = null,
-        Func<ProjectTreeNode, string, int, string?, Task>? editFixtureEvent = null)
+        Func<ProjectTreeNode, string, int, string?, EventBurst, Task>? editFixtureEvent = null)
     {
         _previewInputData =
             new ComponentPreviewInputDataSource(
@@ -804,6 +804,9 @@ internal sealed class RuntimeInputsCollectionEditor
                 },
                 openRuntimeComponentOverrides: _openEmbeddedContext));
         control.IsEnabled = RuntimeInputIsEnabled(preview, DesignPreviewTestValues.Parse(owner.ConfigJson), input);
+        if (!owner.IsInstance && input.Animation is { EventOutputJsonKey.Length: > 0 }
+            && DesignPreviewTestValues.Animation(preview) is { } fixture)
+            return WithFixtureEventControls(owner, input, control, preview, fixture);
         var pendingChange = Task.CompletedTask;
         async Task PublishValueAsync(string next)
         {
@@ -838,28 +841,38 @@ internal sealed class RuntimeInputsCollectionEditor
                 _reloadAndSelect?.Invoke(owner.Node);
             }
         };
-        if (!owner.IsInstance && input.Animation is { EventOutputJsonKey.Length: > 0 }
-            && DesignPreviewTestValues.Animation(preview) is { } fixture)
-            return WithFixtureEventControls(owner, input, control, preview, fixture, () => pendingChange);
         return DecorateAnimationToggle(owner, input, "", control, ownerInputs);
     }
 
     private Control WithFixtureEventControls(
         RuntimeInputOwner owner, ComponentInputDefinition input, DictionaryFieldControl control,
-        JsonObject preview, JsonObject fixture, Func<Task> pendingChange)
+        JsonObject preview, JsonObject fixture)
     {
         var transport = ComponentPreviewActions.ReadApplicable(preview).Single(action => action.DefinesModuleDuration);
         var panel = new StackPanel { Spacing = 4 };
         panel.Children.Add(control);
+        var track = new ModuleInstanceAnimationDocument(fixture.ToJsonString()).Track(input.Id, "");
+        var burst = new EventBurstFields(EventBurst.Single);
+        panel.Children.Add(burst);
+        int? selectedFrame = null;
+        void PresentFrame()
+        {
+            var frame = _currentActionFrame(owner.Node, transport.Id);
+            if (selectedFrame == frame) return;
+            selectedFrame = frame;
+            var key = track?.Keyframes.FirstOrDefault(candidate => candidate.Frame == frame);
+            burst.Present(key?.Burst ?? EventBurst.Single);
+            if (key?.Value is { } value) control.SetValue(value.GetValue<string>());
+        }
+        PreviewPlaybackStateBinding.Attach(panel, _playbackState, PresentFrame);
         var commands = CreateActionPanel();
         async Task EditEvent(bool remove)
         {
             try
             {
-                await pendingChange();
                 var frame = _currentActionFrame(owner.Node, transport.Id);
                 await (_editFixtureEvent ?? throw new InvalidOperationException("Missing fixture event editor."))(
-                    owner.Node, input.Id, frame, remove ? null : control.Value);
+                    owner.Node, input.Id, frame, remove ? null : control.Value, burst.Value);
                 _testValuesChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             }
@@ -876,13 +889,16 @@ internal sealed class RuntimeInputsCollectionEditor
         commands.Children.Add(remove);
         panel.Children.Add(commands);
         var markers = CreateActionPanel();
-        var track = new ModuleInstanceAnimationDocument(fixture.ToJsonString()).Track(input.Id, "");
         foreach (var key in track?.Keyframes ?? [])
         {
             var marker = EditorTimelineTransport.CreateNavigationButton(
                 new TextBlock { Text = key.Frame.ToString(CultureInfo.InvariantCulture) },
                 $"Go to event at frame {key.Frame}");
-            marker.Click += async (_, _) => await _setActionFrame(owner.Node, transport.Id, key.Frame, null);
+            marker.Click += async (_, _) =>
+            {
+                await _setActionFrame(owner.Node, transport.Id, key.Frame, null);
+                PresentFrame();
+            };
             markers.Children.Add(marker);
         }
         panel.Children.Add(markers);
@@ -2555,7 +2571,8 @@ internal sealed class RuntimeInputsCollectionEditor
                                     input,
                                     baseValue)
                                     ?? JsonValue.Create(baseValue)!,
-                                input.Animation.Interpolations.First());
+                                input.Animation.Interpolations.First(),
+                                burst: input.Animation.EventOutputJsonKey.Length > 0 ? EventBurst.Single : null);
                         }
                         return true;
                     });

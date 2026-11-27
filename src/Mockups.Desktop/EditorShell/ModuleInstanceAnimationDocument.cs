@@ -31,7 +31,8 @@ internal sealed class ModuleInstanceAnimationDocument
         string targetId,
         JsonNode initialValue,
         string interpolation,
-        int initialFrame = 0)
+        int initialFrame = 0,
+        EventBurst? burst = null)
     {
         if (HasTrack(fieldId, targetId)) return;
         var track = new JsonObject
@@ -51,6 +52,7 @@ internal sealed class ModuleInstanceAnimationDocument
             },
         };
         if (!string.IsNullOrWhiteSpace(targetId)) track["targetId"] = targetId;
+        if (burst is not null) track["keyframes"]![0]!["burst"] = burst.ToJson();
         _tracks.Add(track);
     }
 
@@ -85,7 +87,8 @@ internal sealed class ModuleInstanceAnimationDocument
         string targetId,
         int frame,
         JsonNode value,
-        string interpolation)
+        string interpolation,
+        EventBurst? burst = null)
     {
         var track = TrackObject(fieldId, targetId)
             ?? throw new InvalidOperationException("Animation track does not exist.");
@@ -104,6 +107,7 @@ internal sealed class ModuleInstanceAnimationDocument
         existing["value"] = value.DeepClone();
         existing["interpolation"] = interpolation;
         existing["enabled"] = true;
+        if (burst is not null) existing["burst"] = burst.ToJson();
         var ordered = keyframes.OfType<JsonObject>()
             .OrderBy((keyframe) => keyframe["frame"]?.GetValue<int>() ?? 0)
             .ThenBy((keyframe) => keyframe["id"]?.GetValue<string>() ?? "", StringComparer.Ordinal)
@@ -237,7 +241,8 @@ internal sealed class ModuleInstanceAnimationDocument
                 keyframe["frame"]?.GetValue<int>() ?? 0,
                 keyframe["value"]?.DeepClone(),
                 keyframe["interpolation"]?.GetValue<string>() ?? "hold",
-                keyframe["enabled"]?.GetValue<bool>() ?? true))
+                keyframe["enabled"]?.GetValue<bool>() ?? true,
+                keyframe.ContainsKey("burst") ? EventBurst.Read(keyframe) : null))
             .OrderBy((keyframe) => keyframe.Frame)
             .ToList() ?? [];
         return new AnimationTrackView(
@@ -259,4 +264,5 @@ internal sealed record AnimationKeyframeView(
     int Frame,
     JsonNode? Value,
     string Interpolation,
-    bool Enabled);
+    bool Enabled,
+    EventBurst? Burst = null);

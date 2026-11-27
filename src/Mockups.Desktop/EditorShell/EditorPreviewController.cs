@@ -2187,7 +2187,7 @@ internal sealed class EditorPreviewController : IDisposable
     public Task RestoreDesignPreviewAction(ProjectTreeNode node, string actionId) =>
         RunDesignActionAsync(node, () => _designInputsPanel.RestoreAction(actionId));
 
-    public Task EditFixtureEvent(ProjectTreeNode node, string fieldId, int frame, string? selected)
+    public Task EditFixtureEvent(ProjectTreeNode node, string fieldId, int frame, string? selected, EventBurst burst)
         => EditDesignPreviewInputsAsync(node, (payload, state) =>
         {
             var config = DesignPreviewTestValues.Parse(payload.ConfigJson);
@@ -2209,8 +2209,8 @@ internal sealed class EditorPreviewController : IDisposable
                 var value = DesignPreviewTestValues.ValueNode(input, selected);
                 RuntimeInputValueKindContract.ValidateRuntimeValue(
                     RuntimeInputOptionSourceContract.Close(input, preview), value, "Fixture event value");
-                if (track is null) document.AddTrack(input.Id, "", value!, "hold", frame);
-                else document.UpsertKeyframe(input.Id, "", frame, value!, "hold");
+                if (track is null) document.AddTrack(input.Id, "", value!, "hold", frame, burst);
+                else document.UpsertKeyframe(input.Id, "", frame, value!, "hold", burst);
             }
             return document.ToJson();
         }, document => _designInputsPanel.SetFixtureAnimation(node, document));

@@ -424,9 +424,13 @@ retain their own declared contracts; they do not stretch parameter keyframes.
 
 A Runtime input can declare an event output with `eventOutputJsonKey` and
 a positive lifetime from `eventDurationConfigPath` in the effective Variant.
-Each enabled hold keyframe in its v2 track emits once, including repeated
-values. Frame projection supplies the stable keyframe id, value and owner-local
-age for overlapping events. The last event extends the owner by its lifetime.
+Each enabled hold keyframe declares one burst with positive integer `count` and
+nonnegative integer `intervalFrames`. Birth number i occurs at trigger frame
+plus i times the interval, starting with i = 0. Zero interval creates simultaneous
+births. Each particle retains identity from the stable keyframe id and its
+ordinal within the burst. Frame projection returns only live births and their
+owner-local ages. Duration covers the latest birth across all enabled triggers
+plus its lifetime, including bursts that extend beyond a later trigger.
 Design Test Values can carry the same v2 document in `testValues.animation`.
 The Design fixture supplies it to the instance envelope for its own transport.
 The Test Values event control sets or removes a key at the current action frame.
@@ -434,9 +438,11 @@ Frame buttons seek to existing emissions. Reset discards session edits and Save
 as defaults promotes the sequence after checking the class Variants.
 
 Reaction Emitter owns its stable emoticon catalog, final size, rise height and
-duration, horizontal spread, fade start, entry duration, initial scale and
+duration, total horizontal dispersion width, standard origin placement, fade start, entry duration, initial scale and
 initial opacity. Its prepared emissions refer to catalog items by stable id.
-Each particle's drift is deterministic from its keyframe id.
+Rise height is a percentage of the root screen height. Dispersion uses design pixels,
+with half the authored width on either side of the placed origin. Each particle’s
+drift is deterministic from its birth identity.
 
 ## Action transport
 

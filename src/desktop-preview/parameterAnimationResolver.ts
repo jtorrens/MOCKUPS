@@ -1,3 +1,4 @@
+import { eventBurst } from "./eventBurst.js";
 import { optionalString, requiredString } from "./componentResolverCommon.js";
 import { optionalObjectArray } from "./previewJsonHelpers.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
@@ -118,17 +119,23 @@ export function resolveParameterAnimation(
   };
 }
 
-/** Each enabled keyframe fires exactly once on the target owner's clock. */
+/** Project live births from owner-local triggers at the requested frame. */
 export function resolveTimelineEvents(animation: JsonRecord, fieldId: string, targetId: string, frame: number, duration: number) {
   if (!Number.isInteger(duration) || duration <= 0) throw new Error("Event duration must be a positive frame count");
   const events = [];
   for (const key of parameterKeyframes(animation, fieldId, targetId) ?? []) {
     if (key.frame > frame) break;
-    if (frame - key.frame >= duration) continue;
+    const age = frame - key.frame;
+    const burst = eventBurst(key.burst);
+    if (age >= burst.lastOffset + duration) continue;
     if (typeof key.id !== "string" || !key.id.trim() || key.interpolation !== "hold") {
       throw new Error(`Event track '${fieldId}' requires stable ids and hold keyframes`);
     }
-    events.push({ id: key.id, value: key.value, age: frame - key.frame });
+    const first = burst.interval === 0 ? 0 : Math.max(0, Math.floor((age - duration) / burst.interval) + 1);
+    const last = burst.interval === 0 ? burst.count - 1 : Math.min(burst.count - 1, Math.floor(age / burst.interval));
+    for (let index = first; index <= last; index++) {
+      events.push({ id: key.id + ":" + index, value: key.value, age: age - index * burst.interval });
+    }
   }
   return events;
 }
@@ -145,6 +152,7 @@ function parameterKeyframes(animation: JsonRecord, fieldId: string, targetId: st
     .filter((keyframe) => keyframe.enabled !== false)
     .map((keyframe) => ({
       id: keyframe.id,
+      burst: keyframe.burst,
       frame: requiredNumberValue(keyframe.frame, "runtime animation keyframe frame"),
       value: keyframe.value,
       interpolation: Object.hasOwn(keyframe, "interpolation")
