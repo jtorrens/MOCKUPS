@@ -22,7 +22,7 @@ export function reactionEmitterComponentToRenderable(
     const y = origin.y + size / 2 - height * particle.rise;
     return { id: `emission.${particle.id}`, type: "text", frame: 0, text: particle.glyph,
       box: { x: x - width / 2, y: y - width / 2, width, height: width },
-      style: { display: "flex", alignItems: "center", justifyContent: "center",
+      style: { display: "flex", overflow: "visible", alignItems: "center", justifyContent: "center",
         fontFamily, fontSize: width, textAlign: "center", opacity: particle.opacity, whiteSpace: "nowrap" } };
   });
   return { id: "component.reactionEmitter", type: "group", frame: 0, box: origin, style: { overflow: "visible" }, children };
