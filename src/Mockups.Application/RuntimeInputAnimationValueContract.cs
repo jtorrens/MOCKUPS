@@ -73,7 +73,12 @@ public static class RuntimeInputAnimationValueContract
             var targetId = track["targetId"]?.GetValue<string>() ?? "";
             if (!targets.TryGetValue((fieldId, targetId), out var target))
                 throw new InvalidOperationException($"Design animation targets undeclared field '{fieldId}'/'{targetId}'.");
-            foreach (var key in JsonPath.RequiredArray(track, "keyframes", "Design animation").Cast<JsonObject>())
+            var keys = JsonPath.RequiredArray(track, "keyframes", "Design animation");
+            if (target.Input.IsFixedEvent && (keys.Count != 1
+                || JsonPath.RequiredInteger(keys[0]!.AsObject(), "frame", "Design emission") < 0
+                || keys[0]!["enabled"]?.GetValue<bool>() == false))
+                throw new InvalidOperationException($"Design emission '{fieldId}'/'{targetId}' requires one enabled, nonnegative frame.");
+            foreach (var key in keys.Cast<JsonObject>())
                 ValidateKeyframe(target.InputWithOptions, key, $"Design animation field '{fieldId}'");
         }
     }

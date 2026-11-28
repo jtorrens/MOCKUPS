@@ -727,3 +727,26 @@ test("Social Post draws each Screen's emissions above its media and below its in
   config.socialPost.showReactionEmitter = true;
   assert.equal(requiredNode(draw(["fire"], 15), "emission.fire-birth:0").text, "🔥");
 });
+
+test("Design Play samples media and reaction frames from the same playhead", () => {
+  const source = fixture("reel");
+  const config = JSON.parse(source.configJson);
+  config.socialPost.showReactionEmitter = true;
+  source.configJson = JSON.stringify(config);
+  const runtime = JSON.parse(source.designPreviewJson);
+  runtime.isPlaying = true;
+  runtime.durationSeconds = 12;
+  source.instanceJson = JSON.stringify({
+    designPlaybackTimeKey: "currentTimeSeconds",
+    animation: { schemaVersion: 2, tracks: [{ id: "heart-track", fieldId: "emit", targetId: "heart",
+      keyframes: [{ id: "birth", frame: 38, value: "emit", enabled: true, interpolation: "hold" }],
+    }] },
+  });
+  for (const frame of [37, 38, 43, 37]) {
+    source.localFrame = frame;
+    runtime.currentTimeSeconds = frame / source.frameRate;
+    source.designPreviewJson = JSON.stringify(runtime);
+    assert.equal(resolveSocialPostModule(source).mediaCurrentTimeSeconds, runtime.currentTimeSeconds);
+    assert.equal(Boolean(findNode(socialPostModuleToRenderable(source), "emission.birth:0")), frame >= 38);
+  }
+});

@@ -213,9 +213,9 @@
     "catalog": [],
     "actions": [
       {
-        "id": "playEmissions",
-        "label": "Play emissions",
-        "playInputId": "playEmissions",
+        "id": "play",
+        "label": "Play",
+        "playInputId": "play",
         "durationBaseFrames": 1,
         "definesModuleDuration": true,
         "timeJsonKey": "sequenceFrame",

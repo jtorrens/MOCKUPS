@@ -9,7 +9,7 @@ internal static class DesignPreviewPlaybackFrameProjection
     public static DesignPreviewPayload Apply(
         DesignPreviewPayload payload,
         ComponentPreviewActionDefinition action,
-        double actionTime)
+        int localFrame)
     {
         if (!action.DefinesModuleDuration)
         {
@@ -20,21 +20,11 @@ internal static class DesignPreviewPlaybackFrameProjection
             throw new InvalidOperationException(
                 $"Design Preview action '{action.Id}' cannot define the root Module frame from a collection item.");
         }
-        if (action.TimeUnit != ComponentPreviewActionTimeUnit.Frames)
-        {
-            throw new InvalidOperationException(
-                $"Design Preview action '{action.Id}' defines the Module duration and must use frames.");
-        }
-        if (!double.IsFinite(actionTime) || actionTime < 0 || actionTime > int.MaxValue)
-        {
-            throw new InvalidOperationException(
-                $"Design Preview action '{action.Id}' has an invalid Module frame.");
-        }
-
-        var localFrame = (int)Math.Floor(actionTime);
+        ArgumentOutOfRangeException.ThrowIfNegative(localFrame);
         var instance = JsonPath.ParseRequiredObject(
             payload.InstanceJson,
             "Preview instance envelope");
+        instance["designPlaybackTimeKey"] = action.TimeJsonKey;
         if (instance.TryGetPropertyValue("context", out var contextNode))
         {
             var context = contextNode as JsonObject

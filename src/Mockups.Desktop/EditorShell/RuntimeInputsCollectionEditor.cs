@@ -63,7 +63,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<ProjectTreeNode, string, int, string?, Task> _setActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _currentActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _maximumActionFrame;
-    private readonly Func<ProjectTreeNode, string, string, int, string?, Task>? _editFixtureEvent;
+    private readonly Func<ProjectTreeNode, string, string, int?, Task>? _editFixtureEvent;
     private readonly Func<ProjectTreeNode, string, string, Task> _setPreviewTestValue;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
@@ -139,7 +139,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<EditorEmbeddedContext> openEmbeddedContext,
         ModuleInstanceAnimationEditor? animationEditor = null,
         Action<ProjectTreeNode>? reloadAndSelect = null,
-        Func<ProjectTreeNode, string, string, int, string?, Task>? editFixtureEvent = null)
+        Func<ProjectTreeNode, string, string, int?, Task>? editFixtureEvent = null)
     {
         _previewInputData =
             new ComponentPreviewInputDataSource(
@@ -786,6 +786,9 @@ internal sealed class RuntimeInputsCollectionEditor
         ComponentInputDefinition input,
         IReadOnlyList<ComponentInputDefinition> ownerInputs)
     {
+        if (!owner.IsInstance && input.IsFixedEvent
+            && DesignPreviewTestValues.Animation(preview) is { } fixture)
+            return CreateFixtureEventFrame(owner, input, "", fixture);
         var value = DesignPreviewTestValues.Value(preview, input);
         var definition = RuntimeInputFieldDefinitionFactory.Create(
             ActiveInputOptions,
@@ -804,9 +807,6 @@ internal sealed class RuntimeInputsCollectionEditor
                 },
                 openRuntimeComponentOverrides: _openEmbeddedContext));
         control.IsEnabled = RuntimeInputIsEnabled(preview, DesignPreviewTestValues.Parse(owner.ConfigJson), input);
-        if (!owner.IsInstance && input.Animation is { EventOutputJsonKey.Length: > 0 }
-            && DesignPreviewTestValues.Animation(preview) is { } fixture)
-            return WithFixtureEventControls(owner, input, "", control, preview, fixture);
         var pendingChange = Task.CompletedTask;
         async Task PublishValueAsync(string next)
         {
@@ -844,67 +844,28 @@ internal sealed class RuntimeInputsCollectionEditor
         return DecorateAnimationToggle(owner, input, "", control, ownerInputs);
     }
 
-    private Control WithFixtureEventControls(
-        RuntimeInputOwner owner, ComponentInputDefinition input, string targetId, DictionaryFieldControl control,
-        JsonObject preview, JsonObject fixture)
+    private Control CreateFixtureEventFrame(
+        RuntimeInputOwner owner, ComponentInputDefinition input, string targetId, JsonObject fixture)
     {
-        var transport = ComponentPreviewActions.ReadApplicable(preview).Single(action => action.DefinesModuleDuration);
-        var panel = new StackPanel { Spacing = 4 };
-        var fixedOption = input.IsFixedEvent ? input.Options![0] : null;
-        if (fixedOption is null) panel.Children.Add(control);
-        var track = new ModuleInstanceAnimationDocument(fixture.ToJsonString()).Track(input.Id, targetId);
-        int? selectedFrame = null;
-        void PresentFrame()
-        {
-            var frame = _currentActionFrame(owner.Node, transport.Id);
-            if (selectedFrame == frame) return;
-            selectedFrame = frame;
-            var key = track?.Keyframes.FirstOrDefault(candidate => candidate.Frame == frame);
-            if (key?.Value is { } value) control.SetValue(value.GetValue<string>());
-        }
-        PreviewPlaybackStateBinding.Attach(panel, _playbackState, PresentFrame);
-        var commands = CreateActionPanel();
-        async Task EditEvent(bool remove)
+        var key = new ModuleInstanceAnimationDocument(fixture.ToJsonString())
+            .Track(input.Id, targetId)?.Keyframes.Single();
+        var definition = new FieldDefinition($"fixture.frame.{input.Id}", "Frame de emisión", ValueKind.Integer,
+            Number: new NumberDefinition(Minimum: 0, Maximum: int.MaxValue), AllowEmpty: true);
+        var control = new DictionaryFieldControl(new FieldValue(definition,
+            key?.Frame.ToString(CultureInfo.InvariantCulture) ?? ""));
+        control.ValueCommitted += async (_, value) =>
         {
             try
             {
-                var frame = _currentActionFrame(owner.Node, transport.Id);
+                int? frame = value.Length == 0 ? null : int.Parse(value, CultureInfo.InvariantCulture);
                 await (_editFixtureEvent ?? throw new InvalidOperationException("Missing fixture event editor."))(
-                    owner.Node, input.Id, targetId, frame, remove ? null : fixedOption?.Value ?? control.Value);
+                    owner.Node, input.Id, targetId, frame);
                 _testValuesChanged();
-                _reloadAndSelect?.Invoke(owner.Node);
             }
             catch (OperationCanceledException) { }
-            catch (Exception error) { _messages.Error("Edit event keyframe", error); }
-        }
-        var add = fixedOption is not null
-            ? new Button { Content = fixedOption.Label }
-            : EditorTimelineTransport.CreateNavigationButton(
-                EditorTimelineTransport.CreateKeyframeGlyph(true), "Set event at current frame");
-        if (fixedOption is not null)
-            EditorAccessibility.Describe(add, $"{fixedOption.Label} · {targetId}");
-        add.Click += async (_, _) => await EditEvent(false);
-        commands.Children.Add(add);
-        var remove = EditorTimelineTransport.CreateNavigationButton(
-            EditorTimelineTransport.CreateKeyframeGlyph(false), $"Remove event at current frame · {input.Label} {targetId}".TrimEnd());
-        remove.Click += async (_, _) => await EditEvent(true);
-        commands.Children.Add(remove);
-        panel.Children.Add(commands);
-        var markers = CreateActionPanel();
-        foreach (var key in track?.Keyframes ?? [])
-        {
-            var marker = EditorTimelineTransport.CreateNavigationButton(
-                new TextBlock { Text = key.Frame.ToString(CultureInfo.InvariantCulture) },
-                $"Go to event at frame {key.Frame}");
-            marker.Click += async (_, _) =>
-            {
-                await _setActionFrame(owner.Node, transport.Id, key.Frame, null);
-                PresentFrame();
-            };
-            markers.Children.Add(marker);
-        }
-        panel.Children.Add(markers);
-        return panel;
+            catch (Exception error) { _messages.Error("Edit emission frame", error); }
+        };
+        return control;
     }
 
     private static bool RuntimeInputIsEnabled(
@@ -2223,6 +2184,9 @@ internal sealed class RuntimeInputsCollectionEditor
             return new Border { IsVisible = false };
         }
 
+        if (!owner.IsInstance && input.IsFixedEvent
+            && DesignPreviewTestValues.Animation(preview) is { } fixture)
+            return CreateFixtureEventFrame(owner, input, ItemId(item, itemIndex), fixture);
         var componentItems = collection.ComponentItems;
         var selectsComponent = componentItems is not null
             && input.JsonKey.Equals(componentItems.VariantReferenceJsonKey, StringComparison.Ordinal);
@@ -2347,9 +2311,6 @@ internal sealed class RuntimeInputsCollectionEditor
                 DesignPreviewTestValues.CollectionValue(item, input),
                 IsHighlighted: hasComponentOverrides),
             services);
-        if (!owner.IsInstance && input.Animation is { EventOutputJsonKey.Length: > 0 }
-            && DesignPreviewTestValues.Animation(preview) is { } fixture)
-            return WithFixtureEventControls(owner, input, ItemId(item, itemIndex), control, preview, fixture);
         itemControls?[input.Id] = control;
         control.ValueCommitted += async (_, next) =>
         {

@@ -2985,7 +2985,9 @@
         "timeJsonKey": "currentTimeSeconds",
         "prewarmFrames": true,
         "completionBehavior": "reset",
-        "timeUnit": "seconds"
+        "timeUnit": "seconds",
+        "definesModuleDuration": true,
+        "durationBaseFrames": 1
       },
       {
         "id": "fullScreen",
@@ -3008,18 +3010,6 @@
         "timeUnit": "frames",
         "prewarmFrames": false,
         "completionBehavior": "holdFinal"
-      },
-      {
-        "id": "playEmissions",
-        "label": "Play emissions",
-        "playInputId": "playEmissions",
-        "durationBaseFrames": 1,
-        "definesModuleDuration": true,
-        "timeJsonKey": "sequenceFrame",
-        "timeUnit": "frames",
-        "prewarmFrames": false,
-        "completionBehavior": "holdFinal",
-        "durationOwnerTimeline": true
       }
     ],
     "socialPostRows": [

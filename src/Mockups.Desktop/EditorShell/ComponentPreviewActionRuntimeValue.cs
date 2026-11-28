@@ -105,6 +105,17 @@ internal static class ComponentPreviewActionRuntimeValue
         return action.DurationSeconds > 0 ? action.DurationSeconds : RequireDurationInput(preview, action);
     }
 
+    public static int FrameAtTime(ComponentPreviewActionDefinition action, double time, int fps)
+    {
+        var frames = action.TimeUnit switch
+        {
+            ComponentPreviewActionTimeUnit.Frames => time,
+            ComponentPreviewActionTimeUnit.Milliseconds => time * fps / 1000,
+            _ => time * fps,
+        };
+        return checked((int)Math.Floor(frames + 0.0001));
+    }
+
     public static double NormalizedTime(
         double value, ComponentPreviewActionDefinition action, JsonObject preview, int fps, string themeTokensJson)
     {

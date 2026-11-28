@@ -2187,7 +2187,7 @@ internal sealed class EditorPreviewController : IDisposable
     public Task RestoreDesignPreviewAction(ProjectTreeNode node, string actionId) =>
         RunDesignActionAsync(node, () => _designInputsPanel.RestoreAction(actionId));
 
-    public Task EditFixtureEvent(ProjectTreeNode node, string fieldId, string targetId, int frame, string? selected)
+    public Task EditFixtureEvent(ProjectTreeNode node, string fieldId, string targetId, int? frame)
         => EditDesignPreviewInputsAsync(node, (payload, state) =>
         {
             var config = DesignPreviewTestValues.Parse(payload.ConfigJson);
@@ -2201,18 +2201,18 @@ internal sealed class EditorPreviewController : IDisposable
                 ?? throw new InvalidOperationException("Event editing requires the fixture animation document.");
             var document = new ModuleInstanceAnimationDocument(fixture.ToJsonString());
             var track = document.Track(fieldId, targetId);
-            if (selected is null)
+            if (frame is null)
             {
-                if (track?.Keyframes.Count == 1 && track.Keyframes[0].Frame == frame) document.RemoveTrack(fieldId, targetId);
-                else document.RemoveKeyframe(fieldId, targetId, frame);
+                if (track is not null) document.RemoveTrack(fieldId, targetId);
+            }
+            else if (track is null)
+            {
+                var value = DesignPreviewTestValues.ValueNode(input, input.Options!.Single().Value);
+                document.AddTrack(fieldId, targetId, value!, "hold", frame.Value);
             }
             else
             {
-                var value = DesignPreviewTestValues.ValueNode(input, selected);
-                RuntimeInputValueKindContract.ValidateRuntimeValue(
-                    input, value, "Fixture event value");
-                if (track is null) document.AddTrack(fieldId, targetId, value!, "hold", frame);
-                else document.UpsertKeyframe(fieldId, targetId, frame, value!, "hold");
+                document.TryMoveKeyframe(fieldId, targetId, track.Keyframes.Single().Frame, frame.Value);
             }
             return document.ToJson();
         }, document => _designInputsPanel.SetFixtureAnimation(node, document));
@@ -3155,11 +3155,7 @@ internal sealed class EditorPreviewController : IDisposable
         }
 
         var actionTime = ComponentPreviewActionRuntimeValue.RequireTime(preview, action);
-        var currentFrame = action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
-            ? Math.Max(0, (int)Math.Floor(actionTime))
-            : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
-                ? Math.Max(0, (int)Math.Floor(actionTime / 1000 * fps))
-                : Math.Max(0, (int)Math.Floor(actionTime * fps));
+        var currentFrame = ComponentPreviewActionRuntimeValue.FrameAtTime(action, actionTime, fps);
         for (var index = 1; index <= AheadPlaybackPreloadFrames * 2; index++)
         {
             var frame = currentFrame + index;
@@ -3182,11 +3178,7 @@ internal sealed class EditorPreviewController : IDisposable
             yield return DesignPreviewPlaybackFrameProjection.Apply(
                 payload with { DesignPreviewJson = framePreview.ToJsonString() },
                 action,
-                action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
-                    ? frame
-                    : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
-                        ? frame / (double)fps * 1000
-                        : frame / (double)fps);
+                frame);
         }
     }
 

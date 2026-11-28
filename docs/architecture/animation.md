@@ -437,11 +437,13 @@ owner-local ages. Duration covers the latest birth across all enabled triggers
 plus its lifetime, including bursts that extend beyond a later trigger.
 Design Test Values can carry the same v2 document in `testValues.animation`.
 The Design fixture supplies it to the instance envelope for its own transport.
-Social Post supplies an initially empty Design sequence. Each fixed-value event in
-Test Values exposes its sole declared option as an action button. It sets a key
-for that item at the current frame of the shared transport. The adjacent remove
-action removes the key for that same item and frame.
-Frame buttons seek to existing emissions. Reset discards session edits and Save
+Social Post starts with an empty Design sequence. Each fixed-value event item
+exposes one optional integer emission frame. Blank removes its Design track.
+Zero creates an emission at the start. Changing the frame moves the same key.
+The main Play transport supplies the Screen-local sample frame, converting its
+declared time unit using the Preview frame rate. Its sampled media time is
+already at that frame. Production retains all authored keys for each item.
+Reset discards session edits and Save
 as defaults promotes the sequence after checking the class Variants.
 
 Reaction Emitter owns its stable emoticon catalog, final size, rise height and

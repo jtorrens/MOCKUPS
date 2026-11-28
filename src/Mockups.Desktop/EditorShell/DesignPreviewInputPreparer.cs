@@ -303,7 +303,8 @@ internal sealed class DesignPreviewInputPreparer(
                 : DesignPreviewPlaybackFrameProjection.Apply(
                     result,
                     moduleFrameActions[0],
-                    PlaybackTimeValue(moduleFrameActions[0]));
+                    ComponentPreviewActionRuntimeValue.FrameAtTime(moduleFrameActions[0],
+                        PlaybackTimeValue(moduleFrameActions[0]), PreviewPlaybackTiming.PreviewFrameRate(payload.FrameRate)));
         }
 
         private void ResolveCollectionRecordReferences(

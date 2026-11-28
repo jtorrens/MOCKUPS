@@ -26,7 +26,7 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
             IsEnabled = definition.IsEditable,
             Increment = definition.Number?.Increment ?? 1,
             FormatString = "0",
-            Value = ParseRequired(_value),
+            Value = Parse(_value),
         });
 
         if (definition.Number?.Minimum is { } minimum)
@@ -43,9 +43,8 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
         {
             if (change.Property != NumericUpDown.ValueProperty || _isUpdating) return;
 
-            if (_numeric.Value is not { } numericValue) return;
-
-            SetLocalValue(Format(numericValue));
+            if (_numeric.Value is { } numericValue) SetLocalValue(Format(numericValue));
+            else if (_definition.AllowEmpty) SetLocalValue("");
         };
         EditorTextBoxBehavior.AttachCommit(
             _numeric,
@@ -70,7 +69,7 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
         _value = normalized;
         _lastCommittedValue = normalized;
         _isUpdating = true;
-        _numeric.Value = ParseRequired(_value);
+        _numeric.Value = Parse(_value);
         _isUpdating = false;
     }
 
@@ -93,7 +92,7 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
 
     private string Normalize(string value)
     {
-        return Format(ParseRequired(value));
+        return Parse(value) is { } number ? Format(number) : "";
     }
 
     private static string Format(decimal value)
@@ -101,7 +100,6 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
         return NumericText.IntegerString(value);
     }
 
-    private decimal ParseRequired(string value) => DictionaryNumericValueContract.ParseRequired(
-        _definition,
-        value);
+    private decimal? Parse(string value) => _definition.AllowEmpty && value.Length == 0
+        ? null : DictionaryNumericValueContract.ParseRequired(_definition, value);
 }

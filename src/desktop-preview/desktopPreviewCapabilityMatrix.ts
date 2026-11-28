@@ -37,7 +37,7 @@ const capabilities = (
 });
 
 export const desktopPreviewComponentCapabilities = {
-  reactionEmitter: capabilities(["playEmissions"], [], ["ownerTimeline"]),
+  reactionEmitter: capabilities(["play"], [], ["ownerTimeline"]),
   label: capabilities([], [], ["calculatedText"]),
   surface: capabilities(),
   cursor: capabilities([], [], ["cursorBlink"]),
@@ -109,7 +109,7 @@ export const desktopPreviewModuleCapabilities = {
     ["ownerTimeline", "presenceMotion"],
   ),
   "module.core.socialPost": capabilities(
-    ["writeMessage", "play", "fullScreen", "playEmissions"],
+    ["writeMessage", "play", "fullScreen"],
     [],
     ["ownerTimeline", "writeOn", "mediaPlayback", "fullScreenMotion", "stateMotion"],
   ),

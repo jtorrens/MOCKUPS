@@ -305,8 +305,9 @@ function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
     requiredBoolean(authored, "isPlaying", "module.core.socialPost.isPlaying"));
   const durationSeconds = Math.max(0,
     requiredNumber(preview, "durationSeconds", "module.core.socialPost.durationSeconds"));
-  const time = Math.max(0, requiredNumber(authored, "currentTimeSeconds",
-    "module.core.socialPost.currentTimeSeconds")) + playback.elapsedFrames / Math.max(1, payload.frameRate);
+  const sampledTime = requiredNumber(authored, "currentTimeSeconds", "module.core.socialPost.currentTimeSeconds");
+  const time = Math.max(0, sampledTime) + (instance.designPlaybackTimeKey === "currentTimeSeconds"
+    ? 0 : playback.elapsedFrames / Math.max(1, payload.frameRate));
   preview.currentTimeSeconds = Math.min(time, durationSeconds);
   preview.isPlaying = playback.isPlaying && time < durationSeconds;
   const fullScreen = resolution.field("isFullScreen");

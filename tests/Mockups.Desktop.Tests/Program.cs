@@ -10690,8 +10690,6 @@ static void DesignEventKeysFollowFixtureTransport()
                 var host = Required(window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
                 var controller = Required(typeof(MainWindow).GetField("_previewController",
                     BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorPreviewController);
-                Button? ButtonNamed(string tip) => (host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
-                    .SingleOrDefault(button => ToolTip.GetTip(button) as string == tip);
                 void Wait(Func<bool> condition) => True(SpinWait.SpinUntil(() =>
                 {
                     Dispatcher.UIThread.RunJobs();
@@ -10704,22 +10702,27 @@ static void DesignEventKeysFollowFixtureTransport()
                     .SingleOrDefault(button => Avalonia.Automation.AutomationProperties.GetName(button) == "Open Emoticons");
                 Wait(() => CatalogTab() is not null);
                 Required(CatalogTab()).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => ButtonNamed("Go to event at frame 16") is not null);
-                Required(ButtonNamed("Go to event at frame 16")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => controller.CurrentDesignPreviewActionFrame(owner, "playEmissions") == 16);
-                Required(ButtonNamed("Remove event at current frame · Emisión clap")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => ButtonNamed("Go to event at frame 8") is not null && ButtonNamed("Go to event at frame 16") is null);
-                Required(ButtonNamed("Emitir · clap")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => ButtonNamed("Go to event at frame 16") is not null);
-                Required(ButtonNamed("Emitir · fire")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => (host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
-                    .Count(button => ToolTip.GetTip(button) as string == "Go to event at frame 16") == 2);
+                DictionaryFieldControl[] Frames() => (host.Content as Control)?.GetLogicalDescendants()
+                    .OfType<DictionaryFieldControl>().Where(field => field.FieldId == "fixture.frame.emit").ToArray() ?? [];
+                Wait(() => Frames().Length == 5);
+                var original = Frames()[2].Value;
+                Equal("16", original);
+                int? EditedFrame()
+                {
+                    var state = controller.CaptureDesignPreviewTransientState(owner);
+                    if (!state.Values.TryGetValue(ComponentPreviewTransientValues.AnimationKey(state.ScopeKey), out var json))
+                        return 16;
+                    return new ModuleInstanceAnimationDocument(json).Track("emit", "clap")?.Keyframes.Single().Frame;
+                }
+                Frames()[2].SetValue("0", commit: true);
+                Wait(() => EditedFrame() == 0);
+                Frames()[2].SetValue("", commit: true);
+                Wait(() => EditedFrame() is null);
                 Equal(before, database.GetComponentClassSettings(component).DesignPreviewJson);
                 var reset = Required((host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
                     .Single(button => button.Content as string == "Reset test values"));
                 reset.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => (host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
-                    .Count(button => ToolTip.GetTip(button) as string == "Go to event at frame 16") == 1);
+                Wait(() => Frames().Length == 5 && Frames()[2].Value == original);
             }
             finally { CloseTestWindow(window); Dispatcher.UIThread.RunJobs(); }
         }, CancellationToken.None).GetAwaiter().GetResult();
