@@ -426,7 +426,8 @@ A Runtime input can declare an event output with `eventOutputJsonKey` and
 a positive lifetime from `eventDurationConfigPath` in the effective Variant.
 The same Variant supplies `eventBurstConfigPath`, with a positive integer `count`
 and nonnegative integer `intervalFrames` shared by every trigger. Each enabled
-hold keyframe selects an item and its emission frame. Embedded event inputs can
+collection event track addresses one stable item by `targetId`. Its hold keyframes
+carry the declared trigger value at owner-local frames. Different items can emit on the same frame. Embedded event inputs can
 declare `sourceVariantSlotPath` to resolve both timing paths against their exact
 Component Variant and local Overrides during shared Runtime preparation. Birth number i occurs at trigger frame
 plus i times the interval, starting with i = 0. Zero interval creates simultaneous

@@ -10700,10 +10700,14 @@ static void DesignEventKeysFollowFixtureTransport()
                 var editor = Required(typeof(MainWindow).GetField("_editorContent",
                     BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as EditorContentController);
                 Wait(() => editor.CommittedOwnerId == owner.Id);
+                Button? CatalogTab() => (host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
+                    .SingleOrDefault(button => Avalonia.Automation.AutomationProperties.GetName(button) == "Open Emoticons");
+                Wait(() => CatalogTab() is not null);
+                Required(CatalogTab()).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Wait(() => ButtonNamed("Go to event at frame 16") is not null);
                 Required(ButtonNamed("Go to event at frame 16")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Wait(() => controller.CurrentDesignPreviewActionFrame(owner, "playEmissions") == 16);
-                Required(ButtonNamed("Remove event at current frame")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Required(ButtonNamed("Remove event at current frame · Emisión clap")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Wait(() => ButtonNamed("Go to event at frame 8") is not null && ButtonNamed("Go to event at frame 16") is null);
                 Equal(before, database.GetComponentClassSettings(component).DesignPreviewJson);
                 var reset = Required((host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
@@ -10780,7 +10784,7 @@ static void DesignCollectionDefaultsUseCurrentState(
                 var createControl = Required(typeof(RuntimeInputsCollectionEditor).GetMethod(
                     "CreateTestValueCollectionControl", BindingFlags.Instance | BindingFlags.NonPublic));
                 var control = Required(createControl.Invoke(mounted.Editor,
-                    [surface.Owner, collection, StructuredCollectionAddress.Root(collection.StorageJsonKey),
+                    [surface.Owner, surface.Preview, collection, StructuredCollectionAddress.Root(collection.StorageJsonKey),
                         0, items[0], input, null, null, null, null]) as DictionaryFieldControl);
                 control.SetValue(nextValue, commit: true);
                 var controller = Required(typeof(MainWindow).GetField("_previewController",
@@ -28964,7 +28968,7 @@ static void SocialPostComposesHeaderRows()
             "mediaCutout",
             "galleryMediaCutout",
             "mediaSource",
-            "emitReaction",
+            "showEmoticons",
         ],
         inputs.Select((input) => input.Id).ToList());
     var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);

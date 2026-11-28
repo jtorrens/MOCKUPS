@@ -133,50 +133,17 @@
     "sampleSize": 256,
     "inputs": [
       {
-        "id": "emit",
-        "label": "Emit reaction",
-        "jsonKey": "emit",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "heart",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
+        "id": "showEmoticons",
+        "jsonKey": "showEmoticons",
+        "label": "Mostrar emoticonos",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
         "source": "runtime",
         "uiOrigin": "self",
-        "uiGroupId": "",
-        "uiGroupLabel": "",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 10,
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ],
-        "eventOutputJsonKey": "emissions",
-        "optionsSourceCollectionJsonKey": "catalog",
-        "optionsSourceValueJsonKey": "id",
-        "optionsSourceLabelJsonKey": "glyph",
-        "eventDurationConfigPath": [
-          "reactionEmitter",
-          "duration"
-        ],
-        "eventBurstConfigPath": [
-          "reactionEmitter",
-          "burst"
-        ]
+        "uiOrder": 10
       }
     ],
-    "emit": "heart",
     "collections": [
       {
         "id": "catalog",
@@ -192,6 +159,34 @@
             "valueKind": "StringSingleLine",
             "defaultValue": "🙂",
             "source": "variant"
+          },
+          {
+            "eventDurationConfigPath": [
+              "reactionEmitter",
+              "duration"
+            ],
+            "eventBurstConfigPath": [
+              "reactionEmitter",
+              "burst"
+            ],
+            "id": "emit",
+            "jsonKey": "emit",
+            "label": "Emisión",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "source": "runtime",
+            "defaultValue": "emit",
+            "options": [
+              {
+                "value": "emit",
+                "label": "Emitir"
+              }
+            ],
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "eventOutputJsonKey": "emissions"
           }
         ],
         "canEditStructure": false,
@@ -202,6 +197,14 @@
           "fieldBindings": {
             "glyph": "glyph"
           }
+        },
+        "animationTimeline": {
+          "sequenceItems": false
+        },
+        "itemPresentation": {
+          "titleFieldId": "glyph",
+          "subtitleFieldIds": [],
+          "fallbackIcon": "component"
         }
       }
     ],
@@ -231,43 +234,73 @@
               {
                 "id": "emit_heart",
                 "frame": 0,
-                "value": "heart",
-                "enabled": true,
-                "interpolation": "hold"
-              },
-              {
-                "id": "emit_laugh",
-                "frame": 8,
-                "value": "laugh",
-                "enabled": true,
-                "interpolation": "hold"
-              },
-              {
-                "id": "emit_clap",
-                "frame": 16,
-                "value": "clap",
-                "enabled": true,
-                "interpolation": "hold"
-              },
-              {
-                "id": "emit_fire",
-                "frame": 24,
-                "value": "fire",
-                "enabled": true,
-                "interpolation": "hold"
-              },
-              {
-                "id": "emit_surprise",
-                "frame": 32,
-                "value": "surprise",
+                "value": "emit",
                 "enabled": true,
                 "interpolation": "hold"
               }
-            ]
+            ],
+            "targetId": "heart"
+          },
+          {
+            "id": "track_461022a8cd0f50be9b605bceae022b84",
+            "fieldId": "emit",
+            "keyframes": [
+              {
+                "id": "emit_laugh",
+                "frame": 8,
+                "value": "emit",
+                "enabled": true,
+                "interpolation": "hold"
+              }
+            ],
+            "targetId": "laugh"
+          },
+          {
+            "id": "track_b0b678088905532d813be01d26e4ba9f",
+            "fieldId": "emit",
+            "keyframes": [
+              {
+                "id": "emit_clap",
+                "frame": 16,
+                "value": "emit",
+                "enabled": true,
+                "interpolation": "hold"
+              }
+            ],
+            "targetId": "clap"
+          },
+          {
+            "id": "track_27830ede1ea258d295de72737ea9d0f9",
+            "fieldId": "emit",
+            "keyframes": [
+              {
+                "id": "emit_fire",
+                "frame": 24,
+                "value": "emit",
+                "enabled": true,
+                "interpolation": "hold"
+              }
+            ],
+            "targetId": "fire"
+          },
+          {
+            "id": "track_5763ee7b4a2e50ff9208e51eeb210f01",
+            "fieldId": "emit",
+            "keyframes": [
+              {
+                "id": "emit_surprise",
+                "frame": 32,
+                "value": "emit",
+                "enabled": true,
+                "interpolation": "hold"
+              }
+            ],
+            "targetId": "surprise"
           }
         ]
       }
-    }
+    },
+    "showEmoticons": true
   },
   "metadata": {
     "note": "Seeded reusable component class."

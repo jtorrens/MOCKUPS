@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { parseObject, requiredObjectArray } from "./previewJsonHelpers.js";
-import { requiredNumberValue, requiredPlacement, requiredRecord, requiredString } from "./previewValueHelpers.js";
+import { requiredBoolean, requiredNumberValue, requiredPlacement, requiredRecord, requiredString } from "./previewValueHelpers.js";
 import type { ReactionEmitterDesignContract } from "./reactionEmitterComponentContract.js";
 
 function integer(owner: Record<string, unknown>, key: string, min: number, max: number) {
@@ -32,20 +32,23 @@ export function resolveReactionEmitterComponent(payload: DesignPreviewPayload): 
   const initialOpacity = integer(config, "entryOpacity", 0, 100) / 100;
   const fadeStart = integer(config, "fadeStart", 0, 100) / 100;
   const particles: ReactionEmitterDesignContract["particles"] = [];
-  for (const event of requiredObjectArray(runtime, "emissions", "Reaction Emitter")) {
-    const id = requiredString(event, "id", "Emission id");
-    const value = requiredString(event, "value", "Emission reaction");
-    const glyph = glyphs.get(value);
-    if (!glyph) throw new Error(`Unknown emission reaction '${value}'`);
-    const age = integer(event, "age", 0, Number.MAX_SAFE_INTEGER);
-    if (age >= duration) continue;
-    const progress = age / duration;
-    const enter = entryFrames === 0 ? 1 : Math.min(1, age / entryFrames);
-    const fade = progress <= fadeStart ? 1 : (1 - progress) / (1 - fadeStart);
-    const rise = 1 - (1 - progress) ** 2;
-    particles.push({ id, glyph, rise, drift: rise * driftForEvent(id),
-      scale: initialScale + (1 - initialScale) * enter,
-      opacity: (initialOpacity + (1 - initialOpacity) * enter) * fade });
+  const catalog = requiredObjectArray(runtime, "catalog", "Reaction Emitter");
+  for (const item of requiredBoolean(runtime, "showEmoticons", "Reaction Emitter") ? catalog : []) {
+    const itemId = requiredString(item, "id", "Emission item");
+    const glyph = glyphs.get(itemId);
+    if (!glyph) throw new Error(`Unknown emission reaction '${itemId}'`);
+    for (const event of requiredObjectArray(item, "emissions", "Emission item")) {
+      const id = requiredString(event, "id", "Emission id");
+      const age = integer(event, "age", 0, Number.MAX_SAFE_INTEGER);
+      if (age >= duration) continue;
+      const progress = age / duration;
+      const enter = entryFrames === 0 ? 1 : Math.min(1, age / entryFrames);
+      const fade = progress <= fadeStart ? 1 : (1 - progress) / (1 - fadeStart);
+      const rise = 1 - (1 - progress) ** 2;
+      particles.push({ id, glyph, rise, drift: rise * driftForEvent(id),
+        scale: initialScale + (1 - initialScale) * enter,
+        opacity: (initialOpacity + (1 - initialOpacity) * enter) * fade });
+    }
   }
   return {
     size: integer(config, "size", 1, 512),

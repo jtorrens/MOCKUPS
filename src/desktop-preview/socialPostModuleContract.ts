@@ -41,7 +41,7 @@ export interface SocialPostModuleContract {
   showActions: boolean;
   showReactionEmitter: boolean;
   reactionEmitterSlot: SocialPostComponentSlot;
-  reactionEmissions: Record<string, unknown>[];
+  reactionCatalog: Record<string, unknown>[];
   actions: IconRowDesignContract;
   galleryFloatHeight: number;
   useAppWallpaper: boolean;

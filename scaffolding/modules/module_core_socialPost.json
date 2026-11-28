@@ -1912,48 +1912,15 @@
         ]
       },
       {
-        "id": "emitReaction",
-        "label": "Emissions",
-        "jsonKey": "emitReaction",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "heart",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
+        "id": "showEmoticons",
+        "jsonKey": "showEmoticons",
+        "label": "Mostrar emoticonos",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
         "source": "runtime",
         "uiOrigin": "self",
-        "uiGroupId": "reactionEmitter",
-        "uiGroupLabel": "Reaction Emitter",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 10,
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ],
-        "eventOutputJsonKey": "reactionEmissions",
-        "optionsSourceCollectionJsonKey": "reactionCatalog",
-        "optionsSourceValueJsonKey": "id",
-        "optionsSourceLabelJsonKey": "glyph",
-        "eventDurationConfigPath": [
-          "reactionEmitter",
-          "duration"
-        ],
-        "eventBurstConfigPath": [
-          "reactionEmitter",
-          "burst"
-        ],
-        "sourceVariantSlotPath": "socialPost.reactionEmitterSlot"
+        "uiOrder": 10
       }
     ],
     "collections": [
@@ -2932,6 +2899,35 @@
             "valueKind": "StringSingleLine",
             "defaultValue": "🙂",
             "source": "variant"
+          },
+          {
+            "eventDurationConfigPath": [
+              "reactionEmitter",
+              "duration"
+            ],
+            "eventBurstConfigPath": [
+              "reactionEmitter",
+              "burst"
+            ],
+            "sourceVariantSlotPath": "socialPost.reactionEmitterSlot",
+            "id": "emit",
+            "jsonKey": "emit",
+            "label": "Emisión",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "source": "runtime",
+            "defaultValue": "emit",
+            "options": [
+              {
+                "value": "emit",
+                "label": "Emitir"
+              }
+            ],
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "eventOutputJsonKey": "emissions"
           }
         ],
         "canEditStructure": false,
@@ -2947,7 +2943,12 @@
         "animationTimeline": {
           "sequenceItems": false
         },
-        "storageCollectionJsonKey": "reactionCatalog"
+        "storageCollectionJsonKey": "reactionCatalog",
+        "itemPresentation": {
+          "titleFieldId": "glyph",
+          "subtitleFieldIds": [],
+          "fallbackIcon": "component"
+        }
       }
     ],
     "showGallery": false,
@@ -3274,29 +3275,34 @@
       }
     ],
     "mediaSource": "system-preview://media/test-image.svg",
-    "emitReaction": "heart",
     "reactionCatalog": [
       {
         "id": "heart",
-        "glyph": "❤️"
+        "glyph": "❤️",
+        "emit": "emit"
       },
       {
         "id": "laugh",
-        "glyph": "😂"
+        "glyph": "😂",
+        "emit": "emit"
       },
       {
         "id": "clap",
-        "glyph": "👏"
+        "glyph": "👏",
+        "emit": "emit"
       },
       {
         "id": "fire",
-        "glyph": "🔥"
+        "glyph": "🔥",
+        "emit": "emit"
       },
       {
         "id": "surprise",
-        "glyph": "😮"
+        "glyph": "😮",
+        "emit": "emit"
       }
-    ]
+    ],
+    "showEmoticons": true
   },
   "metadata": {
     "note": "Social Post defines its two-row header and one padded Media section."

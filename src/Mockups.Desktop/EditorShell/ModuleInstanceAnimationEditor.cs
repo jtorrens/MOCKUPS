@@ -995,6 +995,7 @@ internal sealed class ModuleInstanceAnimationEditor
             }
         }, exception => _messages.Error("Save animation", exception));
         keyframeButton.IsEnabled = exact is null || enabledKeyframes.Count > 1;
+        if (target.Input.IsFixedEvent) return panel;
         valueControl.IsEnabled = true;
         valueControl.ValueCommitted += (_, value) => _ = SaveValue(value, interpolationControl.Value, editingFrame);
         panel.Children.Add(valueControl);
@@ -1333,7 +1334,7 @@ internal sealed class ModuleInstanceAnimationEditor
             .Select((target) => new AnimationTarget(
                 target.FieldId,
                 target.TargetId,
-                target.Input.Label,
+                target.Input.IsFixedEvent && target.TargetId.Length > 0 ? $"{target.Input.Label} · {target.TargetId}" : target.Input.Label,
                 target.InputWithOptions,
                 target.BaseValue,
                 RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(

@@ -195,7 +195,7 @@ export function socialPostModuleToRenderable(
   if (media) children.push(media);
   const emitter = contract.showReactionEmitter
     ? componentNode(payload, componentBaseConfigs, "reactionEmitter", contract.reactionEmitterSlot,
-        { emissions: contract.reactionEmissions }, undefined, screen)
+        { catalog: contract.reactionCatalog, showEmoticons: contract.showReactionEmitter }, undefined, screen)
     : undefined;
   const overlays = emitter ? [gallery, emitter, header] : [header, gallery];
   for (const layer of overlays) {

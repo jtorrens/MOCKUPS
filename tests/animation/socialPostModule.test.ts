@@ -34,7 +34,9 @@ function fixture(variantId = "default") {
     assert.ok(defaultVariant);
     const runtime = JSON.parse(module.design_preview_json) as Record<string, unknown>;
     const emitter = JSON.parse(committedComponentFixture("reactionEmitter").configJson).reactionEmitter;
-    const event = (runtime.inputs as Array<Record<string, unknown>>).find(input => input.id === "emitReaction")!;
+    const catalog = (runtime.collections as Array<{ id: string; fields: Array<Record<string, unknown>> }>)
+      .find(collection => collection.id === "reactionCatalog")!;
+    const event = catalog.fields.find(field => field.id === "emit")!;
     event.eventDurationFrames = emitter.duration;
     event.eventBurst = emitter.burst;
     // Explicit prepared fixture for the Default Icon Row boundary; Reel uses
@@ -119,7 +121,7 @@ test("Social Post owns structure-projected Runtime row sections", () => {
     "mediaCutout",
     "galleryMediaCutout",
     "mediaSource",
-    "emitReaction",
+    "showEmoticons",
   ]);
   assert.deepEqual(runtime.collections.map(({ id }) => id), [
     "socialPostRows",
@@ -697,26 +699,31 @@ test("Reel action and footer labels consume independent Screen Runtime values", 
 test("Social Post draws each Screen's emissions above its media and below its interface", () => {
   const source = fixture("reel");
   const config = JSON.parse(source.configJson);
-  const draw = (value: string, frame: number) => socialPostModuleToRenderable({
+  const draw = (targets: string[], frame: number, showEmoticons = true) => socialPostModuleToRenderable({
     ...source, localFrame: frame, configJson: JSON.stringify(config),
-    instanceJson: JSON.stringify({ animation: { schemaVersion: 2, tracks: [{
-      id: "reactions", fieldId: "emitReaction", keyframes: [
-        { id: "birth", frame: 10, value, enabled: true, interpolation: "hold" },
+    designPreviewJson: JSON.stringify({ ...JSON.parse(source.designPreviewJson), showEmoticons }),
+    instanceJson: JSON.stringify({ animation: { schemaVersion: 2, tracks: targets.map(targetId => ({
+      id: targetId + "-track", fieldId: "emit", targetId, keyframes: [
+        { id: targetId + "-birth", frame: 10, value: "emit", enabled: true, interpolation: "hold" },
       ],
-    }] } }),
+    })) } }),
   });
   config.socialPost.showReactionEmitter = true;
-  const first = draw("fire", 15);
+  const first = draw(["fire"], 15);
+  assert.equal(findNode(draw(["fire"], 15, false), "component.reactionEmitter"), undefined);
+  const simultaneous = draw(["fire", "clap"], 15);
+  assert.equal(requiredNode(simultaneous, "emission.fire-birth:0").text, "🔥");
+  assert.equal(requiredNode(simultaneous, "emission.clap-birth:0").text, "👏");
   const layers = first.children!.map(node => node.id);
   const emitter = layers.indexOf("component.reactionEmitter");
   assert.ok(layers.indexOf("module.core.socialPost.media") >= 0);
   assert.ok(layers.indexOf("module.core.socialPost.media") < emitter);
   assert.ok(emitter < layers.indexOf("module.core.socialPost.actions"));
-  assert.equal(requiredNode(first, "emission.birth:0").text, "🔥");
-  assert.equal(requiredNode(draw("clap", 15), "emission.birth:0").text, "👏");
-  assert.equal(findNode(draw("fire", 9), "emission.birth:0"), undefined);
+  assert.equal(requiredNode(first, "emission.fire-birth:0").text, "🔥");
+  assert.equal(requiredNode(draw(["clap"], 15), "emission.clap-birth:0").text, "👏");
+  assert.equal(findNode(draw(["fire"], 9), "emission.fire-birth:0"), undefined);
   config.socialPost.showReactionEmitter = false;
-  assert.equal(findNode(draw("fire", 15), "component.reactionEmitter"), undefined);
+  assert.equal(findNode(draw(["fire"], 15), "component.reactionEmitter"), undefined);
   config.socialPost.showReactionEmitter = true;
-  assert.equal(requiredNode(draw("fire", 15), "emission.birth:0").text, "🔥");
+  assert.equal(requiredNode(draw(["fire"], 15), "emission.fire-birth:0").text, "🔥");
 });

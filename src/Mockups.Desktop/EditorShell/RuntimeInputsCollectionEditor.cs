@@ -63,7 +63,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<ProjectTreeNode, string, int, string?, Task> _setActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _currentActionFrame;
     private readonly Func<ProjectTreeNode, string, int> _maximumActionFrame;
-    private readonly Func<ProjectTreeNode, string, int, string?, Task>? _editFixtureEvent;
+    private readonly Func<ProjectTreeNode, string, string, int, string?, Task>? _editFixtureEvent;
     private readonly Func<ProjectTreeNode, string, string, Task> _setPreviewTestValue;
     private readonly Action<ProjectTreeNode, string> _discardCommittedProductionRuntimeValue;
     private readonly Func<ProjectTreeNode, StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>
@@ -139,7 +139,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<EditorEmbeddedContext> openEmbeddedContext,
         ModuleInstanceAnimationEditor? animationEditor = null,
         Action<ProjectTreeNode>? reloadAndSelect = null,
-        Func<ProjectTreeNode, string, int, string?, Task>? editFixtureEvent = null)
+        Func<ProjectTreeNode, string, string, int, string?, Task>? editFixtureEvent = null)
     {
         _previewInputData =
             new ComponentPreviewInputDataSource(
@@ -806,7 +806,7 @@ internal sealed class RuntimeInputsCollectionEditor
         control.IsEnabled = RuntimeInputIsEnabled(preview, DesignPreviewTestValues.Parse(owner.ConfigJson), input);
         if (!owner.IsInstance && input.Animation is { EventOutputJsonKey.Length: > 0 }
             && DesignPreviewTestValues.Animation(preview) is { } fixture)
-            return WithFixtureEventControls(owner, input, control, preview, fixture);
+            return WithFixtureEventControls(owner, input, "", control, preview, fixture);
         var pendingChange = Task.CompletedTask;
         async Task PublishValueAsync(string next)
         {
@@ -845,13 +845,13 @@ internal sealed class RuntimeInputsCollectionEditor
     }
 
     private Control WithFixtureEventControls(
-        RuntimeInputOwner owner, ComponentInputDefinition input, DictionaryFieldControl control,
+        RuntimeInputOwner owner, ComponentInputDefinition input, string targetId, DictionaryFieldControl control,
         JsonObject preview, JsonObject fixture)
     {
         var transport = ComponentPreviewActions.ReadApplicable(preview).Single(action => action.DefinesModuleDuration);
         var panel = new StackPanel { Spacing = 4 };
-        panel.Children.Add(control);
-        var track = new ModuleInstanceAnimationDocument(fixture.ToJsonString()).Track(input.Id, "");
+        panel.Children.Add(input.IsFixedEvent ? new TextBlock { Text = input.Label } : control);
+        var track = new ModuleInstanceAnimationDocument(fixture.ToJsonString()).Track(input.Id, targetId);
         int? selectedFrame = null;
         void PresentFrame()
         {
@@ -869,7 +869,7 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 var frame = _currentActionFrame(owner.Node, transport.Id);
                 await (_editFixtureEvent ?? throw new InvalidOperationException("Missing fixture event editor."))(
-                    owner.Node, input.Id, frame, remove ? null : control.Value);
+                    owner.Node, input.Id, targetId, frame, remove ? null : control.Value);
                 _testValuesChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             }
@@ -881,7 +881,7 @@ internal sealed class RuntimeInputsCollectionEditor
         add.Click += async (_, _) => await EditEvent(false);
         commands.Children.Add(add);
         var remove = EditorTimelineTransport.CreateNavigationButton(
-            EditorTimelineTransport.CreateKeyframeGlyph(false), "Remove event at current frame");
+            EditorTimelineTransport.CreateKeyframeGlyph(false), $"Remove event at current frame · {input.Label} {targetId}".TrimEnd());
         remove.Click += async (_, _) => await EditEvent(true);
         commands.Children.Add(remove);
         panel.Children.Add(commands);
@@ -1257,6 +1257,7 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             general.Children.Add(CreateTestValueCollectionControl(
                 owner,
+                preview,
                 collection,
                 StructuredCollectionAddress.Root(collection.StorageJsonKey),
                 itemIndex,
@@ -1875,6 +1876,7 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             content.Children.Add(CreateTestValueCollectionControl(
                 owner,
+                preview,
                 collection,
                 address,
                 itemIndex,
@@ -2196,6 +2198,7 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private Control CreateTestValueCollectionControl(
         RuntimeInputOwner owner,
+        JsonObject preview,
         RuntimeInputCollectionDefinition collection,
         StructuredCollectionAddress address,
         int itemIndex,
@@ -2339,6 +2342,9 @@ internal sealed class RuntimeInputsCollectionEditor
                 DesignPreviewTestValues.CollectionValue(item, input),
                 IsHighlighted: hasComponentOverrides),
             services);
+        if (!owner.IsInstance && input.Animation is { EventOutputJsonKey.Length: > 0 }
+            && DesignPreviewTestValues.Animation(preview) is { } fixture)
+            return WithFixtureEventControls(owner, input, ItemId(item, itemIndex), control, preview, fixture);
         itemControls?[input.Id] = control;
         control.ValueCommitted += async (_, next) =>
         {
@@ -2580,8 +2586,9 @@ internal sealed class RuntimeInputsCollectionEditor
             ColumnSpacing = 2,
         };
         row.Children.Add(toggle);
-        Grid.SetColumn(control, 1);
-        row.Children.Add(control);
+        Control field = input.IsFixedEvent ? new TextBlock { Text = input.Label, VerticalAlignment = VerticalAlignment.Center } : control;
+        Grid.SetColumn(field, 1);
+        row.Children.Add(field);
         void RefreshResolvedValue()
         {
             if (_animationEditor is not null && active)
@@ -2664,6 +2671,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             content.Children.Add(CreateTestValueCollectionControl(
                 owner,
+                preview,
                 collection,
                 address,
                 itemIndex,

@@ -81,6 +81,9 @@ public sealed record ComponentInputDefinition(
     bool UseSlider = false,
     string ThemeTokenFamily = "")
 {
+    public bool IsFixedEvent => Animation is { EventOutputJsonKey.Length: > 0 }
+        && ValueKind == ValueKind.OptionToken && Options is { Count: 1 };
+
     public NumberDefinition Number => new(
         Minimum, Maximum, Increment,
         ValueKind is ValueKind.Integer or ValueKind.IntegerPair ? 0 : 2,

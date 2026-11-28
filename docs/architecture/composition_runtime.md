@@ -668,9 +668,10 @@ Reel is a complete Social Post Variant, not another implementation or route.
 
 Each Social Post Variant owns an enable switch and a fixed Reaction Emitter slot.
 The post draws that Component across the Screen above Media and Gallery and below
-interface layers. Each Screen owns its `emitReaction` event track. Its hold
-keyframes select emoticon ids at Screen-local frames. Disabling the layer preserves
-the track. The projected catalog and event timing both use the effective emitter
+interface layers. Each Screen owns `showEmoticons` and the `emit` tracks of its
+`reactionCatalog` items. Each track uses the stable emoticon id as its target.
+The shared Variant switch and the Screen switch must both be enabled to display
+particles. Changing either switch preserves all item keyframes. The projected catalog and event timing both use the effective emitter
 slot, including its local Overrides.
 
 ### Social Post action and row Runtime labels

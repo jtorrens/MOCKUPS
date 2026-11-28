@@ -25,11 +25,18 @@ test("event tracks preserve repeated values and owner-relative age on nonsequent
 
 test("reaction glyphs grow from configured scale and opacity and expire at the end of their rise", () => {
   const payload = committedComponentFixture("reactionEmitter");
+  const config = JSON.parse(payload.configJson);
+  Object.assign(config.reactionEmitter, { duration: 48, burst: { count: 1, intervalFrames: 0 },
+    entryFrames: 5, entryScale: 15, entryOpacity: 0, fadeStart: 70 });
+  payload.configJson = JSON.stringify(config);
   const fixture = JSON.parse(payload.designPreviewJson);
   const animation = fixture.testValues.animation;
   const at = (frame: number) => {
-    const emissions = resolveTimelineEvents(animation, "emit", "", frame, 48, JSON.parse(payload.configJson).reactionEmitter.burst);
-    const prepared = { ...payload, designPreviewJson: JSON.stringify({ emissions }) };
+    const emitter = config.reactionEmitter;
+    const catalog = emitter.reactions.map(({ id }: { id: string }) => ({
+      id, emissions: resolveTimelineEvents(animation, "emit", id, frame, emitter.duration, emitter.burst),
+    }));
+    const prepared = { ...payload, designPreviewJson: JSON.stringify({ showEmoticons: true, catalog }) };
     return reactionEmitterComponentToRenderable(prepared, resolveReactionEmitterComponent(prepared)).children!;
   };
   const first = at(0)[0]!;
@@ -49,11 +56,11 @@ test("reaction glyphs grow from configured scale and opacity and expire at the e
 test("emitter travel uses the root screen height and the placement inside its assigned box", () => {
   const payload = committedComponentFixture("reactionEmitter");
   const config = JSON.parse(payload.configJson);
-  Object.assign(config.reactionEmitter, { riseHeightPercent: 50, dispersionWidth: 80,
+  Object.assign(config.reactionEmitter, { duration: 48, riseHeightPercent: 50, dispersionWidth: 80,
     placement: { mode: "center", alignX: 0.5, alignY: 1, offsetX: 8, offsetY: -12 } });
   payload.configJson = JSON.stringify(config);
   payload.rootPreviewFrame = { ...payload.previewFrame, screenWidth: 360, screenHeight: 800 };
-  payload.designPreviewJson = JSON.stringify({ emissions: [{ id: "k:1", value: "heart", age: 24 }] });
+  payload.designPreviewJson = JSON.stringify({ showEmoticons: true, catalog: [{ id: "heart", emissions: [{ id: "k:1", value: "emit", age: 24 }] }] });
   const emitter = resolveReactionEmitterComponent(payload);
   const group = reactionEmitterComponentToRenderable(payload, emitter, { x: 10, y: 20, width: 100, height: 200 });
   const box = group.children![0]!.box!;

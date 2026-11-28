@@ -230,22 +230,7 @@ internal static class RuntimeTemporalPhaseContract
     public static void Hydrate(JsonObject runtimeContract, JsonObject effectiveConfig, Func<string, JsonObject>? variantConfig)
     {
         foreach (var input in JsonPath.OptionalObjectArray(runtimeContract, "inputs", "Runtime Preview"))
-        {
-            if (!input.ContainsKey("eventOutputJsonKey")) continue;
-            var eventConfig = input.ContainsKey("sourceVariantSlotPath")
-                ? ComponentVariantSlotDocumentContract.ResolveConfigAtPath(effectiveConfig,
-                    JsonPath.RequiredString(input, "sourceVariantSlotPath", "Runtime event track"), variantConfig, "Runtime event track")
-                : effectiveConfig;
-            var path = JsonPath.OptionalStringArray(input, "eventDurationConfigPath", "Runtime event track");
-            if (path.Count == 0 || JsonPath.Get(eventConfig, path.ToArray()) is not JsonValue value
-                || !value.TryGetValue<int>(out var frames) || frames <= 0)
-                throw new InvalidOperationException("Runtime event duration must resolve to a positive frame count.");
-            input["eventDurationFrames"] = frames;
-            var burstPath = JsonPath.OptionalStringArray(input, "eventBurstConfigPath", "Runtime event track");
-            if (burstPath.Count == 0 || JsonPath.Get(eventConfig, burstPath.ToArray()) is not JsonObject burst)
-                throw new InvalidOperationException("Runtime event burst must resolve to a burst configuration.");
-            input["eventBurst"] = EventBurst.Read(burst).ToJson();
-        }
+            HydrateEvent(input, effectiveConfig, variantConfig);
         HydrateTimeline(
             JsonPath.OptionalObject(runtimeContract, "animationTimeline", "Runtime Preview document"),
             effectiveConfig,
@@ -255,11 +240,31 @@ internal static class RuntimeTemporalPhaseContract
                      "collections",
                      "Runtime Preview document"))
         {
+            foreach (var field in JsonPath.OptionalObjectArray(collection, "fields", "Runtime Preview collection"))
+                HydrateEvent(field, effectiveConfig, variantConfig);
             HydrateTimeline(
                 JsonPath.OptionalObject(collection, "animationTimeline", "Runtime Preview collection"),
                 effectiveConfig,
                 "Runtime Preview collection animation timeline");
         }
+    }
+
+    private static void HydrateEvent(JsonObject input, JsonObject effectiveConfig, Func<string, JsonObject>? variantConfig)
+    {
+        if (!input.ContainsKey("eventOutputJsonKey")) return;
+        var eventConfig = input.ContainsKey("sourceVariantSlotPath")
+            ? ComponentVariantSlotDocumentContract.ResolveConfigAtPath(effectiveConfig,
+                JsonPath.RequiredString(input, "sourceVariantSlotPath", "Runtime event track"), variantConfig, "Runtime event track")
+            : effectiveConfig;
+        var path = JsonPath.OptionalStringArray(input, "eventDurationConfigPath", "Runtime event track");
+        if (path.Count == 0 || JsonPath.Get(eventConfig, path.ToArray()) is not JsonValue value
+            || !value.TryGetValue<int>(out var frames) || frames <= 0)
+            throw new InvalidOperationException("Runtime event duration must resolve to a positive frame count.");
+        input["eventDurationFrames"] = frames;
+        var burstPath = JsonPath.OptionalStringArray(input, "eventBurstConfigPath", "Runtime event track");
+        if (burstPath.Count == 0 || JsonPath.Get(eventConfig, burstPath.ToArray()) is not JsonObject burst)
+            throw new InvalidOperationException("Runtime event burst must resolve to a burst configuration.");
+        input["eventBurst"] = EventBurst.Read(burst).ToJson();
     }
 
     private static void HydrateTimeline(JsonObject? timeline, JsonObject effectiveConfig, string owner)

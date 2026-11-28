@@ -220,6 +220,7 @@ export function planScopedValidation(
         "EditorPreviewController.cs", "ComponentInputsPanel.cs", "DesignPreviewInputPreparer.cs",
         "ModuleInstanceAnimationDocument.cs", "FieldDefinition.cs", "RuntimeInputDefinitionReader.cs",
         "RuntimeInputAnimationValueContract.cs", "parameterAnimationResolver.ts", "runtimeNestedAnimationFields.ts", "runtimeOwnerTimeline.ts",
+        "RuntimeInputDefinitions.cs", "runtimePreviewDocumentContract.ts",
         "RuntimeAnimationFrameOrigin.cs", "RuntimePreviewDocumentContract.cs", "DesignPreviewPayloadFactory.cs",
         "ComponentPreviewActionRuntimeValue.cs"].some(name => file.endsWith("/" + name))) {
       previewTests.add("tests/animation/reactionEmitterComponent.test.ts");

@@ -84,13 +84,14 @@ export function resolveRuntimeDocumentAnimationValues(
   document: JsonRecord,
   animation: JsonRecord,
   localFrame: (fieldId: string, targetId: string) => number,
+  collections = optionalObjectArray(document, "collections", "Runtime document"),
 ) {
   const root = resolveRuntimeAnimationValues(
-    { fields: document.inputs }, document, animation, "",
+    { fields: optionalObjectArray(document, "inputs", "Runtime document") }, document, animation, "",
     (fieldId) => localFrame(fieldId, ""),
   );
   const owners = new Map([["", root]]);
-  for (const collection of optionalObjectArray(document, "collections", "Runtime document")) {
+  for (const collection of collections) {
     const key = requiredString(collection, "jsonKey", "Runtime collection");
     root.values[key] = requiredObjectArray(document, key, "Runtime document").map((item) => {
       const id = requiredString(item, "id", `Runtime collection '${key}' item`);
