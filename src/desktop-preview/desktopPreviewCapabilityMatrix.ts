@@ -109,7 +109,7 @@ export const desktopPreviewModuleCapabilities = {
     ["ownerTimeline", "presenceMotion"],
   ),
   "module.core.socialPost": capabilities(
-    ["writeMessage", "play", "fullScreen"],
+    ["writeMessage", "play", "fullScreen", "playEmissions"],
     [],
     ["ownerTimeline", "writeOn", "mediaPlayback", "fullScreenMotion", "stateMotion"],
   ),

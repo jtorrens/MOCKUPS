@@ -437,7 +437,10 @@ owner-local ages. Duration covers the latest birth across all enabled triggers
 plus its lifetime, including bursts that extend beyond a later trigger.
 Design Test Values can carry the same v2 document in `testValues.animation`.
 The Design fixture supplies it to the instance envelope for its own transport.
-The Test Values event control sets or removes a key at the current action frame.
+Social Post supplies an initially empty Design sequence. Each fixed-value event in
+Test Values exposes its sole declared option as an action button. It sets a key
+for that item at the current frame of the shared transport. The adjacent remove
+action removes the key for that same item and frame.
 Frame buttons seek to existing emissions. Reset discards session edits and Save
 as defaults promotes the sequence after checking the class Variants.
 

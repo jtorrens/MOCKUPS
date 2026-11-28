@@ -850,7 +850,8 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var transport = ComponentPreviewActions.ReadApplicable(preview).Single(action => action.DefinesModuleDuration);
         var panel = new StackPanel { Spacing = 4 };
-        panel.Children.Add(input.IsFixedEvent ? new TextBlock { Text = input.Label } : control);
+        var fixedOption = input.IsFixedEvent ? input.Options![0] : null;
+        if (fixedOption is null) panel.Children.Add(control);
         var track = new ModuleInstanceAnimationDocument(fixture.ToJsonString()).Track(input.Id, targetId);
         int? selectedFrame = null;
         void PresentFrame()
@@ -869,15 +870,19 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 var frame = _currentActionFrame(owner.Node, transport.Id);
                 await (_editFixtureEvent ?? throw new InvalidOperationException("Missing fixture event editor."))(
-                    owner.Node, input.Id, targetId, frame, remove ? null : control.Value);
+                    owner.Node, input.Id, targetId, frame, remove ? null : fixedOption?.Value ?? control.Value);
                 _testValuesChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             }
             catch (OperationCanceledException) { }
             catch (Exception error) { _messages.Error("Edit event keyframe", error); }
         }
-        var add = EditorTimelineTransport.CreateNavigationButton(
-            EditorTimelineTransport.CreateKeyframeGlyph(true), "Set event at current frame");
+        var add = fixedOption is not null
+            ? new Button { Content = fixedOption.Label }
+            : EditorTimelineTransport.CreateNavigationButton(
+                EditorTimelineTransport.CreateKeyframeGlyph(true), "Set event at current frame");
+        if (fixedOption is not null)
+            EditorAccessibility.Describe(add, $"{fixedOption.Label} · {targetId}");
         add.Click += async (_, _) => await EditEvent(false);
         commands.Children.Add(add);
         var remove = EditorTimelineTransport.CreateNavigationButton(

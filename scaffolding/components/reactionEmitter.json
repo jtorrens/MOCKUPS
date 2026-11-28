@@ -203,7 +203,9 @@
         },
         "itemPresentation": {
           "titleFieldId": "glyph",
-          "subtitleFieldIds": [],
+          "subtitleFieldIds": [
+            "glyph"
+          ],
           "fallbackIcon": "component"
         }
       }

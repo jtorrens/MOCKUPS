@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
@@ -68,6 +69,15 @@ internal static class Program
             .WithDeveloperTools()
 #endif
             .WithInterFont()
+            .With(new FontManagerOptions
+            {
+                FontFallbacks = [new FontFallback
+                {
+                    FontFamily = new FontFamily(OperatingSystem.IsMacOS() ? "Apple Color Emoji"
+                        : OperatingSystem.IsWindows() ? "Segoe UI Emoji" : "Noto Color Emoji"),
+                    UnicodeRange = UnicodeRange.Parse("U+2600-27BF,U+1F000-1FAFF"),
+                }],
+            })
             .LogToTrace();
 
 }

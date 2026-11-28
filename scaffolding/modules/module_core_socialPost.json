@@ -2946,7 +2946,9 @@
         "storageCollectionJsonKey": "reactionCatalog",
         "itemPresentation": {
           "titleFieldId": "glyph",
-          "subtitleFieldIds": [],
+          "subtitleFieldIds": [
+            "glyph"
+          ],
           "fallbackIcon": "component"
         }
       }
@@ -3006,6 +3008,18 @@
         "timeUnit": "frames",
         "prewarmFrames": false,
         "completionBehavior": "holdFinal"
+      },
+      {
+        "id": "playEmissions",
+        "label": "Play emissions",
+        "playInputId": "playEmissions",
+        "durationBaseFrames": 1,
+        "definesModuleDuration": true,
+        "timeJsonKey": "sequenceFrame",
+        "timeUnit": "frames",
+        "prewarmFrames": false,
+        "completionBehavior": "holdFinal",
+        "durationOwnerTimeline": true
       }
     ],
     "socialPostRows": [
@@ -3302,7 +3316,13 @@
         "emit": "emit"
       }
     ],
-    "showEmoticons": true
+    "showEmoticons": true,
+    "testValues": {
+      "animation": {
+        "schemaVersion": 2,
+        "tracks": []
+      }
+    }
   },
   "metadata": {
     "note": "Social Post defines its two-row header and one padded Media section."

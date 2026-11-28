@@ -10709,11 +10709,17 @@ static void DesignEventKeysFollowFixtureTransport()
                 Wait(() => controller.CurrentDesignPreviewActionFrame(owner, "playEmissions") == 16);
                 Required(ButtonNamed("Remove event at current frame · Emisión clap")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Wait(() => ButtonNamed("Go to event at frame 8") is not null && ButtonNamed("Go to event at frame 16") is null);
+                Required(ButtonNamed("Emitir · clap")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Wait(() => ButtonNamed("Go to event at frame 16") is not null);
+                Required(ButtonNamed("Emitir · fire")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Wait(() => (host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
+                    .Count(button => ToolTip.GetTip(button) as string == "Go to event at frame 16") == 2);
                 Equal(before, database.GetComponentClassSettings(component).DesignPreviewJson);
                 var reset = Required((host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
                     .Single(button => button.Content as string == "Reset test values"));
                 reset.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Wait(() => ButtonNamed("Go to event at frame 16") is not null);
+                Wait(() => (host.Content as Control)?.GetLogicalDescendants().OfType<Button>()
+                    .Count(button => ToolTip.GetTip(button) as string == "Go to event at frame 16") == 1);
             }
             finally { CloseTestWindow(window); Dispatcher.UIThread.RunJobs(); }
         }, CancellationToken.None).GetAwaiter().GetResult();

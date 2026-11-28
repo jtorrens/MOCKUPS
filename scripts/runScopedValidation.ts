@@ -214,7 +214,7 @@ export function planScopedValidation(
         ["--", "--exact", "Theme token families preserve complete catalogs and metadata"],
       ));
     }
-    if (file.includes("reactionEmitter")
+    if (file === "scaffolding/modules/module_core_socialPost.json" || file.includes("reactionEmitter")
       || ["eventBurst.ts", "EventBurst.cs", "RuntimeCollectionItemPresentation.cs",
         "ModuleInstanceAnimationEditor.cs", "DesignPreviewTestValues.cs", "RuntimeInputsCollectionEditor.cs", "ComponentPreviewTransientState.cs",
         "EditorPreviewController.cs", "ComponentInputsPanel.cs", "DesignPreviewInputPreparer.cs",
