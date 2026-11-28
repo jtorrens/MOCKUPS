@@ -1,3 +1,4 @@
+import type { AlignmentPlacementContract } from "./previewComponentContracts.js";
 import type { ModuleSectionLayout } from "./moduleSectionLayout.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import type {
@@ -40,6 +41,7 @@ export interface SocialPostModuleContract {
   showFooter: boolean;
   showActions: boolean;
   showReactionEmitter: boolean;
+  reactionEmitterPlacement: AlignmentPlacementContract;
   reactionEmitterSlot: SocialPostComponentSlot;
   reactionCatalog: Record<string, unknown>[];
   actions: IconRowDesignContract;

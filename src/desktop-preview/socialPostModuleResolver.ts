@@ -16,6 +16,7 @@ import {
   requiredBoolean,
   requiredComponentVariantSlot,
   requiredNumber,
+  requiredPlacement,
   requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
@@ -112,6 +113,7 @@ export function resolveSocialPostModule(
     showFooter: requiredBoolean(socialPost, "showFooter", "module.core.socialPost"),
     showReactionEmitter: requiredBoolean(socialPost, "showReactionEmitter", "module.core.socialPost")
       && requiredBoolean(preview, "showEmoticons", "module.core.socialPost"),
+    reactionEmitterPlacement: requiredPlacement(socialPost, "reactionEmitterPlacement", "module.core.socialPost"),
     reactionEmitterSlot: requiredTypedSlot(socialPost, componentBaseConfigs, "reactionEmitterSlot", "reactionEmitter"),
     reactionCatalog: requiredObjectArray(preview, "reactionCatalog", "module.core.socialPost"),
     showActions: requiredBoolean(socialPost, "showActions", "module.core.socialPost"),

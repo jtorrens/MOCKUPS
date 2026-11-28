@@ -215,6 +215,7 @@ export function planScopedValidation(
       ));
     }
     if (file === "scaffolding/modules/module_core_socialPost.json" || file.includes("reactionEmitter")
+      || file.endsWith("/socialPostModuleRenderable.ts") || file.endsWith("/previewGeometryHelpers.ts")
       || ["DictionaryIntegerControl.cs", "DesignPreviewPlaybackFrameProjection.cs", "eventBurst.ts", "EventBurst.cs", "RuntimeCollectionItemPresentation.cs",
         "ModuleInstanceAnimationEditor.cs", "DesignPreviewTestValues.cs", "RuntimeInputsCollectionEditor.cs", "ComponentPreviewTransientState.cs",
         "EditorPreviewController.cs", "ComponentInputsPanel.cs", "DesignPreviewInputPreparer.cs",
@@ -224,6 +225,7 @@ export function planScopedValidation(
         "RuntimeAnimationFrameOrigin.cs", "RuntimePreviewDocumentContract.cs", "DesignPreviewPayloadFactory.cs",
         "ComponentPreviewActionRuntimeValue.cs"].some(name => file.endsWith("/" + name))) {
       previewTests.add("tests/animation/reactionEmitterComponent.test.ts");
+      previewTests.add("tests/animation/socialPostModule.test.ts");
       desktopUi = true;
       add(npmStep("desktop:fixture-event-edit", "test:focus:desktop",
         "Fixture event authoring shares the selected playhead and temporary Design state",

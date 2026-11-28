@@ -53,17 +53,16 @@ test("reaction glyphs grow from configured scale and opacity and expire at the e
   assert.deepEqual(at(36), overlap);
 });
 
-test("emitter travel uses the root screen height and the placement inside its assigned box", () => {
+test("emitter travel uses the root screen height and a fixed bottom-center origin in its assigned box", () => {
   const payload = committedComponentFixture("reactionEmitter");
   const config = JSON.parse(payload.configJson);
-  Object.assign(config.reactionEmitter, { duration: 48, riseHeightPercent: 50, dispersionWidth: 80,
-    placement: { mode: "center", alignX: 0.5, alignY: 1, offsetX: 8, offsetY: -12 } });
+  Object.assign(config.reactionEmitter, { duration: 48, riseHeightPercent: 50, dispersionWidth: 80 });
   payload.configJson = JSON.stringify(config);
   payload.rootPreviewFrame = { ...payload.previewFrame, screenWidth: 360, screenHeight: 800 };
   payload.designPreviewJson = JSON.stringify({ showEmoticons: true, catalog: [{ id: "heart", emissions: [{ id: "k:1", value: "emit", age: 24 }] }] });
   const emitter = resolveReactionEmitterComponent(payload);
   const group = reactionEmitterComponentToRenderable(payload, emitter, { x: 10, y: 20, width: 100, height: 200 });
   const box = group.children![0]!.box!;
-  assert.equal(box.y + box.height / 2, 220 - 12 - 400 * 0.75);
-  assert.ok(Math.abs(box.x + box.width / 2 - 68) <= 40);
+  assert.equal(box.y + box.height / 2, 220 - emitter.size / 2 - 400 * 0.75);
+  assert.ok(Math.abs(box.x + box.width / 2 - 60) <= 40);
 });

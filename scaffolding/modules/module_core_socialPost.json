@@ -1496,6 +1496,13 @@
       "reactionEmitterSlot": {
         "variantReference": "component_system_reactionEmitter::variant::default",
         "overrides": {}
+      },
+      "reactionEmitterPlacement": {
+        "mode": "insideEdge",
+        "alignX": 0.5,
+        "alignY": 1,
+        "offsetX": 0,
+        "offsetY": 0
       }
     }
   },
@@ -4767,6 +4774,13 @@
         "reactionEmitterSlot": {
           "variantReference": "component_system_reactionEmitter::variant::default",
           "overrides": {}
+        },
+        "reactionEmitterPlacement": {
+          "mode": "insideEdge",
+          "alignX": 0.5,
+          "alignY": 1,
+          "offsetX": 0,
+          "offsetY": 0
         }
       }
     }
@@ -6470,6 +6484,13 @@
           "reactionEmitterSlot": {
             "variantReference": "component_system_reactionEmitter::variant::default",
             "overrides": {}
+          },
+          "reactionEmitterPlacement": {
+            "mode": "insideEdge",
+            "alignX": 0.5,
+            "alignY": 1,
+            "offsetX": 0,
+            "offsetY": 0
           }
         }
       }
@@ -8292,6 +8313,32 @@
         "recordClassId": "component.reactionEmitter"
       },
       "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.reactionEmitterPlacement",
+      "label": "Emitter origin",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "socialPost",
+        "reactionEmitterPlacement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0.5,\"alignY\":1,\"offsetX\":0,\"offsetY\":0}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {
@@ -8930,6 +8977,11 @@
               {
                 "id": "module.core.socialPost.reactionEmitter",
                 "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.reactionEmitterPlacement",
+                "order": 20,
                 "visible": true
               }
             ],

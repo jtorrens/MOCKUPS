@@ -61,13 +61,6 @@
       ],
       "riseHeightPercent": 26,
       "dispersionWidth": 44,
-      "placement": {
-        "mode": "insideEdge",
-        "alignX": 0.5,
-        "alignY": 1,
-        "offsetX": 0,
-        "offsetY": 0
-      },
       "burst": {
         "count": 1,
         "intervalFrames": 0
@@ -111,13 +104,6 @@
         ],
         "riseHeightPercent": 26,
         "dispersionWidth": 44,
-        "placement": {
-          "mode": "insideEdge",
-          "alignX": 0.5,
-          "alignY": 1,
-          "offsetX": 0,
-          "offsetY": 0
-        },
         "burst": {
           "count": 1,
           "intervalFrames": 0
@@ -590,29 +576,6 @@
       "embeddedSlot": null
     },
     {
-      "id": "component.reactionEmitter.placement",
-      "label": "Emitter origin",
-      "valueKind": "AlignmentPlacement",
-      "jsonPath": [
-        "reactionEmitter",
-        "placement"
-      ],
-      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0.5,\"alignY\":1,\"offsetX\":0,\"offsetY\":0}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
       "id": "component.reactionEmitter.count",
       "label": "Count",
       "valueKind": "Integer",
@@ -747,11 +710,6 @@
               {
                 "id": "component.reactionEmitter.fadeStart",
                 "order": 50,
-                "visible": true
-              },
-              {
-                "id": "component.reactionEmitter.placement",
-                "order": 60,
                 "visible": true
               }
             ]

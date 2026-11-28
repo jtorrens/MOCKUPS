@@ -75,6 +75,16 @@ export function scalePlacement(
   };
 }
 
+export function placeRenderableNode(
+  node: RenderableNode,
+  bounds: RenderableBox,
+  placement: AlignmentPlacementContract,
+): RenderableNode {
+  if (!node.box) return node;
+  const target = placeChild(bounds, node.box, placement);
+  return translateRenderableNode(node, { x: target.x - node.box.x, y: target.y - node.box.y });
+}
+
 export function placeChild(
   parent: RenderableBox,
   childSize: { width: number; height: number },

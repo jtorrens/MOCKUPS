@@ -12,6 +12,8 @@ import {
 import { parseObject } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
+  placeRenderableNode,
+  scalePlacement,
   renderableVisualBounds,
   renderScale,
   translateRenderableNode,
@@ -194,8 +196,11 @@ export function socialPostModuleToRenderable(
   const children: RenderableNode[] = [backgroundNode];
   if (media) children.push(media);
   const emitter = contract.showReactionEmitter
-    ? componentNode(payload, componentBaseConfigs, "reactionEmitter", contract.reactionEmitterSlot,
-        { catalog: contract.reactionCatalog, showEmoticons: contract.showReactionEmitter }, undefined, screen)
+    ? placeRenderableNode(
+        componentNode(payload, componentBaseConfigs, "reactionEmitter", contract.reactionEmitterSlot,
+          { catalog: contract.reactionCatalog, showEmoticons: contract.showReactionEmitter }, undefined, screen),
+        screen, scalePlacement(contract.reactionEmitterPlacement, scale),
+      )
     : undefined;
   const overlays = emitter ? [gallery, emitter, header] : [header, gallery];
   for (const layer of overlays) {

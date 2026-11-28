@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { parseObject, requiredObjectArray } from "./previewJsonHelpers.js";
-import { requiredBoolean, requiredNumberValue, requiredPlacement, requiredRecord, requiredString } from "./previewValueHelpers.js";
+import { requiredBoolean, requiredNumberValue, requiredRecord, requiredString } from "./previewValueHelpers.js";
 import type { ReactionEmitterDesignContract } from "./reactionEmitterComponentContract.js";
 
 function integer(owner: Record<string, unknown>, key: string, min: number, max: number) {
@@ -54,7 +54,6 @@ export function resolveReactionEmitterComponent(payload: DesignPreviewPayload): 
     size: integer(config, "size", 1, 512),
     riseHeightPercent: integer(config, "riseHeightPercent", 0, 100),
     dispersionWidth: integer(config, "dispersionWidth", 0, 2000),
-    placement: requiredPlacement(config, "placement", "Emitter origin"),
     particles,
   };
 }

@@ -531,6 +531,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "reactionEmitterSlot"],
             "reactionEmitter",
             []),
+        ["module.core.socialPost.reactionEmitterPlacement"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.reactionEmitterPlacement",
+            ValueKind.AlignmentPlacement,
+            ["socialPost", "reactionEmitterPlacement"],
+            "",
+            []),
         ["module.core.socialPost.rowGapToken"] = new(
             "module.core.socialPost",
             "module.core.socialPost.rowGapToken",

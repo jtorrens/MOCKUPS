@@ -666,7 +666,9 @@ Overrides through the existing configured-Icon-Row preparation, as cosmetic
 Variant content. It owns no command schema or independent collection lifecycle.
 Reel is a complete Social Post Variant, not another implementation or route.
 
-Each Social Post Variant owns an enable switch and a fixed Reaction Emitter slot.
+Each Social Post Variant owns an enable switch, a fixed Reaction Emitter slot and its screen-relative
+origin (standard alignment and offsets). The module places the emitter using the
+full-size glyph bounds. Standalone Design previews use a fixed bottom-center origin.
 The post draws that Component across the Screen above Media and Gallery and below
 interface layers. Each Screen owns `showEmoticons` and the `emit` tracks of its
 `reactionCatalog` items. Each track uses the stable emoticon id as its target.

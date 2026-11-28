@@ -711,6 +711,12 @@ test("Social Post draws each Screen's emissions above its media and below its in
   config.socialPost.showReactionEmitter = true;
   const first = draw(["fire"], 15);
   assert.equal(findNode(draw(["fire"], 15, false), "component.reactionEmitter"), undefined);
+  const initial = requiredNode(first, "emission.fire-birth:0").box!;
+  config.socialPost.reactionEmitterPlacement.offsetX += 24;
+  const moved = requiredNode(draw(["fire"], 15), "emission.fire-birth:0").box!;
+  const expectedShift = 24 * (source.rootPreviewFrame ?? source.previewFrame).screenWidth / 360;
+  assert.ok(Math.abs(moved.x - initial.x - expectedShift) < 1e-8);
+  assert.equal(moved.y, initial.y);
   const simultaneous = draw(["fire", "clap"], 15);
   assert.equal(requiredNode(simultaneous, "emission.fire-birth:0").text, "🔥");
   assert.equal(requiredNode(simultaneous, "emission.clap-birth:0").text, "👏");

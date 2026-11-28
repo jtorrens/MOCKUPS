@@ -447,7 +447,7 @@ Reset discards session edits and Save
 as defaults promotes the sequence after checking the class Variants.
 
 Reaction Emitter owns its stable emoticon catalog, final size, rise height and
-duration, total horizontal dispersion width, standard origin placement, fade start, entry duration, initial scale and
+duration, total horizontal dispersion width, fade start, entry duration, initial scale and
 initial opacity. Its prepared emissions refer to catalog items by stable id.
 Rise height is a percentage of the root screen height. Dispersion uses design pixels,
 with half the authored width on either side of the placed origin. Each particle’s

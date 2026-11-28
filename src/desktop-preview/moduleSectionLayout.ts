@@ -2,8 +2,8 @@ import type { RenderableBox, RenderableNode } from "../visual/renderable/types.j
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { AlignmentPlacementContract } from "./previewComponentContracts.js";
 import { requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
-import { numberToken, placeChild, renderScale, scalePlacement } from "./componentRenderableCommon.js";
-import { translateRenderableNode } from "./previewGeometryHelpers.js";
+import { numberToken, renderScale, scalePlacement } from "./componentRenderableCommon.js";
+import { placeRenderableNode } from "./previewGeometryHelpers.js";
 
 export interface ModuleSectionLayout {
   mode: "stack" | "float";
@@ -30,9 +30,8 @@ export function sectionContentBox(payload: DesignPreviewPayload, layout: ModuleS
 }
 
 export function placeModuleSection(payload: DesignPreviewPayload, layout: ModuleSectionLayout, bounds: RenderableBox, node: RenderableNode): RenderableNode {
-  if (layout.mode === "stack" || !node.box) return node;
-  const target = placeChild(sectionContentBox(payload, layout, bounds), node.box, scalePlacement(layout.placement, renderScale(payload)));
-  return translateRenderableNode(node, { x: target.x - node.box.x, y: target.y - node.box.y });
+  if (layout.mode === "stack") return node;
+  return placeRenderableNode(node, sectionContentBox(payload, layout, bounds), scalePlacement(layout.placement, renderScale(payload)));
 }
 
 export function sectionFlowEdge(layout: ModuleSectionLayout, node: RenderableNode | undefined, edge: "top" | "bottom", unchanged: number): number {

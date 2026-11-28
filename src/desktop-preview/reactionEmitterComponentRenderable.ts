@@ -1,6 +1,6 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import { fontFamilyForTypography } from "./previewFontHelpers.js";
-import { placeChild, previewScreenBox, renderScale, rootPreviewScreenBox, scalePlacement } from "./componentRenderableCommon.js";
+import { placeChild, previewScreenBox, renderScale, rootPreviewScreenBox } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { ReactionEmitterDesignContract } from "./reactionEmitterComponentContract.js";
 
@@ -13,7 +13,9 @@ export function reactionEmitterComponentToRenderable(
   const height = rootPreviewScreenBox(payload).height * emitter.riseHeightPercent / 100;
   const halfWidth = emitter.dispersionWidth * scale / 2;
   const box = assignedBox ?? previewScreenBox(payload);
-  const origin = placeChild(box, { width: size, height: size }, scalePlacement(emitter.placement, scale));
+  const origin = placeChild(box, { width: size, height: size }, {
+    mode: "insideEdge", alignX: 0.5, alignY: 1, offsetX: 0, offsetY: 0,
+  });
   const children = emitter.particles.map((particle): RenderableNode => {
     const width = size * particle.scale;
     const x = origin.x + size / 2 + halfWidth * particle.drift;
@@ -23,5 +25,5 @@ export function reactionEmitterComponentToRenderable(
       style: { display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily, fontSize: width, textAlign: "center", opacity: particle.opacity, whiteSpace: "nowrap" } };
   });
-  return { id: "component.reactionEmitter", type: "group", frame: 0, box, style: {}, children };
+  return { id: "component.reactionEmitter", type: "group", frame: 0, box: origin, style: { overflow: "visible" }, children };
 }
