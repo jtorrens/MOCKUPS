@@ -1195,7 +1195,6 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _selectedLaneByScreen = new(StringComparer.Ordinal);
     private readonly Dictionary<PreviewScreenTimelineLane, TimelineRow>
         _rowsByLane = [];
-    private readonly List<int> _keyframeFrames = [];
     private IReadOnlyList<PreviewScreenTimelineReferenceMarker>
         _referenceMarkers = [];
     private readonly ContentControl _animationHost = new();
@@ -1264,7 +1263,6 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _isMiddlePanning = false;
         _panStartViewport = null;
         _rowsByLane.Clear();
-        _keyframeFrames.Clear();
         _content.Children.Clear();
         _content.Children.Add(new TextBlock
         {
@@ -1293,7 +1291,6 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _isMiddlePanning = false;
         _panStartViewport = null;
         _rowsByLane.Clear();
-        _keyframeFrames.Clear();
         _content.Children.Clear();
         _content.Children.Add(new EditorLoadingScrim());
     }
@@ -1317,7 +1314,6 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _isMiddlePanning = false;
         _panStartViewport = null;
         _rowsByLane.Clear();
-        _keyframeFrames.Clear();
         _content.Children.Clear();
         _content.Children.Add(new TextBlock
         {
@@ -1357,7 +1353,6 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _playheadSnapFrame = null;
         _lanes.Clear();
         _rowsByLane.Clear();
-        _keyframeFrames.Clear();
         _content.Children.Clear();
         _content.Children.Add(CreateTransport(snapshot, isPlaying, zoom));
 
@@ -1380,6 +1375,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
             _ruler,
             28,
             FontWeight.Normal);
+        var keysByTarget = snapshot.Keyframes.ToLookup(key => key.TargetId, StringComparer.Ordinal);
         PreviewScreenTimelineLane? general = null;
         if (snapshot.ShowGeneralLane)
         {
@@ -1395,6 +1391,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
                     DurationEdit: snapshot.IsDurationEditable
                         ? new PreviewScreenTimelineDurationEdit()
                         : null),
+                keysByTarget[""].ToArray(),
                 isGeneral: true);
             _generalLane = general;
             var generalRow = AddTimelineRow(
@@ -1447,6 +1444,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
                     snapshot,
                     laneKey,
                     item,
+                    keysByTarget[item.Id].ToArray(),
                     isGeneral: false);
                 var row = AddTimelineRow(
                     timeline,
@@ -1596,6 +1594,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
         PreviewScreenTimelineSnapshot snapshot,
         string key,
         PreviewScreenTimelineItem item,
+        IReadOnlyList<PreviewScreenTimelineKeyframe> keyframes,
         bool isGeneral)
     {
         var lane = new PreviewScreenTimelineLane(
@@ -1604,6 +1603,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
                 "Screen Timeline viewport must be prepared before its lanes."),
             key,
             item,
+            keyframes,
             isGeneral,
             LaneSnapTargets);
         lane.EditCommitted += async (_, edit) => await CommitLaneEditAsync(item, edit);
@@ -1689,20 +1689,10 @@ internal sealed class PreviewScreenTimelineSurface : Border
         if (_snapshot is null) return;
         _selectedLane = lane;
         _selectedLaneByScreen[_snapshot.ScreenId] = lane.Key;
-        var keyframes = _snapshot.Keyframes
-            .Where((keyframe) => keyframe.TargetId.Equals(
-                lane.TargetId,
-                StringComparison.Ordinal))
-            .ToList();
-        _keyframeFrames.Clear();
-        _keyframeFrames.AddRange(keyframes
-            .Select((keyframe) => keyframe.ScreenFrame));
         foreach (var candidate in _lanes)
         {
             var isSelected = ReferenceEquals(candidate, lane);
-            candidate.SetSelection(
-                isSelected,
-                isSelected ? keyframes : []);
+            candidate.SetSelection(isSelected);
             if (_rowsByLane.TryGetValue(candidate, out var row))
                 row.SetSelected(isSelected);
         }
@@ -1841,7 +1831,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _lanes
             .Where((lane) => lane.IsVisible)
             .SelectMany((lane) => lane.SnapFrames)
-            .Concat(_keyframeFrames)
+            .Concat(_selectedLane?.Keyframes.Select(key => key.ScreenFrame) ?? [])
             .Concat(_referenceMarkers.Select((marker) => marker.Frame))
             .Distinct()
             .Order()
@@ -2598,6 +2588,7 @@ internal sealed record PreviewScreenTimelineIntervalEdit(
 
 internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
 {
+    private static readonly Pen ReferenceMarkerPen = new(EditorAnimationVisuals.ActiveTrackBrush, 1.5);
     private const double ExitHandleWidth = 12;
     private readonly string _key;
     private readonly string _label;
@@ -2622,7 +2613,6 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     private int _dragEndValue;
     private int _activeIntervalIndex = -1;
     private PreviewScreenTimelineInterval? _dragInterval;
-    private IReadOnlyList<PreviewScreenTimelineKeyframe> _keyframes = [];
     private int? _activeSnapFrame;
     private DragMode _dragMode;
     private bool _isSelected;
@@ -2632,10 +2622,12 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         PreviewScreenTimelineViewport viewport,
         string key,
         PreviewScreenTimelineItem item,
+        IReadOnlyList<PreviewScreenTimelineKeyframe> keyframes,
         bool isGeneral,
         Func<PreviewScreenTimelineLane, IReadOnlyList<int>> snapTargets)
         : base(snapshot, viewport)
     {
+        Keyframes = keyframes;
         _key = key;
         _label = item.Label;
         _targetId = isGeneral ? "" : item.Id;
@@ -2685,6 +2677,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     public string Key => _key;
     public string Label => _label;
     public string TargetId => _targetId;
+    public IReadOnlyList<PreviewScreenTimelineKeyframe> Keyframes { get; }
     public bool IsSelected => _isSelected;
     public int StartFrame => _startFrame;
     public int EndFrame => _endFrame;
@@ -2717,7 +2710,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         IReadOnlyDictionary<int, int>? keyframeChanges = null;
         if (_stateEdit is { } stateEdit)
         {
-            var stateKeyframes = _keyframes
+            var stateKeyframes = Keyframes
                 .Where((keyframe) =>
                     keyframe.FieldId == stateEdit.FieldId
                     && keyframe.TargetId == stateEdit.TargetId)
@@ -2797,12 +2790,9 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         _dragEndValue = _endFrame;
     }
 
-    public void SetSelection(
-        bool isSelected,
-        IReadOnlyList<PreviewScreenTimelineKeyframe> keyframes)
+    public void SetSelection(bool isSelected)
     {
         _isSelected = isSelected;
-        _keyframes = keyframes;
         InvalidateVisual();
     }
 
@@ -2858,35 +2848,37 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                     new Point(right - 4, 7), new Point(right - 4, Bounds.Height - 7));
             }
         }
-        if (_isSelected)
+        var ownerOffset = _movesOwnerOrigin
+            ? _startFrame - _authoredStartFrame
+            : 0;
+        foreach (var keyframe in Keyframes)
         {
-            var ownerOffset = _movesOwnerOrigin
-                ? _startFrame - _authoredStartFrame
-                : 0;
-            foreach (var keyframe in _keyframes)
+            var projectedFrame = keyframe.ScreenFrame + ownerOffset;
+            if (projectedFrame < Viewport.MinimumFrame
+                || projectedFrame > Viewport.MaximumFrame)
             {
-                var projectedFrame = keyframe.ScreenFrame + ownerOffset;
-                if (projectedFrame < Viewport.MinimumFrame
-                    || projectedFrame > Viewport.MaximumFrame)
-                {
-                    continue;
-                }
-                var x = X(projectedFrame);
-                var y = Bounds.Height / 2;
-                var marker = new StreamGeometry();
-                using (var geometry = marker.Open())
-                {
-                    geometry.BeginFigure(new Point(x, y - 4), true);
-                    geometry.LineTo(new Point(x + 4, y));
-                    geometry.LineTo(new Point(x, y + 4));
-                    geometry.LineTo(new Point(x - 4, y));
-                    geometry.EndFigure(true);
-                }
-                context.DrawGeometry(
-                    EditorAnimationVisuals.ActiveTrackBrush,
-                    null,
-                    marker);
+                continue;
             }
+            var x = X(projectedFrame);
+            var y = Bounds.Height / 2;
+            if (!_isSelected)
+            {
+                context.DrawEllipse(null, ReferenceMarkerPen, new Point(x, y), 3.5, 3.5);
+                continue;
+            }
+            var marker = new StreamGeometry();
+            using (var geometry = marker.Open())
+            {
+                geometry.BeginFigure(new Point(x, y - 4), true);
+                geometry.LineTo(new Point(x + 4, y));
+                geometry.LineTo(new Point(x, y + 4));
+                geometry.LineTo(new Point(x - 4, y));
+                geometry.EndFigure(true);
+            }
+            context.DrawGeometry(
+                EditorAnimationVisuals.ActiveTrackBrush,
+                null,
+                marker);
         }
     }
 

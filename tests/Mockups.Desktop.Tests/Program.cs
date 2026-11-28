@@ -9092,12 +9092,25 @@ static void PreviewShellVisualTreeIsResponsive()
                         BindingFlags.Instance | BindingFlags.NonPublic)
                     ?.GetValue(timelineSurface)
                     as Func<string, AnimationTargetEditorContent>);
+            // Distinct Screen and local frames catch rows that publish the wrong clock.
+            var generalKey = new PreviewScreenTimelineKeyframe("generalField", "", 3, 3);
+            var itemKey = new PreviewScreenTimelineKeyframe("itemField", itemTimelineLane.TargetId, 2, 12);
             timelineSurface.SetSnapshot(
-                timelineSnapshot,
+                timelineSnapshot with { Keyframes = [generalKey, itemKey] },
                 timelineAnimationContent,
                 frame: 0,
                 isPlaying: false);
             Dispatcher.UIThread.RunJobs();
+            var refreshedLanes = timelineSurface.GetVisualDescendants().OfType<PreviewScreenTimelineLane>().ToList();
+            var generalKeysLane = refreshedLanes.Single(lane => lane.TargetId == "");
+            var itemKeysLane = refreshedLanes.Single(lane => lane.TargetId == itemKey.TargetId);
+            foreach (var activeLane in new[] { itemKeysLane, generalKeysLane })
+            {
+                activeLane.RequestSelection();
+                Equal(activeLane, refreshedLanes.Single(lane => lane.IsSelected));
+                SequenceEqual(new[] { generalKey }, generalKeysLane.Keyframes);
+                SequenceEqual(new[] { itemKey }, itemKeysLane.Keyframes);
+            }
             Equal(1, timelineSurface
                 .GetVisualDescendants()
                 .OfType<PreviewScreenTimelineRuler>()

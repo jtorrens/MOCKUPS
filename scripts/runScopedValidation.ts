@@ -444,6 +444,11 @@ export function planScopedValidation(
         "animation feedback must remain immediate and retain the mounted authoring surface",
         ["--", "--exact", name]));
     }
+    if (file.endsWith("/PreviewScreenTimeline.cs")) {
+      add(npmStep("desktop:timeline-lane-markers", "test:focus:desktop",
+        "Visible lanes retain their own keyframes across selection changes",
+        ["--", "--exact", "real Preview shell layout remains usable at 1040 and 1440"]));
+    }
     if ([
       "src/Mockups.Application/ReferenceUsageModels.cs",
       "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",

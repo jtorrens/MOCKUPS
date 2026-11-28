@@ -332,7 +332,9 @@ never scales owner clocks or authored keyframes.
 Selecting General or any item lane highlights the complete lane, including its
 label, and opens one Keyframes section after the final visible lane. The section
 reuses the standard animation track and field editor but aligns its ruler and
-markers to Screen time. Only tracks owned by the selected stable target appear.
+markers to Screen time. The Keyframes editor lists tracks owned by the selected stable target. Each visible
+lane shows its own enabled keys at their projected Screen frames. The selected
+lane uses diamonds. Other lanes use hollow yellow circles as visual references.
 Their displayed positions follow the lane when it moves; the authored values
 remain relative to the lane and are not rewritten. Collapsing a collection
 whose selected lane is hidden returns the selection to General.
