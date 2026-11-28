@@ -450,8 +450,11 @@ Reaction Emitter owns its stable emoticon catalog, final size, rise height and
 duration, total horizontal dispersion width, fade start, entry duration, initial scale and
 initial opacity. Its prepared emissions refer to catalog items by stable id.
 Rise height is a percentage of the root screen height. Dispersion uses design pixels,
-with half the authored width on either side of the placed origin. Each particle’s
-drift is deterministic from its birth identity.
+with half the authored width on either side of the placed origin. Each trigger divides that width into as many equal zones as its burst count.
+It samples one destination per zone and shuffles their assignment to births using
+the stable trigger id. All particles start at the placed origin and move toward
+their destinations in proportion to their rise. Projection retains the original
+birth index and total count even when only part of the burst is alive.
 
 ## Action transport
 

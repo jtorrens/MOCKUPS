@@ -134,7 +134,10 @@ export function resolveTimelineEvents(animation: JsonRecord, fieldId: string, ta
     const first = burst.interval === 0 ? 0 : Math.max(0, Math.floor((age - duration) / burst.interval) + 1);
     const last = burst.interval === 0 ? burst.count - 1 : Math.min(burst.count - 1, Math.floor(age / burst.interval));
     for (let index = first; index <= last; index++) {
-      events.push({ id: key.id + ":" + index, value: key.value, age: age - index * burst.interval });
+      events.push({
+        id: key.id + ":" + index, triggerId: key.id, burstIndex: index, burstCount: burst.count,
+        value: key.value, age: age - index * burst.interval,
+      });
     }
   }
   return events;

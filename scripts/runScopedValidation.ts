@@ -214,7 +214,7 @@ export function planScopedValidation(
         ["--", "--exact", "Theme token families preserve complete catalogs and metadata"],
       ));
     }
-    if (file === "scaffolding/modules/module_core_socialPost.json" || file.includes("reactionEmitter")
+    if (file === "scaffolding/modules/module_core_socialPost.json" || file.toLowerCase().includes("reactionemitter")
       || file.endsWith("/socialPostModuleRenderable.ts") || file.endsWith("/previewGeometryHelpers.ts")
       || ["DictionaryIntegerControl.cs", "DesignPreviewPlaybackFrameProjection.cs", "eventBurst.ts", "EventBurst.cs", "RuntimeCollectionItemPresentation.cs",
         "ModuleInstanceAnimationEditor.cs", "DesignPreviewTestValues.cs", "RuntimeInputsCollectionEditor.cs", "ComponentPreviewTransientState.cs",
